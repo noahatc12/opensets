@@ -6,7 +6,12 @@
  * applies. The engine's ProgressionRule/ExerciseState are reused here so the
  * stored program references the exact rule shape the pure engine consumes.
  */
-import type { ProgressionRule, ExerciseState, SetType } from '../engine/types';
+import type {
+  ProgressionRule,
+  ExerciseState,
+  SetType,
+  Prescription,
+} from '../engine/types';
 
 /** Canonical muscle taxonomy (normalized from free-exercise-db in the build pipeline).
  *  NOTE: exact alignment to react-body-highlighter slugs is a P4 integration detail. */
@@ -161,6 +166,10 @@ export interface ExerciseStateRow extends ExerciseState {
   programId: string;
   exerciseId: string;
   updatedAt: string;
+  /** The engine's prescription for the NEXT session, computed at the last
+   *  completion (or seed). Cached so the Today view reads it without re-running
+   *  progression (which would double-advance). db-layer field, not in §6.1. */
+  pending?: Prescription;
 }
 
 export type GoalType =
