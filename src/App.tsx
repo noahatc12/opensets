@@ -3,6 +3,7 @@ import { HashRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { TabBar } from './components/TabBar';
 import { ReloadPrompt } from './components/ReloadPrompt';
 import { TodayScreen } from './features/log/TodayScreen';
+import { RoutineBuilder } from './features/programs/RoutineBuilder';
 import { LibraryScreen } from './features/library/LibraryScreen';
 import { HistoryScreen } from './features/analytics/HistoryScreen';
 import { SettingsScreen } from './features/settings/SettingsScreen';
@@ -34,6 +35,7 @@ export default function App() {
         <Route element={<AppShell />}>
           <Route index element={<Navigate to="/today" replace />} />
           <Route path="/today" element={<TodayScreen />} />
+          <Route path="/routine/new" element={<RoutineBuilder />} />
           <Route path="/library" element={<LibraryScreen />} />
           <Route path="/history" element={<HistoryScreen />} />
           <Route path="/settings" element={<SettingsScreen />} />
