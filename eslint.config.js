@@ -25,6 +25,18 @@ export default defineConfig([
     languageOptions: {
       globals: globals.browser,
     },
+    rules: {
+      // Allow intentionally-unused args/vars when underscore-prefixed (public API
+      // params kept for future options, discarded catch bindings, etc.).
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          argsIgnorePattern: '^_',
+          varsIgnorePattern: '^_',
+          caughtErrorsIgnorePattern: '^_',
+        },
+      ],
+    },
   },
   // ENGINE PURITY LAW (spec §6) enforced at lint time: /src/engine is pure — no
   // framework/storage imports, no wall-clock, no randomness. Time and storage are

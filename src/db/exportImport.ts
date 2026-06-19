@@ -109,10 +109,9 @@ export function assertValidEnvelope(
  * from any past version imports cleanly. v1 is the baseline → identity.
  */
 export function migrateEnvelope(env: ExportEnvelope): ExportEnvelope {
-  let migrated = env;
-  // Example for the next bump:
-  // if (migrated.schemaVersion < 2) migrated = migrate_1_to_2(migrated);
-  return migrated;
+  // v1 is the baseline → identity. Future bumps chain here, e.g.:
+  //   if (env.schemaVersion < 2) env = migrate_1_to_2(env);
+  return env;
 }
 
 export interface ImportOptions {
