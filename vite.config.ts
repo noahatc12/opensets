@@ -29,7 +29,11 @@ export default defineConfig({
         categories: ['health', 'fitness', 'sports'],
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,svg,png,ico,json,woff2}'],
+        globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2}'],
+        // Exercise library data (public/data/*.json) is large and unused until P1.
+        // Its offline strategy (precache vs runtime cache) is decided with the
+        // library in P1; keep the P0 install shell lean.
+        globIgnores: ['**/data/**'],
         // Exercise images are served from jsDelivr (spec §7): cache-first, tolerate
         // opaque responses, bounded retention. Never a core-flow dependency.
         runtimeCaching: [
