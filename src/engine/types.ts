@@ -41,13 +41,33 @@ export interface SetResult {
  * in P1, the rest in P2).
  */
 export type ProgressionRule =
-  | { kind: 'linear'; incrementKg: number; failsBeforeDeload: number; deloadPct: number }
+  | {
+      kind: 'linear';
+      incrementKg: number;
+      failsBeforeDeload: number;
+      deloadPct: number;
+    }
   // perSet=true -> DDP (per-set double progression)
-  | { kind: 'double'; repMin: number; repMax: number; incrementKg: number; perSet: boolean }
+  | {
+      kind: 'double';
+      repMin: number;
+      repMax: number;
+      incrementKg: number;
+      perSet: boolean;
+    }
   // week derived from cycle position
-  | { kind: 'percent531'; variant: 'base' | 'bbb' | 'fsl'; tmIncrementKg: number }
+  | {
+      kind: 'percent531';
+      variant: 'base' | 'bbb' | 'fsl';
+      tmIncrementKg: number;
+    }
   | { kind: 'gzclp'; tier: 1 | 2 | 3 }
-  | { kind: 'rpeTarget'; targetRpe: number; targetReps: number; loadStepPct: number }
+  | {
+      kind: 'rpeTarget';
+      targetRpe: number;
+      targetReps: number;
+      loadStepPct: number;
+    }
   | { kind: 'apre'; rm: 3 | 6 | 10 }
   // bodyweight progression
   | { kind: 'repsOnly'; repIncrement: number }
@@ -109,6 +129,22 @@ export interface EngineSettings {
   rounding: RoundingMode;
   /** Display units. Storage/computation is always kg; this is informational only. */
   units: 'kg' | 'lb';
+}
+
+/**
+ * The slot's set/rep scheme — program configuration the weight-based rules
+ * (`linear`, `double`) need to shape a prescription. Self-contained rules
+ * (5/3/1, GZCLP) derive sets/reps from the rule itself and ignore this.
+ *
+ * NOTE: this extends the §6.1 sketch, which omitted it. `linear` rep targets and
+ * the number of sets are program design, not progression state, so the engine
+ * can't build a full Prescription from (rule, state, lastSession) alone.
+ */
+export interface SetScheme {
+  sets: number;
+  repTarget?: number;
+  repRange?: [number, number];
+  amrapLast?: boolean;
 }
 
 /** Return shape of {@link nextPrescription}: the prescription plus advanced state. */
