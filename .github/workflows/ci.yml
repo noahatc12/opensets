@@ -29,7 +29,8 @@ jobs:
       - run: npm ci
       - run: npm run lint
       - run: npm run typecheck
-      - run: npm test
+      # Coverage run enforces the engine's ≥95% branch gate (spec §6.5, §13).
+      - run: npm run coverage
       # prebuild fetches the pinned exercise dataset, then vite builds.
       - run: npm run build
       - uses: actions/configure-pages@v5

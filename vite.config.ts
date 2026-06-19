@@ -62,10 +62,9 @@ export default defineConfig({
       reportsDirectory: './coverage',
       include: ['src/engine/**/*.ts'],
       exclude: ['src/engine/**/*.{test,spec}.ts', 'src/engine/**/types.ts'],
-      // The ≥95% branch gate is the engine's quality bar (spec §6.5). It activates
-      // in P1 when progression logic lands; P0 ships only types + a stubbed entry
-      // point, so enforcing it now would gate on an empty module. Turn on in P1:
-      // thresholds: { branches: 95, functions: 95, lines: 95, statements: 95 },
+      // The engine's quality bar (spec §6.5), enforced in CI now that P1 logic has
+      // landed. The pure engine is the centerpiece; it stays test-first and ≥95%.
+      thresholds: { branches: 95, functions: 95, lines: 95, statements: 95 },
     },
   },
 });
