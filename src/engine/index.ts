@@ -10,8 +10,10 @@ export {
   roundToLoadable,
   isLoadable,
   generateWarmupRamp,
+  platesForWeight,
   type WarmupSet,
 } from './rounding';
+export { detectPRs, type PRResult } from './prs';
 export {
   e1rm,
   e1rmEpley,

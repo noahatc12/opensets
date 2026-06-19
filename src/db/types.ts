@@ -11,7 +11,10 @@ import type {
   ExerciseState,
   SetType,
   Prescription,
+  PRKind,
 } from '../engine/types';
+
+export type { PRKind };
 
 /** Canonical muscle taxonomy (normalized from free-exercise-db in the build pipeline).
  *  NOTE: exact alignment to react-body-highlighter slugs is a P4 integration detail. */
@@ -141,8 +144,6 @@ export interface WorkoutSession {
    *  refinement). Populated when a session is created from a template. */
   executedSlots?: ExerciseSlot[];
 }
-
-export type PRKind = 'weight' | 'reps' | 'e1rm';
 
 export interface LoggedSet {
   id: string;

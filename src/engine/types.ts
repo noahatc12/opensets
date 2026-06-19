@@ -19,6 +19,9 @@ export type SetType =
   | 'timed'
   | 'cardio';
 
+/** Kinds of personal record the engine detects (spec §5 P1). */
+export type PRKind = 'weight' | 'reps' | 'e1rm';
+
 /** A single performed set, as logged. */
 export interface SetResult {
   /** External load. 0 = pure bodyweight; negative = assisted. */

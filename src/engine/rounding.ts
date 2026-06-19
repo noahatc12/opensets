@@ -134,3 +134,37 @@ export function generateWarmupRamp(
   }
   return out;
 }
+
+/**
+ * Per-side plate breakdown for a loadable weight (the plate calculator). Returns
+ * plates largest-first in kg, or null if the weight is not exactly loadable from
+ * the inventory (round with {@link roundToLoadable} first). Empty array = bar only.
+ */
+export function platesForWeight(
+  weightKg: number,
+  barKg: number,
+  plates: number[],
+): number[] | null {
+  const perSideCs = cs((weightKg - barKg) / 2);
+  if (perSideCs < 0) return null;
+  if (perSideCs === 0) return [];
+
+  const plateCs = plates
+    .map(cs)
+    .filter((p) => p > 0)
+    .sort((a, b) => b - a);
+  if (plateCs.length === 0) return null;
+
+  const reach = reachablePerSide(plateCs, perSideCs);
+  if (!reach[perSideCs]) return null;
+
+  const out: number[] = [];
+  let s = perSideCs;
+  while (s > 0) {
+    // Largest plate that still leaves a reachable remainder (guaranteed to exist).
+    const p = plateCs.find((pc) => pc <= s && reach[s - pc])!;
+    out.push(p);
+    s -= p;
+  }
+  return out.map(kg);
+}

@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { roundToLoadable, generateWarmupRamp, isLoadable } from './rounding';
+import {
+  roundToLoadable,
+  generateWarmupRamp,
+  isLoadable,
+  platesForWeight,
+} from './rounding';
 
 // Standard kg gym set (denominations; each usable as a pair, unlimited quantity).
 const STD = [1.25, 2.5, 5, 10, 15, 20, 25];
@@ -100,5 +105,32 @@ describe('generateWarmupRamp', () => {
     // 25 kg working: 40/60/80% all round down to the bar → only the bar survives.
     const ramp = generateWarmupRamp(25, BAR, STD);
     expect(ramp).toEqual([{ weightKg: BAR, reps: 8 }]);
+  });
+});
+
+describe('platesForWeight', () => {
+  it('breaks a loadable weight into largest-first per-side plates', () => {
+    expect(platesForWeight(100, BAR, STD)).toEqual([25, 15]); // 20 + 2×40
+    expect(platesForWeight(62.5, BAR, STD)).toEqual([20, 1.25]); // 20 + 2×21.25
+  });
+
+  it('returns an empty breakdown for the bar alone', () => {
+    expect(platesForWeight(20, BAR, STD)).toEqual([]);
+  });
+
+  it('returns null for a weight not exactly loadable / below the bar', () => {
+    expect(platesForWeight(61, BAR, NO_MICRO)).toBeNull();
+    expect(platesForWeight(15, BAR, STD)).toBeNull();
+    expect(platesForWeight(80, BAR, [])).toBeNull();
+  });
+
+  it('breakdown always reconstructs the weight (property)', () => {
+    for (let w = 20; w <= 200; w += 2.5) {
+      const loadable = roundToLoadable(w, BAR, STD);
+      const plates = platesForWeight(loadable, BAR, STD);
+      expect(plates).not.toBeNull();
+      const total = BAR + 2 * plates!.reduce((a, b) => a + b, 0);
+      expect(total).toBeCloseTo(loadable, 5);
+    }
   });
 });

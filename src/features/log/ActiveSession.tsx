@@ -8,6 +8,7 @@ import {
   logSet,
   softDeleteSet,
   completeSessionAndAdvance,
+  detectAndMarkPRs,
 } from '../../db/repositories';
 import { Button } from '../../components/Button';
 import { Stepper } from '../../components/Stepper';
@@ -48,7 +49,7 @@ export function ActiveSession() {
   );
 
   async function log(weightKg: number, reps: number, type: SetType) {
-    await logSet({
+    const loggedSet = await logSet({
       sessionId: session!.id,
       exerciseId: exId,
       date: session!.date,
@@ -58,6 +59,7 @@ export function ActiveSession() {
       reps,
       completed: true,
     });
+    await detectAndMarkPRs(loggedSet); // flags persist; live query shows the badge
     startRest(slot!.restWorkSec);
   }
 
@@ -142,6 +144,11 @@ export function ActiveSession() {
                 >
                   <span className="text-[14px] text-muted">Set {i + 1}</span>
                   <div className="flex items-center gap-3">
+                    {d.isPR && d.isPR.length > 0 && (
+                      <span className="rounded bg-pr/15 px-1.5 py-0.5 text-[11px] font-bold uppercase tracking-wide text-pr">
+                        PR
+                      </span>
+                    )}
                     <span className="tnum text-[15px] font-semibold text-text">
                       {fmt(d.weightKg)} kg × {d.reps}
                     </span>

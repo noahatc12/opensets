@@ -9,7 +9,7 @@
  */
 import { db, getSettings } from './db';
 import { newId } from './ids';
-import { nextPrescription } from '../engine';
+import { nextPrescription, detectPRs, type PRResult } from '../engine';
 import type {
   EngineSettings,
   ExerciseState,
@@ -353,4 +353,30 @@ export async function lastWorkingSetsForExercise(
     .filter((s) => s.sessionId === latestSessionId)
     .sort((a, b) => a.order - b.order)
     .map(toSetResult);
+}
+
+// --- Personal records ---
+
+/** Detect PRs for a just-logged set vs the exercise's prior history; persist flags. */
+export async function detectAndMarkPRs(set: LoggedSet): Promise<PRResult> {
+  const all = await db.sets
+    .where('exerciseId')
+    .equals(set.exerciseId)
+    .toArray();
+  const prior = all
+    .filter((s) => s.id !== set.id && !s.deletedAt)
+    .map(toSetResult);
+  const result = detectPRs(toSetResult(set), prior);
+  if (result.kinds.length > 0) {
+    await db.sets.update(set.id, { isPR: result.kinds });
+  }
+  return result;
+}
+
+/** All PR sets for an exercise, most recent first (the PR history list). */
+export async function getExercisePRs(exerciseId: string): Promise<LoggedSet[]> {
+  const all = await db.sets.where('exerciseId').equals(exerciseId).toArray();
+  return all
+    .filter((s) => !s.deletedAt && s.isPR !== undefined && s.isPR.length > 0)
+    .sort((a, b) => b.date.localeCompare(a.date));
 }

@@ -17,6 +17,8 @@ import {
   softDeleteSet,
   restoreSet,
   lastWorkingSetsForExercise,
+  detectAndMarkPRs,
+  getExercisePRs,
 } from './repositories';
 import type { ExerciseSlot, LoggedSet } from './types';
 
@@ -185,5 +187,32 @@ describe('set logging, undo, and last-session lookup', () => {
 
     const last = await lastWorkingSetsForExercise('ex_squat', s2.id);
     expect(last[0]!.weightKg).toBe(60); // falls back to the earlier session
+  });
+});
+
+describe('PR detection + history', () => {
+  it('marks a heavier set as a PR, persists the flag, and lists it', async () => {
+    const { tpl } = await setupProgram();
+    const s1 = await startSessionFromTemplate(tpl, NOW);
+    await logSet(loggedSet(s1.id, 0, { date: '2026-06-19', weightKg: 60 }));
+    const s2 = await startSessionFromTemplate(tpl, LATER);
+    const heavy = await logSet(
+      loggedSet(s2.id, 0, { date: '2026-06-20', weightKg: 70 }),
+    );
+
+    const result = await detectAndMarkPRs(heavy);
+    expect(result.kinds).toContain('weight');
+    expect((await db.sets.get(heavy.id))?.isPR).toContain('weight');
+    expect((await getExercisePRs('ex_squat')).map((p) => p.id)).toContain(
+      heavy.id,
+    );
+  });
+
+  it('does not mark the first-ever set', async () => {
+    const { tpl } = await setupProgram();
+    const s1 = await startSessionFromTemplate(tpl, NOW);
+    const first = await logSet(loggedSet(s1.id, 0));
+    expect((await detectAndMarkPRs(first)).kinds).toEqual([]);
+    expect((await db.sets.get(first.id))?.isPR).toBeUndefined();
   });
 });
