@@ -1,0 +1,55 @@
+/* Self-hosted variable fonts (woff2 vendored from @fontsource into ./fonts).
+   Family names match theme.css (Hanken Grotesk / Inter / JetBrains Mono). */
+
+@font-face {
+  font-family: 'Hanken Grotesk';
+  src: url('./fonts/HankenGrotesk-Variable.woff2') format('woff2');
+  font-weight: 300 800;
+  font-display: swap;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'Inter';
+  src: url('./fonts/Inter-Variable.woff2') format('woff2');
+  font-weight: 100 900;
+  font-display: swap;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'JetBrains Mono';
+  src: url('./fonts/JetBrainsMono-Variable.woff2') format('woff2');
+  font-weight: 100 800;
+  font-display: swap;
+  font-style: normal;
+}
+
+/* Global keyframes referenced by primitives (Sheet / Toast) + PR celebration. */
+@keyframes os-toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes os-cel-in {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+@keyframes os-cel-glow {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in oklab, var(--pr) 0%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 60px 0 color-mix(in oklab, var(--pr) 30%, transparent);
+  }
+}

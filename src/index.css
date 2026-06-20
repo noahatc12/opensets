@@ -1,54 +1,15 @@
 @import 'tailwindcss';
+@import './styles/fonts.css';
+@import './styles/theme.css';
 
 /*
- * OpenSets design foundation (Tailwind v4, CSS-first).
- * Dark-default, gym-lighting aesthetic: deep ink base, one confident volt accent
- * for primary actions + progression-positive signals, amber reserved for PRs.
- * Tokens in @theme emit both CSS vars and utilities (bg-bg, text-muted, ...).
+ * OpenSets — app entry styles.
+ * Design tokens now come from the vendored Claude Design handoff (theme.css):
+ * a 3-axis system (data-mode / data-theme / data-ds) of CSS variables, bridged
+ * to Tailwind utilities (bg-bg, text-muted, border-card, …) via @theme in
+ * theme.css. The data-* attributes live on <html> (see index.html); switching
+ * them re-skins everything live.
  */
-@theme {
-  /* Surfaces — deep ink, layered */
-  --color-bg: #0a0d12;
-  --color-surface: #141a22;
-  --color-surface-2: #1d2530;
-  --color-elevated: #232c38;
-  --color-border: #2a333f;
-  --color-border-strong: #3a4654;
-
-  /* Text */
-  --color-text: #e8edf2;
-  --color-muted: #94a1af;
-  --color-faint: #616d7c;
-
-  /* Brand + signals */
-  --color-accent: #a8f23a; /* volt — primary actions, progression up */
-  --color-accent-hover: #b9f95e;
-  --color-accent-ink: #0a0d12; /* text/icons on accent fills */
-  --color-pr: #ffb020; /* personal records / celebration */
-  --color-danger: #ff5d5d;
-  --color-warn: #ffb020;
-  --color-success: #3ddc84;
-
-  /* Type — refined system stack (no web-font fetch: offline + bundle budget) */
-  --font-sans:
-    'Inter var', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto,
-    'Helvetica Neue', Arial, sans-serif;
-  --font-mono:
-    ui-monospace, 'SF Mono', 'Cascadia Mono', 'Roboto Mono', Menlo, monospace;
-
-  /* Radii */
-  --radius-sm: 0.5rem;
-  --radius-md: 0.75rem;
-  --radius-lg: 1rem;
-  --radius-xl: 1.5rem;
-
-  /* Easing */
-  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-:root {
-  color-scheme: dark;
-}
 
 html,
 body,
@@ -58,8 +19,8 @@ body,
 
 body {
   margin: 0;
-  background-color: var(--color-bg);
-  color: var(--color-text);
+  background-color: var(--bg);
+  color: var(--text);
   font-family: var(--font-sans);
   font-synthesis-weight: none;
   text-rendering: optimizeLegibility;
@@ -67,26 +28,14 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Accessible focus: always-visible ring on keyboard nav (quality floor). */
+/* Accessible focus ring on keyboard nav. */
 :focus-visible {
-  outline: 2px solid var(--color-accent);
+  outline: 2px solid var(--accent);
   outline-offset: 2px;
-  border-radius: var(--radius-sm);
+  border-radius: var(--r-sm, 0.5rem);
 }
 
-/* Respect reduced-motion globally (quality floor). */
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
-  }
-}
-
-/* Tabular numbers for weights/reps so logged values don't jitter on change. */
+/* Tabular numerals so logged values don't jitter as they change. */
 .tnum {
   font-variant-numeric: tabular-nums;
 }

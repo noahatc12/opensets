@@ -1,0 +1,477 @@
+/* ============================================================================
+   TAILWIND v4 BRIDGE  (optional — delete if you reference var(--token) directly)
+   ----------------------------------------------------------------------------
+   Exposes the runtime tokens below as Tailwind utilities. Because the values
+   are `var(--token)`, every utility re-resolves live when data-mode/data-theme
+   change on an ancestor — no rebuild, no class swap. Use e.g. bg-bg, text-muted,
+   border-card, rounded-lg, text-num-lg.
+   ========================================================================== */
+@theme {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-elevated: var(--elevated);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-border-card: var(--border-card);
+  --color-text: var(--text);
+  --color-muted: var(--muted);
+  --color-faint: var(--faint);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-ink: var(--accent-ink);
+  --color-pr: var(--pr);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+
+  --radius-xs: var(--r-xs);
+  --radius-sm: var(--r-sm);
+  --radius-md: var(--r-md);
+  --radius-lg: var(--r-lg);
+  --radius-xl: var(--r-xl);
+  --radius-2xl: var(--r-2xl);
+  --radius-pill: var(--r-pill);
+
+  --font-sans: var(--font-sans);
+
+  --ease-out: var(--ease-out);
+  --ease-spring: var(--ease-spring);
+}
+
+/* ============================================================================
+   OpenSets — Design Tokens
+   ----------------------------------------------------------------------------
+   The single canonical token contract. Port this file verbatim.
+
+   MODEL
+   • Two orthogonal axes:
+       data-mode  = "dark" | "light"   → sets neutral surfaces, text tiers,
+                                          and the shared semantic colors.
+       data-theme = "tempo" | …        → sets the brand accent, the PR /
+                                          celebration color, and (for a few
+                                          themes) a neutral retint.
+   • Apply both on a single ancestor element:
+       <div data-mode="dark" data-theme="tempo"> … </div>
+   • Everything downstream reads var(--token). No component hard-codes a color.
+
+   TAILWIND v4
+   • These are plain CSS custom properties. In Tailwind v4 expose them with
+     @theme { --color-bg: var(--bg); … } or reference var(--bg) directly in
+     utilities / arbitrary values. The names below are the source of truth.
+   ========================================================================== */
+
+:root {
+  /* ---- Typography ---------------------------------------------------------
+     Self-hostable, no exotic web fonts. Hanken Grotesk is the UI + numeral
+     face; tabular figures (font-variant-numeric: tabular-nums) keep the
+     scoreboard numbers from jittering as values change. */
+  --font-sans: "Hanken Grotesk", ui-sans-serif, system-ui, -apple-system,
+    "Segoe UI", Roboto, sans-serif;
+  --font-num: var(--font-sans);              /* used with tabular-nums */
+  --font-label: var(--font-sans);            /* small caps labels */
+
+  /* Design-template knobs (overridden per data-ds). These let one app render
+     in a completely different design language without touching markup. */
+  --num-weight: 600;       /* weight of the scoreboard numerals */
+  --label-tt: none;        /* text-transform for caps labels */
+  --label-ls: 0em;         /* letter-spacing for caps labels */
+  --border-card: transparent;  /* card hairline (visible in Readout) */
+
+  --text-2xs: 10px;
+  --text-xs:  12px;
+  --text-sm:  13px;
+  --text-base:15px;
+  --text-md:  17px;
+  --text-lg:  20px;
+  --text-xl:  24px;
+  --text-2xl: 30px;
+  --text-3xl: 40px;
+
+  /* Scoreboard numerals (weight × reps). The hero is read at arm's length. */
+  --num-sm: 24px;
+  --num-md: 40px;
+  --num-lg: 56px;
+  --num-xl: 72px;
+
+  --fw-regular: 400;
+  --fw-medium: 500;
+  --fw-semibold: 600;
+  --fw-bold: 700;
+  --fw-black: 800;
+
+  --lh-tight: 1.05;
+  --lh-snug: 1.2;
+  --lh-normal: 1.45;
+
+  --tracking-tight: -0.03em;
+  --tracking-snug: -0.01em;
+  --tracking-wide: 0.04em;
+  --tracking-caps: 0.08em;
+
+  /* ---- Spacing (4px base) ------------------------------------------------- */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 20px;
+  --sp-6: 24px;
+  --sp-8: 32px;
+  --sp-10: 40px;
+  --sp-12: 48px;
+  --sp-16: 64px;
+
+  /* ---- Radius ------------------------------------------------------------- */
+  --r-xs: 8px;
+  --r-sm: 10px;
+  --r-md: 14px;
+  --r-lg: 18px;
+  --r-xl: 24px;
+  --r-2xl: 28px;
+  --r-pill: 999px;
+
+  /* ---- Touch (gym constraint) --------------------------------------------- */
+  --touch-min: 48px;          /* never smaller for primary hit targets */
+
+  /* ---- Motion ------------------------------------------------------------- */
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-in-out: cubic-bezier(0.45, 0.05, 0.2, 1);
+  --ease-spring: cubic-bezier(0.34, 1.4, 0.5, 1);
+  --dur-fast: 120ms;
+  --dur-base: 220ms;
+  --dur-slow: 360ms;
+
+  /* ---- Chart categorical palette -----------------------------------------
+     Ordered, hand-tuned to read on BOTH dark and light surfaces and on every
+     theme. chart-1 is remapped to --accent by themes that want their brand
+     color to lead a series. Light-mode variants are set in [data-mode]. */
+  --chart-1: #cda35f;
+  --chart-2: #46b3a3;
+  --chart-3: #5b8fd6;
+  --chart-4: #b079c4;
+  --chart-5: #84b06a;
+  --chart-6: #d8755f;
+}
+
+/* ============================================================================
+   BASE MODES — neutrals, text tiers, shared semantics
+   ========================================================================== */
+
+[data-mode="dark"] {
+  --bg: #101013;
+  --surface: #17171b;
+  --surface-2: #1d1d22;
+  --elevated: #232329;
+  --border: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.15);
+
+  --text: #f4f2ee;
+  --muted: #98948c;
+  --faint: #5d5a54;
+
+  --success: #6fbf8e;
+  --warning: #e0a85c;
+  --danger: #e0735c;
+
+  /* subtle shadows; on dark, depth comes mostly from surface steps + 1px hi */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 6px 20px -8px rgba(0, 0, 0, 0.55);
+  --shadow-lg: 0 24px 60px -20px rgba(0, 0, 0, 0.6);
+  --hairline-top: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+
+  color-scheme: dark;
+}
+
+[data-mode="light"] {
+  --bg: #f3f1ea;
+  --surface: #ffffff;
+  --surface-2: #f8f6ef;
+  --elevated: #ffffff;
+  --border: rgba(20, 18, 12, 0.09);
+  --border-strong: rgba(20, 18, 12, 0.16);
+
+  --text: #1c1a17;
+  --muted: #6b665d;
+  --faint: #a39e93;
+
+  --success: #2f9e63;
+  --warning: #bd7e1c;
+  --danger: #cf4d36;
+
+  --shadow-sm: 0 1px 2px rgba(40, 36, 28, 0.06);
+  --shadow-md: 0 8px 24px -10px rgba(40, 36, 28, 0.16);
+  --shadow-lg: 0 24px 60px -20px rgba(40, 36, 28, 0.2);
+  --hairline-top: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+
+  /* chart palette tuned a touch deeper for contrast on light surfaces */
+  --chart-1: #b07d2e;
+  --chart-2: #2f8e80;
+  --chart-3: #3f72bf;
+  --chart-4: #92509f;
+  --chart-5: #5e8a44;
+  --chart-6: #c0533c;
+
+  color-scheme: light;
+}
+
+/* ============================================================================
+   CURATED THEMES
+   Each sets: --accent, --accent-hover, --accent-ink (text/icon ON accent),
+   --pr (PR / celebration — always distinct from accent). A few retint the
+   neutral surfaces to carry their own mood; those overrides are scoped by mode.
+   ========================================================================== */
+
+/* 01 · Tempo — warm brass on charcoal. Expensive and quiet. (default) */
+[data-theme="tempo"] {
+  --accent: #cda35f;
+  --accent-hover: #d9b677;
+  --accent-ink: #1a1407;
+  --pr: #f0d98a;
+}
+
+/* 01b · Teal — Readout's signal. The Stage-1 technical-instrument accent;
+   pairs with the Readout template by default. */
+[data-theme="teal"] {
+  --accent: #1fe0c4;
+  --accent-hover: #46e9d1;
+  --accent-ink: #04130f;
+  --pr: #ffd24a;
+  --chart-1: #1fe0c4;
+}
+
+/* 02 · Graphite — stark monochrome; the data is the only color. */
+[data-theme="graphite"] {
+  --accent: #e8e6e1;
+  --accent-hover: #ffffff;
+  --accent-ink: #18181b;
+  --pr: #e7c878;
+  --chart-1: #cfcdc8;
+  --chart-2: #9a978f;
+}
+[data-mode="light"][data-theme="graphite"] {
+  --accent: #2a2a2e;          /* monochrome flips on light */
+  --accent-hover: #000000;
+  --accent-ink: #ffffff;
+}
+
+/* 03 · Cold Steel — cool blue-grey, instrument calm. Retints neutrals. */
+[data-mode="dark"][data-theme="steel"] {
+  --bg: #0e1116;
+  --surface: #161a21;
+  --surface-2: #1c212a;
+  --elevated: #222834;
+  --border: rgba(150, 180, 210, 0.1);
+  --border-strong: rgba(150, 180, 210, 0.18);
+  --text: #eef2f7;
+  --muted: #8f9aab;
+  --faint: #545d6b;
+}
+[data-mode="light"][data-theme="steel"] {
+  --bg: #eef1f5;
+  --surface: #ffffff;
+  --surface-2: #f4f6fa;
+  --text: #16202c;
+  --muted: #5a6678;
+}
+[data-theme="steel"] {
+  --accent: #6fa0d6;
+  --accent-hover: #87b3e3;
+  --accent-ink: #07111e;
+  --pr: #6ad6c4;
+}
+
+/* 04 · Volt — electric lime on true black. Athletic, high energy. */
+[data-mode="dark"][data-theme="volt"] {
+  --bg: #0a0b08;
+  --surface: #121410;
+  --surface-2: #181b14;
+  --elevated: #20241a;
+  --border: rgba(196, 238, 63, 0.12);
+  --border-strong: rgba(196, 238, 63, 0.22);
+  --text: #f3f5ec;
+  --muted: #969a8a;
+  --faint: #585c4c;
+}
+[data-theme="volt"] {
+  --accent: #c2ee3f;
+  --accent-hover: #d2f86a;
+  --accent-ink: #14180a;
+  --pr: #c2ee3f;
+}
+
+/* 05 · Ember — warm orange, firelit. */
+[data-theme="ember"] {
+  --accent: #ff7a3c;
+  --accent-hover: #ff9460;
+  --accent-ink: #1c0a02;
+  --pr: #ffce5e;
+}
+
+/* 06 · Clinic — clean clinical, medical blue. Best in light. */
+[data-theme="clinic"] {
+  --accent: #2f7df0;
+  --accent-hover: #4f93f5;
+  --accent-ink: #ffffff;
+  --pr: #18b07a;
+}
+
+/* 07 · Midnight — deep indigo, periwinkle accent. Retints neutrals. */
+[data-mode="dark"][data-theme="midnight"] {
+  --bg: #0c0c16;
+  --surface: #14142200;
+  --surface: #141422;
+  --surface-2: #1a1a2c;
+  --elevated: #212138;
+  --border: rgba(160, 162, 230, 0.12);
+  --border-strong: rgba(160, 162, 230, 0.2);
+  --text: #eeeef8;
+  --muted: #9192b4;
+  --faint: #565878;
+}
+[data-theme="midnight"] {
+  --accent: #8d8ef2;
+  --accent-hover: #a3a4f6;
+  --accent-ink: #0d0c1f;
+  --pr: #f0c178;
+}
+
+/* 08 · Rose — warm rose / crimson. */
+[data-theme="rose"] {
+  --accent: #e06a86;
+  --accent-hover: #ea8197;
+  --accent-ink: #1c0810;
+  --pr: #f0c07a;
+}
+
+/* 09 · Pine — deep forest green. */
+[data-theme="pine"] {
+  --accent: #3fae6b;
+  --accent-hover: #57c081;
+  --accent-ink: #04130b;
+  --pr: #f0c07a;
+}
+
+/* ============================================================================
+   CUSTOM THEME — derived from a seed
+   ----------------------------------------------------------------------------
+   The editor sets three values inline on the themed element:
+       --seed-bg       the base surface color (the darkest/lightest ground)
+       --seed-accent   the brand accent
+       --seed-ink      text/icon color that sits ON the accent
+                       (the editor computes this from the accent's luminance:
+                        light accent → near-black ink; dark accent → white ink)
+
+   Everything else is DERIVED with color-mix so the palette is always coherent:
+   surfaces step toward the "lift" color (white in dark mode, black in light)
+   in fixed increments; text tiers step the opposite way. Tune the percentages
+   once here and every custom palette inherits the same rhythm. */
+
+[data-mode="dark"][data-theme="custom"] {
+  --lift: #ffffff;
+  --bg: var(--seed-bg, #101013);
+  --surface:   color-mix(in oklab, var(--bg), var(--lift) 5%);
+  --surface-2: color-mix(in oklab, var(--bg), var(--lift) 9%);
+  --elevated:  color-mix(in oklab, var(--bg), var(--lift) 14%);
+  --border:        color-mix(in oklab, var(--bg), var(--lift) 14%);
+  --border-strong: color-mix(in oklab, var(--bg), var(--lift) 24%);
+  --text:  color-mix(in oklab, var(--bg), var(--lift) 92%);
+  --muted: color-mix(in oklab, var(--bg), var(--lift) 56%);
+  --faint: color-mix(in oklab, var(--bg), var(--lift) 32%);
+}
+[data-mode="light"][data-theme="custom"] {
+  --lift: #1a1714;
+  --bg: var(--seed-bg, #f3f1ea);
+  --surface:   color-mix(in oklab, var(--bg), #ffffff 60%);
+  --surface-2: color-mix(in oklab, var(--bg), var(--lift) 4%);
+  --elevated:  #ffffff;
+  --border:        color-mix(in oklab, var(--bg), var(--lift) 12%);
+  --border-strong: color-mix(in oklab, var(--bg), var(--lift) 20%);
+  --text:  color-mix(in oklab, var(--bg), var(--lift) 90%);
+  --muted: color-mix(in oklab, var(--bg), var(--lift) 55%);
+  --faint: color-mix(in oklab, var(--bg), var(--lift) 32%);
+}
+[data-theme="custom"] {
+  --accent: var(--seed-accent, #cda35f);
+  --accent-hover: color-mix(in oklab, var(--accent), var(--lift, #fff) 16%);
+  --accent-ink: var(--seed-ink, #1a1407);
+  --pr: color-mix(in oklab, var(--accent), #f4d98a 55%);
+  --chart-1: var(--accent);
+}
+
+/* ============================================================================
+   DESIGN TEMPLATES (data-ds)
+   ----------------------------------------------------------------------------
+   A third axis, orthogonal to mode and theme: the whole design LANGUAGE.
+   Swap the font stack, numeral face, radius scale, label treatment and card
+   borders in one attribute. The two shipped templates are the Stage-1
+   directions, preserved verbatim so the app can be built in either.
+       <div data-ds="tempo"  data-mode="dark" data-theme="tempo"> … </div>
+       <div data-ds="readout" data-mode="dark" data-theme="tempo"> … </div>
+   ========================================================================== */
+
+/* Tempo — calm / premium-data. Soft surfaces, generous radii, humanist sans,
+   the numeral breathes. (default) */
+[data-ds="tempo"] {
+  --font-sans: "Hanken Grotesk", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-num: var(--font-sans);
+  --font-label: var(--font-sans);
+  --num-weight: 600;
+  --label-tt: none;
+  --label-ls: 0em;
+  --border-card: transparent;
+  /* radii inherit the soft :root scale (28 / 24 / 18 / 14 …) */
+}
+
+/* Readout — technical / instrument. Hairline borders, sharp radii, Inter UI,
+   monospaced tabular numerals & caps labels (the barbell readout). */
+[data-ds="readout"] {
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-num: "JetBrains Mono", ui-monospace, "SF Mono", monospace;
+  --font-label: "JetBrains Mono", ui-monospace, monospace;
+  --num-weight: 700;
+  --label-tt: uppercase;
+  --label-ls: 0.12em;
+  --border-card: var(--border);
+  --r-2xl: 18px;
+  --r-xl: 16px;
+  --r-lg: 14px;
+  --r-md: 12px;
+  --r-sm: 10px;
+  --r-xs: 8px;
+}
+
+/* Readout carries its own near-black instrument ground + hairline grid, so the
+   whole app reads as the Stage-1 technical direction — not Tempo in monospace.
+   (Color themes that retint neutrals — steel/volt/midnight — still win by source
+   order when chosen; Readout pairs with Teal by default.) */
+[data-ds="readout"][data-mode="dark"] {
+  --bg: #0a0b0d;
+  --surface: #101317;
+  --surface-2: #171a1f;
+  --elevated: #1c2026;
+  --border: rgba(255, 255, 255, 0.07);
+  --border-strong: rgba(255, 255, 255, 0.13);
+  --text: #f2f4f6;
+  --muted: #8a929c;
+  --faint: #4a515a;
+  --hairline-top: none;
+}
+[data-ds="readout"][data-mode="light"] {
+  --bg: #eef0f2;
+  --surface: #ffffff;
+  --surface-2: #f4f6f8;
+  --border: rgba(10, 12, 16, 0.1);
+  --border-strong: rgba(10, 12, 16, 0.18);
+  --hairline-top: none;
+}
+
+/* ============================================================================
+   ACCESSIBILITY
+   ========================================================================== */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}

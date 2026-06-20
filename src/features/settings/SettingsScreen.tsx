@@ -94,7 +94,7 @@ export function SettingsScreen() {
           <div className="flex items-start gap-3">
             <div
               className={
-                storage.persisted ? 'mt-0.5 text-success' : 'mt-0.5 text-warn'
+                storage.persisted ? 'mt-0.5 text-success' : 'mt-0.5 text-warning'
               }
             >
               <ShieldIcon className="size-5" />

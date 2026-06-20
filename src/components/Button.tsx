@@ -34,7 +34,7 @@ export function Button({
       type={type}
       className={cn(
         'inline-flex min-h-12 items-center justify-center gap-2 rounded-lg px-4 text-[15px]',
-        'transition-colors duration-150 ease-[var(--ease-out-soft)]',
+        'transition-colors duration-150 ease-[var(--ease-out)]',
         'disabled:cursor-not-allowed disabled:opacity-40',
         VARIANTS[variant],
         block && 'w-full',

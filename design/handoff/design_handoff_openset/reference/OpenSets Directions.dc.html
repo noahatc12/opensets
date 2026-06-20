@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700;800&family=Hanken+Grotesk:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; }
+  @keyframes os-pulse { 0%,100% { opacity: 1; } 50% { opacity: .45; } }
+  @keyframes os-prglow { 0%,100% { box-shadow: 0 0 0 0 rgba(255,90,31,.55); } 50% { box-shadow: 0 0 28px 4px rgba(255,90,31,.55); } }
+</style>
+</helmet>
+
+<div style="width:max-content; min-width:100%; min-height:100vh; box-sizing:border-box; padding:48px 56px 80px; background:#e7e5df; font-family:'Hanken Grotesk',-apple-system,sans-serif;">
+
+  <div style="margin-bottom:40px; max-width:760px;">
+    <div style="font-family:'JetBrains Mono',monospace; font-size:12px; letter-spacing:.22em; text-transform:uppercase; color:#9a958c; margin-bottom:14px;">OpenSets · Stage 1 · Choose a direction</div>
+    <div style="font-size:40px; font-weight:800; letter-spacing:-.02em; color:#1c1a17; line-height:1.05;">Pick your look</div>
+    <div style="font-size:16px; color:#6b665d; margin-top:14px; line-height:1.5; max-width:620px;">Tap to switch between the three directions — each shows the active-logging screen and the analytics dashboard at iPhone width. Once you settle on one, I'll build the full system.</div>
+    <div style="display:inline-flex; gap:5px; margin-top:24px; background:#dcd9d1; padding:5px; border-radius:16px;">
+      <button onClick="{{ selectReadout }}" style="border:none; cursor:pointer; padding:11px 20px; border-radius:12px; white-space:nowrap; font-family:'Hanken Grotesk',sans-serif; font-size:14px; font-weight:700; letter-spacing:-.01em; background: {{ rBg }}; color: {{ rFg }};">01 · Readout</button>
+      <button onClick="{{ selectTempo }}" style="border:none; cursor:pointer; padding:11px 20px; border-radius:12px; white-space:nowrap; font-family:'Hanken Grotesk',sans-serif; font-size:14px; font-weight:700; letter-spacing:-.01em; background: {{ tBg }}; color: {{ tFg }};">02 · Tempo</button>
+      <button onClick="{{ selectIgnite }}" style="border:none; cursor:pointer; padding:11px 20px; border-radius:12px; white-space:nowrap; font-family:'Hanken Grotesk',sans-serif; font-size:14px; font-weight:700; letter-spacing:-.01em; background: {{ iBg }}; color: {{ iFg }};">03 · Ignite</button>
+    </div>
+  </div>
+
+  <!-- ===================== DIRECTION 1 — READOUT ===================== -->
+  <div style="margin-bottom:40px; display: {{ rShow }};">
+    <div style="display:flex; align-items:baseline; gap:18px; flex-wrap:wrap; margin-bottom:20px;">
+      <div style="display:flex; align-items:center; gap:12px;">
+        <div style="font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:700; color:#0b0c0e; background:#1fe0c4; padding:4px 9px; border-radius:5px;">01</div>
+        <div style="font-size:26px; font-weight:800; letter-spacing:-.01em; color:#1c1a17;">Readout</div>
+      </div>
+      <div style="font-size:15px; color:#6b665d; font-style:italic;">A barbell readout in the dark — machined, monospaced, zero ambiguity.</div>
+      <div style="display:flex; gap:8px; margin-left:auto; font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:.08em; text-transform:uppercase;">
+        <span style="color:#6b665d; border:1px solid #cfcabf; padding:3px 8px; border-radius:20px;">Inter / JetBrains Mono</span>
+        <span style="color:#6b665d; border:1px solid #cfcabf; padding:3px 8px; border-radius:20px; display:flex; align-items:center; gap:6px;"><span style="width:10px; height:10px; border-radius:50%; background:#1fe0c4; display:inline-block;"></span>Teal signal</span>
+      </div>
+    </div>
+
+    <div style="display:flex; gap:40px; align-items:flex-start;">
+
+      <!-- D1 · LOGGING -->
+      <div style="flex:none;">
+        <div style="font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:#9a958c; margin-bottom:12px; padding-left:6px;">Active logging</div>
+        <div style="width:414px; flex:none; border-radius:54px; padding:12px; background:#000; box-shadow:0 30px 70px -20px rgba(0,0,0,.45);">
+          <div style="position:relative; width:390px; height:800px; border-radius:42px; overflow:hidden; background:#0a0b0d; font-family:Inter,sans-serif; color:#f2f4f6;">
+
+            <!-- status bar -->
+            <div style="display:flex; justify-content:space-between; align-items:center; padding:16px 28px 6px; font-size:14px; font-weight:600;">
+              <span style="font-variant-numeric:tabular-nums;">9:41</span>
+              <span style="display:flex; gap:6px; align-items:center; color:#f2f4f6;">
+                <svg width="17" height="12" viewBox="0 0 17 12" fill="none"><rect x="0" y="7" width="3" height="5" rx="1" fill="currentColor"/><rect x="4.5" y="4.5" width="3" height="7.5" rx="1" fill="currentColor"/><rect x="9" y="2" width="3" height="10" rx="1" fill="currentColor"/><rect x="13.5" y="0" width="3" height="12" rx="1" fill="currentColor" opacity=".4"/></svg>
+                <svg width="22" height="12" viewBox="0 0 24 12" fill="none"><rect x="1" y="1" width="20" height="10" rx="3" stroke="currentColor" stroke-opacity=".5" stroke-width="1"/><rect x="2.5" y="2.5" width="15" height="7" rx="1.5" fill="currentColor"/><rect x="22" y="4" width="1.5" height="4" rx=".75" fill="currentColor"/></svg>
+              </span>
+            </div>
+
+            <!-- top bar -->
+            <div style="display:flex; align-items:center; justify-content:space-between; padding:8px 20px 10px;">
+              <button style="width:40px; height:40px; border:none; background:#16191e; border-radius:11px; color:#c2c8d0; font-size:20px; display:flex; align-items:center; justify-content:center; cursor:pointer;">‹</button>
+              <div style="text-align:center;">
+                <div style="font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:.18em; color:#8a929c;">PUSH · DAY A</div>
+                <div style="font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:.12em; color:#1fe0c4; margin-top:3px;">23:14 ELAPSED</div>
+              </div>
+              <button style="height:40px; padding:0 14px; border:none; background:#16191e; border-radius:11px; color:#f2f4f6; font-size:13px; font-weight:600; cursor:pointer;">Finish</button>
+            </div>
+
+            <!-- exercise header -->
+            <div style="padding:6px 20px 14px;">
+              <div style="display:flex; justify-content:space-between; align-items:baseline;">
+                <div style="font-size:25px; font-weight:800; letter-spacing:-.02em; white-space:nowrap;">Bench Press</div>
+                <div style="font-family:'JetBrains Mono',monospace; font-size:12px; color:#8a929c;">2 / 5</div>
+              </div>
+              <div style="display:flex; align-items:center; gap:10px; margin-top:6px;">
+                <span style="font-size:12.5px; color:#8a929c;">Barbell · Chest</span>
+                <span style="width:3px; height:3px; border-radius:50%; background:#4a515a;"></span>
+                <span style="font-family:'JetBrains Mono',monospace; font-size:12px; color:#8a929c; letter-spacing:.02em;">LAST 84×8,8,7</span>
+              </div>
+              <!-- exercise progress -->
+              <div style="display:flex; gap:4px; margin-top:12px;">
+                <div style="flex:1; height:3px; border-radius:2px; background:#1fe0c4;"></div>
+                <div style="flex:1; height:3px; border-radius:2px; background:#1fe0c4;"></div>
+                <div style="flex:1; height:3px; border-radius:2px; background:#22262c;"></div>
+                <div style="flex:1; height:3px; border-radius:2px; background:#22262c;"></div>
+                <div style="flex:1; height:3px; border-radius:2px; background:#22262c;"></div>
+              </div>
+            </div>
+
+            <!-- set list -->
+            <div style="padding:0 20px; display:flex; flex-direction:column; gap:10px;">
+
+              <!-- set 1 done -->
+              <div style="display:flex; align-items:center; gap:14px; padding:11px 16px; background:#0e1013; border:1px solid rgba(255,255,255,.05); border-radius:14px;">
+                <span style="font-family:'JetBrains Mono',monospace; font-size:13px; color:#4a515a; width:14px;">1</span>
+                <span style="font-family:'JetBrains Mono',monospace; font-size:17px; font-weight:600; color:#8a929c; font-variant-numeric:tabular-nums;">84<span style="font-size:11px; color:#4a515a;">kg</span> × 8</span>
+                <span style="margin-left:auto; display:flex; align-items:center; gap:6px; font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:.1em; color:#1fe0c4;">
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2.5 7.5L5.5 10.5L11.5 3.5" stroke="#1fe0c4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>DONE
+                </span>
+              </div>
+
+              <!-- set 2 ACTIVE (hero) -->
+              <div style="border:1.5px solid #1fe0c4; border-radius:18px; background:linear-gradient(180deg,#0f1816,#0c1012); padding:16px 16px 18px; box-shadow:0 0 0 4px rgba(31,224,196,.07);">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                  <span style="font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:.16em; color:#1fe0c4;">SET 2 · NOW</span>
+                  <span style="font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:.1em; color:#8a929c; border:1px solid #22323031; background:rgba(31,224,196,.08); padding:3px 8px; border-radius:20px;">TARGET RPE 8</span>
+                </div>
+                <div style="display:flex; align-items:stretch; gap:10px;">
+                  <!-- weight -->
+                  <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:8px;">
+                    <span style="font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:.16em; color:#8a929c;">WEIGHT</span>
+                    <div style="display:flex; align-items:baseline; gap:3px;"><span style="font-family:'JetBrains Mono',monospace; font-size:52px; font-weight:700; line-height:1; letter-spacing:-.02em; font-variant-numeric:tabular-nums;">84</span><span style="font-size:14px; color:#8a929c; font-weight:600;">kg</span></div>
+                    <div style="display:flex; gap:8px;">
+                      <button style="width:46px; height:46px; border-radius:13px; border:1px solid rgba(255,255,255,.1); background:#15191e; color:#f2f4f6; font-size:22px; cursor:pointer;">−</button>
+                      <button style="width:46px; height:46px; border-radius:13px; border:1px solid rgba(255,255,255,.1); background:#15191e; color:#f2f4f6; font-size:22px; cursor:pointer;">+</button>
+                    </div>
+                  </div>
+                  <div style="width:1px; background:rgba(255,255,255,.08);"></div>
+                  <!-- reps -->
+                  <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:8px;">
+                    <span style="font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:.16em; color:#8a929c;">REPS</span>
+                    <div style="display:flex; align-items:baseline; gap:3px;"><span style="font-family:'JetBrains Mono',monospace; font-size:52px; font-weight:700; line-height:1; letter-spacing:-.02em; font-variant-numeric:tabular-nums;">8</span></div>
+                    <div style="display:flex; gap:8px;">
+                      <button style="width:46px; height:46px; border-radius:13px; border:1px solid rgba(255,255,255,.1); background:#15191e; color:#f2f4f6; font-size:22px; cursor:pointer;">−</button>
+                      <button style="width:46px; height:46px; border-radius:13px; border:1px solid rgba(255,255,255,.1); background:#15191e; color:#f2f4f6; font-size:22px; cursor:pointer;">+</button>
+                    </div>
+                  </div>
+                </div>
+                <!-- why this weight -->
+                <div style="margin-top:14px; display:flex; gap:10px; align-items:flex-start; padding:10px 12px; background:rgba(31,224,196,.06); border:1px solid rgba(31,224,196,.16); border-radius:12px;">
+                  <svg width="15" height="15" viewBox="0 0 16 16" fill="none" style="margin-top:1px; flex:none;"><circle cx="8" cy="8" r="7" stroke="#1fe0c4" stroke-width="1.3"/><path d="M8 7.2v4M8 4.8h.01" stroke="#1fe0c4" stroke-width="1.5" stroke-linecap="round"/></svg>
+                  <span style="font-size:12.5px; line-height:1.45; color:#c2c8d0;"><strong style="color:#1fe0c4;">+2.5 kg.</strong> You cleared all 3 sets last week at RPE ≤ 8 — double progression adds load.</span>
+                </div>
+              </div>
+
+              <!-- set 3 -->
+              <div style="display:flex; align-items:center; gap:14px; padding:11px 16px; background:#0e1013; border:1px solid rgba(255,255,255,.05); border-radius:14px;">
+                <span style="font-family:'JetBrains Mono',monospace; font-size:13px; color:#4a515a; width:14px;">3</span>
+                <span style="font-family:'JetBrains Mono',monospace; font-size:17px; font-weight:600; color:#c2c8d0; font-variant-numeric:tabular-nums;">84<span style="font-size:11px; color:#4a515a;">kg</span> × 8</span>
+                <span style="margin-left:auto; font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:.12em; color:#4a515a;">UP NEXT</span>
+              </div>
+              <!-- set 4 amrap -->
+              <div style="display:flex; align-items:center; gap:14px; padding:11px 16px; background:#0e1013; border:1px solid rgba(255,255,255,.05); border-radius:14px;">
+                <span style="font-family:'JetBrains Mono',monospace; font-size:13px; color:#4a515a; width:14px;">4</span>
+                <span style="font-family:'JetBrains Mono',monospace; font-size:17px; font-weight:600; color:#c2c8d0; font-variant-numeric:tabular-nums;">84<span style="font-size:11px; color:#4a515a;">kg</span> × 8+</span>
+                <span style="margin-left:auto; font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:.1em; color:#ffd24a; border:1px solid rgba(255,210,74,.3); padding:2px 7px; border-radius:20px;">AMRAP</span>
+              </div>
+            </div>
+
+            <!-- bottom thumb zone -->
+            <div style="position:absolute; left:0; right:0; bottom:0; padding:14px 20px 30px; background:linear-gradient(180deg,rgba(10,11,13,0) 0%,#0a0b0d 24%);">
+              <!-- rest timer -->
+              <div style="display:flex; align-items:center; gap:12px; padding:10px 12px; background:#101418; border:1px solid rgba(255,255,255,.07); border-radius:14px; margin-bottom:12px;">
+                <span style="font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:.14em; color:#8a929c;">REST</span>
+                <span style="font-family:'JetBrains Mono',monospace; font-size:26px; font-weight:700; color:#f2f4f6; font-variant-numeric:tabular-nums; letter-spacing:.01em;">1:24</span>
+                <div style="margin-left:auto; display:flex; gap:8px;">
+                  <button style="height:38px; padding:0 12px; border-radius:11px; border:1px solid rgba(255,255,255,.1); background:#15191e; color:#c2c8d0; font-family:'JetBrains Mono',monospace; font-size:12px; cursor:pointer;">−15</button>
+                  <button style="height:38px; padding:0 12px; border-radius:11px; border:1px solid rgba(255,255,255,.1); background:#15191e; color:#c2c8d0; font-family:'JetBrains Mono',monospace; font-size:12px; cursor:pointer;">+15</button>
+                  <button style="height:38px; padding:0 14px; border-radius:11px; border:none; background:#22262c; color:#f2f4f6; font-size:12px; font-weight:600; cursor:pointer;">Skip</button>
+                </div>
+              </div>
+              <button style="width:100%; height:60px; border:none; border-radius:16px; background:#1fe0c4; color:#04130f; font-size:17px; font-weight:800; letter-spacing:.01em; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:10px;">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M4 10.5L8 14.5L16 5.5" stroke="#04130f" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                Log Set 2 · <span style="font-family:'JetBrains Mono',monospace; font-variant-numeric:tabular-nums;">84 × 8</span>
+              </button>
+            </div>
+
+            <!-- home indicator -->
+            <div style="position:absolute; bottom:9px; left:50%; transform:translateX(-50%); width:134px; height:5px; border-radius:3px; background:rgba(255,255,255,.32);"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- D1 · ANALYTICS -->
+      <div style="flex:none;">
+        <div style="font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:#9a958c; margin-bottom:12px; padding-left:6px;">Analytics</div>
+        <div style="width:414px; flex:none; border-radius:54px; padding:12px; background:#000; box-shadow:0 30px 70px -20px rgba(0,0,0,.45);">
+          <div style="position:relative; width:390px; height:800px; border-radius:42px; overflow:hidden; background:#0a0b0d; font-family:Inter,sans-serif; color:#f2f4f6;">
+
+            <div style="display:flex; justify-content:space-between; align-items:center; padding:16px 28px 6px; font-size:14px; font-weight:600;">
+              <span style="font-variant-numeric:tabular-nums;">9:41</span>
+              <span style="display:flex; gap:6px; align-items:center;">
+                <svg width="17" height="12" viewBox="0 0 17 12" fill="none"><rect x="0" y="7" width="3" height="5" rx="1" fill="currentColor"/><rect x="4.5" y="4.5" width="3" height="7.5" rx="1" fill="currentColor"/><rect x="9" y="2" width="3" height="10" rx="1" fill="currentColor"/><rect x="13.5" y="0" width="3" height="12" rx="1" fill="currentColor" opacity=".4"/></svg>
+                <svg width="22" height="12" viewBox="0 0 24 12" fill="none"><rect x="1" y="1" width="20" height="10" rx="3" stroke="currentColor" stroke-opacity=".5" stroke-width="1"/><rect x="2.5" y="2.5" width="15" height="7" rx="1.5" fill="currentColor"/><rect x="22" y="4" width="1.5" height="4" rx=".75" fill="currentColor"/></svg>
+              </span>
+            </div>
+
+            <!-- header -->
+            <div style="padding:10px 20px 8px;">
+              <div style="font-size:25px; font-weight:800; letter-spacing:-.02em;">Analytics</div>
+              <div style="display:flex; gap:6px; margin-top:14px; background:#101418; border:1px solid rgba(255,255,255,.06); padding:4px; border-radius:12px;">
+                <button style="flex:1; height:34px; border:none; border-radius:9px; background:#1fe0c4; color:#04130f; font-family:'JetBrains Mono',monospace; font-size:12px; font-weight:700; cursor:pointer;">3M</button>
+                <button style="flex:1; height:34px; border:none; border-radius:9px; background:transparent; color:#8a929c; font-family:'JetBrains Mono',monospace; font-size:12px; cursor:pointer;">4W</button>
+                <button style="flex:1; height:34px; border:none; border-radius:9px; background:transparent; color:#8a929c; font-family:'JetBrains Mono',monospace; font-size:12px; cursor:pointer;">1Y</button>
+                <button style="flex:1; height:34px; border:none; border-radius:9px; background:transparent; color:#8a929c; font-family:'JetBrains Mono',monospace; font-size:12px; cursor:pointer;">ALL</button>
+              </div>
+            </div>
+
+            <!-- e1RM chart card -->
+            <div style="margin:8px 20px 0; padding:16px 16px 8px; background:#0e1013; border:1px solid rgba(255,255,255,.06); border-radius:18px;">
+              <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                <div>
+                  <div style="font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:.16em; color:#8a929c;">BENCH PRESS · E1RM</div>
+                  <div style="display:flex; align-items:baseline; gap:8px; margin-top:6px;">
+                    <span style="font-family:'JetBrains Mono',monospace; font-size:34px; font-weight:700; letter-spacing:-.02em; font-variant-numeric:tabular-nums;">102.4</span>
+                    <span style="font-size:13px; color:#8a929c; font-weight:600;">kg</span>
+                  </div>
+                </div>
+                <span style="font-family:'JetBrains Mono',monospace; font-size:12px; font-weight:700; color:#1fe0c4; background:rgba(31,224,196,.1); padding:4px 9px; border-radius:8px;">▲ 4.2%</span>
+              </div>
+              <svg width="100%" viewBox="0 0 330 150" style="margin-top:8px; display:block;">
+                <line x1="10" y1="36" x2="320" y2="36" stroke="#ffffff" stroke-opacity=".05"/>
+                <line x1="10" y1="78" x2="320" y2="78" stroke="#ffffff" stroke-opacity=".05"/>
+                <line x1="10" y1="120" x2="320" y2="120" stroke="#ffffff" stroke-opacity=".05"/>
+                <defs><linearGradient id="d1area" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1fe0c4" stop-opacity=".22"/><stop offset="1" stop-color="#1fe0c4" stop-opacity="0"/></linearGradient></defs>
+                <path d="M10,122 L42,114 L74,116 L106,98 L138,102 L170,82 L202,86 L234,60 L266,64 L298,44 L320,36 L320,138 L10,138 Z" fill="url(#d1area)"/>
+                <polyline points="10,122 42,114 74,116 106,98 138,102 170,82 202,86 234,60 266,64 298,44 320,36" fill="none" stroke="#1fe0c4" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+                <circle cx="170" cy="82" r="4.5" fill="#0a0b0d" stroke="#ffd24a" stroke-width="2.4"/>
+                <circle cx="298" cy="44" r="4.5" fill="#0a0b0d" stroke="#ffd24a" stroke-width="2.4"/>
+                <circle cx="320" cy="36" r="4" fill="#1fe0c4"/>
+              </svg>
+              <div style="display:flex; justify-content:space-between; font-family:'JetBrains Mono',monospace; font-size:9.5px; color:#4a515a; padding:0 4px 4px;">
+                <span>MAR</span><span>APR</span><span>MAY</span><span>JUN</span>
+              </div>
+            </div>
+
+            <!-- stat row -->
+            <div style="display:flex; gap:10px; padding:14px 20px 0;">
+              <div style="flex:1; background:#0e1013; border:1px solid rgba(255,255,255,.06); border-radius:14px; padding:12px;">
+                <div style="font-family:'JetBrains Mono',monospace; font-size:9.5px; letter-spacing:.1em; color:#8a929c;">TONNAGE</div>
+                <div style="font-family:'JetBrains Mono',monospace; font-size:22px; font-weight:700; margin-top:5px; font-variant-numeric:tabular-nums;">18.2<span style="font-size:12px; color:#8a929c;">t</span></div>
+              </div>
+              <div style="flex:1; background:#0e1013; border:1px solid rgba(255,255,255,.06); border-radius:14px; padding:12px;">
+                <div style="font-family:'JetBrains Mono',monospace; font-size:9.5px; letter-spacing:.1em; color:#8a929c;">COMPLIANCE</div>
+                <div style="font-family:'JetBrains Mono',monospace; font-size:22px; font-weight:700; margin-top:5px; color:#1fe0c4; font-variant-numeric:tabular-nums;">94<span style="font-size:12px;">%</span></div>
+              </div>
+              <div style="flex:1; background:#0e1013; border:1px solid rgba(255,255,255,.06); border-radius:14px; padding:12px;">
+                <div style="font-family:'JetBrains Mono',monospace; font-size:9.5px; letter-spacing:.1em; color:#8a929c;">SETS</div>
+                <div style="font-family:'JetBrains Mono',monospace; font-size:22px; font-weight:700; margin-top:5px; font-variant-numeric:tabular-nums;">47</div>
+              </div>
+            </div>
+
+            <!-- volume heatmap -->
+            <div style="margin:16px 20px 0; padding:15px 16px; background:#0e1013; border:1px solid rgba(255,255,255,.06); border-radius:18px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+                <span style="font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:.14em; color:#8a929c;">WEEKLY VOLUME · SETS</span>
+                <span style="font-family:'JetBrains Mono',monospace; font-size:9px; letter-spacing:.06em; color:#4a515a;">MEV·MAV·MRV</span>
+              </div>
+              <!-- muscle rows -->
+              <div style="display:flex; flex-direction:column; gap:13px;">
+                <!-- chest -->
+                <div>
+                  <div style="display:flex; justify-content:space-between; font-size:11.5px; margin-bottom:5px;"><span style="color:#c2c8d0;">Chest</span><span style="font-family:'JetBrains Mono',monospace; color:#1fe0c4;">16</span></div>
+                  <div style="position:relative; height:8px; border-radius:5px; background:#16191e;">
+                    <div style="position:absolute; left:0; top:0; bottom:0; border-radius:5px; width:78%; background:linear-gradient(90deg,#1fe0c4,#1fe0c4);"></div>
+                    <div style="position:absolute; top:0; bottom:0; left:40%; width:2px; background:rgba(255,255,255,.5);"></div>
+                    <div style="position:absolute; top:0; bottom:0; left:85%; width:2px; background:rgba(255,255,255,.5);"></div>
+                  </div>
+                </div>
+                <!-- back -->
+                <div>
+                  <div style="display:flex; justify-content:space-between; font-size:11.5px; margin-bottom:5px;"><span style="color:#c2c8d0;">Back</span><span style="font-family:'JetBrains Mono',monospace; color:#ffd24a;">22</span></div>
+                  <div style="position:relative; height:8px; border-radius:5px; background:#16191e;">
+                    <div style="position:absolute; left:0; top:0; bottom:0; border-radius:5px; width:96%; background:#ffd24a;"></div>
+                    <div style="position:absolute; top:0; bottom:0; left:42%; width:2px; background:rgba(255,255,255,.5);"></div>
+                    <div style="position:absolute; top:0; bottom:0; left:88%; width:2px; background:rgba(255,255,255,.5);"></div>
+                  </div>
+                </div>
+                <!-- shoulders -->
+                <div>
+                  <div style="display:flex; justify-content:space-between; font-size:11.5px; margin-bottom:5px;"><span style="color:#c2c8d0;">Shoulders</span><span style="font-family:'JetBrains Mono',monospace; color:#8a929c;">9</span></div>
+                  <div style="position:relative; height:8px; border-radius:5px; background:#16191e;">
+                    <div style="position:absolute; left:0; top:0; bottom:0; border-radius:5px; width:38%; background:#586069;"></div>
+                    <div style="position:absolute; top:0; bottom:0; left:35%; width:2px; background:rgba(255,255,255,.5);"></div>
+                    <div style="position:absolute; top:0; bottom:0; left:80%; width:2px; background:rgba(255,255,255,.5);"></div>
+                  </div>
+                </div>
+                <!-- quads -->
+                <div>
+                  <div style="display:flex; justify-content:space-between; font-size:11.5px; margin-bottom:5px;"><span style="color:#c2c8d0;">Quads</span><span style="font-family:'JetBrains Mono',monospace; color:#1fe0c4;">14</span></div>
+                  <div style="position:relative; height:8px; border-radius:5px; background:#16191e;">
+                    <div style="position:absolute; left:0; top:0; bottom:0; border-radius:5px; width:64%; background:#1fe0c4;"></div>
+                    <div style="position:absolute; top:0; bottom:0; left:38%; width:2px; background:rgba(255,255,255,.5);"></div>
+                    <div style="position:absolute; top:0; bottom:0; left:84%; width:2px; background:rgba(255,255,255,.5);"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- bottom tab nav -->
+            <div style="position:absolute; left:0; right:0; bottom:0; padding:10px 24px 26px; background:linear-gradient(180deg,rgba(10,11,13,0),#0a0b0d 30%); display:flex; justify-content:space-between;">
+              <div style="display:flex; flex-direction:column; align-items:center; gap:4px; color:#4a515a;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M4 11l8-7 8 7v8a1 1 0 01-1 1h-4v-6h-6v6H5a1 1 0 01-1-1z" stroke="currentColor" stroke-width="1.6"/></svg><span style="font-size:9px; font-family:'JetBrains Mono',monospace;">TODAY</span></div>
+              <div style="display:flex; flex-direction:column; align-items:center; gap:4px; color:#4a515a;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><rect x="4" y="5" width="16" height="15" rx="2" stroke="currentColor" stroke-width="1.6"/><path d="M4 9h16M8 3v4M16 3v4" stroke="currentColor" stroke-width="1.6"/></svg><span style="font-size:9px; font-family:'JetBrains Mono',monospace;">PLAN</span></div>
+              <div style="display:flex; flex-direction:column; align-items:center; gap:4px; color:#4a515a;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="1.6"/><path d="M20 20l-4-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg><span style="font-size:9px; font-family:'JetBrains Mono',monospace;">LIBRARY</span></div>
+              <div style="display:flex; flex-direction:column; align-items:center; gap:4px; color:#1fe0c4;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M4 19V9M9.5 19V4M15 19v-7M20.5 19v-11" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><span style="font-size:9px; font-family:'JetBrains Mono',monospace;">STATS</span></div>
+            </div>
+
+            <div style="position:absolute; bottom:9px; left:50%; transform:translateX(-50%); width:134px; height:5px; border-radius:3px; background:rgba(255,255,255,.32);"></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ===================== DIRECTION 2 — TEMPO ===================== -->
+  <div style="margin-bottom:40px; display: {{ tShow }};">
+    <div style="display:flex; align-items:baseline; gap:18px; flex-wrap:wrap; margin-bottom:20px;">
+      <div style="display:flex; align-items:center; gap:12px;">
+        <div style="font-family:'Hanken Grotesk'; font-size:13px; font-weight:700; color:#1a1407; background:#cda35f; padding:4px 9px; border-radius:5px;">02</div>
+        <div style="font-size:26px; font-weight:800; letter-spacing:-.01em; color:#1c1a17;">Tempo</div>
+      </div>
+      <div style="font-size:15px; color:#6b665d; font-style:italic;">Expensive and quiet — soft surfaces, one warm accent, the number breathes.</div>
+      <div style="display:flex; gap:8px; margin-left:auto; font-family:'Hanken Grotesk'; font-size:10px; font-weight:600; letter-spacing:.08em; text-transform:uppercase;">
+        <span style="color:#6b665d; border:1px solid #cfcabf; padding:3px 8px; border-radius:20px;">Hanken Grotesk</span>
+        <span style="color:#6b665d; border:1px solid #cfcabf; padding:3px 8px; border-radius:20px; display:flex; align-items:center; gap:6px;"><span style="width:10px; height:10px; border-radius:50%; background:#cda35f; display:inline-block;"></span>Brass</span>
+      </div>
+    </div>
+
+    <div style="display:flex; gap:40px; align-items:flex-start;">
+
+      <!-- D2 · LOGGING -->
+      <div style="flex:none;">
+        <div style="font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:#9a958c; margin-bottom:12px; padding-left:6px;">Active logging</div>
+        <div style="width:414px; flex:none; border-radius:54px; padding:12px; background:#000; box-shadow:0 30px 70px -20px rgba(0,0,0,.45);">
+          <div style="position:relative; width:390px; height:800px; border-radius:42px; overflow:hidden; background:#101013; font-family:'Hanken Grotesk',sans-serif; color:#f4f2ee;">
+
+            <div style="display:flex; justify-content:space-between; align-items:center; padding:16px 28px 6px; font-size:14px; font-weight:600;">
+              <span style="font-variant-numeric:tabular-nums;">9:41</span>
+              <span style="display:flex; gap:6px; align-items:center;">
+                <svg width="17" height="12" viewBox="0 0 17 12" fill="none"><rect x="0" y="7" width="3" height="5" rx="1" fill="currentColor"/><rect x="4.5" y="4.5" width="3" height="7.5" rx="1" fill="currentColor"/><rect x="9" y="2" width="3" height="10" rx="1" fill="currentColor"/><rect x="13.5" y="0" width="3" height="12" rx="1" fill="currentColor" opacity=".4"/></svg>
+                <svg width="22" height="12" viewBox="0 0 24 12" fill="none"><rect x="1" y="1" width="20" height="10" rx="3" stroke="currentColor" stroke-opacity=".5" stroke-width="1"/><rect x="2.5" y="2.5" width="15" height="7" rx="1.5" fill="currentColor"/><rect x="22" y="4" width="1.5" height="4" rx=".75" fill="currentColor"/></svg>
+              </span>
+            </div>
+
+            <!-- top bar -->
+            <div style="display:flex; align-items:center; justify-content:space-between; padding:12px 24px 14px;">
+              <button style="width:42px; height:42px; border:none; background:transparent; color:#98948c; font-size:22px; cursor:pointer;">‹</button>
+              <div style="text-align:center;">
+                <div style="font-size:13px; font-weight:600; color:#f4f2ee; white-space:nowrap;">Push · Day A</div>
+                <div style="font-size:11.5px; color:#cda35f; margin-top:2px; font-variant-numeric:tabular-nums;">23:14 elapsed</div>
+              </div>
+              <button style="height:42px; padding:0 8px; border:none; background:transparent; color:#98948c; font-size:14px; font-weight:600; cursor:pointer;">Finish</button>
+            </div>
+
+            <!-- exercise header -->
+            <div style="padding:8px 28px 18px; text-align:center;">
+              <div style="font-size:28px; font-weight:700; letter-spacing:-.02em;">Bench Press</div>
+              <div style="font-size:13px; color:#98948c; margin-top:6px; font-variant-numeric:tabular-nums;">Set 2 of 4 · last 84 × 8, 8, 7</div>
+              <!-- set pips -->
+              <div style="display:flex; justify-content:center; gap:8px; margin-top:16px;">
+                <span style="width:34px; height:5px; border-radius:3px; background:#cda35f;"></span>
+                <span style="width:34px; height:5px; border-radius:3px; background:#cda35f;"></span>
+                <span style="width:34px; height:5px; border-radius:3px; background:#2a2a2f;"></span>
+                <span style="width:34px; height:5px; border-radius:3px; background:#2a2a2f;"></span>
+              </div>
+            </div>
+
+            <!-- hero set card -->
+            <div style="margin:4px 24px 0; padding:26px 22px 24px; background:#17171b; border-radius:28px; box-shadow:0 1px 0 rgba(255,255,255,.04) inset;">
+              <div style="display:flex; align-items:baseline; justify-content:center; gap:7px;">
+                <span style="font-size:72px; font-weight:600; line-height:.9; letter-spacing:-.03em; font-variant-numeric:tabular-nums;">84</span>
+                <span style="font-size:18px; color:#98948c; font-weight:500;">kg</span>
+                <span style="font-size:28px; color:#5d5a54; font-weight:300; margin:0 8px;">×</span>
+                <span style="font-size:72px; font-weight:600; line-height:.9; letter-spacing:-.03em; font-variant-numeric:tabular-nums;">8</span>
+                <span style="font-size:18px; color:#98948c; font-weight:500;">reps</span>
+              </div>
+
+              <!-- steppers -->
+              <div style="display:flex; gap:12px; margin-top:22px;">
+                <div style="flex:1; display:flex; align-items:center; justify-content:space-between; background:#0f0f12; border-radius:18px; padding:6px;">
+                  <button style="width:48px; height:48px; border:none; border-radius:14px; background:#202025; color:#f4f2ee; font-size:24px; cursor:pointer;">−</button>
+                  <span style="font-size:12px; color:#98948c; font-weight:600;">2.5 kg</span>
+                  <button style="width:48px; height:48px; border:none; border-radius:14px; background:#202025; color:#f4f2ee; font-size:24px; cursor:pointer;">+</button>
+                </div>
+                <div style="flex:1; display:flex; align-items:center; justify-content:space-between; background:#0f0f12; border-radius:18px; padding:6px;">
+                  <button style="width:48px; height:48px; border:none; border-radius:14px; background:#202025; color:#f4f2ee; font-size:24px; cursor:pointer;">−</button>
+                  <span style="font-size:12px; color:#98948c; font-weight:600;">rep</span>
+                  <button style="width:48px; height:48px; border:none; border-radius:14px; background:#202025; color:#f4f2ee; font-size:24px; cursor:pointer;">+</button>
+                </div>
+              </div>
+
+              <!-- why this weight -->
+              <button style="margin-top:18px; width:100%; display:flex; align-items:center; gap:10px; padding:13px 16px; background:rgba(205,163,95,.08); border:1px solid rgba(205,163,95,.18); border-radius:16px; cursor:pointer; text-align:left;">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style="flex:none;"><circle cx="8" cy="8" r="7" stroke="#cda35f" stroke-width="1.3"/><path d="M8 7.2v4M8 4.8h.01" stroke="#cda35f" stroke-width="1.5" stroke-linecap="round"/></svg>
+                <span style="font-size:12.5px; line-height:1.4; color:#cbc7be; flex:1;"><span style="color:#cda35f; font-weight:600;">+2.5 kg this week.</span> All reps cleared at RPE ≤ 8.</span>
+                <span style="color:#5d5a54; font-size:18px;">›</span>
+              </button>
+            </div>
+
+            <!-- done set glance -->
+            <div style="display:flex; align-items:center; justify-content:center; gap:10px; margin-top:18px; font-size:13px; color:#98948c;">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7.5" fill="#cda35f" fill-opacity=".18"/><path d="M5 8l2 2 4-4.5" stroke="#cda35f" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <span>Set 1 logged — <span style="color:#cbc7be; font-weight:600; font-variant-numeric:tabular-nums;">84 kg × 8</span></span>
+            </div>
+
+            <!-- bottom thumb zone -->
+            <div style="position:absolute; left:0; right:0; bottom:0; padding:14px 24px 30px; background:linear-gradient(180deg,rgba(16,16,19,0),#101013 26%);">
+              <div style="display:flex; align-items:center; gap:14px; padding:12px 18px; background:#17171b; border-radius:18px; margin-bottom:12px;">
+                <div style="position:relative; width:42px; height:42px; flex:none;">
+                  <svg width="42" height="42" viewBox="0 0 42 42"><circle cx="21" cy="21" r="18" fill="none" stroke="#2a2a2f" stroke-width="4"/><circle cx="21" cy="21" r="18" fill="none" stroke="#cda35f" stroke-width="4" stroke-linecap="round" stroke-dasharray="113" stroke-dashoffset="42" transform="rotate(-90 21 21)"/></svg>
+                </div>
+                <div>
+                  <div style="font-size:11px; color:#98948c; font-weight:600;">Rest</div>
+                  <div style="font-size:24px; font-weight:600; font-variant-numeric:tabular-nums; line-height:1.1;">1:24</div>
+                </div>
+                <div style="margin-left:auto; display:flex; gap:8px;">
+                  <button style="width:44px; height:44px; border-radius:14px; border:none; background:#202025; color:#cbc7be; font-size:12px; font-weight:600; cursor:pointer;">−15</button>
+                  <button style="width:44px; height:44px; border-radius:14px; border:none; background:#202025; color:#cbc7be; font-size:12px; font-weight:600; cursor:pointer;">+15</button>
+                  <button style="height:44px; padding:0 16px; border-radius:14px; border:none; background:#202025; color:#f4f2ee; font-size:13px; font-weight:600; cursor:pointer;">Skip</button>
+                </div>
+              </div>
+              <button style="width:100%; height:62px; border:none; border-radius:20px; background:#cda35f; color:#1a1407; font-size:17px; font-weight:700; cursor:pointer;">Log Set 2</button>
+            </div>
+
+            <div style="position:absolute; bottom:9px; left:50%; transform:translateX(-50%); width:134px; height:5px; border-radius:3px; background:rgba(255,255,255,.32);"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- D2 · ANALYTICS -->
+      <div style="flex:none;">
+        <div style="font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:#9a958c; margin-bottom:12px; padding-left:6px;">Analytics</div>
+        <div style="width:414px; flex:none; border-radius:54px; padding:12px; background:#000; box-shadow:0 30px 70px -20px rgba(0,0,0,.45);">
+          <div style="position:relative; width:390px; height:800px; border-radius:42px; overflow:hidden; background:#101013; font-family:'Hanken Grotesk',sans-serif; color:#f4f2ee;">
+
+            <div style="display:flex; justify-content:space-between; align-items:center; padding:16px 28px 6px; font-size:14px; font-weight:600;">
+              <span style="font-variant-numeric:tabular-nums;">9:41</span>
+              <span style="display:flex; gap:6px; align-items:center;">
+                <svg width="17" height="12" viewBox="0 0 17 12" fill="none"><rect x="0" y="7" width="3" height="5" rx="1" fill="currentColor"/><rect x="4.5" y="4.5" width="3" height="7.5" rx="1" fill="currentColor"/><rect x="9" y="2" width="3" height="10" rx="1" fill="currentColor"/><rect x="13.5" y="0" width="3" height="12" rx="1" fill="currentColor" opacity=".4"/></svg>
+                <svg width="22" height="12" viewBox="0 0 24 12" fill="none"><rect x="1" y="1" width="20" height="10" rx="3" stroke="currentColor" stroke-opacity=".5" stroke-width="1"/><rect x="2.5" y="2.5" width="15" height="7" rx="1.5" fill="currentColor"/><rect x="22" y="4" width="1.5" height="4" rx=".75" fill="currentColor"/></svg>
+              </span>
+            </div>
+
+            <div style="padding:12px 24px 6px;">
+              <div style="font-size:28px; font-weight:700; letter-spacing:-.02em;">Trends</div>
+              <div style="display:flex; gap:4px; margin-top:16px;">
+                <button style="flex:1; height:36px; border:none; border-radius:12px; background:#17171b; color:#98948c; font-size:13px; font-weight:600; cursor:pointer;">4W</button>
+                <button style="flex:1; height:36px; border:none; border-radius:12px; background:#cda35f; color:#1a1407; font-size:13px; font-weight:700; cursor:pointer;">3M</button>
+                <button style="flex:1; height:36px; border:none; border-radius:12px; background:#17171b; color:#98948c; font-size:13px; font-weight:600; cursor:pointer;">1Y</button>
+                <button style="flex:1; height:36px; border:none; border-radius:12px; background:#17171b; color:#98948c; font-size:13px; font-weight:600; cursor:pointer;">All</button>
+              </div>
+            </div>
+
+            <!-- e1RM card -->
+            <div style="margin:14px 24px 0; padding:22px 22px 14px; background:#17171b; border-radius:24px;">
+              <div style="font-size:13px; color:#98948c; font-weight:500;">Bench Press · estimated 1RM</div>
+              <div style="display:flex; align-items:baseline; gap:10px; margin-top:8px;">
+                <span style="font-size:40px; font-weight:600; letter-spacing:-.02em; font-variant-numeric:tabular-nums;">102.4</span>
+                <span style="font-size:15px; color:#98948c;">kg</span>
+                <span style="margin-left:auto; font-size:13px; font-weight:600; color:#cda35f;">+4.2%</span>
+              </div>
+              <svg width="100%" viewBox="0 0 330 140" style="margin-top:14px; display:block;">
+                <defs><linearGradient id="d2area" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#cda35f" stop-opacity=".2"/><stop offset="1" stop-color="#cda35f" stop-opacity="0"/></linearGradient></defs>
+                <path d="M10,114 C40,108 60,110 90,94 C120,80 150,98 180,78 C210,60 240,66 270,52 C290,44 310,40 320,34 L320,128 L10,128 Z" fill="url(#d2area)"/>
+                <path d="M10,114 C40,108 60,110 90,94 C120,80 150,98 180,78 C210,60 240,66 270,52 C290,44 310,40 320,34" fill="none" stroke="#cda35f" stroke-width="2.4" stroke-linecap="round"/>
+                <circle cx="180" cy="78" r="4" fill="#101013" stroke="#e8c77e" stroke-width="2.2"/>
+                <circle cx="320" cy="34" r="4.5" fill="#cda35f"/>
+              </svg>
+              <div style="display:flex; justify-content:space-between; font-size:10px; color:#5d5a54; padding:0 2px;"><span>Mar</span><span>Apr</span><span>May</span><span>Jun</span></div>
+            </div>
+
+            <!-- stats -->
+            <div style="display:flex; gap:12px; padding:16px 24px 0;">
+              <div style="flex:1; background:#17171b; border-radius:18px; padding:16px;">
+                <div style="font-size:11px; color:#98948c; font-weight:500;">Tonnage</div>
+                <div style="font-size:24px; font-weight:600; margin-top:6px; font-variant-numeric:tabular-nums;">18.2 <span style="font-size:13px; color:#98948c;">t</span></div>
+              </div>
+              <div style="flex:1; background:#17171b; border-radius:18px; padding:16px;">
+                <div style="font-size:11px; color:#98948c; font-weight:500;">Compliance</div>
+                <div style="font-size:24px; font-weight:600; margin-top:6px; color:#cda35f; font-variant-numeric:tabular-nums;">94 <span style="font-size:13px;">%</span></div>
+              </div>
+            </div>
+
+            <!-- volume -->
+            <div style="margin:16px 24px 0; padding:20px 22px; background:#17171b; border-radius:24px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                <span style="font-size:13px; font-weight:600; white-space:nowrap;">Weekly volume</span>
+                <span style="font-size:10px; color:#5d5a54; white-space:nowrap;">MEV · MAV · MRV</span>
+              </div>
+              <div style="display:flex; flex-direction:column; gap:15px;">
+                <div>
+                  <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:6px;"><span style="color:#cbc7be;">Chest</span><span style="color:#98948c; font-variant-numeric:tabular-nums; white-space:nowrap;">16 sets</span></div>
+                  <div style="position:relative; height:7px; border-radius:5px; background:#0f0f12;"><div style="position:absolute; left:0; top:0; bottom:0; border-radius:5px; width:78%; background:#cda35f;"></div><div style="position:absolute; top:0; bottom:0; left:40%; width:2px; background:rgba(255,255,255,.5);"></div><div style="position:absolute; top:0; bottom:0; left:85%; width:2px; background:rgba(255,255,255,.5);"></div></div>
+                </div>
+                <div>
+                  <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:6px;"><span style="color:#cbc7be;">Back</span><span style="color:#98948c; font-variant-numeric:tabular-nums; white-space:nowrap;">22 sets</span></div>
+                  <div style="position:relative; height:7px; border-radius:5px; background:#0f0f12;"><div style="position:absolute; left:0; top:0; bottom:0; border-radius:5px; width:96%; background:#d98e73;"></div><div style="position:absolute; top:0; bottom:0; left:42%; width:2px; background:rgba(255,255,255,.5);"></div><div style="position:absolute; top:0; bottom:0; left:88%; width:2px; background:rgba(255,255,255,.5);"></div></div>
+                </div>
+                <div>
+                  <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:6px;"><span style="color:#cbc7be;">Quads</span><span style="color:#98948c; font-variant-numeric:tabular-nums; white-space:nowrap;">14 sets</span></div>
+                  <div style="position:relative; height:7px; border-radius:5px; background:#0f0f12;"><div style="position:absolute; left:0; top:0; bottom:0; border-radius:5px; width:64%; background:#cda35f;"></div><div style="position:absolute; top:0; bottom:0; left:38%; width:2px; background:rgba(255,255,255,.5);"></div><div style="position:absolute; top:0; bottom:0; left:84%; width:2px; background:rgba(255,255,255,.5);"></div></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- tab nav -->
+            <div style="position:absolute; left:0; right:0; bottom:0; padding:10px 26px 26px; background:linear-gradient(180deg,rgba(16,16,19,0),#101013 30%); display:flex; justify-content:space-between;">
+              <div style="display:flex; flex-direction:column; align-items:center; gap:4px; color:#5d5a54;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M4 11l8-7 8 7v8a1 1 0 01-1 1h-4v-6h-6v6H5a1 1 0 01-1-1z" stroke="currentColor" stroke-width="1.6"/></svg><span style="font-size:9.5px; font-weight:600;">Today</span></div>
+              <div style="display:flex; flex-direction:column; align-items:center; gap:4px; color:#5d5a54;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><rect x="4" y="5" width="16" height="15" rx="2" stroke="currentColor" stroke-width="1.6"/><path d="M4 9h16M8 3v4M16 3v4" stroke="currentColor" stroke-width="1.6"/></svg><span style="font-size:9.5px; font-weight:600;">Plan</span></div>
+              <div style="display:flex; flex-direction:column; align-items:center; gap:4px; color:#5d5a54;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="1.6"/><path d="M20 20l-4-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg><span style="font-size:9.5px; font-weight:600;">Library</span></div>
+              <div style="display:flex; flex-direction:column; align-items:center; gap:4px; color:#cda35f;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M4 19V9M9.5 19V4M15 19v-7M20.5 19v-11" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><span style="font-size:9.5px; font-weight:600;">Trends</span></div>
+            </div>
+
+            <div style="position:absolute; bottom:9px; left:50%; transform:translateX(-50%); width:134px; height:5px; border-radius:3px; background:rgba(255,255,255,.32);"></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ===================== DIRECTION 3 — IGNITE ===================== -->
+  <div style="margin-bottom:40px; display: {{ iShow }};">
+    <div style="display:flex; align-items:baseline; gap:18px; flex-wrap:wrap; margin-bottom:20px;">
+      <div style="display:flex; align-items:center; gap:12px;">
+        <div style="font-family:'Space Grotesk'; font-size:13px; font-weight:700; color:#1a0a03; background:#ff5a1f; padding:4px 9px; border-radius:5px;">03</div>
+        <div style="font-size:26px; font-weight:800; letter-spacing:-.01em; color:#1c1a17;">Ignite</div>
+      </div>
+      <div style="font-size:15px; color:#6b665d; font-style:italic;">Punchy and alive — heavy type, hot accent, the PR detonates.</div>
+      <div style="display:flex; gap:8px; margin-left:auto; font-family:'Space Grotesk'; font-size:10px; font-weight:600; letter-spacing:.08em; text-transform:uppercase;">
+        <span style="color:#6b665d; border:1px solid #cfcabf; padding:3px 8px; border-radius:20px;">Space Grotesk</span>
+        <span style="color:#6b665d; border:1px solid #cfcabf; padding:3px 8px; border-radius:20px; display:flex; align-items:center; gap:6px;"><span style="width:10px; height:10px; border-radius:50%; background:#ff5a1f; display:inline-block;"></span>Volt orange</span>
+      </div>
+    </div>
+
+    <div style="display:flex; gap:40px; align-items:flex-start;">
+
+      <!-- D3 · LOGGING (PR moment) -->
+      <div style="flex:none;">
+        <div style="font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:#9a958c; margin-bottom:12px; padding-left:6px;">Active logging · PR moment</div>
+        <div style="width:414px; flex:none; border-radius:54px; padding:12px; background:#000; box-shadow:0 30px 70px -20px rgba(0,0,0,.45);">
+          <div style="position:relative; width:390px; height:800px; border-radius:42px; overflow:hidden; background:#0d0b0a; font-family:'Space Grotesk',sans-serif; color:#fafafa;">
+
+            <div style="display:flex; justify-content:space-between; align-items:center; padding:16px 28px 6px; font-size:14px; font-weight:600;">
+              <span style="font-variant-numeric:tabular-nums;">9:41</span>
+              <span style="display:flex; gap:6px; align-items:center;">
+                <svg width="17" height="12" viewBox="0 0 17 12" fill="none"><rect x="0" y="7" width="3" height="5" rx="1" fill="currentColor"/><rect x="4.5" y="4.5" width="3" height="7.5" rx="1" fill="currentColor"/><rect x="9" y="2" width="3" height="10" rx="1" fill="currentColor"/><rect x="13.5" y="0" width="3" height="12" rx="1" fill="currentColor" opacity=".4"/></svg>
+                <svg width="22" height="12" viewBox="0 0 24 12" fill="none"><rect x="1" y="1" width="20" height="10" rx="3" stroke="currentColor" stroke-opacity=".5" stroke-width="1"/><rect x="2.5" y="2.5" width="15" height="7" rx="1.5" fill="currentColor"/><rect x="22" y="4" width="1.5" height="4" rx=".75" fill="currentColor"/></svg>
+              </span>
+            </div>
+
+            <!-- top bar -->
+            <div style="display:flex; align-items:center; justify-content:space-between; padding:10px 20px 12px;">
+              <button style="width:42px; height:42px; border:none; background:#1a1614; border-radius:13px; color:#9a9591; font-size:21px; cursor:pointer;">‹</button>
+              <div style="text-align:center;">
+                <div style="font-size:13px; font-weight:700; letter-spacing:.02em; text-transform:uppercase; white-space:nowrap;">Push · Day A</div>
+                <div style="font-size:11.5px; color:#ff5a1f; margin-top:2px; font-weight:600; font-variant-numeric:tabular-nums; white-space:nowrap;">23:14 ELAPSED</div>
+              </div>
+              <button style="height:42px; padding:0 16px; border:none; background:#1a1614; border-radius:13px; color:#fafafa; font-size:13px; font-weight:700; cursor:pointer;">Finish</button>
+            </div>
+
+            <!-- exercise header -->
+            <div style="padding:6px 20px 12px;">
+              <div style="display:flex; justify-content:space-between; align-items:baseline;">
+                <div style="font-size:30px; font-weight:700; letter-spacing:-.03em; white-space:nowrap;">Bench Press</div>
+                <div style="font-size:13px; color:#9a9591; font-weight:600; font-variant-numeric:tabular-nums;">2/5</div>
+              </div>
+              <div style="font-size:12.5px; color:#9a9591; margin-top:4px; font-variant-numeric:tabular-nums;">Last: 84 × 8, 8, 7 · target RPE 8</div>
+            </div>
+
+            <!-- set 1 done -->
+            <div style="margin:0 20px 10px; display:flex; align-items:center; gap:14px; padding:12px 16px; background:#161210; border-radius:15px;">
+              <span style="font-size:13px; color:#5a544f; font-weight:700; width:14px;">1</span>
+              <span style="font-size:17px; font-weight:700; color:#9a9591; font-variant-numeric:tabular-nums;">84 <span style="font-size:11px; color:#5a544f;">kg</span> × 8</span>
+              <span style="margin-left:auto; display:flex; align-items:center; gap:6px; font-size:11px; font-weight:700; letter-spacing:.06em; color:#ff5a1f;"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2.5 7.5L5.5 10.5L11.5 3.5" stroke="#ff5a1f" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>DONE</span>
+            </div>
+
+            <!-- ACTIVE PR hero -->
+            <div style="margin:0 20px; position:relative; border-radius:22px; padding:2px; background:linear-gradient(135deg,#ff5a1f,#ff2d78); animation:os-prglow 2.4s ease-in-out infinite;">
+              <div style="border-radius:20px; background:#140f0d; padding:16px 18px 20px;">
+                <!-- PR ribbon -->
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;">
+                  <div style="display:flex; align-items:center; gap:8px; padding:6px 12px; background:linear-gradient(135deg,#ff5a1f,#ff2d78); border-radius:30px;">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M13 2L4 14h7l-1 8 9-12h-7z" fill="#fff"/></svg>
+                    <span style="font-size:12px; font-weight:700; letter-spacing:.08em; color:#fff;">NEW e1RM PR</span>
+                  </div>
+                  <span style="font-size:11px; font-weight:600; color:#ff9d6e; letter-spacing:.04em;">SET 3 · AMRAP</span>
+                </div>
+                <!-- hero numbers -->
+                <div style="display:flex; align-items:center; justify-content:center; gap:16px;">
+                  <div style="text-align:center;">
+                    <div style="font-size:13px; font-weight:600; color:#9a9591; letter-spacing:.08em; margin-bottom:2px;">WEIGHT</div>
+                    <div style="display:flex; align-items:baseline; gap:4px;"><span style="font-size:60px; font-weight:700; line-height:.9; letter-spacing:-.04em; color:#fff; font-variant-numeric:tabular-nums; text-shadow:0 0 24px rgba(255,90,31,.5);">86.5</span><span style="font-size:15px; color:#9a9591; font-weight:600;">kg</span></div>
+                  </div>
+                  <span style="font-size:28px; color:#5a544f; font-weight:700; padding-top:18px;">×</span>
+                  <div style="text-align:center;">
+                    <div style="font-size:13px; font-weight:600; color:#9a9591; letter-spacing:.08em; margin-bottom:2px;">REPS</div>
+                    <div><span style="font-size:60px; font-weight:700; line-height:.9; letter-spacing:-.04em; color:#fff; font-variant-numeric:tabular-nums; text-shadow:0 0 24px rgba(255,90,31,.5);">11</span></div>
+                  </div>
+                </div>
+                <!-- steppers -->
+                <div style="display:flex; gap:10px; margin-top:18px;">
+                  <button style="flex:1; height:48px; border:none; border-radius:14px; background:#221a16; color:#fafafa; font-size:22px; font-weight:700; cursor:pointer;">−</button>
+                  <button style="flex:1; height:48px; border:none; border-radius:14px; background:#221a16; color:#fafafa; font-size:22px; font-weight:700; cursor:pointer;">+ kg</button>
+                  <button style="flex:1; height:48px; border:none; border-radius:14px; background:#221a16; color:#fafafa; font-size:22px; font-weight:700; cursor:pointer;">−</button>
+                  <button style="flex:1; height:48px; border:none; border-radius:14px; background:#221a16; color:#fafafa; font-size:22px; font-weight:700; cursor:pointer;">+</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- why this weight -->
+            <div style="margin:14px 20px 0; display:flex; gap:10px; align-items:flex-start; padding:13px 16px; background:#161210; border-radius:15px;">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style="margin-top:1px; flex:none;"><circle cx="8" cy="8" r="7" stroke="#ff5a1f" stroke-width="1.3"/><path d="M8 7.2v4M8 4.8h.01" stroke="#ff5a1f" stroke-width="1.5" stroke-linecap="round"/></svg>
+              <span style="font-size:12.5px; line-height:1.45; color:#cbc6c2;"><span style="color:#ff5a1f; font-weight:700;">11 reps @ 86.5 kg → 104.2 e1RM.</span> That beats your old best of 102.4. Crush it.</span>
+            </div>
+
+            <!-- bottom thumb zone -->
+            <div style="position:absolute; left:0; right:0; bottom:0; padding:14px 20px 30px; background:linear-gradient(180deg,rgba(13,11,10,0),#0d0b0a 26%);">
+              <div style="display:flex; align-items:center; gap:12px; padding:11px 14px; background:#161210; border-radius:15px; margin-bottom:12px;">
+                <span style="font-size:11px; font-weight:700; letter-spacing:.1em; color:#9a9591;">REST</span>
+                <span style="font-size:26px; font-weight:700; font-variant-numeric:tabular-nums; letter-spacing:.01em;">2:00</span>
+                <div style="margin-left:auto; display:flex; gap:8px;">
+                  <button style="height:40px; padding:0 13px; border-radius:13px; border:none; background:#221a16; color:#cbc6c2; font-size:12px; font-weight:700; cursor:pointer;">−15</button>
+                  <button style="height:40px; padding:0 13px; border-radius:13px; border:none; background:#221a16; color:#cbc6c2; font-size:12px; font-weight:700; cursor:pointer;">+15</button>
+                  <button style="height:40px; padding:0 14px; border-radius:13px; border:none; background:#221a16; color:#fafafa; font-size:12px; font-weight:700; cursor:pointer;">Skip</button>
+                </div>
+              </div>
+              <button style="width:100%; height:62px; border:none; border-radius:18px; background:linear-gradient(135deg,#ff5a1f,#ff2d78); color:#fff; font-size:17px; font-weight:700; letter-spacing:.01em; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:10px; box-shadow:0 8px 24px -6px rgba(255,90,31,.6);">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M13 2L4 14h7l-1 8 9-12h-7z" fill="#fff"/></svg>
+                Log PR Set
+              </button>
+            </div>
+
+            <div style="position:absolute; bottom:9px; left:50%; transform:translateX(-50%); width:134px; height:5px; border-radius:3px; background:rgba(255,255,255,.32);"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- D3 · ANALYTICS -->
+      <div style="flex:none;">
+        <div style="font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:#9a958c; margin-bottom:12px; padding-left:6px;">Analytics</div>
+        <div style="width:414px; flex:none; border-radius:54px; padding:12px; background:#000; box-shadow:0 30px 70px -20px rgba(0,0,0,.45);">
+          <div style="position:relative; width:390px; height:800px; border-radius:42px; overflow:hidden; background:#0d0b0a; font-family:'Space Grotesk',sans-serif; color:#fafafa;">
+
+            <div style="display:flex; justify-content:space-between; align-items:center; padding:16px 28px 6px; font-size:14px; font-weight:600;">
+              <span style="font-variant-numeric:tabular-nums;">9:41</span>
+              <span style="display:flex; gap:6px; align-items:center;">
+                <svg width="17" height="12" viewBox="0 0 17 12" fill="none"><rect x="0" y="7" width="3" height="5" rx="1" fill="currentColor"/><rect x="4.5" y="4.5" width="3" height="7.5" rx="1" fill="currentColor"/><rect x="9" y="2" width="3" height="10" rx="1" fill="currentColor"/><rect x="13.5" y="0" width="3" height="12" rx="1" fill="currentColor" opacity=".4"/></svg>
+                <svg width="22" height="12" viewBox="0 0 24 12" fill="none"><rect x="1" y="1" width="20" height="10" rx="3" stroke="currentColor" stroke-opacity=".5" stroke-width="1"/><rect x="2.5" y="2.5" width="15" height="7" rx="1.5" fill="currentColor"/><rect x="22" y="4" width="1.5" height="4" rx=".75" fill="currentColor"/></svg>
+              </span>
+            </div>
+
+            <div style="padding:10px 20px 6px;">
+              <div style="font-size:30px; font-weight:700; letter-spacing:-.03em;">Progress</div>
+              <div style="display:flex; gap:6px; margin-top:14px;">
+                <button style="flex:1; height:36px; border:none; border-radius:11px; background:#161210; color:#9a9591; font-size:13px; font-weight:700; cursor:pointer;">4W</button>
+                <button style="flex:1; height:36px; border:none; border-radius:11px; background:#ff5a1f; color:#1a0a03; font-size:13px; font-weight:700; cursor:pointer;">3M</button>
+                <button style="flex:1; height:36px; border:none; border-radius:11px; background:#161210; color:#9a9591; font-size:13px; font-weight:700; cursor:pointer;">1Y</button>
+                <button style="flex:1; height:36px; border:none; border-radius:11px; background:#161210; color:#9a9591; font-size:13px; font-weight:700; cursor:pointer;">All</button>
+              </div>
+            </div>
+
+            <!-- e1RM card -->
+            <div style="margin:12px 20px 0; padding:18px 18px 10px; background:#161210; border-radius:20px;">
+              <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                <div>
+                  <div style="font-size:12px; color:#9a9591; font-weight:600; letter-spacing:.04em;">BENCH PRESS · e1RM</div>
+                  <div style="display:flex; align-items:baseline; gap:8px; margin-top:6px;">
+                    <span style="font-size:38px; font-weight:700; letter-spacing:-.03em; font-variant-numeric:tabular-nums;">104.2</span>
+                    <span style="font-size:14px; color:#9a9591; font-weight:600;">kg</span>
+                  </div>
+                </div>
+                <span style="display:flex; align-items:center; gap:5px; font-size:12px; font-weight:700; color:#fff; background:linear-gradient(135deg,#ff5a1f,#ff2d78); padding:5px 10px; border-radius:30px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M13 2L4 14h7l-1 8 9-12h-7z" fill="#fff"/></svg>PR</span>
+              </div>
+              <svg width="100%" viewBox="0 0 330 150" style="margin-top:10px; display:block;">
+                <defs><linearGradient id="d3area" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff5a1f" stop-opacity=".28"/><stop offset="1" stop-color="#ff5a1f" stop-opacity="0"/></linearGradient></defs>
+                <path d="M10,122 L42,116 L74,118 L106,100 L138,104 L170,84 L202,88 L234,62 L266,66 L298,44 L320,32 L320,138 L10,138 Z" fill="url(#d3area)"/>
+                <polyline points="10,122 42,116 74,118 106,100 138,104 170,84 202,88 234,62 266,66 298,44 320,32" fill="none" stroke="#ff5a1f" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+                <circle cx="170" cy="84" r="4.5" fill="#0d0b0a" stroke="#ff2d78" stroke-width="2.4"/>
+                <circle cx="320" cy="32" r="5" fill="#ff5a1f"/>
+                <circle cx="320" cy="32" r="9" fill="#ff5a1f" fill-opacity=".25"/>
+              </svg>
+              <div style="display:flex; justify-content:space-between; font-size:10px; color:#5a544f; padding:0 2px 2px; font-weight:600;"><span>MAR</span><span>APR</span><span>MAY</span><span>JUN</span></div>
+            </div>
+
+            <div style="display:flex; gap:10px; padding:14px 20px 0;">
+              <div style="flex:1; background:#161210; border-radius:15px; padding:13px;">
+                <div style="font-size:10px; color:#9a9591; font-weight:600; letter-spacing:.06em;">TONNAGE</div>
+                <div style="font-size:23px; font-weight:700; margin-top:5px; font-variant-numeric:tabular-nums;">18.2<span style="font-size:12px; color:#9a9591;">t</span></div>
+              </div>
+              <div style="flex:1; background:#161210; border-radius:15px; padding:13px;">
+                <div style="font-size:10px; color:#9a9591; font-weight:600; letter-spacing:.06em;">PRs</div>
+                <div style="font-size:23px; font-weight:700; margin-top:5px; color:#ff5a1f; font-variant-numeric:tabular-nums;">3</div>
+              </div>
+              <div style="flex:1; background:#161210; border-radius:15px; padding:13px;">
+                <div style="font-size:10px; color:#9a9591; font-weight:600; letter-spacing:.06em;">COMPLY</div>
+                <div style="font-size:23px; font-weight:700; margin-top:5px; font-variant-numeric:tabular-nums;">94<span style="font-size:12px; color:#9a9591;">%</span></div>
+              </div>
+            </div>
+
+            <!-- volume -->
+            <div style="margin:16px 20px 0; padding:16px 18px; background:#161210; border-radius:20px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+                <span style="font-size:13px; font-weight:700; letter-spacing:.02em;">WEEKLY VOLUME</span>
+                <span style="font-size:9.5px; color:#5a544f; font-weight:600;">MEV · MAV · MRV</span>
+              </div>
+              <div style="display:flex; flex-direction:column; gap:14px;">
+                <div>
+                  <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:6px;"><span style="color:#cbc6c2; font-weight:600;">Chest</span><span style="color:#9a9591; font-variant-numeric:tabular-nums; font-weight:600;">16</span></div>
+                  <div style="position:relative; height:8px; border-radius:5px; background:#0d0b0a;"><div style="position:absolute; left:0; top:0; bottom:0; border-radius:5px; width:78%; background:linear-gradient(90deg,#ff5a1f,#ff8a4f);"></div><div style="position:absolute; top:0; bottom:0; left:40%; width:2px; background:rgba(255,255,255,.5);"></div><div style="position:absolute; top:0; bottom:0; left:85%; width:2px; background:rgba(255,255,255,.5);"></div></div>
+                </div>
+                <div>
+                  <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:6px;"><span style="color:#cbc6c2; font-weight:600;">Back</span><span style="color:#ffb020; font-variant-numeric:tabular-nums; font-weight:600;">22</span></div>
+                  <div style="position:relative; height:8px; border-radius:5px; background:#0d0b0a;"><div style="position:absolute; left:0; top:0; bottom:0; border-radius:5px; width:96%; background:#ffb020;"></div><div style="position:absolute; top:0; bottom:0; left:42%; width:2px; background:rgba(255,255,255,.5);"></div><div style="position:absolute; top:0; bottom:0; left:88%; width:2px; background:rgba(255,255,255,.5);"></div></div>
+                </div>
+                <div>
+                  <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:6px;"><span style="color:#cbc6c2; font-weight:600;">Quads</span><span style="color:#9a9591; font-variant-numeric:tabular-nums; font-weight:600;">14</span></div>
+                  <div style="position:relative; height:8px; border-radius:5px; background:#0d0b0a;"><div style="position:absolute; left:0; top:0; bottom:0; border-radius:5px; width:64%; background:linear-gradient(90deg,#ff5a1f,#ff8a4f);"></div><div style="position:absolute; top:0; bottom:0; left:38%; width:2px; background:rgba(255,255,255,.5);"></div><div style="position:absolute; top:0; bottom:0; left:84%; width:2px; background:rgba(255,255,255,.5);"></div></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- tab nav -->
+            <div style="position:absolute; left:0; right:0; bottom:0; padding:10px 24px 26px; background:linear-gradient(180deg,rgba(13,11,10,0),#0d0b0a 30%); display:flex; justify-content:space-between;">
+              <div style="display:flex; flex-direction:column; align-items:center; gap:4px; color:#5a544f;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M4 11l8-7 8 7v8a1 1 0 01-1 1h-4v-6h-6v6H5a1 1 0 01-1-1z" stroke="currentColor" stroke-width="1.6"/></svg><span style="font-size:9.5px; font-weight:700;">Today</span></div>
+              <div style="display:flex; flex-direction:column; align-items:center; gap:4px; color:#5a544f;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><rect x="4" y="5" width="16" height="15" rx="2" stroke="currentColor" stroke-width="1.6"/><path d="M4 9h16M8 3v4M16 3v4" stroke="currentColor" stroke-width="1.6"/></svg><span style="font-size:9.5px; font-weight:700;">Plan</span></div>
+              <div style="display:flex; flex-direction:column; align-items:center; gap:4px; color:#5a544f;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="1.6"/><path d="M20 20l-4-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg><span style="font-size:9.5px; font-weight:700;">Library</span></div>
+              <div style="display:flex; flex-direction:column; align-items:center; gap:4px; color:#ff5a1f;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M4 19V9M9.5 19V4M15 19v-7M20.5 19v-11" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><span style="font-size:9.5px; font-weight:700;">Progress</span></div>
+            </div>
+
+            <div style="position:absolute; bottom:9px; left:50%; transform:translateX(-50%); width:134px; height:5px; border-radius:3px; background:rgba(255,255,255,.32);"></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { active: 'tempo' };
+  renderVals() {
+    const a = this.state.active;
+    const sel = (k) => () => this.setState({ active: k });
+    const segBg = (k) => a === k ? '#1c1a17' : 'transparent';
+    const segFg = (k) => a === k ? '#f4f2ee' : '#6b665d';
+    const show = (k) => a === k ? 'block' : 'none';
+    return {
+      selectReadout: sel('readout'), selectTempo: sel('tempo'), selectIgnite: sel('ignite'),
+      rBg: segBg('readout'), rFg: segFg('readout'),
+      tBg: segBg('tempo'), tFg: segFg('tempo'),
+      iBg: segBg('ignite'), iFg: segFg('ignite'),
+      rShow: show('readout'), tShow: show('tempo'), iShow: show('ignite'),
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,1377 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700;800&display=swap" rel="stylesheet">
+<link href="tokens.css" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; }
+  .os-scroll::-webkit-scrollbar { width: 0; height: 0; }
+  .os-scroll { scrollbar-width: none; }
+  @keyframes os-toast-in { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+  @keyframes os-cel-in { from { transform: scale(.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  @keyframes os-cel-glow { 0%,100% { box-shadow: 0 0 0 0 var(--pr); } 50% { box-shadow: 0 0 40px -4px var(--pr); } }
+  @keyframes os-spark { 0% { transform: translateY(0) scale(1); opacity: 1; } 100% { transform: translateY(-60px) scale(.3); opacity: 0; } }
+  .os-range { -webkit-appearance:none; appearance:none; width:100%; height:26px; background:transparent; cursor:pointer; }
+  .os-range::-webkit-slider-runnable-track { height:16px; border-radius:8px; background:var(--os-track,#888); }
+  .os-range::-moz-range-track { height:16px; border-radius:8px; background:var(--os-track,#888); }
+  .os-range::-webkit-slider-thumb { -webkit-appearance:none; appearance:none; width:26px; height:26px; margin-top:-5px; border-radius:50%; background:#fff; border:1px solid rgba(0,0,0,.2); box-shadow:0 1px 5px rgba(0,0,0,.45); }
+  .os-range::-moz-range-thumb { width:24px; height:24px; border-radius:50%; background:#fff; border:1px solid rgba(0,0,0,.2); box-shadow:0 1px 5px rgba(0,0,0,.45); }
+</style>
+</helmet>
+
+<div style="min-height:100vh; background:#e7e5df; display:flex; flex-direction:column; align-items:center; gap:18px; padding:36px 24px 60px; font-family:'Hanken Grotesk',sans-serif;">
+
+  <div style="display:flex; flex-direction:column; align-items:center; gap:14px;">
+    <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap; justify-content:center;">
+      <div style="font-size:13px; font-weight:700; letter-spacing:-.01em; color:#1c1a17;">OpenSets</div>
+      <div style="font-size:12px; color:#9a958c;">live prototype — tap the tab bar &amp; Appearance to drive the system</div>
+    </div>
+    <div style="display:inline-flex; gap:5px; background:#dcd9d1; padding:5px; border-radius:13px;">
+      <button onClick="{{ setDsTempo }}" style="border:none; cursor:pointer; padding:9px 22px; border-radius:9px; white-space:nowrap; font-family:'Hanken Grotesk',sans-serif; font-size:13px; font-weight:700; letter-spacing:-.01em; background: {{ dsTempoBg }}; color: {{ dsTempoFg }};">Tempo template</button>
+      <button onClick="{{ setDsReadout }}" style="border:none; cursor:pointer; padding:9px 22px; border-radius:9px; white-space:nowrap; font-family:'Hanken Grotesk',sans-serif; font-size:13px; font-weight:700; letter-spacing:-.01em; background: {{ dsReadoutBg }}; color: {{ dsReadoutFg }};">Readout template</button>
+    </div>
+  </div>
+
+  <!-- ===================== DEVICE ===================== -->
+  <div style="flex:none; border-radius:54px; padding:12px; background:#000; box-shadow:0 40px 90px -30px rgba(0,0,0,.5);">
+    <div data-ds="{{ ds }}" data-mode="{{ mode }}" data-theme="{{ theme }}" style="position:relative; width:390px; height:820px; border-radius:42px; overflow:hidden; background:var(--bg); color:var(--text); font-family:var(--font-sans); user-select:none; -webkit-user-select:none; --seed-bg: {{ seedBg }}; --seed-accent: {{ seedAccent }}; --seed-ink: {{ seedInk }}; transition: background var(--dur-base) var(--ease-out), color var(--dur-base) var(--ease-out);">
+
+      <!-- ========== SESSION (the product) ========== -->
+      <sc-if value="{{ showSession }}" hint-placeholder-val="{{ true }}">
+      <div style="position:absolute; inset:0; display:flex; flex-direction:column;">
+        <!-- status bar -->
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:15px 28px 4px; font-size:14px; font-weight:600; flex:none;">
+          <span style="font-family:var(--font-num); font-weight:var(--num-weight); font-variant-numeric:tabular-nums;">9:41</span>
+          <span style="display:flex; gap:6px; align-items:center;">
+            <svg width="17" height="12" viewBox="0 0 17 12" fill="none"><rect x="0" y="7" width="3" height="5" rx="1" fill="currentColor"/><rect x="4.5" y="4.5" width="3" height="7.5" rx="1" fill="currentColor"/><rect x="9" y="2" width="3" height="10" rx="1" fill="currentColor"/><rect x="13.5" y="0" width="3" height="12" rx="1" fill="currentColor" opacity=".4"/></svg>
+            <svg width="22" height="12" viewBox="0 0 24 12" fill="none"><rect x="1" y="1" width="20" height="10" rx="3" stroke="currentColor" stroke-opacity=".5" stroke-width="1"/><rect x="2.5" y="2.5" width="15" height="7" rx="1.5" fill="currentColor"/><rect x="22" y="4" width="1.5" height="4" rx=".75" fill="currentColor"/></svg>
+          </span>
+        </div>
+        <!-- top bar -->
+        <sc-if value="{{ isTempo }}" hint-placeholder-val="{{ true }}">
+        <div style="display:flex; align-items:center; justify-content:space-between; padding:10px 22px 12px; flex:none;">
+          <button onClick="{{ goToday }}" style="width:42px; height:42px; border:none; background:transparent; color:var(--muted); font-size:22px; cursor:pointer;">‹</button>
+          <div style="text-align:center;">
+            <div style="font-size:13px; font-weight:600; white-space:nowrap;">Push · Day A</div>
+            <div style="font-size:11.5px; color:var(--accent); margin-top:2px; font-family:var(--font-num); font-weight:var(--num-weight); font-variant-numeric:tabular-nums;">23:14 elapsed</div>
+          </div>
+          <button onClick="{{ goToday }}" style="height:42px; padding:0 10px; border:none; background:transparent; color:var(--muted); font-size:14px; font-weight:600; cursor:pointer;">Finish</button>
+        </div>
+        </sc-if>
+        <sc-if value="{{ isReadout }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex; align-items:center; justify-content:space-between; padding:8px 20px 10px; flex:none;">
+          <button onClick="{{ goToday }}" style="width:40px; height:40px; border:none; background:var(--surface-2); border-radius:var(--r-sm); color:var(--muted); font-size:20px; cursor:pointer;">‹</button>
+          <div style="text-align:center;">
+            <div style="font-size:11px; letter-spacing:.16em; color:var(--muted); font-family:var(--font-num);">PUSH · DAY A</div>
+            <div style="font-size:11px; letter-spacing:.1em; color:var(--accent); margin-top:3px; font-family:var(--font-num); font-variant-numeric:tabular-nums;">23:14 ELAPSED</div>
+          </div>
+          <button onClick="{{ goToday }}" style="height:40px; padding:0 14px; border:none; background:var(--surface-2); border-radius:var(--r-sm); color:var(--text); font-size:13px; font-weight:600; cursor:pointer;">Finish</button>
+        </div>
+        </sc-if>
+
+        <!-- scroll area -->
+        <div class="os-scroll" style="flex:1; overflow:auto; padding:4px 22px 8px;">
+          <!-- ===== TEMPO body (Stage-1 Tempo: centered hero) ===== -->
+          <sc-if value="{{ isTempo }}" hint-placeholder-val="{{ true }}">
+          <div>
+          <!-- exercise header -->
+          <div style="text-align:center; padding-bottom:6px;">
+            <div style="font-size:28px; font-weight:700; letter-spacing:var(--tracking-tight);">Bench Press</div>
+            <div style="font-size:13px; color:var(--muted); margin-top:5px; font-family:var(--font-num); font-weight:var(--num-weight); font-variant-numeric:tabular-nums;">Set 2 of 4 · last 84 × 8, 8, 7</div>
+            <div style="display:flex; justify-content:center; gap:8px; margin-top:14px;">
+              <span style="width:32px; height:5px; border-radius:3px; background:var(--accent);"></span>
+              <span style="width:32px; height:5px; border-radius:3px; background:var(--accent);"></span>
+              <span style="width:32px; height:5px; border-radius:3px; background:var(--surface-2);"></span>
+              <span style="width:32px; height:5px; border-radius:3px; background:var(--surface-2);"></span>
+            </div>
+          </div>
+
+          <!-- hero set card -->
+          <div style="margin-top:14px; padding:24px 20px 20px; background:var(--surface); border-radius:var(--r-2xl); border:1px solid var(--border-card); box-shadow:var(--hairline-top);">
+            <div style="display:flex; align-items:baseline; justify-content:center; gap:7px;">
+              <span style="font-size:var(--num-xl); font-weight:600; line-height:.9; letter-spacing:var(--tracking-tight); font-family:var(--font-num); font-weight:var(--num-weight); font-variant-numeric:tabular-nums;">{{ weight }}</span>
+              <span style="font-size:18px; color:var(--muted); font-weight:500;">kg</span>
+              <span style="font-size:28px; color:var(--faint); font-weight:300; margin:0 8px;">×</span>
+              <span style="font-size:var(--num-xl); font-weight:600; line-height:.9; letter-spacing:var(--tracking-tight); font-family:var(--font-num); font-weight:var(--num-weight); font-variant-numeric:tabular-nums;">{{ reps }}</span>
+              <span style="font-size:18px; color:var(--muted); font-weight:500;">reps</span>
+            </div>
+            <!-- steppers -->
+            <div style="display:flex; gap:12px; margin-top:22px;">
+              <div style="flex:1; display:flex; align-items:center; justify-content:space-between; background:var(--bg); border-radius:var(--r-lg); padding:6px;">
+                <button onClick="{{ decW }}" style="width:48px; height:48px; border:none; border-radius:var(--r-md); background:var(--surface-2); color:var(--text); font-size:24px; cursor:pointer;">−</button>
+                <span style="font-size:12px; color:var(--muted); font-weight:600;">2.5 kg</span>
+                <button onClick="{{ incW }}" style="width:48px; height:48px; border:none; border-radius:var(--r-md); background:var(--surface-2); color:var(--text); font-size:24px; cursor:pointer;">+</button>
+              </div>
+              <div style="flex:1; display:flex; align-items:center; justify-content:space-between; background:var(--bg); border-radius:var(--r-lg); padding:6px;">
+                <button onClick="{{ decR }}" style="width:48px; height:48px; border:none; border-radius:var(--r-md); background:var(--surface-2); color:var(--text); font-size:24px; cursor:pointer;">−</button>
+                <span style="font-size:12px; color:var(--muted); font-weight:600;">rep</span>
+                <button onClick="{{ incR }}" style="width:48px; height:48px; border:none; border-radius:var(--r-md); background:var(--surface-2); color:var(--text); font-size:24px; cursor:pointer;">+</button>
+              </div>
+            </div>
+            <!-- optional RPE -->
+            <div style="display:flex; align-items:center; gap:8px; margin-top:14px;">
+              <span style="font-size:12px; color:var(--muted); font-weight:600;">RPE</span>
+              <span style="font-size:13px; color:var(--muted); padding:7px 13px; border-radius:var(--r-pill); background:var(--bg); font-family:var(--font-num);">7</span>
+              <span style="font-size:13px; color:var(--accent-ink); padding:7px 13px; border-radius:var(--r-pill); background:var(--accent); font-weight:700; font-family:var(--font-num);">8</span>
+              <span style="font-size:13px; color:var(--muted); padding:7px 13px; border-radius:var(--r-pill); background:var(--bg); font-family:var(--font-num);">9</span>
+              <span style="margin-left:auto; font-size:11px; color:var(--faint);">optional</span>
+            </div>
+            <!-- why this weight -->
+            <button onClick="{{ toggleWhy }}" style="margin-top:16px; width:100%; display:flex; align-items:center; gap:10px; padding:13px 16px; background:color-mix(in oklab, var(--accent) 9%, var(--surface)); border:1px solid color-mix(in oklab, var(--accent) 22%, transparent); border-radius:var(--r-md); cursor:pointer; text-align:left;">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style="flex:none;"><circle cx="8" cy="8" r="7" stroke="var(--accent)" stroke-width="1.3"/><path d="M8 7.2v4M8 4.8h.01" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round"/></svg>
+              <span style="font-size:12.5px; line-height:1.4; color:var(--text); flex:1;"><span style="color:var(--accent); font-weight:600;">+2.5 kg this week.</span> All reps cleared at RPE ≤ 8.</span>
+              <span style="color:var(--faint); font-size:18px;">{{ whyChevron }}</span>
+            </button>
+            <sc-if value="{{ whyOpen }}" hint-placeholder-val="{{ false }}">
+            <div style="margin-top:8px; padding:14px 16px; background:var(--bg); border-radius:var(--r-md); font-size:12.5px; line-height:1.55; color:var(--muted);">
+              <div style="display:flex; justify-content:space-between; padding:3px 0;"><span>Rule</span><span style="color:var(--text); font-weight:600;">Double progression</span></div>
+              <div style="display:flex; justify-content:space-between; padding:3px 0;"><span>Last session</span><span style="color:var(--text); font-weight:600; font-family:var(--font-num); font-weight:var(--num-weight); font-variant-numeric:tabular-nums;">84 kg · 8/8/7 reps</span></div>
+              <div style="display:flex; justify-content:space-between; padding:3px 0;"><span>Top of rep range hit</span><span style="color:var(--success); font-weight:600;">Yes → +2.5 kg</span></div>
+            </div>
+            </sc-if>
+          </div>
+
+          <!-- set 1 logged glance (Stage-1 Tempo) -->
+          <div style="display:flex; align-items:center; justify-content:center; gap:10px; margin-top:18px; font-size:13px; color:var(--muted);">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7.5" fill="color-mix(in oklab, var(--accent) 18%, transparent)"/><path d="M5 8l2 2 4-4.5" stroke="var(--accent)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span>Set 1 logged — <span style="color:var(--text); font-weight:600; font-family:var(--font-num); font-weight:var(--num-weight); font-variant-numeric:tabular-nums;">84 kg × 8</span></span>
+          </div>
+          </div>
+          </sc-if>
+
+          <!-- ===== READOUT body (Stage-1 Readout: columnar set-list) ===== -->
+          <sc-if value="{{ isReadout }}" hint-placeholder-val="{{ false }}">
+          <div>
+            <!-- exercise header -->
+            <div style="padding-bottom:14px;">
+              <div style="display:flex; justify-content:space-between; align-items:baseline;">
+                <div style="font-size:25px; font-weight:800; letter-spacing:var(--tracking-snug); white-space:nowrap;">Bench Press</div>
+                <div style="font-size:12px; color:var(--muted); font-family:var(--font-num);">2 / 5</div>
+              </div>
+              <div style="display:flex; align-items:center; gap:10px; margin-top:6px;">
+                <span style="font-size:12.5px; color:var(--muted);">Barbell · Chest</span>
+                <span style="width:3px; height:3px; border-radius:50%; background:var(--faint);"></span>
+                <span style="font-size:12px; color:var(--muted); font-family:var(--font-num); letter-spacing:.02em;">LAST 84×8,8,7</span>
+              </div>
+              <div style="display:flex; gap:4px; margin-top:12px;">
+                <div style="flex:1; height:3px; border-radius:2px; background:var(--accent);"></div>
+                <div style="flex:1; height:3px; border-radius:2px; background:var(--accent);"></div>
+                <div style="flex:1; height:3px; border-radius:2px; background:var(--surface-2);"></div>
+                <div style="flex:1; height:3px; border-radius:2px; background:var(--surface-2);"></div>
+                <div style="flex:1; height:3px; border-radius:2px; background:var(--surface-2);"></div>
+              </div>
+            </div>
+
+            <div style="display:flex; flex-direction:column; gap:10px;">
+              <!-- set 1 done -->
+              <div style="display:flex; align-items:center; gap:14px; padding:11px 16px; background:var(--surface); border:1px solid var(--border-card); border-radius:var(--r-md);">
+                <span style="font-size:13px; color:var(--faint); width:14px; font-family:var(--font-num);">1</span>
+                <span style="font-size:17px; font-weight:600; color:var(--muted); font-family:var(--font-num); font-weight:var(--num-weight); font-variant-numeric:tabular-nums;">84<span style="font-size:11px; color:var(--faint);">kg</span> × 8</span>
+                <span style="margin-left:auto; display:flex; align-items:center; gap:6px; font-size:11px; letter-spacing:.1em; color:var(--accent); font-family:var(--font-label); text-transform:uppercase;"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2.5 7.5L5.5 10.5L11.5 3.5" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Done</span>
+              </div>
+
+              <!-- set 2 FAILED (missed target reps) -->
+              <div style="display:flex; align-items:center; gap:14px; padding:11px 16px; background:var(--surface); border:1px solid color-mix(in oklab, var(--danger) 28%, var(--border-card)); border-radius:var(--r-md);">
+                <span style="font-size:13px; color:var(--faint); width:14px; font-family:var(--font-num);">2</span>
+                <span style="font-size:17px; font-weight:600; color:var(--muted); font-family:var(--font-num); font-weight:var(--num-weight); font-variant-numeric:tabular-nums;">84<span style="font-size:11px; color:var(--faint);">kg</span> × 6</span>
+                <span style="margin-left:auto; display:flex; align-items:center; gap:6px; font-size:11px; letter-spacing:.1em; color:var(--danger); font-family:var(--font-label); text-transform:uppercase;"><svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M4 4l6 6M10 4l-6 6" stroke="var(--danger)" stroke-width="2" stroke-linecap="round"/></svg>Missed</span>
+              </div>
+
+              <!-- set 3 ACTIVE columnar hero -->
+              <div style="border:1.5px solid var(--accent); border-radius:var(--r-lg); background:var(--surface); padding:16px 16px 18px; box-shadow:0 0 0 4px color-mix(in oklab, var(--accent) 7%, transparent);">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                  <span style="font-size:11px; letter-spacing:.16em; color:var(--accent); font-family:var(--font-label); text-transform:uppercase;">Set 3 · Now</span>
+                  <span style="font-size:10px; letter-spacing:.08em; color:var(--muted); font-family:var(--font-label); text-transform:uppercase; background:color-mix(in oklab, var(--accent) 10%, transparent); padding:3px 8px; border-radius:var(--r-pill);">Target RPE 8</span>
+                </div>
+                <div style="display:flex; align-items:stretch; gap:10px;">
+                  <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:8px;">
+                    <span style="font-size:10px; letter-spacing:.16em; color:var(--muted); font-family:var(--font-label); text-transform:uppercase;">Weight</span>
+                    <div style="display:flex; align-items:baseline; gap:3px;"><span style="font-size:52px; line-height:1; letter-spacing:var(--tracking-snug); font-family:var(--font-num); font-weight:var(--num-weight); font-variant-numeric:tabular-nums;">{{ weight }}</span><span style="font-size:14px; color:var(--muted); font-weight:600;">kg</span></div>
+                    <div style="display:flex; gap:8px;">
+                      <button onClick="{{ decW }}" style="width:46px; height:46px; border-radius:var(--r-sm); border:1px solid var(--border-strong); background:var(--surface-2); color:var(--text); font-size:22px; cursor:pointer;">−</button>
+                      <button onClick="{{ incW }}" style="width:46px; height:46px; border-radius:var(--r-sm); border:1px solid var(--border-strong); background:var(--surface-2); color:var(--text); font-size:22px; cursor:pointer;">+</button>
+                    </div>
+                  </div>
+                  <div style="width:1px; background:var(--border);"></div>
+                  <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:8px;">
+                    <span style="font-size:10px; letter-spacing:.16em; color:var(--muted); font-family:var(--font-label); text-transform:uppercase;">Reps</span>
+                    <div style="display:flex; align-items:baseline;"><span style="font-size:52px; line-height:1; letter-spacing:var(--tracking-snug); font-family:var(--font-num); font-weight:var(--num-weight); font-variant-numeric:tabular-nums;">{{ reps }}</span></div>
+                    <div style="display:flex; gap:8px;">
+                      <button onClick="{{ decR }}" style="width:46px; height:46px; border-radius:var(--r-sm); border:1px solid var(--border-strong); background:var(--surface-2); color:var(--text); font-size:22px; cursor:pointer;">−</button>
+                      <button onClick="{{ incR }}" style="width:46px; height:46px; border-radius:var(--r-sm); border:1px solid var(--border-strong); background:var(--surface-2); color:var(--text); font-size:22px; cursor:pointer;">+</button>
+                    </div>
+                  </div>
+                </div>
+                <!-- optional RPE -->
+                <div style="display:flex; align-items:center; gap:7px; margin-top:14px;">
+                  <span style="font-size:10px; color:var(--muted); font-family:var(--font-label); text-transform:uppercase; letter-spacing:.12em;">RPE</span>
+                  <span style="font-size:12px; color:var(--muted); padding:6px 11px; border-radius:var(--r-sm); background:var(--bg); font-family:var(--font-num);">7</span>
+                  <span style="font-size:12px; color:var(--accent-ink); padding:6px 11px; border-radius:var(--r-sm); background:var(--accent); font-weight:700; font-family:var(--font-num);">8</span>
+                  <span style="font-size:12px; color:var(--muted); padding:6px 11px; border-radius:var(--r-sm); background:var(--bg); font-family:var(--font-num);">9</span>
+                  <span style="margin-left:auto; font-size:10px; color:var(--faint);">optional</span>
+                </div>
+                <button onClick="{{ toggleWhy }}" style="margin-top:14px; width:100%; display:flex; gap:10px; align-items:flex-start; padding:10px 12px; background:color-mix(in oklab, var(--accent) 6%, transparent); border:1px solid color-mix(in oklab, var(--accent) 16%, transparent); border-radius:var(--r-sm); cursor:pointer; text-align:left;">
+                  <svg width="15" height="15" viewBox="0 0 16 16" fill="none" style="margin-top:1px; flex:none;"><circle cx="8" cy="8" r="7" stroke="var(--accent)" stroke-width="1.3"/><path d="M8 7.2v4M8 4.8h.01" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round"/></svg>
+                  <span style="font-size:12.5px; line-height:1.45; color:var(--muted); flex:1;"><span style="color:var(--accent); font-weight:600;">+2.5 kg.</span> Cleared all 3 sets last week at RPE ≤ 8 — double progression adds load.</span>
+                  <span style="color:var(--faint); font-size:16px;">{{ whyChevron }}</span>
+                </button>
+              </div>
+
+              <!-- set 4 upcoming -->
+              <div style="display:flex; align-items:center; gap:14px; padding:11px 16px; background:var(--surface); border:1px solid var(--border-card); border-radius:var(--r-md);">
+                <span style="font-size:13px; color:var(--faint); width:14px; font-family:var(--font-num);">4</span>
+                <span style="font-size:17px; font-weight:600; color:var(--text); font-family:var(--font-num); font-weight:var(--num-weight); font-variant-numeric:tabular-nums;">84<span style="font-size:11px; color:var(--faint);">kg</span> × 8</span>
+                <span style="margin-left:auto; font-size:10px; letter-spacing:.12em; color:var(--faint); font-family:var(--font-label); text-transform:uppercase;">Up next</span>
+              </div>
+              <!-- set 5 amrap -->
+              <div style="display:flex; align-items:center; gap:14px; padding:11px 16px; background:var(--surface); border:1px solid var(--border-card); border-radius:var(--r-md);">
+                <span style="font-size:13px; color:var(--faint); width:14px; font-family:var(--font-num);">5</span>
+                <span style="font-size:17px; font-weight:600; color:var(--text); font-family:var(--font-num); font-weight:var(--num-weight); font-variant-numeric:tabular-nums;">84<span style="font-size:11px; color:var(--faint);">kg</span> × 8+</span>
+                <span style="margin-left:auto; font-size:10px; letter-spacing:.1em; color:var(--pr); font-family:var(--font-label); text-transform:uppercase; border:1px solid color-mix(in oklab, var(--pr) 40%, transparent); padding:2px 7px; border-radius:var(--r-pill);">AMRAP</span>
+              </div>
+            </div>
+          </div>
+          </sc-if>
+          <div style="height:8px;"></div>
+        </div>
+
+        <!-- mid-session actions -->
+        <div style="flex:none; display:flex; align-items:center; gap:7px; padding:2px 22px 8px;">
+          <button style="width:42px; height:42px; flex:none; border:none; border-radius:var(--r-sm); background:var(--surface); color:var(--muted); font-size:18px; cursor:pointer;">‹</button>
+          <button onClick="{{ openSheet }}" style="flex:1; height:42px; border:none; border-radius:var(--r-sm); background:var(--surface); color:var(--text); font-size:13px; font-weight:600; cursor:pointer;">Swap</button>
+          <button style="flex:1; height:42px; border:none; border-radius:var(--r-sm); background:var(--surface); color:var(--text); font-size:13px; font-weight:600; cursor:pointer;">Skip</button>
+          <button style="flex:1; height:42px; border:none; border-radius:var(--r-sm); background:var(--surface); color:var(--text); font-size:13px; font-weight:600; cursor:pointer;">Add</button>
+          <button style="width:42px; height:42px; flex:none; border:none; border-radius:var(--r-sm); background:var(--surface); color:var(--muted); font-size:18px; cursor:pointer;">›</button>
+        </div>
+
+        <!-- bottom thumb zone -->
+        <div style="flex:none; padding:12px 22px 28px; background:linear-gradient(180deg,transparent,var(--bg) 22%);">
+          <sc-if value="{{ resting }}" hint-placeholder-val="{{ true }}">
+          <div style="display:flex; align-items:center; gap:14px; padding:11px 16px; background:var(--surface); border-radius:var(--r-lg); margin-bottom:12px;">
+            <span style="font-size:11px; color:var(--muted); font-weight:700; letter-spacing:.06em; text-transform:uppercase;">Rest</span>
+            <span style="font-size:26px; font-weight:600; font-family:var(--font-num); font-weight:var(--num-weight); font-variant-numeric:tabular-nums; line-height:1;">{{ restText }}</span>
+            <div style="margin-left:auto; display:flex; gap:8px;">
+              <button onClick="{{ subRest }}" style="width:44px; height:44px; border-radius:var(--r-md); border:none; background:var(--surface-2); color:var(--muted); font-size:12px; font-weight:600; cursor:pointer;">−15</button>
+              <button onClick="{{ addRest }}" style="width:44px; height:44px; border-radius:var(--r-md); border:none; background:var(--surface-2); color:var(--muted); font-size:12px; font-weight:600; cursor:pointer;">+15</button>
+              <button onClick="{{ skipRest }}" style="height:44px; padding:0 16px; border-radius:var(--r-md); border:none; background:var(--surface-2); color:var(--text); font-size:13px; font-weight:600; cursor:pointer;">Skip</button>
+            </div>
+          </div>
+          </sc-if>
+          <sc-if value="{{ isTempo }}" hint-placeholder-val="{{ true }}">
+          <button onClick="{{ logSet }}" style="width:100%; height:62px; border:none; border-radius:var(--r-xl); background:var(--accent); color:var(--accent-ink); font-size:17px; font-weight:700; cursor:pointer; transition:background var(--dur-fast);">Log Set 2</button>
+          </sc-if>
+          <sc-if value="{{ isReadout }}" hint-placeholder-val="{{ false }}">
+          <button onClick="{{ logSet }}" style="width:100%; height:60px; border:none; border-radius:var(--r-lg); background:var(--accent); color:var(--accent-ink); font-size:16px; font-weight:700; letter-spacing:.01em; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:10px;">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M4 10.5L8 14.5L16 5.5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Log Set 3 · <span style="font-family:var(--font-num); font-variant-numeric:tabular-nums;">{{ weight }} × {{ reps }}</span>
+          </button>
+          </sc-if>
+        </div>
+      </div>
+      </sc-if>
+
+      <!-- ========== TODAY ========== -->
+      <sc-if value="{{ showToday }}" hint-placeholder-val="{{ false }}">
+      <div style="position:absolute; inset:0; display:flex; flex-direction:column;">
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:15px 28px 4px; font-size:14px; font-weight:600; flex:none;">
+          <span style="font-family:var(--font-num); font-weight:var(--num-weight); font-variant-numeric:tabular-nums;">9:41</span>
+          <span style="display:flex; gap:6px; align-items:center;"><svg width="17" height="12" viewBox="0 0 17 12" fill="none"><rect x="0" y="7" width="3" height="5" rx="1" fill="currentColor"/><rect x="4.5" y="4.5" width="3" height="7.5" rx="1" fill="currentColor"/><rect x="9" y="2" width="3" height="10" rx="1" fill="currentColor"/><rect x="13.5" y="0" width="3" height="12" rx="1" fill="currentColor" opacity=".4"/></svg><svg width="22" height="12" viewBox="0 0 24 12" fill="none"><rect x="1" y="1" width="20" height="10" rx="3" stroke="currentColor" stroke-opacity=".5" stroke-width="1"/><rect x="2.5" y="2.5" width="15" height="7" rx="1.5" fill="currentColor"/><rect x="22" y="4" width="1.5" height="4" rx=".75" fill="currentColor"/></svg></span>
+        </div>
+        <div class="os-scroll" style="flex:1; overflow:auto; padding:8px 22px 96px;">
+          <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+            <div>
+              <div style="font-size:13px; color:var(--muted); font-weight:500;">Thursday, Jun 19</div>
+              <div style="font-size:30px; font-weight:700; letter-spacing:var(--tracking-tight); margin-top:2px;">Today</div>
+            </div>
+            <button onClick="{{ goSettings }}" style="width:42px; height:42px; border:none; border-radius:var(--r-md); background:var(--surface); color:var(--muted); cursor:pointer; display:flex; align-items:center; justify-content:center;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3.2" stroke="currentColor" stroke-width="1.6"/><path d="M12 2.5v2.5M12 19v2.5M21.5 12H19M5 12H2.5M18.7 5.3l-1.8 1.8M7.1 16.9l-1.8 1.8M18.7 18.7l-1.8-1.8M7.1 7.1L5.3 5.3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>
+          </div>
+
+          <!-- today's workout card -->
+          <div style="margin-top:18px; padding:20px; background:var(--surface); border-radius:var(--r-xl); border:1px solid var(--border-card); box-shadow:var(--hairline-top);">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <span style="font-size:11px; font-weight:700; letter-spacing:var(--tracking-caps); text-transform:uppercase; font-family:var(--font-label); color:var(--accent);">Scheduled</span>
+              <span style="font-size:12px; color:var(--muted); font-family:var(--font-num); font-weight:var(--num-weight); font-variant-numeric:tabular-nums;">~52 min · 5 exercises</span>
+            </div>
+            <div style="font-size:24px; font-weight:700; letter-spacing:var(--tracking-snug); margin-top:10px;">Push · Day A</div>
+            <div style="display:flex; flex-wrap:wrap; gap:6px; margin-top:12px;">
+              <span style="font-size:12px; color:var(--muted); background:var(--bg); padding:6px 11px; border-radius:var(--r-pill);">Bench Press</span>
+              <span style="font-size:12px; color:var(--muted); background:var(--bg); padding:6px 11px; border-radius:var(--r-pill);">Overhead Press</span>
+              <span style="font-size:12px; color:var(--muted); background:var(--bg); padding:6px 11px; border-radius:var(--r-pill);">Incline DB</span>
+              <span style="font-size:12px; color:var(--muted); background:var(--bg); padding:6px 11px; border-radius:var(--r-pill);">+2 more</span>
+            </div>
+            <button onClick="{{ goSession }}" style="margin-top:18px; width:100%; height:56px; border:none; border-radius:var(--r-lg); background:var(--accent); color:var(--accent-ink); font-size:16px; font-weight:700; cursor:pointer;">Start workout</button>
+          </div>
+
+          <!-- weekly streak / quick stats -->
+          <div style="display:flex; gap:12px; margin-top:14px;">
+            <div style="flex:1; padding:16px; background:var(--surface); border-radius:var(--r-lg);">
+              <div style="font-size:11px; color:var(--muted); font-weight:500;">This week</div>
+              <div style="font-size:24px; font-weight:600; margin-top:4px; font-family:var(--font-num); font-weight:var(--num-weight); font-variant-numeric:tabular-nums;">3<span style="font-size:13px; color:var(--muted);">/4</span></div>
+              <div style="display:flex; gap:5px; margin-top:10px;"><span style="flex:1; height:5px; border-radius:3px; background:var(--accent);"></span><span style="flex:1; height:5px; border-radius:3px; background:var(--accent);"></span><span style="flex:1; height:5px; border-radius:3px; background:var(--accent);"></span><span style="flex:1; height:5px; border-radius:3px; background:var(--surface-2);"></span></div>
+            </div>
+            <div style="flex:1; padding:16px; background:var(--surface); border-radius:var(--r-lg);">
+              <div style="font-size:11px; color:var(--muted); font-weight:500;">Last PR</div>
+              <div style="font-size:24px; font-weight:600; margin-top:4px; color:var(--pr); font-family:var(--font-num); font-weight:var(--num-weight); font-variant-numeric:tabular-nums;">102.4</div>
+              <div style="font-size:11px; color:var(--muted); margin-top:8px;">Bench e1RM · 3d ago</div>
+            </div>
+          </div>
+
+          <div onClick="{{ goHistory }}" style="font-size:11px; font-weight:700; letter-spacing:var(--tracking-caps); text-transform:uppercase; font-family:var(--font-label); color:var(--faint); margin:22px 4px 10px; display:flex; justify-content:space-between; align-items:center; cursor:pointer;">Recent <span style="color:var(--accent); letter-spacing:0;">All ›</span></div>
+          <div style="display:flex; flex-direction:column; gap:8px;">
+            <div style="display:flex; align-items:center; gap:14px; padding:14px 16px; background:var(--surface); border-radius:var(--r-md);">
+              <div style="width:38px; height:38px; border-radius:var(--r-sm); background:var(--bg); display:flex; align-items:center; justify-content:center; color:var(--muted);"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M4 12h16M7 8v8M17 8v8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></div>
+              <div style="flex:1;"><div style="font-size:14px; font-weight:600;">Pull · Day B</div><div style="font-size:12px; color:var(--muted);">Tue · 47 min · 1 PR</div></div>
+              <span style="color:var(--faint); font-size:18px;">›</span>
+            </div>
+            <div style="display:flex; align-items:center; gap:14px; padding:14px 16px; background:var(--surface); border-radius:var(--r-md);">
+              <div style="width:38px; height:38px; border-radius:var(--r-sm); background:var(--bg); display:flex; align-items:center; justify-content:center; color:var(--muted);"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M4 12h16M7 8v8M17 8v8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></div>
+              <div style="flex:1;"><div style="font-size:14px; font-weight:600;">Legs · Day C</div><div style="font-size:12px; color:var(--muted);">Sun · 58 min</div></div>
+              <span style="color:var(--faint); font-size:18px;">›</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      </sc-if>
+
+      <!-- ========== TRENDS ========== -->
+      <sc-if value="{{ showTrends }}" hint-placeholder-val="{{ false }}">
+      <div style="position:absolute; inset:0; display:flex; flex-direction:column;">
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:15px 28px 4px; font-size:14px; font-weight:600; flex:none;">
+          <span style="font-family:var(--font-num); font-weight:var(--num-weight); font-variant-numeric:tabular-nums;">9:41</span>
+          <span style="display:flex; gap:6px; align-items:center;"><svg width="17" height="12" viewBox="0 0 17 12" fill="none"><rect x="0" y="7" width="3" height="5" rx="1" fill="currentColor"/><rect x="4.5" y="4.5" width="3" height="7.5" rx="1" fill="currentColor"/><rect x="9" y="2" width="3" height="10" rx="1" fill="currentColor"/><rect x="13.5" y="0" width="3" height="12" rx="1" fill="currentColor" opacity=".4"/></svg><svg width="22" height="12" viewBox="0 0 24 12" fill="none"><rect x="1" y="1" width="20" height="10" rx="3" stroke="currentColor" stroke-opacity=".5" stroke-width="1"/><rect x="2.5" y="2.5" width="15" height="7" rx="1.5" fill="currentColor"/><rect x="22" y="4" width="1.5" height="4" rx=".75" fill="currentColor"/></svg></span>
+        </div>
+        <div class="os-scroll" style="flex:1; overflow:auto; padding:8px 22px 96px;">
+          <sc-if value="{{ isTempo }}" hint-placeholder-val="{{ true }}">
+          <div>
+          <div style="font-size:30px; font-weight:700; letter-spacing:var(--tracking-tight);">Trends</div>
+          <div style="display:flex; gap:4px; margin-top:16px;">
+            <button style="flex:1; height:36px; border:none; border-radius:var(--r-sm); background:var(--surface); color:var(--muted); font-size:13px; font-weight:600; cursor:pointer;">4W</button>
+            <button style="flex:1; height:36px; border:none; border-radius:var(--r-sm); background:var(--accent); color:var(--accent-ink); font-size:13px; font-weight:700; cursor:pointer;">3M</button>
+            <button style="flex:1; height:36px; border:none; border-radius:var(--r-sm); background:var(--surface); color:var(--muted); font-size:13px; font-weight:600; cursor:pointer;">1Y</button>
+            <button style="flex:1; height:36px; border:none; border-radius:var(--r-sm); background:var(--surface); color:var(--muted); font-size:13px; font-weight:600; cursor:pointer;">All</button>
+          </div>
+          <!-- e1RM -->
+          <div style="margin-top:14px; padding:20px; background:var(--surface); border-radius:var(--r-xl);">
+            <div style="font-size:13px; color:var(--muted);">Bench Press · estimated 1RM</div>
+            <div style="display:flex; align-items:baseline; gap:10px; margin-top:8px;">
+              <span style="font-size:var(--num-md); font-weight:600; letter-spacing:var(--tracking-snug); font-family:var(--font-num); font-weight:var(--num-weight); font-variant-numeric:tabular-nums;">102.4</span>
+              <span style="font-size:15px; color:var(--muted);">kg</span>
+              <span style="margin-left:auto; font-size:13px; font-weight:600; color:var(--accent);">+4.2%</span>
+            </div>
+            <svg width="100%" viewBox="0 0 330 140" style="margin-top:14px; display:block;">
+              <defs><linearGradient id="osArea" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--accent)" stop-opacity=".2"/><stop offset="1" stop-color="var(--accent)" stop-opacity="0"/></linearGradient></defs>
+              <path d="M10,114 C40,108 60,110 90,94 C120,80 150,98 180,78 C210,60 240,66 270,52 C290,44 310,40 320,34 L320,128 L10,128 Z" fill="url(#osArea)"/>
+              <path d="M10,114 C40,108 60,110 90,94 C120,80 150,98 180,78 C210,60 240,66 270,52 C290,44 310,40 320,34" fill="none" stroke="var(--accent)" stroke-width="2.4" stroke-linecap="round"/>
+              <circle cx="180" cy="78" r="4" fill="var(--bg)" stroke="var(--pr)" stroke-width="2.2"/>
+              <circle cx="320" cy="34" r="4.5" fill="var(--accent)"/>
+            </svg>
+            <div style="display:flex; justify-content:space-between; font-size:10px; color:var(--faint); padding:0 2px;"><span>Mar</span><span>Apr</span><span>May</span><span>Jun</span></div>
+          </div>
+          <!-- stats -->
+          <div style="display:flex; gap:12px; margin-top:14px;">
+            <div style="flex:1; padding:16px; background:var(--surface); border-radius:var(--r-lg);"><div style="font-size:11px; color:var(--muted);">Tonnage</div><div style="font-size:22px; font-weight:600; margin-top:5px; font-family:var(--font-num); font-weight:var(--num-weight); font-variant-numeric:tabular-nums;">18.2<span style="font-size:12px; color:var(--muted);"> t</span></div></div>
+            <div style="flex:1; padding:16px; background:var(--surface); border-radius:var(--r-lg);"><div style="font-size:11px; color:var(--muted);">Compliance</div><div style="font-size:22px; font-weight:600; margin-top:5px; color:var(--accent); font-family:var(--font-num); font-weight:var(--num-weight); font-variant-numeric:tabular-nums;">94<span style="font-size:12px;"> %</span></div></div>
+          </div>
+          <!-- volume -->
+          <div style="margin-top:14px; padding:20px; background:var(--surface); border-radius:var(--r-xl);">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+              <span style="font-size:13px; font-weight:600; white-space:nowrap;">Weekly volume</span>
+              <span style="font-size:10px; color:var(--faint); white-space:nowrap;">MEV · MAV · MRV</span>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:15px;">
+              <div>
+                <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:6px;"><span style="color:var(--text);">Chest</span><span style="color:var(--muted); font-family:var(--font-num); font-weight:var(--num-weight); font-variant-numeric:tabular-nums; white-space:nowrap;">16 sets</span></div>
+                <div style="position:relative; height:7px; border-radius:5px; background:var(--bg);"><div style="position:absolute; left:0; top:0; bottom:0; border-radius:5px; width:78%; background:var(--accent);"></div><div style="position:absolute; top:0; bottom:0; left:40%; width:2px; background:var(--border-strong);"></div><div style="position:absolute; top:0; bottom:0; left:85%; width:2px; background:var(--border-strong);"></div></div>
+              </div>
+              <div>
+                <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:6px;"><span style="color:var(--text);">Back</span><span style="color:var(--muted); font-family:var(--font-num); font-weight:var(--num-weight); font-variant-numeric:tabular-nums; white-space:nowrap;">22 sets</span></div>
+                <div style="position:relative; height:7px; border-radius:5px; background:var(--bg);"><div style="position:absolute; left:0; top:0; bottom:0; border-radius:5px; width:96%; background:var(--warning);"></div><div style="position:absolute; top:0; bottom:0; left:42%; width:2px; background:var(--border-strong);"></div><div style="position:absolute; top:0; bottom:0; left:88%; width:2px; background:var(--border-strong);"></div></div>
+              </div>
+              <div>
+                <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:6px;"><span style="color:var(--text);">Quads</span><span style="color:var(--muted); font-family:var(--font-num); font-weight:var(--num-weight); font-variant-numeric:tabular-nums; white-space:nowrap;">14 sets</span></div>
+                <div style="position:relative; height:7px; border-radius:5px; background:var(--bg);"><div style="position:absolute; left:0; top:0; bottom:0; border-radius:5px; width:64%; background:var(--accent);"></div><div style="position:absolute; top:0; bottom:0; left:38%; width:2px; background:var(--border-strong);"></div><div style="position:absolute; top:0; bottom:0; left:84%; width:2px; background:var(--border-strong);"></div></div>
+              </div>
+            </div>
+          </div>
+          <!-- intensity distribution -->
+          <div style="margin-top:14px; padding:20px; background:var(--surface); border-radius:var(--r-xl);">
+            <div style="font-size:13px; font-weight:600; margin-bottom:14px;">Intensity distribution</div>
+            <div style="display:flex; height:12px; border-radius:6px; overflow:hidden; gap:2px;">
+              <div style="width:18%; background:color-mix(in oklab, var(--accent) 35%, var(--surface-2));"></div>
+              <div style="width:46%; background:var(--accent);"></div>
+              <div style="width:26%; background:color-mix(in oklab, var(--accent) 62%, var(--surface-2));"></div>
+              <div style="width:10%; background:var(--surface-2);"></div>
+            </div>
+            <div style="display:flex; justify-content:space-between; margin-top:12px; font-size:11px; color:var(--muted); font-family:var(--font-num);">
+              <span>1–5 · 18%</span><span>6–8 · 46%</span><span>9–12 · 26%</span><span>13+ · 10%</span>
+            </div>
+          </div>
+          </div>
+          </sc-if>
+
+          <!-- ===== READOUT analytics (Stage-1 Readout instrument) ===== -->
+          <sc-if value="{{ isReadout }}" hint-placeholder-val="{{ false }}">
+          <div>
+            <div style="font-size:25px; font-weight:800; letter-spacing:var(--tracking-snug);">Analytics</div>
+            <div style="display:flex; gap:6px; margin-top:16px; background:var(--surface); border:1px solid var(--border); padding:4px; border-radius:var(--r-md);">
+              <button style="flex:1; height:34px; border:none; border-radius:var(--r-sm); background:var(--accent); color:var(--accent-ink); font-family:var(--font-num); font-size:12px; font-weight:700; cursor:pointer;">3M</button>
+              <button style="flex:1; height:34px; border:none; border-radius:var(--r-sm); background:transparent; color:var(--muted); font-family:var(--font-num); font-size:12px; cursor:pointer;">4W</button>
+              <button style="flex:1; height:34px; border:none; border-radius:var(--r-sm); background:transparent; color:var(--muted); font-family:var(--font-num); font-size:12px; cursor:pointer;">1Y</button>
+              <button style="flex:1; height:34px; border:none; border-radius:var(--r-sm); background:transparent; color:var(--muted); font-family:var(--font-num); font-size:12px; cursor:pointer;">ALL</button>
+            </div>
+            <!-- e1RM card -->
+            <div style="margin-top:14px; padding:16px 16px 8px; background:var(--surface); border:1px solid var(--border); border-radius:var(--r-lg);">
+              <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                <div>
+                  <div style="font-size:10px; letter-spacing:.16em; color:var(--muted); font-family:var(--font-label); text-transform:uppercase;">Bench Press · e1RM</div>
+                  <div style="display:flex; align-items:baseline; gap:8px; margin-top:6px;"><span style="font-size:34px; letter-spacing:var(--tracking-snug); font-family:var(--font-num); font-weight:var(--num-weight); font-variant-numeric:tabular-nums;">102.4</span><span style="font-size:13px; color:var(--muted); font-weight:600;">kg</span></div>
+                </div>
+                <span style="font-size:12px; font-weight:700; color:var(--accent); background:color-mix(in oklab, var(--accent) 12%, transparent); padding:4px 9px; border-radius:var(--r-sm); font-family:var(--font-num);">▲ 4.2%</span>
+              </div>
+              <svg width="100%" viewBox="0 0 330 150" style="margin-top:8px; display:block;">
+                <line x1="10" y1="36" x2="320" y2="36" stroke="var(--text)" stroke-opacity=".05"/>
+                <line x1="10" y1="78" x2="320" y2="78" stroke="var(--text)" stroke-opacity=".05"/>
+                <line x1="10" y1="120" x2="320" y2="120" stroke="var(--text)" stroke-opacity=".05"/>
+                <defs><linearGradient id="osReadArea" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--accent)" stop-opacity=".22"/><stop offset="1" stop-color="var(--accent)" stop-opacity="0"/></linearGradient></defs>
+                <path d="M10,122 L42,114 L74,116 L106,98 L138,102 L170,82 L202,86 L234,60 L266,64 L298,44 L320,36 L320,138 L10,138 Z" fill="url(#osReadArea)"/>
+                <polyline points="10,122 42,114 74,116 106,98 138,102 170,82 202,86 234,60 266,64 298,44 320,36" fill="none" stroke="var(--accent)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+                <circle cx="170" cy="82" r="4.5" fill="var(--bg)" stroke="var(--pr)" stroke-width="2.4"/>
+                <circle cx="298" cy="44" r="4.5" fill="var(--bg)" stroke="var(--pr)" stroke-width="2.4"/>
+                <circle cx="320" cy="36" r="4" fill="var(--accent)"/>
+              </svg>
+              <div style="display:flex; justify-content:space-between; font-size:9.5px; color:var(--faint); padding:0 4px 4px; font-family:var(--font-label);">
+                <span>MAR</span><span>APR</span><span>MAY</span><span>JUN</span>
+              </div>
+            </div>
+            <!-- stat row -->
+            <div style="display:flex; gap:10px; margin-top:14px;">
+              <div style="flex:1; background:var(--surface); border:1px solid var(--border); border-radius:var(--r-md); padding:12px;"><div style="font-size:9.5px; letter-spacing:.1em; color:var(--muted); font-family:var(--font-label); text-transform:uppercase;">Tonnage</div><div style="font-size:22px; margin-top:5px; font-family:var(--font-num); font-weight:var(--num-weight); font-variant-numeric:tabular-nums;">18.2<span style="font-size:12px; color:var(--muted);">t</span></div></div>
+              <div style="flex:1; background:var(--surface); border:1px solid var(--border); border-radius:var(--r-md); padding:12px;"><div style="font-size:9.5px; letter-spacing:.1em; color:var(--muted); font-family:var(--font-label); text-transform:uppercase;">Comply</div><div style="font-size:22px; margin-top:5px; color:var(--accent); font-family:var(--font-num); font-weight:var(--num-weight); font-variant-numeric:tabular-nums;">94<span style="font-size:12px;">%</span></div></div>
+              <div style="flex:1; background:var(--surface); border:1px solid var(--border); border-radius:var(--r-md); padding:12px;"><div style="font-size:9.5px; letter-spacing:.1em; color:var(--muted); font-family:var(--font-label); text-transform:uppercase;">Sets</div><div style="font-size:22px; margin-top:5px; font-family:var(--font-num); font-weight:var(--num-weight); font-variant-numeric:tabular-nums;">47</div></div>
+            </div>
+            <!-- volume heatmap -->
+            <div style="margin-top:14px; padding:15px 16px; background:var(--surface); border:1px solid var(--border); border-radius:var(--r-lg);">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+                <span style="font-size:10px; letter-spacing:.14em; color:var(--muted); font-family:var(--font-label); text-transform:uppercase;">Weekly volume · sets</span>
+                <span style="font-size:9px; letter-spacing:.06em; color:var(--faint); font-family:var(--font-label); text-transform:uppercase;">MEV·MAV·MRV</span>
+              </div>
+              <div style="display:flex; flex-direction:column; gap:13px;">
+                <div>
+                  <div style="display:flex; justify-content:space-between; font-size:11.5px; margin-bottom:5px;"><span style="color:var(--text);">Chest</span><span style="color:var(--accent); font-family:var(--font-num);">16</span></div>
+                  <div style="position:relative; height:8px; border-radius:5px; background:var(--bg);"><div style="position:absolute; left:0; top:0; bottom:0; border-radius:5px; width:78%; background:var(--accent);"></div><div style="position:absolute; top:0; bottom:0; left:40%; width:2px; background:var(--border-strong);"></div><div style="position:absolute; top:0; bottom:0; left:85%; width:2px; background:var(--border-strong);"></div></div>
+                </div>
+                <div>
+                  <div style="display:flex; justify-content:space-between; font-size:11.5px; margin-bottom:5px;"><span style="color:var(--text);">Back</span><span style="color:var(--warning); font-family:var(--font-num);">22</span></div>
+                  <div style="position:relative; height:8px; border-radius:5px; background:var(--bg);"><div style="position:absolute; left:0; top:0; bottom:0; border-radius:5px; width:96%; background:var(--warning);"></div><div style="position:absolute; top:0; bottom:0; left:42%; width:2px; background:var(--border-strong);"></div><div style="position:absolute; top:0; bottom:0; left:88%; width:2px; background:var(--border-strong);"></div></div>
+                </div>
+                <div>
+                  <div style="display:flex; justify-content:space-between; font-size:11.5px; margin-bottom:5px;"><span style="color:var(--text);">Shoulders</span><span style="color:var(--muted); font-family:var(--font-num);">9</span></div>
+                  <div style="position:relative; height:8px; border-radius:5px; background:var(--bg);"><div style="position:absolute; left:0; top:0; bottom:0; border-radius:5px; width:38%; background:var(--faint);"></div><div style="position:absolute; top:0; bottom:0; left:35%; width:2px; background:var(--border-strong);"></div><div style="position:absolute; top:0; bottom:0; left:80%; width:2px; background:var(--border-strong);"></div></div>
+                </div>
+                <div>
+                  <div style="display:flex; justify-content:space-between; font-size:11.5px; margin-bottom:5px;"><span style="color:var(--text);">Quads</span><span style="color:var(--accent); font-family:var(--font-num);">14</span></div>
+                  <div style="position:relative; height:8px; border-radius:5px; background:var(--bg);"><div style="position:absolute; left:0; top:0; bottom:0; border-radius:5px; width:64%; background:var(--accent);"></div><div style="position:absolute; top:0; bottom:0; left:38%; width:2px; background:var(--border-strong);"></div><div style="position:absolute; top:0; bottom:0; left:84%; width:2px; background:var(--border-strong);"></div></div>
+                </div>
+              </div>
+            </div>
+            <!-- intensity distribution -->
+            <div style="margin-top:14px; padding:15px 16px; background:var(--surface); border:1px solid var(--border); border-radius:var(--r-lg);">
+              <div style="font-size:10px; letter-spacing:.14em; color:var(--muted); font-family:var(--font-label); text-transform:uppercase; margin-bottom:12px;">Intensity distribution</div>
+              <div style="display:flex; height:12px; border-radius:6px; overflow:hidden; gap:2px;">
+                <div style="width:18%; background:color-mix(in oklab, var(--accent) 35%, var(--surface-2));"></div>
+                <div style="width:46%; background:var(--accent);"></div>
+                <div style="width:26%; background:color-mix(in oklab, var(--accent) 62%, var(--surface-2));"></div>
+                <div style="width:10%; background:var(--surface-2);"></div>
+              </div>
+              <div style="display:flex; justify-content:space-between; margin-top:12px; font-size:10px; color:var(--muted); font-family:var(--font-num);">
+                <span>1–5 · 18%</span><span>6–8 · 46%</span><span>9–12 · 26%</span><span>13+ · 10%</span>
+              </div>
+            </div>
+          </div>
+          </sc-if>
+        </div>
+      </div>
+      </sc-if>
+
+      <!-- ========== SETTINGS HUB ========== -->
+      <sc-if value="{{ showSettings }}" hint-placeholder-val="{{ false }}">
+      <div style="position:absolute; inset:0; display:flex; flex-direction:column;">
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:15px 28px 4px; font-size:14px; font-weight:600; flex:none;"><span style="font-family:var(--font-num); font-weight:var(--num-weight); font-variant-numeric:tabular-nums;">9:41</span><span style="display:flex; gap:6px; align-items:center;"><svg width="17" height="12" viewBox="0 0 17 12" fill="none"><rect x="0" y="7" width="3" height="5" rx="1" fill="currentColor"/><rect x="4.5" y="4.5" width="3" height="7.5" rx="1" fill="currentColor"/><rect x="9" y="2" width="3" height="10" rx="1" fill="currentColor"/><rect x="13.5" y="0" width="3" height="12" rx="1" fill="currentColor" opacity=".4"/></svg><svg width="22" height="12" viewBox="0 0 24 12" fill="none"><rect x="1" y="1" width="20" height="10" rx="3" stroke="currentColor" stroke-opacity=".5" stroke-width="1"/><rect x="2.5" y="2.5" width="15" height="7" rx="1.5" fill="currentColor"/><rect x="22" y="4" width="1.5" height="4" rx=".75" fill="currentColor"/></svg></span></div>
+        <div style="display:flex; align-items:center; gap:10px; padding:6px 18px 10px;">
+          <button onClick="{{ goToday }}" style="width:40px; height:40px; border:none; background:transparent; color:var(--muted); font-size:22px; cursor:pointer;">‹</button>
+          <div style="font-size:22px; font-weight:700; letter-spacing:var(--tracking-snug);">Settings</div>
+        </div>
+        <div class="os-scroll" style="flex:1; overflow:auto; padding:6px 22px 28px;">
+          <!-- units -->
+          <div style="font-size:11px; font-weight:700; letter-spacing:var(--tracking-caps); text-transform:uppercase; font-family:var(--font-label); color:var(--faint); margin:4px 4px 8px;">Units</div>
+          <div style="display:flex; align-items:center; justify-content:space-between; padding:14px 16px; background:var(--surface); border:1px solid var(--border-card); border-radius:var(--r-md);">
+            <span style="font-size:14px; font-weight:600;">Weight unit</span>
+            <div style="display:flex; gap:4px; background:var(--bg); padding:4px; border-radius:var(--r-sm);">
+              <span style="padding:6px 14px; border-radius:7px; background:var(--accent); color:var(--accent-ink); font-size:13px; font-weight:700; font-family:var(--font-num);">kg</span>
+              <span style="padding:6px 14px; border-radius:7px; color:var(--muted); font-size:13px; font-weight:600; font-family:var(--font-num);">lb</span>
+            </div>
+          </div>
+          <div style="font-size:11px; color:var(--faint); margin:8px 4px 0; line-height:1.4;">kg is canonical. lb is converted for display only — e.g. 84 kg = 185 lb.</div>
+
+          <!-- training -->
+          <div style="font-size:11px; font-weight:700; letter-spacing:var(--tracking-caps); text-transform:uppercase; font-family:var(--font-label); color:var(--faint); margin:22px 4px 8px;">Training</div>
+          <div style="background:var(--surface); border:1px solid var(--border-card); border-radius:var(--r-md); overflow:hidden;">
+            <div onClick="{{ goPlates }}" style="display:flex; align-items:center; gap:12px; padding:14px 16px; border-bottom:1px solid var(--border); cursor:pointer;"><span style="flex:1; font-size:14px; font-weight:500;">Plate inventory</span><span style="display:flex; gap:4px;"><span style="font-size:10px; color:var(--muted); background:var(--bg); padding:3px 7px; border-radius:var(--r-pill); font-family:var(--font-num);">25</span><span style="font-size:10px; color:var(--muted); background:var(--bg); padding:3px 7px; border-radius:var(--r-pill); font-family:var(--font-num);">20</span><span style="font-size:10px; color:var(--muted); background:var(--bg); padding:3px 7px; border-radius:var(--r-pill); font-family:var(--font-num);">+5</span></span><span style="color:var(--faint); font-size:18px;">›</span></div>
+            <div onClick="{{ goRestDefaults }}" style="display:flex; align-items:center; gap:12px; padding:14px 16px; border-bottom:1px solid var(--border); cursor:pointer;"><span style="flex:1; font-size:14px; font-weight:500;">Default rest</span><span style="font-size:13px; color:var(--muted); font-family:var(--font-num);">2:00</span><span style="color:var(--faint); font-size:18px;">›</span></div>
+            <div onClick="{{ goGoals }}" style="display:flex; align-items:center; gap:12px; padding:14px 16px; border-bottom:1px solid var(--border); cursor:pointer;"><span style="flex:1; font-size:14px; font-weight:500;">Goals</span><span style="font-size:13px; color:var(--muted); font-family:var(--font-num);">3 active</span><span style="color:var(--faint); font-size:18px;">›</span></div>
+            <div onClick="{{ goMeasurements }}" style="display:flex; align-items:center; gap:12px; padding:14px 16px; cursor:pointer;"><span style="flex:1; font-size:14px; font-weight:500;">Body measurements</span><span style="color:var(--faint); font-size:18px;">›</span></div>
+          </div>
+
+          <!-- appearance -->
+          <div style="font-size:11px; font-weight:700; letter-spacing:var(--tracking-caps); text-transform:uppercase; font-family:var(--font-label); color:var(--faint); margin:22px 4px 8px;">App</div>
+          <div style="background:var(--surface); border:1px solid var(--border-card); border-radius:var(--r-md); overflow:hidden;">
+            <div onClick="{{ goAppearance }}" style="display:flex; align-items:center; gap:12px; padding:14px 16px; border-bottom:1px solid var(--border); cursor:pointer;"><span style="flex:1; font-size:14px; font-weight:500;">Appearance</span><span style="font-size:13px; color:var(--muted);">Tempo · Dark</span><span style="color:var(--faint); font-size:18px;">›</span></div>
+            <div onClick="{{ goBackup }}" style="display:flex; align-items:center; gap:12px; padding:14px 16px; border-bottom:1px solid var(--border); cursor:pointer;"><span style="flex:1; font-size:14px; font-weight:500;">Backup &amp; export</span><span style="color:var(--faint); font-size:18px;">›</span></div>
+            <div style="display:flex; align-items:center; gap:12px; padding:14px 16px;"><span style="flex:1; font-size:14px; font-weight:500;">Import data</span><span style="color:var(--faint); font-size:18px;">›</span></div>
+          </div>
+
+          <!-- privacy -->
+          <div style="margin-top:22px; padding:16px; background:color-mix(in oklab, var(--accent) 7%, var(--surface)); border:1px solid color-mix(in oklab, var(--accent) 16%, transparent); border-radius:var(--r-md);">
+            <div style="display:flex; align-items:center; gap:8px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6z" stroke="var(--accent)" stroke-width="1.6" stroke-linejoin="round"/></svg><span style="font-size:13px; font-weight:700; color:var(--accent);">Private by default</span></div>
+            <div style="font-size:12.5px; color:var(--muted); margin-top:6px; line-height:1.5;">Your data never leaves your device. No account, no sync, no tracking.</div>
+          </div>
+          <div style="font-size:11px; color:var(--faint); text-align:center; margin-top:18px; line-height:1.5;">Educational tool — not medical advice.<br/>v1.0 · Licenses · Privacy policy</div>
+        </div>
+      </div>
+      </sc-if>
+
+      <!-- ========== MEASUREMENTS ========== -->
+      <sc-if value="{{ showMeasurements }}" hint-placeholder-val="{{ false }}">
+      <div style="position:absolute; inset:0; display:flex; flex-direction:column;">
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:15px 28px 4px; font-size:14px; font-weight:600; flex:none;"><span style="font-family:var(--font-num); font-weight:var(--num-weight); font-variant-numeric:tabular-nums;">9:41</span><span style="display:flex; gap:6px; align-items:center;"><svg width="17" height="12" viewBox="0 0 17 12" fill="none"><rect x="0" y="7" width="3" height="5" rx="1" fill="currentColor"/><rect x="4.5" y="4.5" width="3" height="7.5" rx="1" fill="currentColor"/><rect x="9" y="2" width="3" height="10" rx="1" fill="currentColor"/><rect x="13.5" y="0" width="3" height="12" rx="1" fill="currentColor" opacity=".4"/></svg><svg width="22" height="12" viewBox="0 0 24 12" fill="none"><rect x="1" y="1" width="20" height="10" rx="3" stroke="currentColor" stroke-opacity=".5" stroke-width="1"/><rect x="2.5" y="2.5" width="15" height="7" rx="1.5" fill="currentColor"/><rect x="22" y="4" width="1.5" height="4" rx=".75" fill="currentColor"/></svg></span></div>
+        <div style="display:flex; align-items:center; gap:10px; padding:6px 18px 8px;">
+          <button onClick="{{ goSettings }}" style="width:40px; height:40px; border:none; background:transparent; color:var(--muted); font-size:22px; cursor:pointer;">‹</button>
+          <div style="font-size:20px; font-weight:700; letter-spacing:var(--tracking-snug);">Measurements</div>
+        </div>
+        <div class="os-scroll" style="flex:1; overflow:auto; padding:6px 22px 28px;">
+          <!-- stats -->
+          <div style="display:flex; gap:10px;">
+            <div style="flex:1; padding:16px; background:var(--surface); border:1px solid var(--border-card); border-radius:var(--r-md);"><div style="font-size:11px; color:var(--muted);">Bodyweight</div><div style="font-size:22px; font-weight:600; margin-top:4px; font-family:var(--font-num); font-weight:var(--num-weight); font-variant-numeric:tabular-nums;">82.4<span style="font-size:12px; color:var(--muted);">kg</span></div><div style="font-size:11px; color:var(--success); margin-top:4px;">+0.6 / 4wk</div></div>
+            <div style="flex:1; padding:16px; background:var(--surface); border:1px solid var(--border-card); border-radius:var(--r-md);"><div style="font-size:11px; color:var(--muted);">Waist</div><div style="font-size:22px; font-weight:600; margin-top:4px; font-family:var(--font-num); font-weight:var(--num-weight); font-variant-numeric:tabular-nums;">82<span style="font-size:12px; color:var(--muted);">cm</span></div><div style="font-size:11px; color:var(--muted); margin-top:4px;">−1 / 4wk</div></div>
+          </div>
+          <!-- progress photos compare -->
+          <div style="font-size:11px; font-weight:700; letter-spacing:var(--tracking-caps); text-transform:uppercase; font-family:var(--font-label); color:var(--faint); margin:22px 4px 10px;">Progress photos</div>
+          <div style="display:flex; gap:10px;">
+            <div style="flex:1;">
+              <div style="aspect-ratio:3/4; border-radius:var(--r-md); background:var(--surface); border:1px dashed var(--border-strong); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; color:var(--faint);"><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><rect x="3" y="5" width="18" height="14" rx="2" stroke="currentColor" stroke-width="1.5"/><circle cx="8.5" cy="10" r="1.5" fill="currentColor"/><path d="M5 17l4.5-4 3 2.5L17 11l2 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span style="font-size:10px;">Add photo</span></div>
+              <div style="text-align:center; font-size:11px; color:var(--muted); margin-top:6px; font-family:var(--font-num);">Mar 1 · 80.1 kg</div>
+            </div>
+            <div style="flex:1;">
+              <div style="aspect-ratio:3/4; border-radius:var(--r-md); background:var(--surface); border:1px dashed var(--border-strong); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; color:var(--faint);"><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><rect x="3" y="5" width="18" height="14" rx="2" stroke="currentColor" stroke-width="1.5"/><circle cx="8.5" cy="10" r="1.5" fill="currentColor"/><path d="M5 17l4.5-4 3 2.5L17 11l2 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span style="font-size:10px;">Add photo</span></div>
+              <div style="text-align:center; font-size:11px; color:var(--muted); margin-top:6px; font-family:var(--font-num);">Jun 19 · 82.4 kg</div>
+            </div>
+          </div>
+          <button style="margin-top:16px; width:100%; height:48px; border:none; border-radius:var(--r-md); background:var(--accent); color:var(--accent-ink); font-size:14px; font-weight:700; cursor:pointer;">Log measurement</button>
+        </div>
+      </div>
+      </sc-if>
+
+      <!-- ========== GOALS ========== -->
+      <sc-if value="{{ showGoals }}" hint-placeholder-val="{{ false }}">
+      <div style="position:absolute; inset:0; display:flex; flex-direction:column;">
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:15px 28px 4px; font-size:14px; font-weight:600; flex:none;"><span style="font-family:var(--font-num); font-weight:var(--num-weight); font-variant-numeric:tabular-nums;">9:41</span><span style="display:flex; gap:6px; align-items:center;"><svg width="17" height="12" viewBox="0 0 17 12" fill="none"><rect x="0" y="7" width="3" height="5" rx="1" fill="currentColor"/><rect x="4.5" y="4.5" width="3" height="7.5" rx="1" fill="currentColor"/><rect x="9" y="2" width="3" height="10" rx="1" fill="currentColor"/><rect x="13.5" y="0" width="3" height="12" rx="1" fill="currentColor" opacity=".4"/></svg><svg width="22" height="12" viewBox="0 0 24 12" fill="none"><rect x="1" y="1" width="20" height="10" rx="3" stroke="currentColor" stroke-opacity=".5" stroke-width="1"/><rect x="2.5" y="2.5" width="15" height="7" rx="1.5" fill="currentColor"/><rect x="22" y="4" width="1.5" height="4" rx=".75" fill="currentColor"/></svg></span></div>
+        <div style="display:flex; align-items:center; gap:10px; padding:6px 18px 8px;">
+          <button onClick="{{ goSettings }}" style="width:40px; height:40px; border:none; background:transparent; color:var(--muted); font-size:22px; cursor:pointer;">‹</button>
+          <div style="font-size:20px; font-weight:700; letter-spacing:var(--tracking-snug);">Goals</div>
+        </div>
+        <div class="os-scroll" style="flex:1; overflow:auto; padding:6px 22px 28px;">
+          <div style="display:flex; flex-direction:column; gap:12px;">
+            <div style="padding:16px 18px; background:var(--surface); border:1px solid var(--border-card); border-radius:var(--r-md);">
+              <div style="display:flex; justify-content:space-between; align-items:baseline;"><span style="font-size:14px; font-weight:600; white-space:nowrap;">Bench Press 100 kg</span><span style="font-size:13px; color:var(--accent); font-family:var(--font-num); font-weight:var(--num-weight);">84%</span></div>
+              <div style="height:8px; border-radius:5px; background:var(--bg); margin-top:10px; overflow:hidden;"><div style="height:100%; width:84%; border-radius:5px; background:var(--accent);"></div></div>
+              <div style="font-size:11.5px; color:var(--muted); margin-top:8px; font-family:var(--font-num);">e1RM 102.4 → goal 100 · reached</div>
+            </div>
+            <div style="padding:16px 18px; background:var(--surface); border:1px solid var(--border-card); border-radius:var(--r-md);">
+              <div style="display:flex; justify-content:space-between; align-items:baseline;"><span style="font-size:14px; font-weight:600; white-space:nowrap;">Train 4× / week</span><span style="font-size:13px; color:var(--accent); font-family:var(--font-num); font-weight:var(--num-weight);">75%</span></div>
+              <div style="height:8px; border-radius:5px; background:var(--bg); margin-top:10px; overflow:hidden;"><div style="height:100%; width:75%; border-radius:5px; background:var(--accent);"></div></div>
+              <div style="font-size:11.5px; color:var(--muted); margin-top:8px; font-family:var(--font-num);">3 of 4 sessions this week</div>
+            </div>
+            <div style="padding:16px 18px; background:var(--surface); border:1px solid var(--border-card); border-radius:var(--r-md);">
+              <div style="display:flex; justify-content:space-between; align-items:baseline;"><span style="font-size:14px; font-weight:600; white-space:nowrap;">Bodyweight 85 kg</span><span style="font-size:13px; color:var(--muted); font-family:var(--font-num); font-weight:var(--num-weight);">55%</span></div>
+              <div style="height:8px; border-radius:5px; background:var(--bg); margin-top:10px; overflow:hidden;"><div style="height:100%; width:55%; border-radius:5px; background:var(--accent);"></div></div>
+              <div style="font-size:11.5px; color:var(--muted); margin-top:8px; font-family:var(--font-num);">82.4 → 85 kg · +2.6 to go</div>
+            </div>
+          </div>
+          <button style="margin-top:16px; width:100%; height:48px; border:1px dashed var(--border-strong); border-radius:var(--r-md); background:transparent; color:var(--accent); font-size:14px; font-weight:600; cursor:pointer;">＋ New goal</button>
+        </div>
+      </div>
+      </sc-if>
+
+      <!-- ========== PLATE INVENTORY EDITOR ========== -->
+      <sc-if value="{{ showPlates }}" hint-placeholder-val="{{ false }}">
+      <div style="position:absolute; inset:0; display:flex; flex-direction:column;">
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:15px 28px 4px; font-size:14px; font-weight:600; flex:none;"><span style="font-family:var(--font-num); font-weight:var(--num-weight); font-variant-numeric:tabular-nums;">9:41</span><span style="display:flex; gap:6px; align-items:center;"><svg width="17" height="12" viewBox="0 0 17 12" fill="none"><rect x="0" y="7" width="3" height="5" rx="1" fill="currentColor"/><rect x="4.5" y="4.5" width="3" height="7.5" rx="1" fill="currentColor"/><rect x="9" y="2" width="3" height="10" rx="1" fill="currentColor"/><rect x="13.5" y="0" width="3" height="12" rx="1" fill="currentColor" opacity=".4"/></svg><svg width="22" height="12" viewBox="0 0 24 12" fill="none"><rect x="1" y="1" width="20" height="10" rx="3" stroke="currentColor" stroke-opacity=".5" stroke-width="1"/><rect x="2.5" y="2.5" width="15" height="7" rx="1.5" fill="currentColor"/><rect x="22" y="4" width="1.5" height="4" rx=".75" fill="currentColor"/></svg></span></div>
+        <div style="display:flex; align-items:center; gap:10px; padding:6px 18px 8px;"><button onClick="{{ goSettings }}" style="width:40px; height:40px; border:none; background:transparent; color:var(--muted); font-size:22px; cursor:pointer;">‹</button><div style="font-size:20px; font-weight:700; letter-spacing:var(--tracking-snug);">Plate inventory</div></div>
+        <div class="os-scroll" style="flex:1; overflow:auto; padding:6px 22px 28px;">
+          <div style="font-size:13px; color:var(--muted); margin:2px 2px 14px; line-height:1.4;">Plates you own, per side. Used to round prescriptions to loadable weights.</div>
+          <div style="display:flex; flex-direction:column; gap:8px;">
+            <div style="display:flex; align-items:center; gap:14px; padding:11px 14px; background:var(--surface); border:1px solid var(--border-card); border-radius:var(--r-md);"><span style="width:16px; height:16px; border-radius:50%; background:var(--accent);"></span><span style="flex:1; font-size:15px; font-weight:600; font-family:var(--font-num); font-variant-numeric:tabular-nums;">25<span style="font-size:11px; color:var(--muted);"> kg</span></span><div style="display:flex; align-items:center; gap:10px;"><button style="width:36px; height:36px; border:none; border-radius:var(--r-sm); background:var(--surface-2); color:var(--text); font-size:18px; cursor:pointer;">−</button><span style="font-size:15px; font-family:var(--font-num); font-variant-numeric:tabular-nums; width:18px; text-align:center;">4</span><button style="width:36px; height:36px; border:none; border-radius:var(--r-sm); background:var(--surface-2); color:var(--text); font-size:18px; cursor:pointer;">+</button></div></div>
+            <div style="display:flex; align-items:center; gap:14px; padding:11px 14px; background:var(--surface); border:1px solid var(--border-card); border-radius:var(--r-md);"><span style="width:16px; height:16px; border-radius:50%; background:color-mix(in oklab, var(--accent) 70%, var(--surface-2));"></span><span style="flex:1; font-size:15px; font-weight:600; font-family:var(--font-num); font-variant-numeric:tabular-nums;">20<span style="font-size:11px; color:var(--muted);"> kg</span></span><div style="display:flex; align-items:center; gap:10px;"><button style="width:36px; height:36px; border:none; border-radius:var(--r-sm); background:var(--surface-2); color:var(--text); font-size:18px; cursor:pointer;">−</button><span style="font-size:15px; font-family:var(--font-num); font-variant-numeric:tabular-nums; width:18px; text-align:center;">2</span><button style="width:36px; height:36px; border:none; border-radius:var(--r-sm); background:var(--surface-2); color:var(--text); font-size:18px; cursor:pointer;">+</button></div></div>
+            <div style="display:flex; align-items:center; gap:14px; padding:11px 14px; background:var(--surface); border:1px solid var(--border-card); border-radius:var(--r-md);"><span style="width:14px; height:14px; border-radius:50%; background:color-mix(in oklab, var(--accent) 50%, var(--surface-2));"></span><span style="flex:1; font-size:15px; font-weight:600; font-family:var(--font-num); font-variant-numeric:tabular-nums;">10<span style="font-size:11px; color:var(--muted);"> kg</span></span><div style="display:flex; align-items:center; gap:10px;"><button style="width:36px; height:36px; border:none; border-radius:var(--r-sm); background:var(--surface-2); color:var(--text); font-size:18px; cursor:pointer;">−</button><span style="font-size:15px; font-family:var(--font-num); font-variant-numeric:tabular-nums; width:18px; text-align:center;">2</span><button style="width:36px; height:36px; border:none; border-radius:var(--r-sm); background:var(--surface-2); color:var(--text); font-size:18px; cursor:pointer;">+</button></div></div>
+            <div style="display:flex; align-items:center; gap:14px; padding:11px 14px; background:var(--surface); border:1px solid var(--border-card); border-radius:var(--r-md);"><span style="width:12px; height:12px; border-radius:50%; background:var(--surface-2);"></span><span style="flex:1; font-size:15px; font-weight:600; font-family:var(--font-num); font-variant-numeric:tabular-nums;">5<span style="font-size:11px; color:var(--muted);"> kg</span></span><div style="display:flex; align-items:center; gap:10px;"><button style="width:36px; height:36px; border:none; border-radius:var(--r-sm); background:var(--surface-2); color:var(--text); font-size:18px; cursor:pointer;">−</button><span style="font-size:15px; font-family:var(--font-num); font-variant-numeric:tabular-nums; width:18px; text-align:center;">2</span><button style="width:36px; height:36px; border:none; border-radius:var(--r-sm); background:var(--surface-2); color:var(--text); font-size:18px; cursor:pointer;">+</button></div></div>
+            <div style="display:flex; align-items:center; gap:14px; padding:11px 14px; background:var(--surface); border:1px solid var(--border-card); border-radius:var(--r-md);"><span style="width:10px; height:10px; border-radius:50%; background:var(--surface-2);"></span><span style="flex:1; font-size:15px; font-weight:600; font-family:var(--font-num); font-variant-numeric:tabular-nums;">2.5<span style="font-size:11px; color:var(--muted);"> kg</span></span><div style="display:flex; align-items:center; gap:10px;"><button style="width:36px; height:36px; border:none; border-radius:var(--r-sm); background:var(--surface-2); color:var(--text); font-size:18px; cursor:pointer;">−</button><span style="font-size:15px; font-family:var(--font-num); font-variant-numeric:tabular-nums; width:18px; text-align:center;">2</span><button style="width:36px; height:36px; border:none; border-radius:var(--r-sm); background:var(--surface-2); color:var(--text); font-size:18px; cursor:pointer;">+</button></div></div>
+            <div style="display:flex; align-items:center; gap:14px; padding:11px 14px; background:var(--surface); border:1px solid var(--border-card); border-radius:var(--r-md);"><span style="width:9px; height:9px; border-radius:50%; background:var(--surface-2);"></span><span style="flex:1; font-size:15px; font-weight:600; font-family:var(--font-num); font-variant-numeric:tabular-nums;">1.25<span style="font-size:11px; color:var(--muted);"> kg</span></span><div style="display:flex; align-items:center; gap:10px;"><button style="width:36px; height:36px; border:none; border-radius:var(--r-sm); background:var(--surface-2); color:var(--text); font-size:18px; cursor:pointer;">−</button><span style="font-size:15px; font-family:var(--font-num); font-variant-numeric:tabular-nums; width:18px; text-align:center;">2</span><button style="width:36px; height:36px; border:none; border-radius:var(--r-sm); background:var(--surface-2); color:var(--text); font-size:18px; cursor:pointer;">+</button></div></div>
+          </div>
+        </div>
+      </div>
+      </sc-if>
+
+      <!-- ========== REST TIMER DEFAULTS ========== -->
+      <sc-if value="{{ showRestDefaults }}" hint-placeholder-val="{{ false }}">
+      <div style="position:absolute; inset:0; display:flex; flex-direction:column;">
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:15px 28px 4px; font-size:14px; font-weight:600; flex:none;"><span style="font-family:var(--font-num); font-weight:var(--num-weight); font-variant-numeric:tabular-nums;">9:41</span><span style="display:flex; gap:6px; align-items:center;"><svg width="17" height="12" viewBox="0 0 17 12" fill="none"><rect x="0" y="7" width="3" height="5" rx="1" fill="currentColor"/><rect x="4.5" y="4.5" width="3" height="7.5" rx="1" fill="currentColor"/><rect x="9" y="2" width="3" height="10" rx="1" fill="currentColor"/><rect x="13.5" y="0" width="3" height="12" rx="1" fill="currentColor" opacity=".4"/></svg><svg width="22" height="12" viewBox="0 0 24 12" fill="none"><rect x="1" y="1" width="20" height="10" rx="3" stroke="currentColor" stroke-opacity=".5" stroke-width="1"/><rect x="2.5" y="2.5" width="15" height="7" rx="1.5" fill="currentColor"/><rect x="22" y="4" width="1.5" height="4" rx=".75" fill="currentColor"/></svg></span></div>
+        <div style="display:flex; align-items:center; gap:10px; padding:6px 18px 8px;"><button onClick="{{ goSettings }}" style="width:40px; height:40px; border:none; background:transparent; color:var(--muted); font-size:22px; cursor:pointer;">‹</button><div style="font-size:20px; font-weight:700; letter-spacing:var(--tracking-snug);">Rest timer</div></div>
+        <div class="os-scroll" style="flex:1; overflow:auto; padding:6px 22px 28px;">
+          <div style="display:flex; align-items:center; justify-content:space-between; padding:14px 16px; background:var(--surface); border:1px solid var(--border-card); border-radius:var(--r-md);">
+            <span style="font-size:14px; font-weight:600;">Auto-start on logged set</span>
+            <span style="width:46px; height:28px; border-radius:var(--r-pill); background:var(--accent); position:relative; flex:none;"><span style="position:absolute; top:3px; right:3px; width:22px; height:22px; border-radius:50%; background:var(--accent-ink);"></span></span>
+          </div>
+          <div style="font-size:11px; font-weight:700; letter-spacing:var(--tracking-caps); text-transform:uppercase; font-family:var(--font-label); color:var(--faint); margin:22px 4px 10px;">Default by exercise type</div>
+          <div style="display:flex; flex-direction:column; gap:8px;">
+            <div style="display:flex; align-items:center; justify-content:space-between; padding:14px 16px; background:var(--surface); border:1px solid var(--border-card); border-radius:var(--r-md);"><span style="font-size:14px;">Compound</span><span style="font-size:16px; font-weight:600; color:var(--accent); font-family:var(--font-num); font-variant-numeric:tabular-nums;">3:00</span></div>
+            <div style="display:flex; align-items:center; justify-content:space-between; padding:14px 16px; background:var(--surface); border:1px solid var(--border-card); border-radius:var(--r-md);"><span style="font-size:14px;">Isolation</span><span style="font-size:16px; font-weight:600; color:var(--accent); font-family:var(--font-num); font-variant-numeric:tabular-nums;">2:00</span></div>
+            <div style="display:flex; align-items:center; justify-content:space-between; padding:14px 16px; background:var(--surface); border:1px solid var(--border-card); border-radius:var(--r-md);"><span style="font-size:14px;">Accessory</span><span style="font-size:16px; font-weight:600; color:var(--accent); font-family:var(--font-num); font-variant-numeric:tabular-nums;">1:30</span></div>
+          </div>
+          <div style="font-size:11px; font-weight:700; letter-spacing:var(--tracking-caps); text-transform:uppercase; font-family:var(--font-label); color:var(--faint); margin:22px 4px 10px;">±  Step</div>
+          <div style="display:flex; gap:6px; background:var(--surface); border:1px solid var(--border-card); padding:5px; border-radius:var(--r-md);">
+            <span style="flex:1; text-align:center; padding:10px; border-radius:var(--r-sm); color:var(--muted); font-size:14px; font-weight:600; font-family:var(--font-num);">10s</span>
+            <span style="flex:1; text-align:center; padding:10px; border-radius:var(--r-sm); background:var(--accent); color:var(--accent-ink); font-size:14px; font-weight:700; font-family:var(--font-num);">15s</span>
+            <span style="flex:1; text-align:center; padding:10px; border-radius:var(--r-sm); color:var(--muted); font-size:14px; font-weight:600; font-family:var(--font-num);">30s</span>
+          </div>
+        </div>
+      </div>
+      </sc-if>
+
+      <!-- ========== CUSTOM EXERCISE CREATE ========== -->
+      <sc-if value="{{ showCustom }}" hint-placeholder-val="{{ false }}">
+      <div style="position:absolute; inset:0; display:flex; flex-direction:column;">
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:15px 28px 4px; font-size:14px; font-weight:600; flex:none;"><span style="font-family:var(--font-num); font-weight:var(--num-weight); font-variant-numeric:tabular-nums;">9:41</span><span style="display:flex; gap:6px; align-items:center;"><svg width="17" height="12" viewBox="0 0 17 12" fill="none"><rect x="0" y="7" width="3" height="5" rx="1" fill="currentColor"/><rect x="4.5" y="4.5" width="3" height="7.5" rx="1" fill="currentColor"/><rect x="9" y="2" width="3" height="10" rx="1" fill="currentColor"/><rect x="13.5" y="0" width="3" height="12" rx="1" fill="currentColor" opacity=".4"/></svg><svg width="22" height="12" viewBox="0 0 24 12" fill="none"><rect x="1" y="1" width="20" height="10" rx="3" stroke="currentColor" stroke-opacity=".5" stroke-width="1"/><rect x="2.5" y="2.5" width="15" height="7" rx="1.5" fill="currentColor"/><rect x="22" y="4" width="1.5" height="4" rx=".75" fill="currentColor"/></svg></span></div>
+        <div style="display:flex; align-items:center; justify-content:space-between; padding:6px 18px 8px;"><div style="display:flex; align-items:center; gap:8px;"><button onClick="{{ goLibrary }}" style="width:40px; height:40px; border:none; background:transparent; color:var(--muted); font-size:22px; cursor:pointer;">‹</button><div style="font-size:20px; font-weight:700; letter-spacing:var(--tracking-snug);">New exercise</div></div><button onClick="{{ goLibrary }}" style="height:38px; padding:0 16px; border:none; border-radius:var(--r-md); background:var(--accent); color:var(--accent-ink); font-size:13px; font-weight:700; cursor:pointer;">Save</button></div>
+        <div class="os-scroll" style="flex:1; overflow:auto; padding:6px 22px 28px;">
+          <div style="aspect-ratio:16/9; border-radius:var(--r-md); background:var(--surface); border:1px dashed var(--border-strong); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; color:var(--faint);"><svg width="26" height="26" viewBox="0 0 24 24" fill="none"><rect x="3" y="5" width="18" height="14" rx="2" stroke="currentColor" stroke-width="1.5"/><circle cx="8.5" cy="10" r="1.5" fill="currentColor"/><path d="M5 17l4.5-4 3 2.5L17 11l2 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span style="font-size:11px;">Add a photo (optional)</span></div>
+          <div style="margin-top:16px; padding:0 16px; height:50px; display:flex; align-items:center; background:var(--surface); border:1px solid var(--border-card); border-radius:var(--r-md); font-size:15px; color:var(--faint);">Exercise name</div>
+          <div style="font-size:11px; font-weight:700; letter-spacing:var(--tracking-caps); text-transform:uppercase; font-family:var(--font-label); color:var(--faint); margin:20px 4px 10px;">Primary muscle</div>
+          <div style="display:flex; flex-wrap:wrap; gap:8px;"><span style="font-size:13px; font-weight:600; color:var(--accent-ink); background:var(--accent); padding:9px 15px; border-radius:var(--r-pill);">Chest</span><span style="font-size:13px; color:var(--muted); background:var(--surface); border:1px solid var(--border-card); padding:9px 15px; border-radius:var(--r-pill);">Back</span><span style="font-size:13px; color:var(--muted); background:var(--surface); border:1px solid var(--border-card); padding:9px 15px; border-radius:var(--r-pill);">Legs</span><span style="font-size:13px; color:var(--muted); background:var(--surface); border:1px solid var(--border-card); padding:9px 15px; border-radius:var(--r-pill);">Shoulders</span></div>
+          <div style="font-size:11px; font-weight:700; letter-spacing:var(--tracking-caps); text-transform:uppercase; font-family:var(--font-label); color:var(--faint); margin:20px 4px 10px;">Equipment &amp; mechanic</div>
+          <div style="display:flex; gap:8px;"><span style="flex:1; text-align:center; font-size:13px; font-weight:600; color:var(--accent-ink); background:var(--accent); padding:11px; border-radius:var(--r-md);">Barbell</span><span style="flex:1; text-align:center; font-size:13px; color:var(--muted); background:var(--surface); border:1px solid var(--border-card); padding:11px; border-radius:var(--r-md);">Dumbbell</span><span style="flex:1; text-align:center; font-size:13px; color:var(--muted); background:var(--surface); border:1px solid var(--border-card); padding:11px; border-radius:var(--r-md);">Machine</span></div>
+        </div>
+      </div>
+      </sc-if>
+
+      <!-- ========== BACKUP & DATA ========== -->
+      <sc-if value="{{ showBackup }}" hint-placeholder-val="{{ false }}">
+      <div style="position:absolute; inset:0; display:flex; flex-direction:column;">
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:15px 28px 4px; font-size:14px; font-weight:600; flex:none;"><span style="font-family:var(--font-num); font-weight:var(--num-weight); font-variant-numeric:tabular-nums;">9:41</span><span style="display:flex; gap:6px; align-items:center;"><svg width="17" height="12" viewBox="0 0 17 12" fill="none"><rect x="0" y="7" width="3" height="5" rx="1" fill="currentColor"/><rect x="4.5" y="4.5" width="3" height="7.5" rx="1" fill="currentColor"/><rect x="9" y="2" width="3" height="10" rx="1" fill="currentColor"/><rect x="13.5" y="0" width="3" height="12" rx="1" fill="currentColor" opacity=".4"/></svg><svg width="22" height="12" viewBox="0 0 24 12" fill="none"><rect x="1" y="1" width="20" height="10" rx="3" stroke="currentColor" stroke-opacity=".5" stroke-width="1"/><rect x="2.5" y="2.5" width="15" height="7" rx="1.5" fill="currentColor"/><rect x="22" y="4" width="1.5" height="4" rx=".75" fill="currentColor"/></svg></span></div>
+        <div style="display:flex; align-items:center; gap:10px; padding:6px 18px 8px;"><button onClick="{{ goSettings }}" style="width:40px; height:40px; border:none; background:transparent; color:var(--muted); font-size:22px; cursor:pointer;">‹</button><div style="font-size:20px; font-weight:700; letter-spacing:var(--tracking-snug);">Backup &amp; data</div></div>
+        <div class="os-scroll" style="flex:1; overflow:auto; padding:6px 22px 28px;">
+          <div style="display:flex; align-items:center; justify-content:space-between; padding:14px 16px; background:var(--surface); border:1px solid var(--border-card); border-radius:var(--r-md);"><span style="font-size:14px; font-weight:500;">Last backup</span><span style="font-size:13px; color:var(--muted); font-family:var(--font-num);">Jun 18 · auto</span></div>
+          <div style="margin-top:16px; padding:18px; background:var(--surface); border:1px solid var(--border-card); border-radius:var(--r-lg);">
+            <div style="font-size:14px; font-weight:600;">Export everything</div>
+            <div style="font-size:12.5px; color:var(--muted); margin-top:4px; line-height:1.45;">Workouts, programs, measurements and settings as a single file.</div>
+            <div style="display:flex; gap:8px; margin-top:14px;">
+              <span style="flex:1; text-align:center; font-size:13px; font-weight:700; color:var(--accent-ink); background:var(--accent); padding:11px; border-radius:var(--r-md); font-family:var(--font-num);">JSON</span>
+              <span style="flex:1; text-align:center; font-size:13px; color:var(--muted); background:var(--bg); padding:11px; border-radius:var(--r-md); font-family:var(--font-num);">CSV</span>
+            </div>
+            <button style="margin-top:12px; width:100%; height:50px; border:none; border-radius:var(--r-md); background:var(--accent); color:var(--accent-ink); font-size:14px; font-weight:700; cursor:pointer;">Export data</button>
+          </div>
+          <button style="margin-top:12px; width:100%; height:50px; border:1px solid var(--border-strong); border-radius:var(--r-md); background:transparent; color:var(--text); font-size:14px; font-weight:600; cursor:pointer;">Restore from file</button>
+          <div style="margin-top:18px; padding:14px 16px; background:color-mix(in oklab, var(--accent) 7%, var(--surface)); border:1px solid color-mix(in oklab, var(--accent) 16%, transparent); border-radius:var(--r-md); font-size:12.5px; color:var(--muted); line-height:1.5;">Backups are created on-device. <span style="color:var(--text); font-weight:600;">Nothing is uploaded</span> unless you share the file yourself.</div>
+        </div>
+      </div>
+      </sc-if>
+
+      <!-- ========== APPEARANCE ========== -->
+      <sc-if value="{{ showAppearance }}" hint-placeholder-val="{{ false }}">
+      <div style="position:absolute; inset:0; display:flex; flex-direction:column;">
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:15px 28px 4px; font-size:14px; font-weight:600; flex:none;">
+          <span style="font-family:var(--font-num); font-weight:var(--num-weight); font-variant-numeric:tabular-nums;">9:41</span>
+          <span style="display:flex; gap:6px; align-items:center;"><svg width="17" height="12" viewBox="0 0 17 12" fill="none"><rect x="0" y="7" width="3" height="5" rx="1" fill="currentColor"/><rect x="4.5" y="4.5" width="3" height="7.5" rx="1" fill="currentColor"/><rect x="9" y="2" width="3" height="10" rx="1" fill="currentColor"/><rect x="13.5" y="0" width="3" height="12" rx="1" fill="currentColor" opacity=".4"/></svg><svg width="22" height="12" viewBox="0 0 24 12" fill="none"><rect x="1" y="1" width="20" height="10" rx="3" stroke="currentColor" stroke-opacity=".5" stroke-width="1"/><rect x="2.5" y="2.5" width="15" height="7" rx="1.5" fill="currentColor"/><rect x="22" y="4" width="1.5" height="4" rx=".75" fill="currentColor"/></svg></span>
+        </div>
+        <div style="display:flex; align-items:center; gap:10px; padding:6px 18px 10px;">
+          <button onClick="{{ goSettings }}" style="width:40px; height:40px; border:none; background:transparent; color:var(--muted); font-size:22px; cursor:pointer;">‹</button>
+          <div style="font-size:22px; font-weight:700; letter-spacing:var(--tracking-snug);">Appearance</div>
+        </div>
+        <div class="os-scroll" style="flex:1; overflow:auto; padding:6px 22px 96px;">
+          <!-- design template -->
+          <div style="font-size:11px; font-weight:700; letter-spacing:var(--tracking-caps); text-transform:uppercase; font-family:var(--font-label); color:var(--faint); margin:4px 4px 8px;">Design template</div>
+          <div style="display:grid; grid-template-columns:repeat(2,1fr); gap:10px;">
+            <button onClick="{{ setDsTempo }}" style="padding:15px 16px; background:var(--surface); border:1.5px solid {{ ringDsTempo }}; border-radius:var(--r-md); cursor:pointer; text-align:left;">
+              <div style="font-family:'Hanken Grotesk',sans-serif; font-size:15px; font-weight:600; color:var(--text);">Tempo</div>
+              <div style="font-size:11px; color:var(--muted); margin-top:4px; line-height:1.35;">Calm premium-data. Soft surfaces, humanist sans.</div>
+            </button>
+            <button onClick="{{ setDsReadout }}" style="padding:15px 16px; background:var(--surface); border:1.5px solid {{ ringDsReadout }}; border-radius:var(--r-md); cursor:pointer; text-align:left;">
+              <div style="font-family:'JetBrains Mono',monospace; font-size:15px; font-weight:700; color:var(--text);">Readout</div>
+              <div style="font-size:11px; color:var(--muted); margin-top:4px; line-height:1.35;">Technical instrument. Hairlines, mono numerals.</div>
+            </button>
+          </div>
+
+          <!-- mode -->
+          <div style="font-size:11px; font-weight:700; letter-spacing:var(--tracking-caps); text-transform:uppercase; font-family:var(--font-label); color:var(--faint); margin:22px 4px 8px;">Mode</div>
+          <div style="display:flex; gap:6px; background:var(--surface); padding:5px; border-radius:var(--r-md);">
+            <button onClick="{{ modeDark }}" style="flex:1; height:44px; border:none; border-radius:var(--r-sm); background: {{ modeDarkBg }}; color: {{ modeDarkFg }}; font-size:14px; font-weight:600; cursor:pointer;">Dark</button>
+            <button onClick="{{ modeLight }}" style="flex:1; height:44px; border:none; border-radius:var(--r-sm); background: {{ modeLightBg }}; color: {{ modeLightFg }}; font-size:14px; font-weight:600; cursor:pointer;">Light</button>
+          </div>
+
+          <!-- curated themes -->
+          <div style="font-size:11px; font-weight:700; letter-spacing:var(--tracking-caps); text-transform:uppercase; font-family:var(--font-label); color:var(--faint); margin:22px 4px 10px;">Curated themes</div>
+          <div style="display:grid; grid-template-columns:repeat(2,1fr); gap:10px;">
+            <button onClick="{{ themeTempo }}" style="display:flex; align-items:center; gap:11px; padding:13px 14px; background:var(--surface); border:1.5px solid {{ ringTempo }}; border-radius:var(--r-md); cursor:pointer; text-align:left;"><span style="width:26px; height:26px; border-radius:50%; background:#cda35f; flex:none;"></span><span><span style="display:block; font-size:13px; font-weight:600; color:var(--text);">Tempo</span><span style="display:block; font-size:10.5px; color:var(--muted);">Warm brass</span></span></button>
+            <button onClick="{{ themeTeal }}" style="display:flex; align-items:center; gap:11px; padding:13px 14px; background:var(--surface); border:1.5px solid {{ ringTeal }}; border-radius:var(--r-md); cursor:pointer; text-align:left;"><span style="width:26px; height:26px; border-radius:50%; background:#1fe0c4; flex:none;"></span><span><span style="display:block; font-size:13px; font-weight:600; color:var(--text);">Teal</span><span style="display:block; font-size:10.5px; color:var(--muted);">Readout signal</span></span></button>
+            <button onClick="{{ themeGraphite }}" style="display:flex; align-items:center; gap:11px; padding:13px 14px; background:var(--surface); border:1.5px solid {{ ringGraphite }}; border-radius:var(--r-md); cursor:pointer; text-align:left;"><span style="width:26px; height:26px; border-radius:50%; background:#e8e6e1; flex:none;"></span><span><span style="display:block; font-size:13px; font-weight:600; color:var(--text);">Graphite</span><span style="display:block; font-size:10.5px; color:var(--muted);">Monochrome</span></span></button>
+            <button onClick="{{ themeSteel }}" style="display:flex; align-items:center; gap:11px; padding:13px 14px; background:var(--surface); border:1.5px solid {{ ringSteel }}; border-radius:var(--r-md); cursor:pointer; text-align:left;"><span style="width:26px; height:26px; border-radius:50%; background:#6fa0d6; flex:none;"></span><span><span style="display:block; font-size:13px; font-weight:600; color:var(--text);">Cold Steel</span><span style="display:block; font-size:10.5px; color:var(--muted);">Cool blue-grey</span></span></button>
+            <button onClick="{{ themeVolt }}" style="display:flex; align-items:center; gap:11px; padding:13px 14px; background:var(--surface); border:1.5px solid {{ ringVolt }}; border-radius:var(--r-md); cursor:pointer; text-align:left;"><span style="width:26px; height:26px; border-radius:50%; background:#c2ee3f; flex:none;"></span><span><span style="display:block; font-size:13px; font-weight:600; color:var(--text);">Volt</span><span style="display:block; font-size:10.5px; color:var(--muted);">Electric lime</span></span></button>
+            <button onClick="{{ themeEmber }}" style="display:flex; align-items:center; gap:11px; padding:13px 14px; background:var(--surface); border:1.5px solid {{ ringEmber }}; border-radius:var(--r-md); cursor:pointer; text-align:left;"><span style="width:26px; height:26px; border-radius:50%; background:#ff7a3c; flex:none;"></span><span><span style="display:block; font-size:13px; font-weight:600; color:var(--text);">Ember</span><span style="display:block; font-size:10.5px; color:var(--muted);">Warm orange</span></span></button>
+            <button onClick="{{ themeClinic }}" style="display:flex; align-items:center; gap:11px; padding:13px 14px; background:var(--surface); border:1.5px solid {{ ringClinic }}; border-radius:var(--r-md); cursor:pointer; text-align:left;"><span style="width:26px; height:26px; border-radius:50%; background:#2f7df0; flex:none;"></span><span><span style="display:block; font-size:13px; font-weight:600; color:var(--text);">Clinic</span><span style="display:block; font-size:10.5px; color:var(--muted);">Clinical blue</span></span></button>
+            <button onClick="{{ themeMidnight }}" style="display:flex; align-items:center; gap:11px; padding:13px 14px; background:var(--surface); border:1.5px solid {{ ringMidnight }}; border-radius:var(--r-md); cursor:pointer; text-align:left;"><span style="width:26px; height:26px; border-radius:50%; background:#8d8ef2; flex:none;"></span><span><span style="display:block; font-size:13px; font-weight:600; color:var(--text);">Midnight</span><span style="display:block; font-size:10.5px; color:var(--muted);">Deep indigo</span></span></button>
+            <button onClick="{{ themeRose }}" style="display:flex; align-items:center; gap:11px; padding:13px 14px; background:var(--surface); border:1.5px solid {{ ringRose }}; border-radius:var(--r-md); cursor:pointer; text-align:left;"><span style="width:26px; height:26px; border-radius:50%; background:#e06a86; flex:none;"></span><span><span style="display:block; font-size:13px; font-weight:600; color:var(--text);">Rose</span><span style="display:block; font-size:10.5px; color:var(--muted);">Warm rose</span></span></button>
+            <button onClick="{{ themePine }}" style="display:flex; align-items:center; gap:11px; padding:13px 14px; background:var(--surface); border:1.5px solid {{ ringPine }}; border-radius:var(--r-md); cursor:pointer; text-align:left;"><span style="width:26px; height:26px; border-radius:50%; background:#3fae6b; flex:none;"></span><span><span style="display:block; font-size:13px; font-weight:600; color:var(--text);">Pine</span><span style="display:block; font-size:10.5px; color:var(--muted);">Deep forest green</span></span></button>
+          </div>
+
+          <!-- custom editor -->
+          <div style="font-size:11px; font-weight:700; letter-spacing:var(--tracking-caps); text-transform:uppercase; font-family:var(--font-label); color:var(--faint); margin:24px 4px 10px;">Custom theme</div>
+          <div style="padding:18px; background:var(--surface); border:1.5px solid {{ ringCustom }}; border-radius:var(--r-lg);">
+            <div style="display:flex; align-items:center; gap:14px;">
+              <div style="flex:1;">
+                <div style="font-size:13px; font-weight:600;">Build your own</div>
+                <div style="font-size:11.5px; color:var(--muted); margin-top:3px; line-height:1.4;">Tap a color — every surface, border and text tier derives automatically.</div>
+              </div>
+              <div style="width:52px; height:52px; border-radius:var(--r-md); background:var(--seed-accent); flex:none; box-shadow:var(--shadow-sm);"></div>
+            </div>
+            <div style="margin-top:18px;">
+              <div style="font-size:12px; color:var(--muted); margin-bottom:11px;">Accent color</div>
+              <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px;">
+                <button onClick="{{ setAccentSwatch }}" data-hue="40" data-sat="82" aria-label="Amber" style="height:48px; border:none; border-radius:var(--r-md); background:hsl(40 82% 58%); cursor:pointer;" style-active="transform:scale(0.92)"></button>
+                <button onClick="{{ setAccentSwatch }}" data-hue="22" data-sat="85" aria-label="Ember" style="height:48px; border:none; border-radius:var(--r-md); background:hsl(22 85% 58%); cursor:pointer;" style-active="transform:scale(0.92)"></button>
+                <button onClick="{{ setAccentSwatch }}" data-hue="6" data-sat="78" aria-label="Red" style="height:48px; border:none; border-radius:var(--r-md); background:hsl(6 78% 58%); cursor:pointer;" style-active="transform:scale(0.92)"></button>
+                <button onClick="{{ setAccentSwatch }}" data-hue="344" data-sat="70" aria-label="Rose" style="height:48px; border:none; border-radius:var(--r-md); background:hsl(344 70% 60%); cursor:pointer;" style-active="transform:scale(0.92)"></button>
+                <button onClick="{{ setAccentSwatch }}" data-hue="276" data-sat="58" aria-label="Violet" style="height:48px; border:none; border-radius:var(--r-md); background:hsl(276 58% 62%); cursor:pointer;" style-active="transform:scale(0.92)"></button>
+                <button onClick="{{ setAccentSwatch }}" data-hue="250" data-sat="66" aria-label="Indigo" style="height:48px; border:none; border-radius:var(--r-md); background:hsl(250 66% 62%); cursor:pointer;" style-active="transform:scale(0.92)"></button>
+                <button onClick="{{ setAccentSwatch }}" data-hue="222" data-sat="76" aria-label="Blue" style="height:48px; border:none; border-radius:var(--r-md); background:hsl(222 76% 58%); cursor:pointer;" style-active="transform:scale(0.92)"></button>
+                <button onClick="{{ setAccentSwatch }}" data-hue="200" data-sat="78" aria-label="Sky" style="height:48px; border:none; border-radius:var(--r-md); background:hsl(200 78% 56%); cursor:pointer;" style-active="transform:scale(0.92)"></button>
+                <button onClick="{{ setAccentSwatch }}" data-hue="174" data-sat="58" aria-label="Teal" style="height:48px; border:none; border-radius:var(--r-md); background:hsl(174 58% 50%); cursor:pointer;" style-active="transform:scale(0.92)"></button>
+                <button onClick="{{ setAccentSwatch }}" data-hue="80" data-sat="72" aria-label="Lime" style="height:48px; border:none; border-radius:var(--r-md); background:hsl(80 72% 54%); cursor:pointer;" style-active="transform:scale(0.92)"></button>
+                <button onClick="{{ setAccentSwatch }}" data-hue="48" data-sat="88" aria-label="Gold" style="height:48px; border:none; border-radius:var(--r-md); background:hsl(48 88% 56%); cursor:pointer;" style-active="transform:scale(0.92)"></button>
+                <button onClick="{{ setAccentSwatch }}" data-hue="14" data-sat="80" aria-label="Coral" style="height:48px; border:none; border-radius:var(--r-md); background:hsl(14 80% 62%); cursor:pointer;" style-active="transform:scale(0.92)"></button>
+                <button onClick="{{ setAccentSwatch }}" data-hue="330" data-sat="75" aria-label="Pink" style="height:48px; border:none; border-radius:var(--r-md); background:hsl(330 75% 64%); cursor:pointer;" style-active="transform:scale(0.92)"></button>
+                <button onClick="{{ setAccentSwatch }}" data-hue="300" data-sat="55" aria-label="Magenta" style="height:48px; border:none; border-radius:var(--r-md); background:hsl(300 55% 60%); cursor:pointer;" style-active="transform:scale(0.92)"></button>
+                <button onClick="{{ setAccentSwatch }}" data-hue="235" data-sat="62" aria-label="Periwinkle" style="height:48px; border:none; border-radius:var(--r-md); background:hsl(235 62% 64%); cursor:pointer;" style-active="transform:scale(0.92)"></button>
+                <button onClick="{{ setAccentSwatch }}" data-hue="190" data-sat="72" aria-label="Cyan" style="height:48px; border:none; border-radius:var(--r-md); background:hsl(190 72% 50%); cursor:pointer;" style-active="transform:scale(0.92)"></button>
+                <button onClick="{{ setAccentSwatch }}" data-hue="160" data-sat="55" aria-label="Mint" style="height:48px; border:none; border-radius:var(--r-md); background:hsl(160 55% 48%); cursor:pointer;" style-active="transform:scale(0.92)"></button>
+                <button onClick="{{ setAccentSwatch }}" data-hue="140" data-sat="55" aria-label="Green" style="height:48px; border:none; border-radius:var(--r-md); background:hsl(140 55% 46%); cursor:pointer;" style-active="transform:scale(0.92)"></button>
+                <button onClick="{{ setAccentSwatch }}" data-hue="95" data-sat="52" aria-label="Olive" style="height:48px; border:none; border-radius:var(--r-md); background:hsl(95 52% 48%); cursor:pointer;" style-active="transform:scale(0.92)"></button>
+                <button onClick="{{ setAccentSwatch }}" data-hue="0" data-sat="68" aria-label="Crimson" style="height:48px; border:none; border-radius:var(--r-md); background:hsl(0 68% 52%); cursor:pointer;" style-active="transform:scale(0.92)"></button>
+                <button onClick="{{ setAccentSwatch }}" data-hue="350" data-sat="55" aria-label="Burgundy" style="height:48px; border:none; border-radius:var(--r-md); background:hsl(350 55% 48%); cursor:pointer;" style-active="transform:scale(0.92)"></button>
+                <button onClick="{{ setAccentSwatch }}" data-hue="312" data-sat="48" aria-label="Plum" style="height:48px; border:none; border-radius:var(--r-md); background:hsl(312 48% 54%); cursor:pointer;" style-active="transform:scale(0.92)"></button>
+                <button onClick="{{ setAccentSwatch }}" data-hue="260" data-sat="72" aria-label="Royal" style="height:48px; border:none; border-radius:var(--r-md); background:hsl(260 72% 60%); cursor:pointer;" style-active="transform:scale(0.92)"></button>
+                <button onClick="{{ setAccentSwatch }}" data-hue="212" data-sat="82" aria-label="Azure" style="height:48px; border:none; border-radius:var(--r-md); background:hsl(212 82% 56%); cursor:pointer;" style-active="transform:scale(0.92)"></button>
+                <button onClick="{{ setAccentSwatch }}" data-hue="215" data-sat="28" aria-label="Steel" style="height:48px; border:none; border-radius:var(--r-md); background:hsl(215 28% 58%); cursor:pointer;" style-active="transform:scale(0.92)"></button>
+              </div>
+              <button onClick="{{ openPicker }}" style="margin-top:10px; width:100%; display:flex; align-items:center; gap:12px; padding:10px 12px; border:1px solid var(--border-card); border-radius:var(--r-md); cursor:pointer; background:var(--surface); text-align:left;">
+                <span style="width:34px; height:34px; border-radius:50%; flex:none; background:conic-gradient(from 90deg, #ff5a5a, #ffd24d, #5cff8f, #4dd2ff, #5a7bff, #e86bff, #ff5a5a);"></span>
+                <span style="flex:1; font-size:13px; font-weight:600; color:var(--text);">Custom color</span>
+                <span style="font-size:16px; color:var(--faint);">›</span>
+              </button>
+            </div>
+            <div style="margin-top:18px;">
+              <div style="font-size:12px; color:var(--muted); margin-bottom:11px;">Ground tint</div>
+              <div style="display:flex; gap:8px;">
+                <button onClick="{{ setGround }}" data-h="30" style="flex:1; height:46px; display:flex; align-items:center; justify-content:center; gap:8px; border:1px solid var(--border-card); border-radius:var(--r-md); background:var(--surface); color:var(--text); font-size:13px; font-weight:600; cursor:pointer;"><span style="width:14px; height:14px; border-radius:50%; background:hsl(30 40% 52%);"></span>Warm</button>
+                <button onClick="{{ setGround }}" data-h="250" style="flex:1; height:46px; display:flex; align-items:center; justify-content:center; gap:8px; border:1px solid var(--border-card); border-radius:var(--r-md); background:var(--surface); color:var(--text); font-size:13px; font-weight:600; cursor:pointer;"><span style="width:14px; height:14px; border-radius:50%; background:hsl(250 28% 55%);"></span>Neutral</button>
+                <button onClick="{{ setGround }}" data-h="205" style="flex:1; height:46px; display:flex; align-items:center; justify-content:center; gap:8px; border:1px solid var(--border-card); border-radius:var(--r-md); background:var(--surface); color:var(--text); font-size:13px; font-weight:600; cursor:pointer;"><span style="width:14px; height:14px; border-radius:50%; background:hsl(205 40% 52%);"></span>Cool</button>
+              </div>
+            </div>
+            <!-- derived swatches preview -->
+            <div style="display:flex; gap:6px; margin-top:16px;">
+              <span style="flex:1; height:30px; border-radius:7px; background:var(--bg); border:1px solid var(--border);"></span>
+              <span style="flex:1; height:30px; border-radius:7px; background:var(--surface-2);"></span>
+              <span style="flex:1; height:30px; border-radius:7px; background:var(--elevated);"></span>
+              <span style="flex:1; height:30px; border-radius:7px; background:var(--accent);"></span>
+              <span style="flex:1; height:30px; border-radius:7px; background:var(--pr);"></span>
+            </div>
+            <button onClick="{{ themeCustom }}" style="margin-top:16px; width:100%; height:48px; border:none; border-radius:var(--r-md); background:var(--accent); color:var(--accent-ink); font-size:14px; font-weight:700; cursor:pointer;">Use custom theme</button>
+          </div>
+          <div style="font-size:11px; color:var(--faint); text-align:center; margin-top:22px; line-height:1.5;">Educational tool — not medical advice.<br/>Your data never leaves your device.</div>
+        </div>
+      </div>
+      </sc-if>
+
+      <!-- ========== PLAN (programs) ========== -->
+      <sc-if value="{{ showPlan }}" hint-placeholder-val="{{ false }}">
+      <div style="position:absolute; inset:0; display:flex; flex-direction:column;">
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:15px 28px 4px; font-size:14px; font-weight:600; flex:none;"><span style="font-variant-numeric:tabular-nums;">9:41</span><span style="display:flex; gap:6px; align-items:center;"><svg width="17" height="12" viewBox="0 0 17 12" fill="none"><rect x="0" y="7" width="3" height="5" rx="1" fill="currentColor"/><rect x="4.5" y="4.5" width="3" height="7.5" rx="1" fill="currentColor"/><rect x="9" y="2" width="3" height="10" rx="1" fill="currentColor"/><rect x="13.5" y="0" width="3" height="12" rx="1" fill="currentColor" opacity=".4"/></svg><svg width="22" height="12" viewBox="0 0 24 12" fill="none"><rect x="1" y="1" width="20" height="10" rx="3" stroke="currentColor" stroke-opacity=".5" stroke-width="1"/><rect x="2.5" y="2.5" width="15" height="7" rx="1.5" fill="currentColor"/><rect x="22" y="4" width="1.5" height="4" rx=".75" fill="currentColor"/></svg></span></div>
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 22px 8px;">
+          <div style="font-size:30px; font-weight:700; letter-spacing:var(--tracking-tight);">Programs</div>
+          <button onClick="{{ goBuilder }}" style="height:40px; padding:0 16px; border:none; border-radius:var(--r-md); background:var(--accent); color:var(--accent-ink); font-size:13px; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:6px;">＋ New</button>
+        </div>
+        <div class="os-scroll" style="flex:1; overflow:auto; padding:6px 22px 96px;">
+          <!-- active program -->
+          <button onClick="{{ goBuilder }}" style="width:100%; text-align:left; padding:18px; background:var(--surface); border:1.5px solid var(--accent); border-radius:var(--r-xl); cursor:pointer; box-shadow:var(--hairline-top);">
+            <div style="display:flex; justify-content:space-between; align-items:center;"><span style="font-size:10px; font-weight:700; letter-spacing:var(--tracking-caps); text-transform:uppercase; font-family:var(--font-label); color:var(--accent);">Active</span><span style="font-size:11px; color:var(--muted); font-family:var(--font-num); font-variant-numeric:tabular-nums;">4 days · wk 3 of 6</span></div>
+            <div style="font-size:21px; font-weight:700; margin-top:8px; letter-spacing:var(--tracking-snug);">Upper / Lower Power</div>
+            <div style="display:flex; gap:6px; margin-top:12px;"><span style="font-size:12px; color:var(--muted); background:var(--bg); padding:6px 11px; border-radius:var(--r-pill);">Push A</span><span style="font-size:12px; color:var(--muted); background:var(--bg); padding:6px 11px; border-radius:var(--r-pill);">Pull B</span><span style="font-size:12px; color:var(--muted); background:var(--bg); padding:6px 11px; border-radius:var(--r-pill);">Legs C</span><span style="font-size:12px; color:var(--muted); background:var(--bg); padding:6px 11px; border-radius:var(--r-pill);">Upper D</span></div>
+          </button>
+          <div style="font-size:11px; font-weight:700; letter-spacing:var(--tracking-caps); text-transform:uppercase; font-family:var(--font-label); color:var(--faint); margin:22px 4px 10px;">All routines</div>
+          <div style="display:flex; flex-direction:column; gap:8px;">
+            <button onClick="{{ goBuilder }}" style="width:100%; text-align:left; display:flex; align-items:center; gap:14px; padding:14px 16px; background:var(--surface); border:1px solid var(--border-card); border-radius:var(--r-md); cursor:pointer;"><div style="width:38px; height:38px; border-radius:var(--r-sm); background:var(--bg); display:flex; align-items:center; justify-content:center; color:var(--accent);"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M4 12h16M7 8v8M17 8v8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></div><div style="flex:1;"><div style="font-size:14px; font-weight:600;">5/3/1 BBB</div><div style="font-size:12px; color:var(--muted);">4 days · main + boring-but-big</div></div><span style="color:var(--faint); font-size:18px;">›</span></button>
+            <button onClick="{{ goBuilder }}" style="width:100%; text-align:left; display:flex; align-items:center; gap:14px; padding:14px 16px; background:var(--surface); border:1px solid var(--border-card); border-radius:var(--r-md); cursor:pointer;"><div style="width:38px; height:38px; border-radius:var(--r-sm); background:var(--bg); display:flex; align-items:center; justify-content:center; color:var(--accent);"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M4 12h16M7 8v8M17 8v8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></div><div style="flex:1;"><div style="font-size:14px; font-weight:600;">Full Body 3×</div><div style="font-size:12px; color:var(--muted);">3 days · minimal equipment</div></div><span style="color:var(--faint); font-size:18px;">›</span></button>
+          </div>
+          <button onClick="{{ goOnboarding }}" style="margin-top:18px; width:100%; height:52px; border:1px dashed var(--border-strong); border-radius:var(--r-md); background:transparent; color:var(--muted); font-size:14px; font-weight:600; cursor:pointer;">Generate a plan from your goals</button>
+        </div>
+      </div>
+      </sc-if>
+
+      <!-- ========== LIBRARY (browse) ========== -->
+      <sc-if value="{{ showLibrary }}" hint-placeholder-val="{{ false }}">
+      <div style="position:absolute; inset:0; display:flex; flex-direction:column;">
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:15px 28px 4px; font-size:14px; font-weight:600; flex:none;"><span style="font-variant-numeric:tabular-nums;">9:41</span><span style="display:flex; gap:6px; align-items:center;"><svg width="17" height="12" viewBox="0 0 17 12" fill="none"><rect x="0" y="7" width="3" height="5" rx="1" fill="currentColor"/><rect x="4.5" y="4.5" width="3" height="7.5" rx="1" fill="currentColor"/><rect x="9" y="2" width="3" height="10" rx="1" fill="currentColor"/><rect x="13.5" y="0" width="3" height="12" rx="1" fill="currentColor" opacity=".4"/></svg><svg width="22" height="12" viewBox="0 0 24 12" fill="none"><rect x="1" y="1" width="20" height="10" rx="3" stroke="currentColor" stroke-opacity=".5" stroke-width="1"/><rect x="2.5" y="2.5" width="15" height="7" rx="1.5" fill="currentColor"/><rect x="22" y="4" width="1.5" height="4" rx=".75" fill="currentColor"/></svg></span></div>
+        <div style="padding:10px 22px 6px;">
+          <div style="display:flex; justify-content:space-between; align-items:center;"><div style="font-size:30px; font-weight:700; letter-spacing:var(--tracking-tight);">Library</div><button onClick="{{ goCustom }}" style="height:38px; padding:0 14px; border:none; border-radius:var(--r-md); background:var(--surface); color:var(--text); font-size:13px; font-weight:600; cursor:pointer;">＋ New</button></div>
+          <div style="display:flex; align-items:center; gap:10px; margin-top:14px; padding:0 14px; height:46px; background:var(--surface); border:1px solid var(--border-card); border-radius:var(--r-md);">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" style="color:var(--faint);"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="1.7"/><path d="M20 20l-4-4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+            <span style="font-size:14px; color:var(--faint);">Search exercises</span>
+          </div>
+        </div>
+        <div class="os-scroll" style="display:flex; gap:8px; overflow-x:auto; padding:8px 22px 6px; flex:none;">
+          <span style="flex:none; font-size:12px; font-weight:600; color:var(--accent-ink); background:var(--accent); padding:7px 13px; border-radius:var(--r-pill);">All</span>
+          <span style="flex:none; font-size:12px; color:var(--muted); background:var(--surface); border:1px solid var(--border-card); padding:7px 13px; border-radius:var(--r-pill);">Chest</span>
+          <span style="flex:none; font-size:12px; color:var(--muted); background:var(--surface); border:1px solid var(--border-card); padding:7px 13px; border-radius:var(--r-pill);">Barbell</span>
+          <span style="flex:none; font-size:12px; color:var(--muted); background:var(--surface); border:1px solid var(--border-card); padding:7px 13px; border-radius:var(--r-pill);">Compound</span>
+          <span style="flex:none; font-size:12px; color:var(--muted); background:var(--surface); border:1px solid var(--border-card); padding:7px 13px; border-radius:var(--r-pill);">Intermediate</span>
+        </div>
+        <div class="os-scroll" style="flex:1; overflow:auto; padding:6px 22px 96px;">
+          <div style="display:flex; flex-direction:column; gap:8px;">
+            <button onClick="{{ goDetail }}" style="width:100%; text-align:left; display:flex; align-items:center; gap:14px; padding:10px 14px 10px 10px; background:var(--surface); border:1px solid var(--border-card); border-radius:var(--r-md); cursor:pointer;"><div style="width:46px; height:46px; border-radius:var(--r-sm); background:var(--bg); border:1px dashed var(--border-strong); display:flex; align-items:center; justify-content:center; color:var(--faint);"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><rect x="3" y="5" width="18" height="14" rx="2" stroke="currentColor" stroke-width="1.5"/><circle cx="8.5" cy="10" r="1.5" fill="currentColor"/><path d="M5 17l4.5-4 3 2.5L17 11l2 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div style="flex:1;"><div style="font-size:14.5px; font-weight:600;">Barbell Bench Press</div><div style="font-size:12px; color:var(--muted);">Chest · Barbell · Compound</div></div><span style="color:var(--faint); font-size:18px;">›</span></button>
+            <button onClick="{{ goDetail }}" style="width:100%; text-align:left; display:flex; align-items:center; gap:14px; padding:10px 14px 10px 10px; background:var(--surface); border:1px solid var(--border-card); border-radius:var(--r-md); cursor:pointer;"><div style="width:46px; height:46px; border-radius:var(--r-sm); background:var(--bg); border:1px dashed var(--border-strong); display:flex; align-items:center; justify-content:center; color:var(--faint);"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><rect x="3" y="5" width="18" height="14" rx="2" stroke="currentColor" stroke-width="1.5"/><circle cx="8.5" cy="10" r="1.5" fill="currentColor"/><path d="M5 17l4.5-4 3 2.5L17 11l2 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div style="flex:1;"><div style="font-size:14.5px; font-weight:600;">Back Squat</div><div style="font-size:12px; color:var(--muted);">Quads · Barbell · Compound</div></div><span style="color:var(--faint); font-size:18px;">›</span></button>
+            <button onClick="{{ goDetail }}" style="width:100%; text-align:left; display:flex; align-items:center; gap:14px; padding:10px 14px 10px 10px; background:var(--surface); border:1px solid var(--border-card); border-radius:var(--r-md); cursor:pointer;"><div style="width:46px; height:46px; border-radius:var(--r-sm); background:var(--bg); border:1px dashed var(--border-strong); display:flex; align-items:center; justify-content:center; color:var(--faint);"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><rect x="3" y="5" width="18" height="14" rx="2" stroke="currentColor" stroke-width="1.5"/><circle cx="8.5" cy="10" r="1.5" fill="currentColor"/><path d="M5 17l4.5-4 3 2.5L17 11l2 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div style="flex:1;"><div style="font-size:14.5px; font-weight:600;">Deadlift</div><div style="font-size:12px; color:var(--muted);">Back · Barbell · Compound</div></div><span style="color:var(--faint); font-size:18px;">›</span></button>
+            <button onClick="{{ goDetail }}" style="width:100%; text-align:left; display:flex; align-items:center; gap:14px; padding:10px 14px 10px 10px; background:var(--surface); border:1px solid var(--border-card); border-radius:var(--r-md); cursor:pointer;"><div style="width:46px; height:46px; border-radius:var(--r-sm); background:var(--bg); border:1px dashed var(--border-strong); display:flex; align-items:center; justify-content:center; color:var(--faint);"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><rect x="3" y="5" width="18" height="14" rx="2" stroke="currentColor" stroke-width="1.5"/><circle cx="8.5" cy="10" r="1.5" fill="currentColor"/><path d="M5 17l4.5-4 3 2.5L17 11l2 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div style="flex:1;"><div style="font-size:14.5px; font-weight:600;">Overhead Press</div><div style="font-size:12px; color:var(--muted);">Shoulders · Barbell · Compound</div></div><span style="color:var(--faint); font-size:18px;">›</span></button>
+          </div>
+        </div>
+      </div>
+      </sc-if>
+
+      <!-- ========== EXERCISE DETAIL ========== -->
+      <sc-if value="{{ showDetail }}" hint-placeholder-val="{{ false }}">
+      <div style="position:absolute; inset:0; display:flex; flex-direction:column;">
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:15px 28px 4px; font-size:14px; font-weight:600; flex:none;"><span style="font-variant-numeric:tabular-nums;">9:41</span><span style="display:flex; gap:6px; align-items:center;"><svg width="17" height="12" viewBox="0 0 17 12" fill="none"><rect x="0" y="7" width="3" height="5" rx="1" fill="currentColor"/><rect x="4.5" y="4.5" width="3" height="7.5" rx="1" fill="currentColor"/><rect x="9" y="2" width="3" height="10" rx="1" fill="currentColor"/><rect x="13.5" y="0" width="3" height="12" rx="1" fill="currentColor" opacity=".4"/></svg><svg width="22" height="12" viewBox="0 0 24 12" fill="none"><rect x="1" y="1" width="20" height="10" rx="3" stroke="currentColor" stroke-opacity=".5" stroke-width="1"/><rect x="2.5" y="2.5" width="15" height="7" rx="1.5" fill="currentColor"/><rect x="22" y="4" width="1.5" height="4" rx=".75" fill="currentColor"/></svg></span></div>
+        <div style="display:flex; align-items:center; gap:10px; padding:6px 18px 8px;">
+          <button onClick="{{ goLibrary }}" style="width:40px; height:40px; border:none; background:transparent; color:var(--muted); font-size:22px; cursor:pointer;">‹</button>
+          <div style="font-size:20px; font-weight:700; letter-spacing:var(--tracking-snug); white-space:nowrap;">Bench Press</div>
+        </div>
+        <div class="os-scroll" style="flex:1; overflow:auto; padding:6px 22px 28px;">
+          <!-- image-absent state -->
+          <div style="display:flex; gap:10px;">
+            <div style="flex:1; aspect-ratio:1; border-radius:var(--r-md); background:var(--surface); border:1px dashed var(--border-strong); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; color:var(--faint);"><svg width="26" height="26" viewBox="0 0 24 24" fill="none"><rect x="3" y="5" width="18" height="14" rx="2" stroke="currentColor" stroke-width="1.5"/><circle cx="8.5" cy="10" r="1.5" fill="currentColor"/><path d="M5 17l4.5-4 3 2.5L17 11l2 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span style="font-size:10px;">Start · offline</span></div>
+            <div style="flex:1; aspect-ratio:1; border-radius:var(--r-md); background:var(--surface); border:1px dashed var(--border-strong); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; color:var(--faint);"><svg width="26" height="26" viewBox="0 0 24 24" fill="none"><rect x="3" y="5" width="18" height="14" rx="2" stroke="currentColor" stroke-width="1.5"/><circle cx="8.5" cy="10" r="1.5" fill="currentColor"/><path d="M5 17l4.5-4 3 2.5L17 11l2 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span style="font-size:10px;">End · offline</span></div>
+          </div>
+          <div style="display:flex; flex-wrap:wrap; gap:6px; margin-top:14px;">
+            <span style="font-size:11px; font-weight:600; color:var(--accent-ink); background:var(--accent); padding:5px 11px; border-radius:var(--r-pill);">Chest</span>
+            <span style="font-size:11px; color:var(--muted); background:var(--surface); border:1px solid var(--border-card); padding:5px 11px; border-radius:var(--r-pill);">Front delts</span>
+            <span style="font-size:11px; color:var(--muted); background:var(--surface); border:1px solid var(--border-card); padding:5px 11px; border-radius:var(--r-pill);">Triceps</span>
+          </div>
+          <!-- muscle engagement -->
+          <div style="margin-top:16px; padding:18px; background:var(--surface); border:1px solid var(--border-card); border-radius:var(--r-lg);">
+            <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:16px;">
+              <span style="font-size:13px; font-weight:600;">Muscles worked</span>
+              <span style="font-size:10px; color:var(--faint); font-family:var(--font-label); text-transform:uppercase; letter-spacing:.1em;">Engagement</span>
+            </div>
+            <div style="display:flex; gap:16px; align-items:center;">
+              <div style="flex:1; display:flex; flex-direction:column; gap:13px;">
+              <div>
+                <div style="display:flex; justify-content:space-between; font-size:12.5px; margin-bottom:6px;"><span style="color:var(--text); font-weight:500; white-space:nowrap;">Chest <span style="color:var(--accent); font-size:9.5px; font-family:var(--font-label); text-transform:uppercase; letter-spacing:.08em; margin-left:4px;">Primary</span></span><span style="color:var(--muted); font-family:var(--font-num); font-variant-numeric:tabular-nums;">100%</span></div>
+                <div style="height:7px; border-radius:5px; background:var(--bg); overflow:hidden;"><div style="height:100%; width:100%; border-radius:5px; background:var(--accent);"></div></div>
+              </div>
+              <div>
+                <div style="display:flex; justify-content:space-between; font-size:12.5px; margin-bottom:6px;"><span style="color:var(--text); font-weight:500; white-space:nowrap;">Front delts</span><span style="color:var(--muted); font-family:var(--font-num); font-variant-numeric:tabular-nums;">55%</span></div>
+                <div style="height:7px; border-radius:5px; background:var(--bg); overflow:hidden;"><div style="height:100%; width:55%; border-radius:5px; background:color-mix(in oklab, var(--accent) 60%, var(--surface-2));"></div></div>
+              </div>
+              <div>
+                <div style="display:flex; justify-content:space-between; font-size:12.5px; margin-bottom:6px;"><span style="color:var(--text); font-weight:500; white-space:nowrap;">Triceps</span><span style="color:var(--muted); font-family:var(--font-num); font-variant-numeric:tabular-nums;">40%</span></div>
+                <div style="height:7px; border-radius:5px; background:var(--bg); overflow:hidden;"><div style="height:100%; width:40%; border-radius:5px; background:color-mix(in oklab, var(--accent) 60%, var(--surface-2));"></div></div>
+              </div>
+            </div>
+            </div>
+          </div>
+          <!-- e1RM sparkline -->
+          <div style="margin-top:16px; padding:16px 18px; background:var(--surface); border:1px solid var(--border-card); border-radius:var(--r-lg);">
+            <div style="display:flex; justify-content:space-between; align-items:baseline;"><span style="font-size:12px; color:var(--muted);">Your e1RM</span><span style="font-size:20px; font-weight:600; font-family:var(--font-num); font-weight:var(--num-weight); font-variant-numeric:tabular-nums;">102.4 <span style="font-size:12px; color:var(--muted);">kg</span></span></div>
+            <svg width="100%" viewBox="0 0 300 60" style="margin-top:10px; display:block;"><polyline points="6,48 40,44 74,46 108,38 142,40 176,30 210,33 244,22 278,16 294,12" fill="none" stroke="var(--accent)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="294" cy="12" r="3.5" fill="var(--accent)"/></svg>
+          </div>
+          <!-- instructions -->
+          <div style="font-size:11px; font-weight:700; letter-spacing:var(--tracking-caps); text-transform:uppercase; font-family:var(--font-label); color:var(--faint); margin:20px 4px 10px;">How to</div>
+          <div style="display:flex; flex-direction:column; gap:12px;">
+            <div style="display:flex; gap:12px;"><span style="flex:none; width:22px; height:22px; border-radius:var(--r-pill); background:var(--surface-2); color:var(--text); font-size:12px; font-weight:700; display:flex; align-items:center; justify-content:center; font-family:var(--font-num);">1</span><span style="font-size:13px; line-height:1.5; color:var(--text);">Set up with eyes under the bar, shoulder blades retracted and feet flat.</span></div>
+            <div style="display:flex; gap:12px;"><span style="flex:none; width:22px; height:22px; border-radius:var(--r-pill); background:var(--surface-2); color:var(--text); font-size:12px; font-weight:700; display:flex; align-items:center; justify-content:center; font-family:var(--font-num);">2</span><span style="font-size:13px; line-height:1.5; color:var(--text);">Lower the bar to mid-chest with elbows ~75°, then press to lockout.</span></div>
+          </div>
+          <!-- notes -->
+          <div style="margin-top:18px; padding:14px 16px; background:color-mix(in oklab, var(--accent) 7%, var(--surface)); border:1px solid color-mix(in oklab, var(--accent) 18%, transparent); border-radius:var(--r-md);">
+            <div style="font-size:11px; font-weight:700; letter-spacing:var(--tracking-caps); text-transform:uppercase; font-family:var(--font-label); color:var(--accent); margin-bottom:6px;">My cue</div>
+            <div style="font-size:13px; line-height:1.5; color:var(--text);">Drive with the legs, keep the bar path over the shoulder line.</div>
+          </div>
+        </div>
+      </div>
+      </sc-if>
+
+      <!-- ========== HISTORY ========== -->
+      <sc-if value="{{ showHistory }}" hint-placeholder-val="{{ false }}">
+      <div style="position:absolute; inset:0; display:flex; flex-direction:column;">
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:15px 28px 4px; font-size:14px; font-weight:600; flex:none;"><span style="font-variant-numeric:tabular-nums;">9:41</span><span style="display:flex; gap:6px; align-items:center;"><svg width="17" height="12" viewBox="0 0 17 12" fill="none"><rect x="0" y="7" width="3" height="5" rx="1" fill="currentColor"/><rect x="4.5" y="4.5" width="3" height="7.5" rx="1" fill="currentColor"/><rect x="9" y="2" width="3" height="10" rx="1" fill="currentColor"/><rect x="13.5" y="0" width="3" height="12" rx="1" fill="currentColor" opacity=".4"/></svg><svg width="22" height="12" viewBox="0 0 24 12" fill="none"><rect x="1" y="1" width="20" height="10" rx="3" stroke="currentColor" stroke-opacity=".5" stroke-width="1"/><rect x="2.5" y="2.5" width="15" height="7" rx="1.5" fill="currentColor"/><rect x="22" y="4" width="1.5" height="4" rx=".75" fill="currentColor"/></svg></span></div>
+        <div style="display:flex; align-items:center; gap:10px; padding:6px 18px 8px;">
+          <button onClick="{{ goToday }}" style="width:40px; height:40px; border:none; background:transparent; color:var(--muted); font-size:22px; cursor:pointer;">‹</button>
+          <div style="font-size:20px; font-weight:700; letter-spacing:var(--tracking-snug);">History</div>
+        </div>
+        <div class="os-scroll" style="flex:1; overflow:auto; padding:6px 22px 28px;">
+          <!-- calendar -->
+          <div style="padding:16px 18px; background:var(--surface); border:1px solid var(--border-card); border-radius:var(--r-lg);">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;"><span style="font-size:14px; font-weight:600;">June 2026</span><span style="font-size:12px; color:var(--muted); font-family:var(--font-num);">12 sessions</span></div>
+            <div style="display:grid; grid-template-columns:repeat(7,1fr); gap:7px;">
+              <span style="text-align:center; font-size:9px; color:var(--faint); font-family:var(--font-label);">M</span><span style="text-align:center; font-size:9px; color:var(--faint); font-family:var(--font-label);">T</span><span style="text-align:center; font-size:9px; color:var(--faint); font-family:var(--font-label);">W</span><span style="text-align:center; font-size:9px; color:var(--faint); font-family:var(--font-label);">T</span><span style="text-align:center; font-size:9px; color:var(--faint); font-family:var(--font-label);">F</span><span style="text-align:center; font-size:9px; color:var(--faint); font-family:var(--font-label);">S</span><span style="text-align:center; font-size:9px; color:var(--faint); font-family:var(--font-label);">S</span>
+              <span style="aspect-ratio:1; border-radius:7px; display:flex; align-items:center; justify-content:center; font-size:11px; color:var(--faint); font-family:var(--font-num);">1</span>
+              <span style="aspect-ratio:1; border-radius:7px; background:var(--accent); color:var(--accent-ink); display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:600; font-family:var(--font-num);">2</span>
+              <span style="aspect-ratio:1; border-radius:7px; display:flex; align-items:center; justify-content:center; font-size:11px; color:var(--text); font-family:var(--font-num);">3</span>
+              <span style="aspect-ratio:1; border-radius:7px; background:var(--accent); color:var(--accent-ink); display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:600; font-family:var(--font-num);">4</span>
+              <span style="aspect-ratio:1; border-radius:7px; display:flex; align-items:center; justify-content:center; font-size:11px; color:var(--text); font-family:var(--font-num);">5</span>
+              <span style="aspect-ratio:1; border-radius:7px; background:var(--accent); color:var(--accent-ink); display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:600; font-family:var(--font-num);">6</span>
+              <span style="aspect-ratio:1; border-radius:7px; display:flex; align-items:center; justify-content:center; font-size:11px; color:var(--faint); font-family:var(--font-num);">7</span>
+              <span style="aspect-ratio:1; border-radius:7px; background:var(--accent); color:var(--accent-ink); display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:600; font-family:var(--font-num);">8</span>
+              <span style="aspect-ratio:1; border-radius:7px; display:flex; align-items:center; justify-content:center; font-size:11px; color:var(--text); font-family:var(--font-num);">9</span>
+              <span style="aspect-ratio:1; border-radius:7px; background:var(--accent); color:var(--accent-ink); display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:600; font-family:var(--font-num);">10</span>
+              <span style="aspect-ratio:1; border-radius:7px; display:flex; align-items:center; justify-content:center; font-size:11px; color:var(--text); font-family:var(--font-num);">11</span>
+              <span style="aspect-ratio:1; border-radius:7px; background:var(--accent); color:var(--accent-ink); display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:600; font-family:var(--font-num);">12</span>
+              <span style="aspect-ratio:1; border-radius:7px; display:flex; align-items:center; justify-content:center; font-size:11px; color:var(--text); font-family:var(--font-num);">13</span>
+              <span style="aspect-ratio:1; border-radius:7px; display:flex; align-items:center; justify-content:center; font-size:11px; color:var(--text); font-family:var(--font-num);">14</span>
+            </div>
+          </div>
+          <div style="font-size:11px; font-weight:700; letter-spacing:var(--tracking-caps); text-transform:uppercase; font-family:var(--font-label); color:var(--faint); margin:20px 4px 10px;">Sessions</div>
+          <div style="display:flex; flex-direction:column; gap:8px;">
+            <div style="display:flex; align-items:center; gap:14px; padding:14px 16px; background:var(--surface); border:1px solid var(--border-card); border-radius:var(--r-md);"><div style="flex:1;"><div style="font-size:14px; font-weight:600;">Pull · Day B</div><div style="font-size:12px; color:var(--muted); font-family:var(--font-num);">Tue Jun 12 · 47 min · 18 sets</div></div><span style="font-size:10px; color:var(--pr); font-family:var(--font-label); text-transform:uppercase; letter-spacing:.08em; border:1px solid color-mix(in oklab, var(--pr) 40%, transparent); padding:3px 8px; border-radius:var(--r-pill);">1 PR</span></div>
+            <div style="display:flex; align-items:center; gap:14px; padding:14px 16px; background:var(--surface); border:1px solid var(--border-card); border-radius:var(--r-md);"><div style="flex:1;"><div style="font-size:14px; font-weight:600;">Legs · Day C</div><div style="font-size:12px; color:var(--muted); font-family:var(--font-num);">Sun Jun 10 · 58 min · 20 sets</div></div><span style="color:var(--faint); font-size:18px;">›</span></div>
+          </div>
+        </div>
+      </div>
+      </sc-if>
+
+      <!-- ========== ROUTINE BUILDER ========== -->
+      <sc-if value="{{ showBuilder }}" hint-placeholder-val="{{ false }}">
+      <div style="position:absolute; inset:0; display:flex; flex-direction:column;">
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:15px 28px 4px; font-size:14px; font-weight:600; flex:none;"><span style="font-variant-numeric:tabular-nums;">9:41</span><span style="display:flex; gap:6px; align-items:center;"><svg width="17" height="12" viewBox="0 0 17 12" fill="none"><rect x="0" y="7" width="3" height="5" rx="1" fill="currentColor"/><rect x="4.5" y="4.5" width="3" height="7.5" rx="1" fill="currentColor"/><rect x="9" y="2" width="3" height="10" rx="1" fill="currentColor"/><rect x="13.5" y="0" width="3" height="12" rx="1" fill="currentColor" opacity=".4"/></svg><svg width="22" height="12" viewBox="0 0 24 12" fill="none"><rect x="1" y="1" width="20" height="10" rx="3" stroke="currentColor" stroke-opacity=".5" stroke-width="1"/><rect x="2.5" y="2.5" width="15" height="7" rx="1.5" fill="currentColor"/><rect x="22" y="4" width="1.5" height="4" rx=".75" fill="currentColor"/></svg></span></div>
+        <div style="display:flex; align-items:center; justify-content:space-between; padding:6px 18px 8px;">
+          <div style="display:flex; align-items:center; gap:6px;"><button onClick="{{ goPlan }}" style="width:40px; height:40px; border:none; background:transparent; color:var(--muted); font-size:22px; cursor:pointer;">‹</button><div style="font-size:20px; font-weight:700; letter-spacing:var(--tracking-snug);">Edit routine</div></div>
+          <button onClick="{{ goPlan }}" style="height:38px; padding:0 16px; border:none; border-radius:var(--r-md); background:var(--accent); color:var(--accent-ink); font-size:13px; font-weight:700; cursor:pointer;">Save</button>
+        </div>
+        <div class="os-scroll" style="flex:1; overflow:auto; padding:6px 22px 28px;">
+          <!-- day tabs -->
+          <div style="display:flex; gap:6px; background:var(--surface); padding:5px; border-radius:var(--r-md);">
+            <span style="flex:1; text-align:center; padding:9px; border-radius:var(--r-sm); background:var(--accent); color:var(--accent-ink); font-size:13px; font-weight:700;">Push A</span>
+            <span style="flex:1; text-align:center; padding:9px; border-radius:var(--r-sm); color:var(--muted); font-size:13px; font-weight:600;">Pull B</span>
+            <span style="flex:1; text-align:center; padding:9px; border-radius:var(--r-sm); color:var(--muted); font-size:13px; font-weight:600;">Legs C</span>
+          </div>
+          <!-- exercise slot -->
+          <div style="margin-top:14px; padding:16px; background:var(--surface); border:1px solid var(--border-card); border-radius:var(--r-lg);">
+            <div style="display:flex; align-items:center; gap:10px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" style="color:var(--faint);"><path d="M8 6h8M8 12h8M8 18h8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span style="font-size:15px; font-weight:600; flex:1;">Bench Press</span><span style="color:var(--faint); font-size:18px;">⋯</span></div>
+            <div style="display:flex; gap:10px; margin-top:14px;">
+              <div style="flex:1;"><div style="font-size:10px; color:var(--muted); font-family:var(--font-label); text-transform:uppercase; letter-spacing:.08em; margin-bottom:6px;">Sets</div><div style="display:flex; align-items:center; justify-content:space-between; background:var(--bg); border-radius:var(--r-sm); padding:4px;"><button style="width:34px; height:34px; border:none; border-radius:8px; background:var(--surface-2); color:var(--text); font-size:18px; cursor:pointer;">−</button><span style="font-size:16px; font-weight:600; font-family:var(--font-num); font-variant-numeric:tabular-nums;">4</span><button style="width:34px; height:34px; border:none; border-radius:8px; background:var(--surface-2); color:var(--text); font-size:18px; cursor:pointer;">+</button></div></div>
+              <div style="flex:1;"><div style="font-size:10px; color:var(--muted); font-family:var(--font-label); text-transform:uppercase; letter-spacing:.08em; margin-bottom:6px;">Rep range</div><div style="display:flex; align-items:center; justify-content:center; background:var(--bg); border-radius:var(--r-sm); height:42px; font-size:15px; font-weight:600; font-family:var(--font-num); font-variant-numeric:tabular-nums;">6–8</div></div>
+            </div>
+            <div style="display:flex; gap:10px; margin-top:10px;">
+              <div style="flex:1;"><div style="font-size:10px; color:var(--muted); font-family:var(--font-label); text-transform:uppercase; letter-spacing:.08em; margin-bottom:6px;">Rest</div><div style="display:flex; align-items:center; justify-content:center; background:var(--bg); border-radius:var(--r-sm); height:42px; font-size:14px; font-weight:600; font-family:var(--font-num);">3:00</div></div>
+              <div style="flex:1;"><div style="font-size:10px; color:var(--muted); font-family:var(--font-label); text-transform:uppercase; letter-spacing:.08em; margin-bottom:6px;">Progression</div><div style="display:flex; align-items:center; justify-content:space-between; background:var(--bg); border-radius:var(--r-sm); height:42px; padding:0 12px; font-size:13px; font-weight:600;">Double <span style="color:var(--faint);">⌄</span></div></div>
+            </div>
+          </div>
+          <button style="margin-top:12px; width:100%; height:48px; border:1px dashed var(--border-strong); border-radius:var(--r-md); background:transparent; color:var(--accent); font-size:14px; font-weight:600; cursor:pointer;">＋ Add exercise</button>
+          <!-- 5/3/1 training max -->
+          <div style="margin-top:18px; padding:16px 18px; background:var(--surface); border:1px solid var(--border-card); border-radius:var(--r-lg);">
+            <div style="font-size:11px; font-weight:700; letter-spacing:var(--tracking-caps); text-transform:uppercase; font-family:var(--font-label); color:var(--accent); margin-bottom:12px;">5/3/1 training max</div>
+            <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid var(--border);"><span style="font-size:13px;">Bench Press</span><span style="font-size:15px; font-weight:600; font-family:var(--font-num); font-variant-numeric:tabular-nums;">95.0 <span style="font-size:11px; color:var(--muted);">kg</span></span></div>
+            <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 0;"><span style="font-size:13px;">Squat</span><span style="font-size:15px; font-weight:600; font-family:var(--font-num); font-variant-numeric:tabular-nums;">130.0 <span style="font-size:11px; color:var(--muted);">kg</span></span></div>
+          </div>
+        </div>
+      </div>
+      </sc-if>
+
+      <!-- ========== ONBOARDING WIZARD ========== -->
+      <sc-if value="{{ showOnboarding }}" hint-placeholder-val="{{ false }}">
+      <div style="position:absolute; inset:0; display:flex; flex-direction:column;">
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:15px 28px 4px; font-size:14px; font-weight:600; flex:none;"><span style="font-variant-numeric:tabular-nums;">9:41</span><span style="display:flex; gap:6px; align-items:center;"><svg width="17" height="12" viewBox="0 0 17 12" fill="none"><rect x="0" y="7" width="3" height="5" rx="1" fill="currentColor"/><rect x="4.5" y="4.5" width="3" height="7.5" rx="1" fill="currentColor"/><rect x="9" y="2" width="3" height="10" rx="1" fill="currentColor"/><rect x="13.5" y="0" width="3" height="12" rx="1" fill="currentColor" opacity=".4"/></svg><svg width="22" height="12" viewBox="0 0 24 12" fill="none"><rect x="1" y="1" width="20" height="10" rx="3" stroke="currentColor" stroke-opacity=".5" stroke-width="1"/><rect x="2.5" y="2.5" width="15" height="7" rx="1.5" fill="currentColor"/><rect x="22" y="4" width="1.5" height="4" rx=".75" fill="currentColor"/></svg></span></div>
+        <!-- progress -->
+        <div style="display:flex; align-items:center; gap:14px; padding:10px 22px 12px;">
+          <button onClick="{{ obBack }}" style="width:38px; height:38px; border:none; background:transparent; color:var(--muted); font-size:22px; cursor:pointer;">‹</button>
+          <div style="flex:1; height:5px; border-radius:3px; background:var(--surface-2); overflow:hidden;"><div style="height:100%; border-radius:3px; background:var(--accent); width: {{ obProgress }}; transition:width var(--dur-base) var(--ease-out);"></div></div>
+        </div>
+        <div class="os-scroll" style="flex:1; overflow:auto; padding:10px 26px 8px;">
+          <!-- step 0 welcome -->
+          <sc-if value="{{ ob0 }}" hint-placeholder-val="{{ true }}">
+          <div style="padding-top:30px;">
+            <div style="width:56px; height:56px; border-radius:var(--r-lg); background:var(--accent); color:var(--accent-ink); display:flex; align-items:center; justify-content:center; margin-bottom:24px;"><svg width="28" height="28" viewBox="0 0 24 24" fill="none"><path d="M4 12h16M7 8v8M17 8v8" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg></div>
+            <div style="font-size:32px; font-weight:700; letter-spacing:var(--tracking-tight); line-height:1.1;">Your coach is just math.</div>
+            <div style="font-size:15px; color:var(--muted); margin-top:14px; line-height:1.55;">OpenSets builds your plan, tracks every set, and tells you exactly when to add weight — on-device, free, fully usable with no signal.</div>
+            <div style="margin-top:24px; padding:14px 16px; background:var(--surface); border:1px solid var(--border-card); border-radius:var(--r-md); font-size:12px; color:var(--muted); line-height:1.5;">Educational tool — <span style="color:var(--text); font-weight:600;">not medical advice.</span> Train within your own limits.</div>
+          </div>
+          </sc-if>
+          <!-- step 1 goal -->
+          <sc-if value="{{ ob1 }}" hint-placeholder-val="{{ false }}">
+          <div>
+            <div style="font-size:11px; font-weight:700; letter-spacing:var(--tracking-caps); text-transform:uppercase; font-family:var(--font-label); color:var(--faint);">Step 1</div>
+            <div style="font-size:26px; font-weight:700; letter-spacing:var(--tracking-snug); margin-top:8px;">What's your goal?</div>
+            <div style="display:flex; flex-direction:column; gap:10px; margin-top:22px;">
+              <div style="padding:16px 18px; background:var(--accent); color:var(--accent-ink); border-radius:var(--r-md); font-size:15px; font-weight:700;">Build muscle</div>
+              <div style="padding:16px 18px; background:var(--surface); border:1px solid var(--border-card); border-radius:var(--r-md); font-size:15px; font-weight:600;">Lose fat</div>
+              <div style="padding:16px 18px; background:var(--surface); border:1px solid var(--border-card); border-radius:var(--r-md); font-size:15px; font-weight:600;">Recomposition</div>
+              <div style="padding:16px 18px; background:var(--surface); border:1px solid var(--border-card); border-radius:var(--r-md); font-size:15px; font-weight:600;">Get stronger</div>
+            </div>
+          </div>
+          </sc-if>
+          <!-- step 2 days + equipment -->
+          <sc-if value="{{ ob2 }}" hint-placeholder-val="{{ false }}">
+          <div>
+            <div style="font-size:11px; font-weight:700; letter-spacing:var(--tracking-caps); text-transform:uppercase; font-family:var(--font-label); color:var(--faint);">Step 2</div>
+            <div style="font-size:26px; font-weight:700; letter-spacing:var(--tracking-snug); margin-top:8px;">Days per week</div>
+            <div style="display:flex; gap:10px; margin-top:20px;">
+              <div style="flex:1; aspect-ratio:1; display:flex; align-items:center; justify-content:center; background:var(--surface); border:1px solid var(--border-card); border-radius:var(--r-md); font-size:22px; font-weight:600; font-family:var(--font-num);">3</div>
+              <div style="flex:1; aspect-ratio:1; display:flex; align-items:center; justify-content:center; background:var(--accent); color:var(--accent-ink); border-radius:var(--r-md); font-size:22px; font-weight:700; font-family:var(--font-num);">4</div>
+              <div style="flex:1; aspect-ratio:1; display:flex; align-items:center; justify-content:center; background:var(--surface); border:1px solid var(--border-card); border-radius:var(--r-md); font-size:22px; font-weight:600; font-family:var(--font-num);">5</div>
+              <div style="flex:1; aspect-ratio:1; display:flex; align-items:center; justify-content:center; background:var(--surface); border:1px solid var(--border-card); border-radius:var(--r-md); font-size:22px; font-weight:600; font-family:var(--font-num);">6</div>
+            </div>
+            <div style="font-size:15px; font-weight:600; margin:26px 0 14px;">Equipment</div>
+            <div style="display:flex; flex-wrap:wrap; gap:8px;">
+              <span style="font-size:13px; font-weight:600; color:var(--accent-ink); background:var(--accent); padding:10px 16px; border-radius:var(--r-pill);">Full gym</span>
+              <span style="font-size:13px; color:var(--muted); background:var(--surface); border:1px solid var(--border-card); padding:10px 16px; border-radius:var(--r-pill);">Home rack</span>
+              <span style="font-size:13px; color:var(--muted); background:var(--surface); border:1px solid var(--border-card); padding:10px 16px; border-radius:var(--r-pill);">Minimal</span>
+            </div>
+          </div>
+          </sc-if>
+          <!-- step 3 experience -->
+          <sc-if value="{{ ob3 }}" hint-placeholder-val="{{ false }}">
+          <div>
+            <div style="font-size:11px; font-weight:700; letter-spacing:var(--tracking-caps); text-transform:uppercase; font-family:var(--font-label); color:var(--faint);">Step 3</div>
+            <div style="font-size:26px; font-weight:700; letter-spacing:var(--tracking-snug); margin-top:8px;">Experience</div>
+            <div style="display:flex; flex-direction:column; gap:10px; margin-top:22px;">
+              <div style="padding:16px 18px; background:var(--surface); border:1px solid var(--border-card); border-radius:var(--r-md);"><div style="font-size:15px; font-weight:600;">Novice</div><div style="font-size:12px; color:var(--muted); margin-top:3px;">New to structured training</div></div>
+              <div style="padding:16px 18px; background:var(--accent); color:var(--accent-ink); border-radius:var(--r-md);"><div style="font-size:15px; font-weight:700;">Intermediate</div><div style="font-size:12px; opacity:.8; margin-top:3px;">1–3 years, self-coached</div></div>
+              <div style="padding:16px 18px; background:var(--surface); border:1px solid var(--border-card); border-radius:var(--r-md);"><div style="font-size:15px; font-weight:600;">Advanced</div><div style="font-size:12px; color:var(--muted); margin-top:3px;">Periodised, near my ceiling</div></div>
+            </div>
+          </div>
+          </sc-if>
+          <!-- step 4 optional stats -->
+          <sc-if value="{{ ob4 }}" hint-placeholder-val="{{ false }}">
+          <div>
+            <div style="font-size:11px; font-weight:700; letter-spacing:var(--tracking-caps); text-transform:uppercase; font-family:var(--font-label); color:var(--faint);">Step 4 · optional</div>
+            <div style="font-size:26px; font-weight:700; letter-spacing:var(--tracking-snug); margin-top:8px;">A few numbers</div>
+            <div style="font-size:13px; color:var(--muted); margin-top:6px; line-height:1.5;">Tailors load jumps and bodyweight goals. Skip anytime.</div>
+            <div style="display:flex; gap:10px; margin-top:20px;">
+              <div style="flex:1;"><div style="font-size:10px; color:var(--muted); font-family:var(--font-label); text-transform:uppercase; letter-spacing:.08em; margin-bottom:6px;">Height</div><div style="height:50px; display:flex; align-items:center; padding:0 14px; background:var(--surface); border:1px solid var(--border-card); border-radius:var(--r-md); font-size:15px; font-family:var(--font-num);">178 <span style="color:var(--muted); font-size:12px; margin-left:4px;">cm</span></div></div>
+              <div style="flex:1;"><div style="font-size:10px; color:var(--muted); font-family:var(--font-label); text-transform:uppercase; letter-spacing:.08em; margin-bottom:6px;">Weight</div><div style="height:50px; display:flex; align-items:center; padding:0 14px; background:var(--surface); border:1px solid var(--border-card); border-radius:var(--r-md); font-size:15px; font-family:var(--font-num);">82.4 <span style="color:var(--muted); font-size:12px; margin-left:4px;">kg</span></div></div>
+            </div>
+            <div style="display:flex; gap:10px; margin-top:12px;">
+              <div style="flex:1;"><div style="font-size:10px; color:var(--muted); font-family:var(--font-label); text-transform:uppercase; letter-spacing:.08em; margin-bottom:6px;">Target weight</div><div style="height:50px; display:flex; align-items:center; padding:0 14px; background:var(--surface); border:1px solid var(--border-card); border-radius:var(--r-md); font-size:15px; font-family:var(--font-num);">85.0 <span style="color:var(--muted); font-size:12px; margin-left:4px;">kg</span></div></div>
+              <div style="flex:1;"><div style="font-size:10px; color:var(--muted); font-family:var(--font-label); text-transform:uppercase; letter-spacing:.08em; margin-bottom:6px;">By</div><div style="height:50px; display:flex; align-items:center; padding:0 14px; background:var(--surface); border:1px solid var(--border-card); border-radius:var(--r-md); font-size:15px;">Dec 2026</div></div>
+            </div>
+          </div>
+          </sc-if>
+          <!-- step 5 preview -->
+          <sc-if value="{{ ob5 }}" hint-placeholder-val="{{ false }}">
+          <div>
+            <div style="font-size:11px; font-weight:700; letter-spacing:var(--tracking-caps); text-transform:uppercase; font-family:var(--font-label); color:var(--accent);">Recommended</div>
+            <div style="font-size:26px; font-weight:700; letter-spacing:var(--tracking-snug); margin-top:8px;">Upper / Lower Power</div>
+            <div style="font-size:14px; color:var(--muted); margin-top:6px; line-height:1.5;">4 days · double progression · built for intermediate muscle gain.</div>
+            <div style="margin-top:20px; display:flex; flex-direction:column; gap:8px;">
+              <div style="display:flex; align-items:center; gap:12px; padding:14px 16px; background:var(--surface); border:1px solid var(--border-card); border-radius:var(--r-md);"><span style="font-size:11px; font-family:var(--font-num); color:var(--accent); width:26px;">A</span><span style="font-size:14px; font-weight:600; flex:1;">Upper Push</span><span style="font-size:12px; color:var(--muted); font-family:var(--font-num);">5 lifts</span></div>
+              <div style="display:flex; align-items:center; gap:12px; padding:14px 16px; background:var(--surface); border:1px solid var(--border-card); border-radius:var(--r-md);"><span style="font-size:11px; font-family:var(--font-num); color:var(--accent); width:26px;">B</span><span style="font-size:14px; font-weight:600; flex:1;">Lower</span><span style="font-size:12px; color:var(--muted); font-family:var(--font-num);">5 lifts</span></div>
+              <div style="display:flex; align-items:center; gap:12px; padding:14px 16px; background:var(--surface); border:1px solid var(--border-card); border-radius:var(--r-md);"><span style="font-size:11px; font-family:var(--font-num); color:var(--accent); width:26px;">C</span><span style="font-size:14px; font-weight:600; flex:1;">Upper Pull</span><span style="font-size:12px; color:var(--muted); font-family:var(--font-num);">5 lifts</span></div>
+            </div>
+          </div>
+          </sc-if>
+        </div>
+        <!-- bottom cta -->
+        <div style="flex:none; padding:12px 22px 28px;">
+          <button onClick="{{ obNext }}" style="width:100%; height:60px; border:none; border-radius:var(--r-xl); background:var(--accent); color:var(--accent-ink); font-size:17px; font-weight:700; cursor:pointer;">{{ obCta }}</button>
+        </div>
+      </div>
+      </sc-if>
+
+      <!-- ========== TAB NAV (hidden in session/settings) ========== -->
+      <sc-if value="{{ showTabs }}" hint-placeholder-val="{{ false }}">
+      <div style="position:absolute; left:0; right:0; bottom:0; padding:10px 22px 24px; background:linear-gradient(180deg,transparent,var(--bg) 32%); display:flex; justify-content:space-between;">
+        <button onClick="{{ goToday }}" style="background:none; border:none; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:4px; color: {{ tcToday }};"><svg width="23" height="23" viewBox="0 0 24 24" fill="none"><path d="M4 11l8-7 8 7v8a1 1 0 01-1 1h-4v-6h-6v6H5a1 1 0 01-1-1z" stroke="currentColor" stroke-width="1.6"/></svg><span style="font-size:9.5px; font-weight:600;">Today</span></button>
+        <button onClick="{{ goPlan }}" style="background:none; border:none; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:4px; color: {{ tcPlan }};"><svg width="23" height="23" viewBox="0 0 24 24" fill="none"><rect x="4" y="5" width="16" height="15" rx="2" stroke="currentColor" stroke-width="1.6"/><path d="M4 9h16M8 3v4M16 3v4" stroke="currentColor" stroke-width="1.6"/></svg><span style="font-size:9.5px; font-weight:600;">Plan</span></button>
+        <button onClick="{{ goLibrary }}" style="background:none; border:none; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:4px; color: {{ tcLibrary }};"><svg width="23" height="23" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="1.6"/><path d="M20 20l-4-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg><span style="font-size:9.5px; font-weight:600;">Library</span></button>
+        <button onClick="{{ goTrends }}" style="background:none; border:none; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:4px; color: {{ tcTrends }};"><svg width="23" height="23" viewBox="0 0 24 24" fill="none"><path d="M4 19V9M9.5 19V4M15 19v-7M20.5 19v-11" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><span style="font-size:9.5px; font-weight:600;">Trends</span></button>
+      </div>
+      </sc-if>
+
+      <!-- ========== TOAST ========== -->
+      <sc-if value="{{ toast }}" hint-placeholder-val="{{ false }}">
+      <div style="position:absolute; left:18px; right:18px; bottom:104px; display:flex; align-items:center; gap:12px; padding:14px 16px; background:var(--elevated); border:1px solid var(--border); border-radius:var(--r-md); box-shadow:var(--shadow-lg); animation:os-toast-in var(--dur-base) var(--ease-out);">
+        <span style="flex:1; font-size:13px; font-weight:500; color:var(--text);">{{ toast }}</span>
+        <button onClick="{{ dismissToast }}" style="background:none; border:none; color:var(--accent); font-size:13px; font-weight:700; cursor:pointer;">Undo</button>
+      </div>
+      </sc-if>
+
+      <!-- ========== PR CELEBRATION ========== -->
+      <sc-if value="{{ celebrate }}" hint-placeholder-val="{{ false }}">
+      <div onClick="{{ dismissCelebrate }}" style="position:absolute; inset:0; background:color-mix(in oklab, var(--bg) 78%, transparent); backdrop-filter:blur(3px); display:flex; align-items:center; justify-content:center; cursor:pointer; z-index:5;">
+        <div style="text-align:center; padding:34px 30px; background:var(--elevated); border-radius:var(--r-2xl); animation:os-cel-in var(--dur-slow) var(--ease-spring), os-cel-glow 2s var(--ease-in-out) infinite; max-width:280px;">
+          <div style="display:inline-flex; align-items:center; gap:7px; padding:7px 14px; background:var(--pr); color:var(--accent-ink); border-radius:var(--r-pill); font-size:12px; font-weight:700; letter-spacing:.06em;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M13 2L4 14h7l-1 8 9-12h-7z" fill="currentColor"/></svg>NEW e1RM PR</div>
+          <div style="display:flex; align-items:baseline; justify-content:center; gap:8px; margin-top:18px;"><span style="font-size:var(--num-lg); font-weight:700; letter-spacing:var(--tracking-tight); font-family:var(--font-num); font-weight:var(--num-weight); font-variant-numeric:tabular-nums;">104.2</span><span style="font-size:18px; color:var(--muted); font-weight:600;">kg</span></div>
+          <div style="font-size:13px; color:var(--muted); margin-top:6px;">Beat your old best of 102.4 kg</div>
+          <button onClick="{{ dismissCelebrate }}" style="margin-top:22px; width:100%; height:48px; border:none; border-radius:var(--r-md); background:var(--accent); color:var(--accent-ink); font-size:14px; font-weight:700; cursor:pointer;">Keep going</button>
+        </div>
+      </div>
+      </sc-if>
+
+      <!-- bottom sheet (swap exercise) -->
+      <sc-if value="{{ sheetOpen }}" hint-placeholder-val="{{ false }}">
+      <div onClick="{{ closeSheet }}" style="position:absolute; inset:0; background:color-mix(in oklab, var(--bg) 64%, transparent); backdrop-filter:blur(2px); display:flex; align-items:flex-end; z-index:7;">
+        <div style="width:100%; background:var(--elevated); border-radius:var(--r-2xl) var(--r-2xl) 0 0; padding:10px 20px 30px; box-shadow:var(--shadow-lg); animation:os-toast-in var(--dur-base) var(--ease-out);">
+          <div style="width:38px; height:4px; border-radius:2px; background:var(--border-strong); margin:0 auto 14px;"></div>
+          <div style="font-size:17px; font-weight:700; letter-spacing:var(--tracking-snug);">Swap exercise</div>
+          <div style="font-size:12.5px; color:var(--muted); margin-top:4px;">Same movement pattern, similar muscles worked.</div>
+          <div style="display:flex; flex-direction:column; gap:8px; margin-top:16px;">
+            <button onClick="{{ closeSheet }}" style="width:100%; text-align:left; display:flex; align-items:center; gap:12px; padding:14px 16px; background:var(--surface); border:1px solid var(--border-card); border-radius:var(--r-md); cursor:pointer;"><span style="flex:1; font-size:14px; font-weight:600; color:var(--text);">Dumbbell Bench Press</span><span style="font-size:12px; color:var(--muted);">Chest</span></button>
+            <button onClick="{{ closeSheet }}" style="width:100%; text-align:left; display:flex; align-items:center; gap:12px; padding:14px 16px; background:var(--surface); border:1px solid var(--border-card); border-radius:var(--r-md); cursor:pointer;"><span style="flex:1; font-size:14px; font-weight:600; color:var(--text);">Incline Bench Press</span><span style="font-size:12px; color:var(--muted);">Upper chest</span></button>
+            <button onClick="{{ closeSheet }}" style="width:100%; text-align:left; display:flex; align-items:center; gap:12px; padding:14px 16px; background:var(--surface); border:1px solid var(--border-card); border-radius:var(--r-md); cursor:pointer;"><span style="flex:1; font-size:14px; font-weight:600; color:var(--text);">Machine Chest Press</span><span style="font-size:12px; color:var(--muted);">Chest</span></button>
+          </div>
+          <button onClick="{{ closeSheet }}" style="margin-top:14px; width:100%; height:50px; border:none; border-radius:var(--r-md); background:var(--surface-2); color:var(--text); font-size:14px; font-weight:600; cursor:pointer;">Cancel</button>
+        </div>
+      </div>
+      </sc-if>
+
+      <!-- iOS-style color picker -->
+      <sc-if value="{{ pickerOpen }}" hint-placeholder-val="{{ false }}">
+      <div onClick="{{ closePicker }}" style="position:absolute; inset:0; background:color-mix(in oklab, var(--bg) 64%, transparent); backdrop-filter:blur(2px); display:flex; align-items:flex-end; z-index:8;">
+        <div onClick="{{ stop }}" style="width:100%; background:var(--elevated); border-radius:24px 24px 0 0; padding:10px 20px 28px; box-shadow:var(--shadow-lg); animation:os-toast-in var(--dur-base) var(--ease-out);">
+          <div style="width:38px; height:4px; border-radius:2px; background:var(--border-strong); margin:0 auto 14px;"></div>
+          <div style="display:flex; align-items:center; gap:12px; margin-bottom:14px;">
+            <span style="width:34px; height:34px; border-radius:50%; flex:none; background:{{ curCss }}; box-shadow:0 0 0 1px var(--border-strong);"></span>
+            <div style="flex:1;">
+              <div style="font-size:16px; font-weight:700;">Colors</div>
+              <div style="font-size:11px; color:var(--muted); font-family:var(--font-num);">{{ curHex }}</div>
+            </div>
+            <button onClick="{{ closePicker }}" style="height:36px; padding:0 17px; border:none; border-radius:var(--r-pill); background:var(--accent); color:var(--accent-ink); font-size:13px; font-weight:700; cursor:pointer;">Done</button>
+          </div>
+          <div style="display:flex; padding:3px; background:var(--bg); border-radius:var(--r-md); margin-bottom:16px;">
+            <button onClick="{{ tabGrid }}" style="flex:1; height:36px; border:none; border-radius:8px; background:{{ segGridBg }}; color:{{ segGridFg }}; font-size:12.5px; font-weight:600; cursor:pointer;">Grid</button>
+            <button onClick="{{ tabSpectrum }}" style="flex:1; height:36px; border:none; border-radius:8px; background:{{ segSpectrumBg }}; color:{{ segSpectrumFg }}; font-size:12.5px; font-weight:600; cursor:pointer;">Spectrum</button>
+            <button onClick="{{ tabSliders }}" style="flex:1; height:36px; border:none; border-radius:8px; background:{{ segSlidersBg }}; color:{{ segSlidersFg }}; font-size:12.5px; font-weight:600; cursor:pointer;">Sliders</button>
+          </div>
+          <sc-if value="{{ isGrid }}" hint-placeholder-val="{{ true }}">
+          <div style="display:grid; grid-template-columns:repeat(12,1fr); gap:5px;">
+            <sc-for list="{{ gridColors }}" as="c" hint-placeholder-count="24">
+              <button onClick="{{ setGridColor }}" data-h="{{ c.h }}" data-s="{{ c.s }}" data-l="{{ c.l }}" style="aspect-ratio:1; border:none; border-radius:5px; background:{{ c.css }}; cursor:pointer;" style-active="transform:scale(0.82)"></button>
+            </sc-for>
+          </div>
+          </sc-if>
+          <sc-if value="{{ isSpectrum }}" hint-placeholder-val="{{ false }}">
+          <div>
+            <div onPointerDown="{{ onSpectrum }}" onPointerMove="{{ onSpectrum }}" style="position:relative; height:172px; border-radius:16px; cursor:crosshair; touch-action:none; background:linear-gradient(to top, rgba(0,0,0,.92), rgba(0,0,0,0) 52%, rgba(255,255,255,.55)), linear-gradient(to right, hsl(0 80% 55%), hsl(60 80% 55%), hsl(120 80% 55%), hsl(180 80% 55%), hsl(240 80% 55%), hsl(300 80% 55%), hsl(360 80% 55%));">
+              <span style="position:absolute; left:{{ spLeft }}; top:{{ spTop }}; transform:translate(-50%,-50%); width:24px; height:24px; border-radius:50%; border:3px solid #fff; box-shadow:0 0 0 1px rgba(0,0,0,.35), 0 1px 4px rgba(0,0,0,.4); background:{{ curCss }}; pointer-events:none;"></span>
+            </div>
+            <div style="font-size:11px; color:var(--muted); text-align:center; margin-top:10px;">Drag to choose hue &amp; brightness</div>
+          </div>
+          </sc-if>
+          <sc-if value="{{ isSliders }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex; flex-direction:column; gap:18px; padding:4px 0;">
+            <div><div style="font-size:11px; color:var(--muted); margin-bottom:7px; display:flex; justify-content:space-between;"><span>Hue</span><span style="font-family:var(--font-num);">{{ accentHue }}°</span></div><input class="os-range" type="range" min="0" max="360" value="{{ accentHue }}" onInput="{{ setHue }}" style="--os-track: {{ hueTrack }};" /></div>
+            <div><div style="font-size:11px; color:var(--muted); margin-bottom:7px; display:flex; justify-content:space-between;"><span>Saturation</span><span style="font-family:var(--font-num);">{{ accentSat }}%</span></div><input class="os-range" type="range" min="0" max="100" value="{{ accentSat }}" onInput="{{ setSat }}" style="--os-track: {{ satTrack }};" /></div>
+            <div><div style="font-size:11px; color:var(--muted); margin-bottom:7px; display:flex; justify-content:space-between;"><span>Brightness</span><span style="font-family:var(--font-num);">{{ accentLight }}%</span></div><input class="os-range" type="range" min="38" max="70" value="{{ accentLight }}" onInput="{{ setLight }}" style="--os-track: {{ lightTrack }};" /></div>
+            <div style="display:flex; align-items:center; gap:10px; padding:12px 14px; background:var(--bg); border-radius:var(--r-md);"><span style="width:26px; height:26px; border-radius:6px; background:{{ curCss }}; box-shadow:0 0 0 1px var(--border-strong);"></span><span style="flex:1; font-size:13px; font-weight:600;">Hex</span><span style="font-family:var(--font-num); font-size:14px; color:var(--text);">{{ curHex }}</span></div>
+          </div>
+          </sc-if>
+        </div>
+      </div>
+      </sc-if>
+
+      <!-- home indicator -->
+      <div style="position:absolute; bottom:9px; left:50%; transform:translateX(-50%); width:134px; height:5px; border-radius:3px; background:color-mix(in oklab, var(--text) 32%, transparent); z-index:6;"></div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = {
+    screen: 'session', ds: 'tempo', mode: 'dark', theme: 'tempo',
+    accentHue: 38, accentSat: 70, accentLight: 58, baseHue: 28,
+    pickerOpen: false, pickerTab: 'grid',
+    weight: 84, reps: 8,
+    rest: 0, resting: false,
+    toast: null, celebrate: false, whyOpen: false,
+    obStep: 0,
+    sheetOpen: false,
+  };
+
+  componentDidMount() {
+    this._t = setInterval(() => {
+      this.setState(s => (s.resting && s.rest > 0) ? { rest: s.rest - 1, resting: (s.rest - 1) > 0 } : null);
+    }, 1000);
+  }
+  componentWillUnmount() { clearInterval(this._t); clearTimeout(this._toastT); clearTimeout(this._celT); }
+
+  _hslRgb(h, s, l) {
+    s /= 100; l /= 100;
+    const k = n => (n + h / 30) % 12;
+    const a = s * Math.min(l, 1 - l);
+    const f = n => l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
+    return [f(0), f(8), f(4)].map(x => Math.round(x * 255));
+  }
+  _lum([r, g, b]) {
+    const a = [r, g, b].map(v => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); });
+    return 0.2126 * a[0] + 0.7152 * a[1] + 0.0722 * a[2];
+  }
+  _hexHsl(hex) {
+    const r = parseInt(hex.slice(1,3),16)/255, g = parseInt(hex.slice(3,5),16)/255, b = parseInt(hex.slice(5,7),16)/255;
+    const mx = Math.max(r,g,b), mn = Math.min(r,g,b), d = mx-mn; let h = 0;
+    if (d) { if (mx===r) h=((g-b)/d)%6; else if (mx===g) h=(b-r)/d+2; else h=(r-g)/d+4; h*=60; if (h<0) h+=360; }
+    const l = (mx+mn)/2, s = d===0 ? 0 : d/(1-Math.abs(2*l-1));
+    return { h: Math.round(h), s: Math.round(s*100) };
+  }
+  _hslHex(h, s, l) { const [r,g,b] = this._hslRgb(h, s, l); return '#' + [r,g,b].map(x => x.toString(16).padStart(2,'0')).join('').toUpperCase(); }
+  _fmt(t) { const m = Math.floor(t / 60), s = t % 60; return m + ':' + String(s).padStart(2, '0'); }
+
+  renderVals() {
+    const st = this.state;
+    const set = (p) => this.setState(p);
+    const aL = Math.min(70, Math.max(38, st.accentLight));
+    const accent = `hsl(${st.accentHue} ${st.accentSat}% ${aL}%)`;
+    const seedBg = `hsl(${st.baseHue} 16% ${st.mode === 'dark' ? 7 : 96}%)`;
+    const ink = this._lum(this._hslRgb(st.accentHue, st.accentSat, aL)) > 0.45 ? '#15110a' : '#ffffff';
+    const tc = (k) => st.screen === k ? 'var(--accent)' : 'var(--faint)';
+    const ring = (k) => st.theme === k ? 'var(--accent)' : 'var(--border)';
+    const aHex = this._hslHex(st.accentHue, st.accentSat, aL);
+    const lights = [90,80,69,58,47,37,27,16];
+    const ghues = [0,18,40,55,90,150,178,200,222,255,292,328];
+    const gridColors = [];
+    lights.forEach(l => ghues.forEach((h,i) => { const s = i===0?0:80; gridColors.push({ css:`hsl(${h} ${s}% ${l}%)`, h, s, l, key:i+'-'+l }); }));
+    const spLeft = (st.accentHue/360*100) + '%';
+    const spTop = Math.min(100, Math.max(0, (86 - aL)/(86-30)*100)) + '%';
+    const hueTrack = 'linear-gradient(to right, hsl(0 80% 55%), hsl(60 80% 55%), hsl(120 80% 55%), hsl(180 80% 55%), hsl(240 80% 55%), hsl(300 80% 55%), hsl(360 80% 55%))';
+    const satTrack = `linear-gradient(to right, hsl(${st.accentHue} 0% ${aL}%), hsl(${st.accentHue} 100% ${aL}%))`;
+    const lightTrack = `linear-gradient(to right, hsl(${st.accentHue} ${st.accentSat}% 28%), hsl(${st.accentHue} ${st.accentSat}% 72%))`;
+    const segBg = (t) => st.pickerTab === t ? 'var(--accent)' : 'transparent';
+    const segFg = (t) => st.pickerTab === t ? 'var(--accent-ink)' : 'var(--muted)';
+
+    return {
+      mode: st.mode, theme: st.theme, ds: st.ds,
+      accentLight: aL,
+      pickerOpen: st.pickerOpen,
+      isGrid: st.pickerTab === 'grid', isSpectrum: st.pickerTab === 'spectrum', isSliders: st.pickerTab === 'sliders',
+      openPicker: () => set({ pickerOpen: true }), closePicker: () => set({ pickerOpen: false }),
+      stop: (e) => e.stopPropagation(),
+      tabGrid: () => set({ pickerTab: 'grid' }), tabSpectrum: () => set({ pickerTab: 'spectrum' }), tabSliders: () => set({ pickerTab: 'sliders' }),
+      segGridBg: segBg('grid'), segGridFg: segFg('grid'),
+      segSpectrumBg: segBg('spectrum'), segSpectrumFg: segFg('spectrum'),
+      segSlidersBg: segBg('sliders'), segSlidersFg: segFg('sliders'),
+      gridColors,
+      setGridColor: (e) => { const d = e.currentTarget.dataset; set({ accentHue: +d.h, accentSat: +d.s, accentLight: +d.l, theme: 'custom' }); },
+      onSpectrum: (e) => { if (e.type === 'pointermove' && e.buttons === 0) return; const r = e.currentTarget.getBoundingClientRect(); const x = Math.min(1, Math.max(0, (e.clientX - r.left) / r.width)); const y = Math.min(1, Math.max(0, (e.clientY - r.top) / r.height)); set({ accentHue: Math.round(x * 360), accentSat: 80, accentLight: Math.round(86 - y * (86 - 30)), theme: 'custom' }); },
+      spLeft, spTop, curCss: accent, curHex: aHex,
+      setHue: (e) => set({ accentHue: +e.target.value, theme: 'custom' }),
+      setSat: (e) => set({ accentSat: +e.target.value, theme: 'custom' }),
+      setLight: (e) => set({ accentLight: +e.target.value, theme: 'custom' }),
+      hueTrack, satTrack, lightTrack,
+      setDsTempo: () => set({ ds: 'tempo', theme: 'tempo' }),
+      setDsReadout: () => set({ ds: 'readout', theme: 'teal', mode: 'dark' }),
+      ringDsTempo: st.ds === 'tempo' ? 'var(--accent)' : 'var(--border)',
+      ringDsReadout: st.ds === 'readout' ? 'var(--accent)' : 'var(--border)',
+      dsTempoBg: st.ds === 'tempo' ? '#1c1a17' : 'transparent',
+      dsTempoFg: st.ds === 'tempo' ? '#f4f2ee' : '#6b665d',
+      dsReadoutBg: st.ds === 'readout' ? '#1c1a17' : 'transparent',
+      dsReadoutFg: st.ds === 'readout' ? '#f4f2ee' : '#6b665d',
+      dsTempoCardBg: st.ds === 'tempo' ? 'var(--accent)' : 'var(--surface)',
+      dsTempoCardFg: st.ds === 'tempo' ? 'var(--accent-ink)' : 'var(--muted)',
+      dsReadoutCardBg: st.ds === 'readout' ? 'var(--accent)' : 'var(--surface)',
+      dsReadoutCardFg: st.ds === 'readout' ? 'var(--accent-ink)' : 'var(--muted)',
+      seedBg, seedAccent: accent, seedInk: ink,
+      accentHue: st.accentHue, accentSat: st.accentSat, baseHue: st.baseHue,
+
+      showSession: st.screen === 'session', showToday: st.screen === 'today',
+      showTrends: st.screen === 'trends', showSettings: st.screen === 'settings',
+      showAppearance: st.screen === 'appearance', showMeasurements: st.screen === 'measurements', showGoals: st.screen === 'goals',
+      showPlan: st.screen === 'plan', showLibrary: st.screen === 'library',
+      showTabs: ['today', 'trends', 'plan', 'library'].includes(st.screen),
+      isTempo: st.ds === 'tempo', isReadout: st.ds === 'readout',
+      muscleFig: st.mode === 'dark' ? 'assets/muscle-figure-dark.png' : 'assets/muscle-figure-light.png',
+
+      goToday: () => set({ screen: 'today' }), goSession: () => set({ screen: 'session' }),
+      goTrends: () => set({ screen: 'trends' }), goSettings: () => set({ screen: 'settings' }),
+      goAppearance: () => set({ screen: 'appearance' }), goMeasurements: () => set({ screen: 'measurements' }), goGoals: () => set({ screen: 'goals' }),
+      goPlan: () => set({ screen: 'plan' }), goLibrary: () => set({ screen: 'library' }),
+      tcToday: tc('today'), tcTrends: tc('trends'), tcPlan: tc('plan'), tcLibrary: tc('library'),
+      showBuilder: st.screen === 'builder', showDetail: st.screen === 'detail', showHistory: st.screen === 'history',
+      showBackup: st.screen === 'backup', goBackup: () => set({ screen: 'backup' }),
+      goBuilder: () => set({ screen: 'builder' }), goDetail: () => set({ screen: 'detail' }), goHistory: () => set({ screen: 'history' }),
+      showPlates: st.screen === 'plates', showCustom: st.screen === 'custom', showRestDefaults: st.screen === 'restdefaults',
+      goPlates: () => set({ screen: 'plates' }), goCustom: () => set({ screen: 'custom' }), goRestDefaults: () => set({ screen: 'restdefaults' }),
+      goOnboarding: () => set({ screen: 'onboarding', obStep: 0 }),
+      showOnboarding: st.screen === 'onboarding',
+      obStep: st.obStep,
+      ob0: st.obStep === 0, ob1: st.obStep === 1, ob2: st.obStep === 2, ob3: st.obStep === 3, ob4: st.obStep === 4, ob5: st.obStep === 5,
+      obProgress: (((st.obStep + 1) / 6) * 100) + '%',
+      obCta: st.obStep >= 5 ? 'Start training' : 'Continue',
+      obNext: () => set(s => s.obStep >= 5 ? { screen: 'plan' } : { obStep: s.obStep + 1 }),
+      obBack: () => set(s => s.obStep === 0 ? { screen: 'plan' } : { obStep: s.obStep - 1 }),
+
+      weight: st.weight, reps: st.reps,
+      incW: () => set(s => ({ weight: Math.round((s.weight + 2.5) * 10) / 10 })),
+      decW: () => set(s => ({ weight: Math.max(0, Math.round((s.weight - 2.5) * 10) / 10) })),
+      incR: () => set(s => ({ reps: s.reps + 1 })),
+      decR: () => set(s => ({ reps: Math.max(0, s.reps - 1) })),
+
+      restText: this._fmt(st.rest || 0), resting: st.resting,
+      addRest: () => set(s => ({ rest: (s.rest || 0) + 15, resting: true })),
+      subRest: () => set(s => ({ rest: Math.max(0, (s.rest || 0) - 15) })),
+      skipRest: () => set({ rest: 0, resting: false }),
+
+      whyOpen: st.whyOpen, whyChevron: st.whyOpen ? '⌄' : '›',
+      toggleWhy: () => set(s => ({ whyOpen: !s.whyOpen })),
+
+      logSet: () => {
+        const pr = st.reps >= 11 || st.weight >= 86;
+        set({ rest: 120, resting: true, toast: 'Set logged · ' + st.weight + ' kg × ' + st.reps, celebrate: pr });
+        clearTimeout(this._toastT); this._toastT = setTimeout(() => this.setState({ toast: null }), 2800);
+        if (pr) { clearTimeout(this._celT); this._celT = setTimeout(() => this.setState({ celebrate: false }), 2600); }
+      },
+      toast: st.toast, dismissToast: () => set({ toast: null }),
+      celebrate: st.celebrate, dismissCelebrate: () => set({ celebrate: false }),
+      sheetOpen: st.sheetOpen, openSheet: () => set({ sheetOpen: true }), closeSheet: () => set({ sheetOpen: false }),
+
+      modeDark: () => set({ mode: 'dark' }), modeLight: () => set({ mode: 'light' }),
+      modeDarkBg: st.mode === 'dark' ? 'var(--accent)' : 'transparent',
+      modeDarkFg: st.mode === 'dark' ? 'var(--accent-ink)' : 'var(--muted)',
+      modeLightBg: st.mode === 'light' ? 'var(--accent)' : 'transparent',
+      modeLightFg: st.mode === 'light' ? 'var(--accent-ink)' : 'var(--muted)',
+
+      themeTempo: () => set({ theme: 'tempo' }), themeTeal: () => set({ theme: 'teal' }),
+      themeGraphite: () => set({ theme: 'graphite' }),
+      themeSteel: () => set({ theme: 'steel' }), themeVolt: () => set({ theme: 'volt' }),
+      themeEmber: () => set({ theme: 'ember' }), themeClinic: () => set({ theme: 'clinic' }),
+      themeMidnight: () => set({ theme: 'midnight' }), themeRose: () => set({ theme: 'rose' }),
+      themePine: () => set({ theme: 'pine' }),
+      themeCustom: () => set({ theme: 'custom' }),
+      ringTempo: ring('tempo'), ringTeal: ring('teal'), ringGraphite: ring('graphite'), ringSteel: ring('steel'),
+      ringVolt: ring('volt'), ringEmber: ring('ember'), ringClinic: ring('clinic'),
+      ringMidnight: ring('midnight'), ringRose: ring('rose'), ringCustom: ring('custom'),
+      ringPine: ring('pine'),
+      setAccentSwatch: (e) => set({ accentHue: +e.currentTarget.dataset.hue, accentSat: +e.currentTarget.dataset.sat, theme: 'custom' }),
+      setGround: (e) => set({ baseHue: +e.currentTarget.dataset.h, theme: 'custom' }),
+      setAccentPick: (e) => { const c = this._hexHsl(e.target.value); set({ accentHue: c.h, accentSat: Math.max(12, c.s), theme: 'custom' }); },
+    };
+  }
+}
+</script>
+</body>
+</html>

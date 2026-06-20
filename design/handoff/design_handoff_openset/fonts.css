@@ -1,0 +1,60 @@
+/* ============================================================================
+   OpenSets — Fonts + global keyframes
+   ----------------------------------------------------------------------------
+   SELF-HOSTABLE TYPE — no Google Fonts CDN at runtime.
+
+   The app uses three faces (all available under the SIL Open Font License, so
+   you can vendor the .woff2 files into /public/fonts and ship them yourself):
+
+     • Hanken Grotesk  — UI + numerals for the "Tempo" template (data-ds="tempo")
+                         https://github.com/marcologous/hanken-grotesk
+     • Inter           — UI for the "Readout" template (data-ds="readout")
+                         https://github.com/rsms/inter
+     • JetBrains Mono  — tabular numerals + caps labels in Readout
+                         https://github.com/JetBrains/JetBrainsMono
+
+   Download the variable .woff2 for each, drop into /public/fonts, and the
+   @font-face blocks below pick them up. If you'd rather not vendor fonts at
+   all, delete the @font-face blocks — the --font-sans stack already falls back
+   to ui-sans-serif / system-ui, and --font-num to ui-monospace.
+   ========================================================================== */
+
+@font-face {
+  font-family: "Hanken Grotesk";
+  src: url("/fonts/HankenGrotesk-Variable.woff2") format("woff2");
+  font-weight: 300 800;
+  font-display: swap;
+  font-style: normal;
+}
+@font-face {
+  font-family: "Inter";
+  src: url("/fonts/Inter-Variable.woff2") format("woff2");
+  font-weight: 100 900;
+  font-display: swap;
+  font-style: normal;
+}
+@font-face {
+  font-family: "JetBrains Mono";
+  src: url("/fonts/JetBrainsMono-Variable.woff2") format("woff2");
+  font-weight: 100 800;
+  font-display: swap;
+  font-style: normal;
+}
+
+/* ----------------------------------------------------------------------------
+   Global keyframes referenced by primitives (Sheet / Toast) and the PR
+   celebration. Animation durations/easings come from the motion tokens.
+---------------------------------------------------------------------------- */
+
+@keyframes os-toast-in {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes os-cel-in {
+  from { opacity: 0; transform: scale(0.9); }
+  to   { opacity: 1; transform: scale(1); }
+}
+@keyframes os-cel-glow {
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in oklab, var(--pr) 0%, transparent); }
+  50%      { box-shadow: 0 0 60px 0 color-mix(in oklab, var(--pr) 30%, transparent); }
+}
