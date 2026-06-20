@@ -19,7 +19,14 @@ export interface PlanParams {
   days: number;
   equipment: Equipment;
   experience: Experience;
+  /** Per-type rest defaults (seconds) from user settings. Compound slots use
+   *  `compoundSec`, everything else `isolationSec`. Omitted → built-in defaults
+   *  so the generator stays pure for tests. */
+  rest?: { compoundSec: number; isolationSec: number };
 }
+
+/** Built-in rest fallbacks, used when no settings-derived rest is supplied. */
+const DEFAULT_REST = { compoundSec: 180, isolationSec: 90 } as const;
 
 export interface PlanSlotSpec {
   exerciseId: string;
@@ -153,6 +160,7 @@ function startWeight(ex: Exercise, compound: boolean): number {
 
 export function generatePlan(catalog: Exercise[], params: PlanParams): GeneratedPlan {
   const { goal, days, equipment, experience } = params;
+  const rest = params.rest ?? DEFAULT_REST;
   const pool = EQUIPMENT_POOL[equipment];
   const strength = goal === 'Get stronger' || experience === 'Novice';
   const fatLoss = goal === 'Lose fat';
@@ -216,8 +224,8 @@ export function generatePlan(catalog: Exercise[], params: PlanParams): Generated
         rule: pat.compound ? compoundRule : isoRule,
         scheme: pat.compound ? compoundScheme : isoScheme,
         rest: pat.compound
-          ? { warmupSec: 60, workSec: fatLoss ? 120 : 180 }
-          : { warmupSec: 45, workSec: fatLoss ? 60 : 90 },
+          ? { warmupSec: 60, workSec: rest.compoundSec }
+          : { warmupSec: 45, workSec: rest.isolationSec },
         startWeightKg: startWeight(chosen, pat.compound),
       });
     }

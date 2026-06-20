@@ -50,7 +50,7 @@ export function OnboardingScreen() {
   const [experience, setExperience] = useState<string>('Intermediate');
   const [bodyweight, setBodyweight] = useState('');
   const [busy, setBusy] = useState(false);
-  const { units } = useSettings();
+  const { units, restCompoundSec, restIsolationSec } = useSettings();
 
   // The generated plan — recomputed as the answers change, used for both the
   // step-5 preview and the actual build so they always agree.
@@ -62,9 +62,10 @@ export function OnboardingScreen() {
             days,
             equipment: equipment as Equipment,
             experience: experience as Experience,
+            rest: { compoundSec: restCompoundSec, isolationSec: restIsolationSec },
           })
         : null,
-    [catalog, goal, days, equipment, experience],
+    [catalog, goal, days, equipment, experience, restCompoundSec, restIsolationSec],
   );
 
   async function finish() {

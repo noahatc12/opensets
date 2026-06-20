@@ -217,6 +217,13 @@ export interface UserSettings {
   plateInventoryKg: number[];
   defaultRestWarmupSec: number;
   defaultRestWorkSec: number;
+  /** Per-exercise-type rest defaults (seconds), keyed by mechanic class.
+   *  Older rows may lack these — consumers read with `?? <default>`. */
+  restCompoundSec: number;
+  restIsolationSec: number;
+  restAccessorySec: number;
+  /** When true, the rest timer auto-starts after each logged set. */
+  restAutoStart: boolean;
   theme: 'dark' | 'light' | 'system';
   soundOn: boolean;
   backupNudgeEvery: number;

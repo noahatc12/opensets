@@ -2,12 +2,14 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSettings, updateSettings } from '../../db/hooks';
 import { ChevronLeftIcon, PlusIcon, MinusIcon } from '../../components/icons';
+import { DEFAULT_SETTINGS } from '../../db/db';
 
-/* Ported from the OpenSets prototype `showRestDefaults` screen (Rest timer):
-   header (‹ back + title) + scroll body. The prototype's per-type rows are a
-   static mock; here they're real steppers writing settings.defaultRestWarmupSec
-   and settings.defaultRestWorkSec (stored in seconds, shown as m:ss). The ±Step
-   segmented control picks the stepper increment. */
+/* Ported from the OpenSets prototype `showRestDefaults` screen (Rest timer,
+   reference/OpenSets.dc.html lines 634-659): an "Auto-start on logged set" pill
+   toggle, then a "Default by exercise type" group with three value rows
+   (Compound / Isolation / Accessory) showing m:ss, each adjusted by a shared
+   ±Step control. The prototype's rows are static; here they write real settings
+   (restCompoundSec / restIsolationSec / restAccessorySec, restAutoStart). */
 
 const numFont = {
   fontFamily: 'var(--font-num)',
@@ -32,9 +34,9 @@ const SectionLabel = ({ children }: { children: React.ReactNode }) => (
   </div>
 );
 
-type RestField = 'defaultRestWarmupSec' | 'defaultRestWorkSec';
+type RestField = 'restCompoundSec' | 'restIsolationSec' | 'restAccessorySec';
 
-function StepperRow({
+function TypeRow({
   label,
   field,
   seconds,
@@ -48,32 +50,32 @@ function StepperRow({
   const set = (next: number) => void updateSettings({ [field]: clamp(next) });
   return (
     <div
-      className="flex items-center justify-between rounded-[var(--r-md)] border px-4 py-2.5"
+      className="flex items-center justify-between rounded-[var(--r-md)] border px-4 py-3.5"
       style={{ background: 'var(--surface)', borderColor: 'var(--border-card)' }}
     >
       <span className="text-[14px] text-text">{label}</span>
       <div className="flex items-center gap-3">
         <button
           onClick={() => set(seconds - step)}
-          aria-label={`Decrease ${label}`}
-          className="grid size-[34px] place-items-center rounded-[var(--r-pill)] text-muted"
+          aria-label={`Decrease ${label} rest`}
+          className="grid size-8 place-items-center rounded-[var(--r-pill)] text-muted"
           style={{ background: 'var(--bg)' }}
         >
-          <MinusIcon className="size-5" />
+          <MinusIcon className="size-[18px]" />
         </button>
         <span
-          className="w-[58px] text-center text-[16px] font-semibold text-accent"
+          className="w-[52px] text-center text-[16px] font-semibold text-accent"
           style={numFont}
         >
           {fmt(seconds)}
         </span>
         <button
           onClick={() => set(seconds + step)}
-          aria-label={`Increase ${label}`}
-          className="grid size-[34px] place-items-center rounded-[var(--r-pill)] text-muted"
+          aria-label={`Increase ${label} rest`}
+          className="grid size-8 place-items-center rounded-[var(--r-pill)] text-muted"
           style={{ background: 'var(--bg)' }}
         >
-          <PlusIcon className="size-5" />
+          <PlusIcon className="size-[18px]" />
         </button>
       </div>
     </div>
@@ -84,6 +86,11 @@ export function RestDefaultsScreen() {
   const navigate = useNavigate();
   const settings = useSettings();
   const [step, setStep] = useState<Step>(15);
+
+  const autoStart = settings.restAutoStart ?? DEFAULT_SETTINGS.restAutoStart;
+  const compoundSec = settings.restCompoundSec ?? DEFAULT_SETTINGS.restCompoundSec;
+  const isolationSec = settings.restIsolationSec ?? DEFAULT_SETTINGS.restIsolationSec;
+  const accessorySec = settings.restAccessorySec ?? DEFAULT_SETTINGS.restAccessorySec;
 
   return (
     <div className="flex h-full flex-col">
@@ -104,20 +111,36 @@ export function RestDefaultsScreen() {
       </div>
 
       <div className="os-scroll flex-1 overflow-auto px-[22px] pb-7 pt-1.5">
-        <SectionLabel>Default by set type</SectionLabel>
+        {/* Auto-start pill toggle */}
+        <button
+          onClick={() => void updateSettings({ restAutoStart: !autoStart })}
+          aria-pressed={autoStart}
+          className="flex w-full items-center justify-between rounded-[var(--r-md)] border px-4 py-3.5 text-left"
+          style={{ background: 'var(--surface)', borderColor: 'var(--border-card)' }}
+        >
+          <span className="text-[14px] font-semibold text-text">
+            Auto-start on logged set
+          </span>
+          <span
+            className="relative h-7 w-[46px] flex-none rounded-[var(--r-pill)] transition-colors"
+            style={{ background: autoStart ? 'var(--accent)' : 'var(--surface-2)' }}
+          >
+            <span
+              className="absolute top-[3px] size-[22px] rounded-full transition-all"
+              style={{
+                background: autoStart ? 'var(--accent-ink)' : 'var(--muted)',
+                left: autoStart ? 'auto' : '3px',
+                right: autoStart ? '3px' : 'auto',
+              }}
+            />
+          </span>
+        </button>
+
+        <SectionLabel>Default by exercise type</SectionLabel>
         <div className="flex flex-col gap-2">
-          <StepperRow
-            label="Warm-up sets"
-            field="defaultRestWarmupSec"
-            seconds={settings.defaultRestWarmupSec}
-            step={step}
-          />
-          <StepperRow
-            label="Working sets"
-            field="defaultRestWorkSec"
-            seconds={settings.defaultRestWorkSec}
-            step={step}
-          />
+          <TypeRow label="Compound" field="restCompoundSec" seconds={compoundSec} step={step} />
+          <TypeRow label="Isolation" field="restIsolationSec" seconds={isolationSec} step={step} />
+          <TypeRow label="Accessory" field="restAccessorySec" seconds={accessorySec} step={step} />
         </div>
 
         <SectionLabel>±&nbsp;Step</SectionLabel>
@@ -146,7 +169,8 @@ export function RestDefaultsScreen() {
         </div>
 
         <p className="mx-1 mt-2 text-[11px] leading-snug text-faint">
-          The rest timer starts at these lengths after each logged set.
+          New exercises start their rest timer at the length for their type. The ±
+          Step control sets how much each tap adjusts.
         </p>
       </div>
     </div>

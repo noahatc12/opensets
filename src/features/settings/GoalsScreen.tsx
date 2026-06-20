@@ -3,10 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../db/db';
 import { newId } from '../../db/ids';
-import type { Goal, GoalType } from '../../db/types';
+import type { Goal, GoalType, Measurement } from '../../db/types';
 import { ChevronLeftIcon, PlusIcon } from '../../components/icons';
 import { useSettings } from '../../db/hooks';
-import { fmtWeight, lbToKg } from '../../lib/units';
+import { e1rm, isE1rmEligible } from '../../engine';
+import { fmtWeight, lbToKg, toUnit } from '../../lib/units';
 import type { WeightUnit } from '../../lib/units';
 
 /* Ported from the Tempo prototype Goals screen (showGoals): a back header +
@@ -54,16 +55,78 @@ function goalTitle(goal: Goal, units: WeightUnit): string {
   return `${label} ${value}${unit ? ` ${unit}` : ''}`.trim();
 }
 
-function goalSubline(goal: Goal, units: WeightUnit): string {
-  const { value, unit } = displayTarget(goal, units);
-  const verb = goal.direction === 'increase' ? 'Reach' : 'Reduce to';
-  return `${verb} ${value}${unit ? ` ${unit}` : ''} · tracking`;
+const clamp = (n: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, n));
+
+/** Latest measurement of a given type (max by date), or undefined if none. */
+function latestMeasurement(rows: Measurement[], type: string): Measurement | undefined {
+  let best: Measurement | undefined;
+  for (const m of rows) {
+    if (m.type !== type) continue;
+    if (!best || m.date > best.date) best = m;
+  }
+  return best;
+}
+
+/** Progress toward a target given a direction. Both args canonical (kg / cm). */
+function pctToward(current: number, target: number, direction: Goal['direction']): number {
+  if (target <= 0 || current <= 0) return 0;
+  const ratio = direction === 'decrease' ? target / current : current / target;
+  return clamp(ratio * 100, 0, 100);
+}
+
+/** Format a current/target line in the right unit. Weight goals convert to {units}. */
+function progressSubline(goal: Goal, currentKg: number | null, units: WeightUnit): string {
+  const { value: targetStr, unit } = displayTarget(goal, units);
+  if (currentKg === null) {
+    const verb = goal.direction === 'increase' ? 'Reach' : 'Reduce to';
+    return `${verb} ${targetStr}${unit ? ` ${unit}` : ''} · tracking`;
+  }
+  const currentStr = isWeightGoal(goal.type)
+    ? fmtWeight(currentKg, units)
+    : String(Math.round(toUnit(currentKg, units) * 10) / 10);
+  return `${currentStr} / ${targetStr}${unit ? ` ${unit}` : ''}`;
 }
 
 function GoalCard({ goal, units }: { goal: Goal; units: WeightUnit }) {
-  // No stored current value yet — show the target honestly at 0% rather than
-  // inventing a percentage. Achieved goals read full.
-  const pct = goal.status === 'achieved' ? 100 : 0;
+  // Best estimated 1RM for a liftTarget goal, from logged eligible sets.
+  const liftCurrent = useLiveQuery(async () => {
+    if (goal.type !== 'liftTarget' || !goal.exerciseId) return null;
+    const sets = await db.sets.where('exerciseId').equals(goal.exerciseId).toArray();
+    let best = 0;
+    for (const s of sets) {
+      if (s.deletedAt || !isE1rmEligible(s)) continue;
+      best = Math.max(best, e1rm(s.weightKg, s.reps));
+    }
+    return best;
+  }, [goal.type, goal.exerciseId]);
+
+  // Latest bodyweight / body-measurement reading for those goal types.
+  const measureRows = useLiveQuery(
+    () =>
+      goal.type === 'bodyweight' || goal.type === 'measurement'
+        ? db.measurements.toArray()
+        : Promise.resolve<Measurement[]>([]),
+    [goal.type],
+  );
+
+  // Resolve current value (canonical kg/cm) per goal type. null = no source mapped.
+  let current: number | null = null;
+  if (goal.type === 'liftTarget') {
+    current = liftCurrent != null && liftCurrent > 0 ? liftCurrent : null;
+  } else if (goal.type === 'bodyweight') {
+    const m = latestMeasurement(measureRows ?? [], 'bodyweight');
+    current = m?.valueKg ?? null;
+  }
+  // 'measurement' goals carry no measurement-type link on Goal, so they stay
+  // unmapped (0%) rather than guessing which measurement to read.
+
+  const pct =
+    goal.status === 'achieved'
+      ? 100
+      : current === null
+        ? 0
+        : Math.round(pctToward(current, goal.target, goal.direction));
+
   return (
     <div
       className="rounded-[var(--r-md)] border"
@@ -94,7 +157,8 @@ function GoalCard({ goal, units }: { goal: Goal; units: WeightUnit }) {
         />
       </div>
       <div className="mt-2 text-[11.5px] text-muted" style={{ fontFamily: 'var(--font-num)' }}>
-        {goalSubline(goal, units)}
+        {progressSubline(goal, current, units)}
+        {current !== null ? ` · ${pct}%` : ''}
       </div>
     </div>
   );

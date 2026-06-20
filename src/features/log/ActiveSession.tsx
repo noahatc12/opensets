@@ -59,7 +59,7 @@ const numFont = {
 
 export function ActiveSession() {
   useCatalog();
-  const { units } = useSettings();
+  const { units, restAutoStart } = useSettings();
   const { session, prescriptions, lastByExercise, logged } = useActiveWorkout();
   const current = useSessionStore((s) => s.currentExercise);
   const setCurrent = useSessionStore((s) => s.setCurrentExercise);
@@ -161,7 +161,7 @@ export function ActiveSession() {
     }
     setToast({ setId: loggedRow.id });
     setWhyOpen(false);
-    startRest(slot!.restWorkSec);
+    if (restAutoStart ?? true) startRest(slot!.restWorkSec);
   }
 
   async function finish() {
