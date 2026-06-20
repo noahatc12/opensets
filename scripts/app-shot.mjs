@@ -11,12 +11,26 @@ const ctx = await browser.newContext({
   viewport: { width: 390, height: 844 },
   deviceScaleFactor: 2,
 });
+// Optionally preset the theme selection (mode/theme/ds) BEFORE the app boots,
+// so initTheme() reads it. addInitScript runs before any page script on every load.
+const theme = process.env.SHOT_THEME; // e.g. '{"mode":"dark","theme":"tempo","ds":"readout"}'
+if (theme) {
+  await ctx.addInitScript((t) => {
+    try {
+      localStorage.setItem('opensets-theme', t);
+    } catch {
+      /* ignore */
+    }
+  }, theme);
+}
+
 const page = await ctx.newPage();
 const errors = [];
 page.on('pageerror', (e) => errors.push('PAGEERROR: ' + e.message));
 
 for (const route of routes) {
   await page.goto(`${BASE}#/${route}`, { waitUntil: 'networkidle' });
+  await page.reload({ waitUntil: 'networkidle' });
   await page.waitForTimeout(700);
   await page.screenshot({ path: `.shots/app-${route.replace(/\//g, '_')}.png`, fullPage: true });
   console.log('shot:', route);
