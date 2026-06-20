@@ -2,6 +2,7 @@ import { fmtWeight } from '../../lib/units';
 import { getCatalogExercise } from '../../db/catalog';
 import { useLogger } from './useLogger';
 import { PrCelebration } from './PrCelebration';
+import { ExercisePicker } from '../library/ExercisePicker';
 import {
   ChevronLeftIcon,
   ChevronRightIcon,
@@ -71,9 +72,16 @@ export function ActiveSession() {
     toast,
     setToast,
     finishing,
+    multiTabConflict,
+    pickerMode,
     log,
     finish,
     undoSet,
+    skip,
+    openSwap,
+    openAdd,
+    closePicker,
+    onPickExercise,
   } = vm;
 
   const totalForGrid = Math.max(totalSets, 1);
@@ -112,6 +120,20 @@ export function ActiveSession() {
           {finishing ? '…' : 'Finish'}
         </button>
       </div>
+
+      {multiTabConflict && (
+        <div
+          className="mx-[22px] mb-2 flex-none rounded-[var(--r-md)] px-3.5 py-2.5 text-[12px] font-medium"
+          style={{
+            background: 'color-mix(in oklab, var(--danger) 12%, var(--surface))',
+            border: '1px solid color-mix(in oklab, var(--danger) 32%, transparent)',
+            color: 'var(--danger)',
+          }}
+        >
+          This workout is open in another tab. Logging is paused here to protect your
+          data — finish in the original tab.
+        </div>
+      )}
 
       {/* Scroll area — Readout columnar set-list */}
       <div className="os-scroll flex-1 overflow-auto px-[22px] pb-2 pt-1">
@@ -448,13 +470,22 @@ export function ActiveSession() {
         >
           <ChevronLeftIcon className="size-[18px]" />
         </button>
-        <button className="h-[42px] flex-1 rounded-[var(--r-sm)] bg-surface text-[13px] font-semibold text-text">
+        <button
+          onClick={openSwap}
+          className="h-[42px] flex-1 rounded-[var(--r-sm)] bg-surface text-[13px] font-semibold text-text"
+        >
           Swap
         </button>
-        <button className="h-[42px] flex-1 rounded-[var(--r-sm)] bg-surface text-[13px] font-semibold text-text">
+        <button
+          onClick={() => void skip()}
+          className="h-[42px] flex-1 rounded-[var(--r-sm)] bg-surface text-[13px] font-semibold text-text"
+        >
           Skip
         </button>
-        <button className="h-[42px] flex-1 rounded-[var(--r-sm)] bg-surface text-[13px] font-semibold text-text">
+        <button
+          onClick={openAdd}
+          className="h-[42px] flex-1 rounded-[var(--r-sm)] bg-surface text-[13px] font-semibold text-text"
+        >
           Add
         </button>
         <button
@@ -502,7 +533,8 @@ export function ActiveSession() {
         {!exerciseComplete && activePrescribed ? (
           <button
             onClick={() => void log()}
-            className="flex h-[60px] w-full items-center justify-center gap-2.5 rounded-[var(--r-lg)] bg-accent text-[16px] font-bold text-accent-ink"
+            disabled={multiTabConflict}
+            className="flex h-[60px] w-full items-center justify-center gap-2.5 rounded-[var(--r-lg)] bg-accent text-[16px] font-bold text-accent-ink disabled:opacity-50"
             style={{ letterSpacing: '.01em' }}
           >
             <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
@@ -546,6 +578,10 @@ export function ActiveSession() {
             Undo
           </button>
         </div>
+      )}
+
+      {pickerMode && (
+        <ExercisePicker onPick={(ex) => void onPickExercise(ex)} onClose={closePicker} />
       )}
     </div>
   );

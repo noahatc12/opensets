@@ -21,6 +21,10 @@ interface SessionUIState {
   startRest: (seconds: number) => void;
   adjustRest: (deltaSec: number) => void;
   stopRest: () => void;
+  /** Set the rest timer directly (used to restore a crash-recovery snapshot). */
+  setRest: (rest: RestTimer | null) => void;
+  /** Restore ephemeral UI (current exercise + rest) from a recovery snapshot. */
+  restoreUI: (currentExercise: number, rest: RestTimer | null) => void;
 }
 
 export const useSessionStore = create<SessionUIState>((set) => ({
@@ -48,4 +52,6 @@ export const useSessionStore = create<SessionUIState>((set) => ({
         : {},
     ),
   stopRest: () => set({ rest: null }),
+  setRest: (rest) => set({ rest }),
+  restoreUI: (currentExercise, rest) => set({ currentExercise, rest }),
 }));

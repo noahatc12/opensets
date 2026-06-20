@@ -4,14 +4,14 @@
  * (and a future Tempo skin is a second presentational component over the same
  * hook, not a rebuild). No JSX here: state, derived values, and actions only.
  */
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../db/db';
 import { useSettings } from '../../db/hooks';
 import { fmtWeight, weightStepKg, weightStepLabel } from '../../lib/units';
 import { useActiveWorkout } from './useActiveWorkout';
-import { useSessionStore } from '../../state/session';
+import { useSessionStore, type RestTimer } from '../../state/session';
 import { getCatalogExercise } from '../../db/catalog';
 import { useCatalog } from '../library/useCatalog';
 import {
@@ -19,9 +19,41 @@ import {
   softDeleteSet,
   completeSessionAndAdvance,
   detectAndMarkPRs,
+  setSessionSlots,
+  makeSlot,
 } from '../../db/repositories';
-import type { ExerciseSlot, LoggedSet, WorkoutSession } from '../../db/types';
-import type { Prescription, PrescribedSet, PRKind, SetType, SetResult } from '../../engine/types';
+import {
+  saveActiveSnapshot,
+  getActiveSnapshot,
+  clearActiveSnapshot,
+} from '../../db/recovery';
+import { guardActiveSession } from '../../db/multiTab';
+import type {
+  Exercise,
+  ExerciseSlot,
+  LoggedSet,
+  WorkoutSession,
+} from '../../db/types';
+import type {
+  Prescription,
+  PrescribedSet,
+  PRKind,
+  ProgressionRule,
+  SetType,
+  SetResult,
+} from '../../engine/types';
+
+export type PickerMode = 'swap' | 'add' | null;
+
+/** Default progression for an ad-hoc exercise added mid-workout (hypertrophy double). */
+const ADD_RULE: ProgressionRule = {
+  kind: 'double',
+  repMin: 8,
+  repMax: 12,
+  incrementKg: 2.5,
+  perSet: false,
+};
+const ADD_SCHEME = { sets: 3, repRange: [8, 12] as [number, number] };
 
 const nowIso = () => new Date().toISOString();
 
@@ -82,16 +114,24 @@ export interface LoggerVM {
   toast: { setId: string } | null;
   setToast: React.Dispatch<React.SetStateAction<{ setId: string } | null>>;
   finishing: boolean;
+  multiTabConflict: boolean;
+  pickerMode: PickerMode;
   // actions
   log: () => Promise<void>;
   finish: () => Promise<void>;
   undoSet: (setId: string) => Promise<void>;
+  skip: () => Promise<void>;
+  openSwap: () => void;
+  openAdd: () => void;
+  closePicker: () => void;
+  onPickExercise: (exercise: Exercise) => Promise<void>;
   session: WorkoutSession;
 }
 
 export function useLogger(): LoggerVM | null {
   useCatalog();
-  const { units, restAutoStart } = useSettings();
+  const { units, restAutoStart, defaultRestWarmupSec, defaultRestWorkSec } =
+    useSettings();
   const { session, prescriptions, lastByExercise, logged } = useActiveWorkout();
   const current = useSessionStore((s) => s.currentExercise);
   const setCurrent = useSessionStore((s) => s.setCurrentExercise);
@@ -100,6 +140,7 @@ export function useLogger(): LoggerVM | null {
   const stopRest = useSessionStore((s) => s.stopRest);
   const rest = useSessionStore((s) => s.rest);
   const endSession = useSessionStore((s) => s.endSession);
+  const restoreUI = useSessionStore((s) => s.restoreUI);
   const navigate = useNavigate();
 
   const [finishing, setFinishing] = useState(false);
@@ -110,6 +151,17 @@ export function useLogger(): LoggerVM | null {
     e1rm: number | null;
   } | null>(null);
   const [toast, setToast] = useState<{ setId: string } | null>(null);
+  const [pickerMode, setPickerMode] = useState<PickerMode>(null);
+  const [multiTabConflict, setMultiTabConflict] = useState(false);
+  const [readyToSave, setReadyToSave] = useState(false);
+  const restoredForRef = useRef<string | null>(null);
+
+  // Multi-tab guard: if another tab already holds the active session, warn + go
+  // read-only here. Browser-only (no-op in node/tests).
+  useEffect(() => {
+    const guard = guardActiveSession(() => setMultiTabConflict(true));
+    return () => guard.release();
+  }, []);
 
   const program = useLiveQuery(
     () => (session?.programId ? db.programs.get(session.programId) : undefined),
@@ -131,12 +183,49 @@ export function useLogger(): LoggerVM | null {
     return () => clearInterval(id);
   }, []);
 
-  // Auto-dismiss the set-logged undo toast. (Step 2 extends this to the spec's 10 s.)
+  // Auto-dismiss the set-logged undo toast (10 s undo window, spec §5 P1).
   useEffect(() => {
     if (!toast) return;
-    const id = setTimeout(() => setToast(null), 3500);
+    const id = setTimeout(() => setToast(null), 10_000);
     return () => clearTimeout(id);
   }, [toast]);
+
+  // Crash recovery: restore the ephemeral UI (current exercise + rest timer) from
+  // the snapshot once per session BEFORE we start overwriting it, so a reload
+  // resumes exactly where the lifter left off (the rest timer's absolute endsAt
+  // survives the reload). Then enable debounced snapshotting.
+  useEffect(() => {
+    if (!session || restoredForRef.current === session.id) return;
+    restoredForRef.current = session.id;
+    let live = true;
+    void getActiveSnapshot().then((snap) => {
+      if (!live) return;
+      if (snap && snap.sessionId === session.id) {
+        const p = snap.payload as
+          | { currentExercise?: number; rest?: RestTimer | null }
+          | null;
+        if (p) restoreUI(p.currentExercise ?? 0, p.rest ?? null);
+      }
+      setReadyToSave(true);
+    });
+    return () => {
+      live = false;
+    };
+  }, [session, restoreUI]);
+
+  // Debounced snapshot (≤ 250 ms after a mutation, spec §9). Gated on readyToSave
+  // so the initial mount can't overwrite the snapshot before it's been restored.
+  useEffect(() => {
+    if (!session || !readyToSave) return;
+    const id = setTimeout(() => {
+      void saveActiveSnapshot(
+        session.id,
+        { currentExercise: current, rest },
+        nowIso(),
+      );
+    }, 250);
+    return () => clearTimeout(id);
+  }, [session, readyToSave, current, rest, logged.length]);
 
   const slots = session?.executedSlots ?? [];
   const slot = slots[Math.min(current, Math.max(0, slots.length - 1))];
@@ -211,12 +300,46 @@ export function useLogger(): LoggerVM | null {
     setFinishing(true);
     stopRest();
     await completeSessionAndAdvance(session!.id, nowIso());
+    await clearActiveSnapshot();
     endSession();
     navigate('/today');
   }
 
   async function undoSet(setId: string) {
     await softDeleteSet(setId, nowIso());
+  }
+
+  /** Mid-workout edits mutate the session's frozen slots only (template untouched). */
+  async function skip() {
+    const next = slots.filter((_, i) => i !== current);
+    await setSessionSlots(session!.id, next);
+    if (next.length === 0) {
+      await finish();
+      return;
+    }
+    setCurrent(Math.min(current, next.length - 1));
+  }
+
+  const openSwap = () => setPickerMode('swap');
+  const openAdd = () => setPickerMode('add');
+  const closePicker = () => setPickerMode(null);
+
+  async function onPickExercise(exercise: Exercise) {
+    const mode = pickerMode;
+    setPickerMode(null);
+    if (mode === 'swap') {
+      const next = slots.map((s, i) =>
+        i === current ? { ...s, exerciseId: exercise.id } : s,
+      );
+      await setSessionSlots(session!.id, next);
+    } else if (mode === 'add') {
+      const slot = makeSlot(exercise.id, slots.length, ADD_RULE, ADD_SCHEME, {
+        warmupSec: defaultRestWarmupSec,
+        workSec: defaultRestWorkSec,
+      });
+      await setSessionSlots(session!.id, [...slots, slot]);
+      setCurrent(slots.length);
+    }
   }
 
   return {
@@ -256,9 +379,16 @@ export function useLogger(): LoggerVM | null {
     toast,
     setToast,
     finishing,
+    multiTabConflict,
+    pickerMode,
     log,
     finish,
     undoSet,
+    skip,
+    openSwap,
+    openAdd,
+    closePicker,
+    onPickExercise,
     session,
   };
 }

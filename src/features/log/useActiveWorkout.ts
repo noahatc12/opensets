@@ -24,7 +24,15 @@ export interface ActiveWorkout {
  *  sets logged so far this session. */
 export function useActiveWorkout(): ActiveWorkout {
   const activeSessionId = useSessionStore((s) => s.activeSessionId);
-  const [session, setSession] = useState<WorkoutSession | null>(null);
+  // Live session so mid-workout slot edits (Skip / Swap / Add) reflect immediately.
+  const session =
+    useLiveQuery(
+      () =>
+        activeSessionId
+          ? getSession(activeSessionId)
+          : Promise.resolve(undefined),
+      [activeSessionId],
+    ) ?? null;
   const [prescriptions, setPrescriptions] = useState<
     Record<string, Prescription>
   >({});
@@ -32,22 +40,26 @@ export function useActiveWorkout(): ActiveWorkout {
     Record<string, SetResult[]>
   >({});
 
+  // Re-fetch + recompute prescriptions whenever the active session or its slot
+  // composition changes. Keyed on the slot signature (not session identity) so a
+  // live-query tick that doesn't touch slots doesn't thrash the engine.
+  const slotsKey = (session?.executedSlots ?? [])
+    .map((s) => `${s.slotId}:${s.exerciseId}`)
+    .join('|');
+
   // Loading session data from storage is a valid effect (synchronizing React with
   // an external system). The synchronous reset on a null id is intentional.
   /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     let live = true;
     if (!activeSessionId) {
-      setSession(null);
       setPrescriptions({});
       setLastByExercise({});
       return;
     }
     void (async () => {
       const s = await getSession(activeSessionId);
-      if (!live) return;
-      setSession(s ?? null);
-      if (!s) return;
+      if (!live || !s) return;
       const pres: Record<string, Prescription> = {};
       const last: Record<string, SetResult[]> = {};
       for (const slot of s.executedSlots ?? []) {
@@ -68,7 +80,7 @@ export function useActiveWorkout(): ActiveWorkout {
     return () => {
       live = false;
     };
-  }, [activeSessionId]);
+  }, [activeSessionId, slotsKey]);
   /* eslint-enable react-hooks/set-state-in-effect */
 
   const logged =

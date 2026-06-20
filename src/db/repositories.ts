@@ -237,6 +237,17 @@ export function getActiveWorkoutSession(): Promise<WorkoutSession | undefined> {
 }
 
 /**
+ * Replace a session's executed slots (mid-workout Skip / Swap / Add). Mutates the
+ * session's frozen copy only — the program template is never touched.
+ */
+export async function setSessionSlots(
+  sessionId: string,
+  slots: ExerciseSlot[],
+): Promise<void> {
+  await db.sessions.update(sessionId, { executedSlots: slots });
+}
+
+/**
  * Complete a session and ADVANCE progression: for every executed slot, run the
  * engine over what was logged and persist the next state + cached prescription.
  */
