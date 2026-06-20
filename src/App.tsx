@@ -7,6 +7,7 @@ import { TodayScreen } from './features/log/TodayScreen';
 import { RoutineBuilder } from './features/programs/RoutineBuilder';
 import { PlanScreen } from './features/programs/PlanScreen';
 import { LibraryScreen } from './features/library/LibraryScreen';
+import { ExerciseDetailScreen } from './features/library/ExerciseDetailScreen';
 import { HistoryScreen } from './features/analytics/HistoryScreen';
 import { SettingsScreen } from './features/settings/SettingsScreen';
 import { AppearanceScreen } from './features/settings/AppearanceScreen';
@@ -44,6 +45,7 @@ export default function App() {
           <Route path="/plan" element={<PlanScreen />} />
           <Route path="/routine/new" element={<RoutineBuilder />} />
           <Route path="/library" element={<LibraryScreen />} />
+          <Route path="/library/:id" element={<ExerciseDetailScreen />} />
           <Route path="/history" element={<HistoryScreen />} />
           <Route path="/settings" element={<SettingsScreen />} />
           <Route path="/appearance" element={<AppearanceScreen />} />
