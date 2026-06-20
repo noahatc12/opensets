@@ -56,17 +56,36 @@ function filterByRange(series: SeriesPoint[], range: '4W' | '3M' | '1Y' | 'All')
   return out.length >= 2 ? out : series;
 }
 
-/** Derive up to 4 evenly-spaced month labels (e.g. "Mar") spanning the series date range. */
+/**
+ * Derive 4 distinct, evenly-spaced month labels (e.g. "Mar") spanning the series
+ * date range. Steps by whole calendar months across the range so short windows
+ * never collapse to duplicates ("May May Jun Jun"); evenly distributes 4 labels
+ * across however many months the data actually covers.
+ */
 function monthTicks(series: SeriesPoint[]): string[] {
   if (series.length === 0) return [];
-  const first = new Date(series[0]!.date).getTime();
-  const last = new Date(series[series.length - 1]!.date).getTime();
-  const span = last - first || 1;
+  const firstD = new Date(series[0]!.date);
+  const lastD = new Date(series[series.length - 1]!.date);
+  // Whole-month index (year*12 + month) so we count distinct calendar months.
+  const firstM = firstD.getFullYear() * 12 + firstD.getMonth();
+  const lastM = lastD.getFullYear() * 12 + lastD.getMonth();
+  const totalMonths = lastM - firstM; // inclusive span = totalMonths + 1 months
   const n = 4;
+  const fmt = (monthIndex: number) =>
+    new Date(Math.floor(monthIndex / 12), monthIndex % 12, 1).toLocaleDateString('en-US', {
+      month: 'short',
+    });
+  // Range covers <4 distinct months: emit one label per covered month (no dupes).
+  if (totalMonths < n - 1) {
+    const ticks: string[] = [];
+    for (let m = firstM; m <= lastM; m++) ticks.push(fmt(m));
+    return ticks;
+  }
+  // Range covers ≥4 months: 4 evenly-spaced, distinct month labels end-to-end.
   const ticks: string[] = [];
   for (let i = 0; i < n; i++) {
-    const t = first + (span * i) / (n - 1);
-    ticks.push(new Date(t).toLocaleDateString('en-US', { month: 'short' }));
+    const m = firstM + Math.round((totalMonths * i) / (n - 1));
+    ticks.push(fmt(m));
   }
   return ticks;
 }
@@ -322,7 +341,9 @@ export function HistoryScreen() {
           <div className="mt-3.5 rounded-[var(--r-xl)] bg-surface p-5">
             <div className="mb-4 flex items-center justify-between">
               <span className="text-[13px] font-semibold text-text">Volume by muscle</span>
-              <span className="text-[10px] text-faint">hard sets</span>
+              <span className="text-[10px] text-faint" style={{ whiteSpace: 'nowrap' }}>
+                MEV · MAV · MRV
+              </span>
             </div>
             <div className="flex flex-col gap-[15px]">
               {a.volume.map(([m, n]) => (
@@ -333,14 +354,17 @@ export function HistoryScreen() {
                       {n} sets
                     </span>
                   </div>
-                  <div className="h-[7px] rounded-[5px]" style={{ background: 'var(--bg)' }}>
+                  <div className="relative h-[7px] rounded-[5px]" style={{ background: 'var(--bg)' }}>
                     <div
-                      className="h-full rounded-[5px]"
+                      className="absolute inset-y-0 left-0 rounded-[5px]"
                       style={{
                         width: `${Math.min(100, (n / MAX_VOL) * 100)}%`,
                         background: n > 20 ? 'var(--warning)' : 'var(--accent)',
                       }}
                     />
+                    {/* MEV / MRV threshold ticks (match prototype: 40% / 85%, 2px, border-strong) */}
+                    <div className="absolute inset-y-0 w-0.5" style={{ left: '40%', background: 'var(--border-strong)' }} />
+                    <div className="absolute inset-y-0 w-0.5" style={{ left: '85%', background: 'var(--border-strong)' }} />
                   </div>
                 </div>
               ))}

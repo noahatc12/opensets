@@ -244,7 +244,7 @@ export function OnboardingScreen() {
           <Step n="Recommended" title={`${goal} · ${days} days`} accentLabel>
             <p className="mt-1.5 text-[14px] leading-relaxed text-muted">
               {goal === 'Get stronger' || experience === 'Novice' ? 'Linear' : 'Double'} progression ·{' '}
-              {equipment.toLowerCase()} · built for {experience.toLowerCase()} {goal.toLowerCase()}.
+              {equipment.toLowerCase()} · built for {experience.toLowerCase()} lifters.
             </p>
             <div className="mt-5 flex flex-col gap-3.5">
               {(plan?.days ?? []).map((day) => (

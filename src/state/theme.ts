@@ -8,7 +8,7 @@ import { create } from 'zustand';
 import { applyTheme, type ThemeSelection } from '../theme';
 
 const KEY = 'opensets-theme';
-const DEFAULT: ThemeSelection = { mode: 'dark', theme: 'tempo', ds: 'tempo' };
+const DEFAULT: ThemeSelection = { mode: 'dark', theme: 'teal', ds: 'readout' };
 
 function load(): ThemeSelection {
   try {

@@ -15,7 +15,7 @@ import {
   seedExerciseState,
 } from './repositories';
 import type { Exercise } from './types';
-import type { LoggedSet, WorkoutSession } from './types';
+import type { LoggedSet, WorkoutSession, Goal, Measurement } from './types';
 import type { ProgressionRule } from '../engine/types';
 
 const DAY_MS = 86_400_000;
@@ -118,4 +118,37 @@ export async function seedSampleData(catalog: Exercise[], now: string): Promise<
 
   await db.sessions.bulkAdd(sessions);
   await db.sets.bulkAdd(sets);
+
+  // A couple goals + bodyweight history so the Goals / Measurements screens
+  // render their populated card layouts (instead of empty states).
+  const benchId = templates[0]?.exs[0]?.id;
+  const goals: Goal[] = [
+    { id: newId(), type: 'bodyweight', target: 82, direction: 'increase', status: 'active', createdAt: now },
+    ...(benchId
+      ? [
+          {
+            id: newId(),
+            type: 'liftTarget' as const,
+            target: 100,
+            direction: 'increase' as const,
+            exerciseId: benchId,
+            status: 'active' as const,
+            createdAt: now,
+          },
+        ]
+      : []),
+  ];
+  await db.goals.bulkAdd(goals);
+
+  const measurements: Measurement[] = [];
+  for (let wk = 4; wk >= 0; wk--) {
+    measurements.push({
+      id: newId(),
+      date: new Date(nowMs - wk * 7 * DAY_MS).toISOString(),
+      type: 'bodyweight',
+      valueKg: Math.round((80 + (4 - wk) * 0.6) * 10) / 10,
+    });
+  }
+  measurements.push({ id: newId(), date: now, type: 'waist', valueCm: 82 });
+  await db.measurements.bulkAdd(measurements);
 }
