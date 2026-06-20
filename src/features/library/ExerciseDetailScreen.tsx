@@ -105,7 +105,10 @@ function Engagement({ name, pct, primary }: { name: string; pct: number; primary
         <span className="whitespace-nowrap font-medium text-text">
           {name}
           {primary && (
-            <span className="ml-1 text-[9.5px] uppercase tracking-wide text-accent">
+            <span
+              className="ml-1 text-[9.5px] uppercase text-accent"
+              style={{ letterSpacing: 'var(--tracking-caps)', fontFamily: 'var(--font-label)' }}
+            >
               Primary
             </span>
           )}
@@ -233,7 +236,10 @@ export function ExerciseDetailScreen() {
           >
             <div className="mb-4 flex items-baseline justify-between">
               <span className="text-[13px] font-semibold text-text">Muscles worked</span>
-              <span className="text-[10px] uppercase tracking-wide text-faint">
+              <span
+                className="text-[10px] uppercase text-faint"
+                style={{ letterSpacing: 'var(--tracking-caps)', fontFamily: 'var(--font-label)' }}
+              >
                 Engagement
               </span>
             </div>
@@ -280,7 +286,10 @@ export function ExerciseDetailScreen() {
 
         {ex.instructions.length > 0 && (
           <>
-            <div className="mx-1 mb-2.5 mt-5 text-[11px] font-bold uppercase tracking-wide text-faint">
+            <div
+              className="mx-1 mb-2.5 mt-5 text-[11px] font-bold uppercase text-faint"
+              style={{ letterSpacing: 'var(--tracking-caps)', fontFamily: 'var(--font-label)' }}
+            >
               How to
             </div>
             <div className="flex flex-col gap-3">

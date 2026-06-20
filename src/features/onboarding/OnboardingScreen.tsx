@@ -267,7 +267,10 @@ function Step({
 }) {
   return (
     <div>
-      <div className={`text-[11px] font-bold uppercase tracking-wide ${accentLabel ? 'text-accent' : 'text-faint'}`}>
+      <div
+        className={`text-[11px] font-bold uppercase ${accentLabel ? 'text-accent' : 'text-faint'}`}
+        style={{ letterSpacing: 'var(--tracking-caps)', fontFamily: 'var(--font-label)' }}
+      >
         {n}
       </div>
       <div className="mt-2 text-[26px] font-bold text-text" style={{ letterSpacing: 'var(--tracking-snug)' }}>

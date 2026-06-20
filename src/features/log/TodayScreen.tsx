@@ -170,7 +170,10 @@ export function TodayScreen() {
         style={{ borderColor: 'var(--border-card)', boxShadow: 'var(--hairline-top)' }}
       >
         <div className="flex items-center justify-between">
-          <span className="text-[11px] font-bold uppercase tracking-wide text-accent">
+          <span
+            className="text-[11px] font-bold uppercase text-accent"
+            style={{ letterSpacing: 'var(--tracking-caps)', fontFamily: 'var(--font-label)' }}
+          >
             Scheduled
           </span>
           <span className="text-[12px] text-muted" style={numFont}>
@@ -231,7 +234,8 @@ export function TodayScreen() {
         <>
           <div
             onClick={() => navigate('/history')}
-            className="mx-1 mb-2.5 mt-[22px] flex cursor-pointer items-center justify-between text-[11px] font-bold uppercase tracking-wide text-faint"
+            className="mx-1 mb-2.5 mt-[22px] flex cursor-pointer items-center justify-between text-[11px] font-bold uppercase text-faint"
+            style={{ letterSpacing: 'var(--tracking-caps)', fontFamily: 'var(--font-label)' }}
           >
             Recent <span className="normal-case tracking-normal text-accent">All ›</span>
           </div>

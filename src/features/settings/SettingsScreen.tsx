@@ -53,7 +53,10 @@ function Row({
 }
 
 const SectionLabel = ({ children }: { children: React.ReactNode }) => (
-  <div className="mx-1 mb-2 mt-[22px] text-[11px] font-bold uppercase tracking-wide text-faint">
+  <div
+    className="mx-1 mb-2 mt-[22px] text-[11px] font-bold uppercase text-faint"
+    style={{ letterSpacing: 'var(--tracking-caps)', fontFamily: 'var(--font-label)' }}
+  >
     {children}
   </div>
 );
