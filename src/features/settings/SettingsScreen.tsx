@@ -69,6 +69,22 @@ export function SettingsScreen() {
   const sel = useThemeStore((s) => s.selection);
   const fileRef = useRef<HTMLInputElement>(null);
   const [feedback, setFeedback] = useState<string | null>(null);
+  const [confirmReset, setConfirmReset] = useState(false);
+
+  /** Wipe the local database + stored preferences, then reload as a fresh install. */
+  async function resetAll() {
+    try {
+      await db.delete();
+    } catch {
+      /* ignore */
+    }
+    try {
+      localStorage.clear();
+    } catch {
+      /* ignore */
+    }
+    window.location.href = import.meta.env.BASE_URL;
+  }
 
   async function handleImport(file: File) {
     try {
@@ -201,6 +217,54 @@ export function SettingsScreen() {
             {feedback}
           </p>
         )}
+
+        <SectionLabel>Data</SectionLabel>
+        <div
+          className="overflow-hidden rounded-[var(--r-md)] border"
+          style={{
+            background: 'var(--surface)',
+            borderColor: confirmReset
+              ? 'color-mix(in oklab, var(--danger) 45%, var(--border-card))'
+              : 'var(--border-card)',
+          }}
+        >
+          {!confirmReset ? (
+            <button
+              onClick={() => setConfirmReset(true)}
+              className="flex w-full items-center gap-3 px-4 py-3.5 text-left"
+            >
+              <span className="flex-1 text-[14px] font-medium text-danger">Reset all data</span>
+              <ChevronRightIcon className="size-[18px] text-faint" />
+            </button>
+          ) : (
+            <div className="px-4 py-3.5">
+              <p className="text-[13px] leading-snug text-text">
+                Permanently erase all workouts, programs, history, goals, and settings on
+                this device. This can't be undone.
+              </p>
+              <div className="mt-3.5 flex gap-2">
+                <button
+                  onClick={() => setConfirmReset(false)}
+                  className="h-11 flex-1 rounded-[var(--r-sm)] text-[13px] font-semibold text-text"
+                  style={{ background: 'var(--surface-2)' }}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => void resetAll()}
+                  className="h-11 flex-1 rounded-[var(--r-sm)] text-[13px] font-bold"
+                  style={{ background: 'var(--danger)', color: '#fff' }}
+                >
+                  Erase everything
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+        <p className="mx-1 mt-2 text-[11px] leading-snug text-faint">
+          Restores the default appearance and clears onboarding — the app reloads like a
+          fresh install.
+        </p>
 
         <div
           className="mt-[22px] rounded-[var(--r-md)] border p-4"
