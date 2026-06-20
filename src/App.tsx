@@ -9,6 +9,7 @@ import { PlanScreen } from './features/programs/PlanScreen';
 import { LibraryScreen } from './features/library/LibraryScreen';
 import { HistoryScreen } from './features/analytics/HistoryScreen';
 import { SettingsScreen } from './features/settings/SettingsScreen';
+import { AppearanceScreen } from './features/settings/AppearanceScreen';
 
 function AppShell() {
   const inSession = useSessionStore((s) => s.activeSessionId !== null);
@@ -45,6 +46,7 @@ export default function App() {
           <Route path="/library" element={<LibraryScreen />} />
           <Route path="/history" element={<HistoryScreen />} />
           <Route path="/settings" element={<SettingsScreen />} />
+          <Route path="/appearance" element={<AppearanceScreen />} />
           <Route path="*" element={<Navigate to="/today" replace />} />
         </Route>
       </Routes>

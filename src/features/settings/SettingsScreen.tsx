@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Screen, Section } from '../../components/Screen';
 import { Card, CardRow } from '../../components/Card';
 import { Button } from '../../components/Button';
@@ -29,6 +30,7 @@ function formatBytes(n: number | null): string {
 type Feedback = { kind: 'ok' | 'err'; msg: string } | null;
 
 export function SettingsScreen() {
+  const navigate = useNavigate();
   const settings = useSettings();
   const storage = usePersistentStorage();
   const fileRef = useRef<HTMLInputElement>(null);
@@ -73,6 +75,23 @@ export function SettingsScreen() {
 
   return (
     <Screen title={t.settings.title}>
+      <Section title="Appearance">
+        <button
+          onClick={() => navigate('/appearance')}
+          className="flex w-full items-center justify-between rounded-[var(--r-xl)] border border-border bg-surface px-4 py-4 text-left"
+        >
+          <div>
+            <div className="text-[15px] font-medium text-text">
+              Theme &amp; appearance
+            </div>
+            <div className="mt-0.5 text-[13px] text-muted">
+              Mode, design template, and 10 color themes
+            </div>
+          </div>
+          <span className="text-[18px] text-faint">›</span>
+        </button>
+      </Section>
+
       <Section title={t.settings.units}>
         <Card>
           <CardRow label={t.settings.units} hint={t.settings.unitsHint}>
