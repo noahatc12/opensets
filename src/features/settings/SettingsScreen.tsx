@@ -1,211 +1,206 @@
 import { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Screen, Section } from '../../components/Screen';
-import { Card, CardRow } from '../../components/Card';
-import { Button } from '../../components/Button';
-import { Segmented } from '../../components/Segmented';
-import { DownloadIcon, UploadIcon, ShieldIcon } from '../../components/icons';
-import { t } from '../../i18n/strings';
 import { useSettings, updateSettings } from '../../db/hooks';
+import { useThemeStore } from '../../state/theme';
 import {
   downloadEnvelope,
   importFromJson,
   ImportError,
 } from '../../db/exportImport';
-import { usePersistentStorage } from './usePersistentStorage';
 
-function formatBytes(n: number | null): string {
-  if (n === null) return '—';
-  if (n < 1024) return `${n} B`;
-  const units = ['KB', 'MB', 'GB'];
-  let v = n / 1024;
-  let i = 0;
-  while (v >= 1024 && i < units.length - 1) {
-    v /= 1024;
-    i += 1;
-  }
-  return `${v.toFixed(v < 10 ? 1 : 0)} ${units[i]}`;
+/* Ported from the Tempo prototype Settings screen: grouped list rows
+   (Units / Training / App) + privacy card + footer. */
+
+const nowIso = () => new Date().toISOString();
+const numFont = { fontFamily: 'var(--font-num)' as const };
+
+function Group({ children }: { children: React.ReactNode }) {
+  return (
+    <div
+      className="overflow-hidden rounded-[var(--r-md)] border"
+      style={{ background: 'var(--surface)', borderColor: 'var(--border-card)' }}
+    >
+      {children}
+    </div>
+  );
 }
 
-type Feedback = { kind: 'ok' | 'err'; msg: string } | null;
+function Row({
+  label,
+  value,
+  onClick,
+  last,
+}: {
+  label: string;
+  value?: React.ReactNode;
+  onClick?: () => void;
+  last?: boolean;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={!onClick}
+      className="flex w-full items-center gap-3 px-4 py-3.5 text-left"
+      style={last ? undefined : { borderBottom: '1px solid var(--border)' }}
+    >
+      <span className="flex-1 text-[14px] font-medium text-text">{label}</span>
+      {value}
+      {onClick && <span className="text-[18px] text-faint">›</span>}
+    </button>
+  );
+}
+
+const SectionLabel = ({ children }: { children: React.ReactNode }) => (
+  <div className="mx-1 mb-2 mt-[22px] text-[11px] font-bold uppercase tracking-wide text-faint">
+    {children}
+  </div>
+);
 
 export function SettingsScreen() {
   const navigate = useNavigate();
   const settings = useSettings();
-  const storage = usePersistentStorage();
+  const sel = useThemeStore((s) => s.selection);
   const fileRef = useRef<HTMLInputElement>(null);
-  const [feedback, setFeedback] = useState<Feedback>(null);
-  const [busy, setBusy] = useState(false);
+  const [feedback, setFeedback] = useState<string | null>(null);
 
-  async function handleExport() {
-    setFeedback(null);
+  async function handleImport(file: File) {
     try {
-      await downloadEnvelope(new Date().toISOString());
-      await updateSettings({ lastExportAt: new Date().toISOString() });
-      setFeedback({ kind: 'ok', msg: 'Backup downloaded.' });
-    } catch {
-      setFeedback({ kind: 'err', msg: 'Export failed.' });
-    }
-  }
-
-  async function handleImportFile(file: File) {
-    setBusy(true);
-    setFeedback(null);
-    try {
-      const text = await file.text();
-      await importFromJson(text);
-      await storage.refresh();
-      setFeedback({ kind: 'ok', msg: 'Backup restored.' });
+      await importFromJson(await file.text());
+      setFeedback('Backup restored.');
     } catch (err) {
-      const msg =
-        err instanceof ImportError ? err.message : 'Could not read that file.';
-      setFeedback({ kind: 'err', msg });
+      setFeedback(err instanceof ImportError ? err.message : 'Could not read file.');
     } finally {
-      setBusy(false);
       if (fileRef.current) fileRef.current.value = '';
     }
   }
 
-  const persistedLabel =
-    storage.persisted === true
-      ? t.settings.storagePersisted
-      : storage.persisted === false
-        ? t.settings.storageBestEffort
-        : 'Checking…';
+  const themeLabel = `${sel.theme[0]!.toUpperCase()}${sel.theme.slice(1)} · ${sel.mode === 'dark' ? 'Dark' : 'Light'}`;
 
   return (
-    <Screen title={t.settings.title}>
-      <Section title="Appearance">
-        <button
-          onClick={() => navigate('/appearance')}
-          className="flex w-full items-center justify-between rounded-[var(--r-xl)] border border-border bg-surface px-4 py-4 text-left"
-        >
-          <div>
-            <div className="text-[15px] font-medium text-text">
-              Theme &amp; appearance
-            </div>
-            <div className="mt-0.5 text-[13px] text-muted">
-              Mode, design template, and 10 color themes
-            </div>
-          </div>
-          <span className="text-[18px] text-faint">›</span>
+    <div className="flex h-full flex-col">
+      <div className="flex items-center gap-2.5 px-[18px] pb-2.5 pt-[max(0.5rem,env(safe-area-inset-top))]">
+        <button onClick={() => navigate('/today')} className="size-10 bg-transparent text-[22px] text-muted" aria-label="Back">
+          ‹
         </button>
-      </Section>
+        <div className="text-[22px] font-bold text-text" style={{ letterSpacing: 'var(--tracking-snug)' }}>
+          Settings
+        </div>
+      </div>
 
-      <Section title={t.settings.units}>
-        <Card>
-          <CardRow label={t.settings.units} hint={t.settings.unitsHint}>
-            <Segmented
-              ariaLabel={t.settings.units}
-              value={settings.units}
-              onChange={(units) => void updateSettings({ units })}
-              options={[
-                { value: 'kg', label: 'kg' },
-                { value: 'lb', label: 'lb' },
-              ]}
-            />
-          </CardRow>
-        </Card>
-      </Section>
-
-      <Section title={t.settings.storage}>
-        <Card>
-          <div className="flex items-start gap-3">
-            <div
-              className={
-                storage.persisted ? 'mt-0.5 text-success' : 'mt-0.5 text-warning'
-              }
-            >
-              <ShieldIcon className="size-5" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-[14px] leading-snug text-text">
-                {persistedLabel}
-              </p>
-              <p className="mt-1 text-[13px] text-muted">
-                {t.settings.usage}: {formatBytes(storage.usageBytes)}
-                {storage.quotaBytes
-                  ? ` of ${formatBytes(storage.quotaBytes)}`
-                  : ''}
-              </p>
-            </div>
+      <div className="os-scroll flex-1 overflow-auto px-[22px] pb-8 pt-1.5">
+        <SectionLabel>Units</SectionLabel>
+        <div
+          className="flex items-center justify-between rounded-[var(--r-md)] border px-4 py-3.5"
+          style={{ background: 'var(--surface)', borderColor: 'var(--border-card)' }}
+        >
+          <span className="text-[14px] font-semibold text-text">Weight unit</span>
+          <div className="flex gap-1 rounded-[var(--r-sm)] p-1" style={{ background: 'var(--bg)' }}>
+            {(['kg', 'lb'] as const).map((u) => {
+              const active = settings.units === u;
+              return (
+                <button
+                  key={u}
+                  onClick={() => void updateSettings({ units: u })}
+                  className="rounded-[7px] px-3.5 py-1.5 text-[13px]"
+                  style={{
+                    ...numFont,
+                    fontWeight: active ? 700 : 600,
+                    background: active ? 'var(--accent)' : 'transparent',
+                    color: active ? 'var(--accent-ink)' : 'var(--muted)',
+                  }}
+                >
+                  {u}
+                </button>
+              );
+            })}
           </div>
-          {storage.persisted !== true && storage.supported && (
-            <Button
-              variant="secondary"
-              block
-              className="mt-3"
-              onClick={() => void storage.request()}
-            >
-              {t.settings.requestPersist}
-            </Button>
-          )}
-        </Card>
-      </Section>
+        </div>
+        <p className="mx-1 mt-2 text-[11px] leading-snug text-faint">
+          kg is canonical. lb is converted for display only — e.g. 84 kg = 185 lb.
+        </p>
 
-      <Section title={t.settings.data}>
-        <Card className="flex flex-col gap-3">
-          <CardRow label={t.settings.export} hint={t.settings.exportHint} />
-          <Button
-            block
-            leadingIcon={<DownloadIcon className="size-[18px]" />}
-            onClick={() => void handleExport()}
-          >
-            {t.settings.export}
-          </Button>
-
-          <div className="my-1 border-t border-border" />
-
-          <CardRow label={t.settings.import} hint={t.settings.importHint} />
-          <Button
-            block
-            variant="secondary"
-            disabled={busy}
-            leadingIcon={<UploadIcon className="size-[18px]" />}
-            onClick={() => fileRef.current?.click()}
-          >
-            {busy ? 'Restoring…' : t.settings.import}
-          </Button>
-          <input
-            ref={fileRef}
-            type="file"
-            accept="application/json,.json"
-            className="hidden"
-            onChange={(e) => {
-              const file = e.target.files?.[0];
-              if (file) void handleImportFile(file);
-            }}
+        <SectionLabel>Training</SectionLabel>
+        <Group>
+          <Row
+            label="Plate inventory"
+            value={
+              <span className="flex gap-1">
+                {settings.plateInventoryKg.slice(-3).map((p) => (
+                  <span
+                    key={p}
+                    className="rounded-[var(--r-pill)] bg-bg px-[7px] py-[3px] text-[10px] text-muted"
+                    style={numFont}
+                  >
+                    {p}
+                  </span>
+                ))}
+              </span>
+            }
+            onClick={() => setFeedback('Plate editor coming soon.')}
           />
+          <Row
+            label="Default rest"
+            value={
+              <span className="text-[13px] text-muted" style={numFont}>
+                {Math.floor(settings.defaultRestWorkSec / 60)}:
+                {String(settings.defaultRestWorkSec % 60).padStart(2, '0')}
+              </span>
+            }
+            onClick={() => setFeedback('Rest defaults coming soon.')}
+          />
+          <Row label="Body measurements" onClick={() => setFeedback('Measurements coming soon.')} last />
+        </Group>
 
-          {feedback && (
-            <p
-              role="status"
-              className={
-                feedback.kind === 'ok'
-                  ? 'text-[13px] text-success'
-                  : 'text-[13px] text-danger'
-              }
-            >
-              {feedback.msg}
-            </p>
-          )}
-        </Card>
-      </Section>
+        <SectionLabel>App</SectionLabel>
+        <Group>
+          <Row
+            label="Appearance"
+            value={<span className="text-[13px] text-muted">{themeLabel}</span>}
+            onClick={() => navigate('/appearance')}
+          />
+          <Row label="Backup & export" onClick={() => void downloadEnvelope(nowIso())} />
+          <Row label="Import data" onClick={() => fileRef.current?.click()} last />
+        </Group>
+        <input
+          ref={fileRef}
+          type="file"
+          accept="application/json,.json"
+          className="hidden"
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            if (f) void handleImport(f);
+          }}
+        />
 
-      <Section title={t.settings.about}>
-        <Card className="space-y-2">
-          <p className="text-[13px] leading-relaxed text-muted">
-            {t.settings.privacy}
+        {feedback && (
+          <p role="status" className="mt-3 text-center text-[12px] text-muted">
+            {feedback}
           </p>
-          <p className="text-[13px] leading-relaxed text-faint">
-            {t.settings.disclaimer}
+        )}
+
+        <div
+          className="mt-[22px] rounded-[var(--r-md)] border p-4"
+          style={{
+            background: 'color-mix(in oklab, var(--accent) 7%, var(--surface))',
+            borderColor: 'color-mix(in oklab, var(--accent) 16%, transparent)',
+          }}
+        >
+          <div className="flex items-center gap-2">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+              <path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6z" stroke="var(--accent)" strokeWidth="1.6" strokeLinejoin="round" />
+            </svg>
+            <span className="text-[13px] font-bold text-accent">Private by default</span>
+          </div>
+          <p className="mt-1.5 text-[12.5px] leading-snug text-muted">
+            Your data never leaves your device. No account, no sync, no tracking.
           </p>
-          <p className="pt-1 text-[12px] text-faint">
-            Exercise data: free-exercise-db (Unlicense). OpenSets is
-            MIT-licensed.
-          </p>
-        </Card>
-      </Section>
-    </Screen>
+        </div>
+        <p className="mt-[18px] text-center text-[11px] leading-snug text-faint">
+          Educational tool — not medical advice.
+          <br />
+          v1.0 · MIT · free-exercise-db
+        </p>
+      </div>
+    </div>
   );
 }

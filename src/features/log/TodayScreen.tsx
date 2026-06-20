@@ -103,9 +103,19 @@ export function TodayScreen() {
         <div className="mt-6">
           <EmptyState
             icon={<DumbbellIcon />}
-            title="Build your first routine"
-            body="Add your exercises and starting weights — OpenSets tells you what to lift and when to add weight."
-            action={<Button onClick={() => navigate('/routine/new')}>Build a routine</Button>}
+            title="Let's build your plan"
+            body="Answer a few questions and OpenSets generates a starter routine — or build one yourself."
+            action={
+              <div className="flex flex-col items-center gap-3">
+                <Button onClick={() => navigate('/onboarding')}>Get started</Button>
+                <button
+                  onClick={() => navigate('/routine/new')}
+                  className="text-[13px] text-muted underline-offset-2 hover:underline"
+                >
+                  Build manually
+                </button>
+              </div>
+            }
           />
           <p className="mt-2 text-center text-[12px] text-faint">{t.today.disclaimer}</p>
         </div>

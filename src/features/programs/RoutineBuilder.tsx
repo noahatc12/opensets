@@ -1,8 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Screen, Section } from '../../components/Screen';
 import { Card } from '../../components/Card';
-import { Button } from '../../components/Button';
 import { Stepper } from '../../components/Stepper';
 import { Segmented } from '../../components/Segmented';
 import { ExercisePicker } from '../library/ExercisePicker';
@@ -105,18 +103,35 @@ export function RoutineBuilder() {
   }
 
   return (
-    <Screen title="New routine">
-      <Section>
+    <div className="flex h-full flex-col">
+      <div className="flex items-center justify-between px-[18px] pb-2 pt-[max(0.5rem,env(safe-area-inset-top))]">
+        <div className="flex items-center gap-1.5">
+          <button onClick={() => navigate('/today')} className="size-10 bg-transparent text-[22px] text-muted" aria-label="Back">
+            ‹
+          </button>
+          <div className="text-[20px] font-bold text-text" style={{ letterSpacing: 'var(--tracking-snug)' }}>
+            New routine
+          </div>
+        </div>
+        <button
+          onClick={() => void save()}
+          disabled={!name.trim() || drafts.length === 0 || saving}
+          className="h-[38px] rounded-[var(--r-md)] bg-accent px-4 text-[13px] font-bold text-accent-ink disabled:opacity-40"
+        >
+          {saving ? '…' : 'Save'}
+        </button>
+      </div>
+
+      <div className="os-scroll flex-1 overflow-auto px-[22px] pb-8 pt-1.5">
         <input
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="Routine name (e.g. Upper / Lower A)"
-          className="min-h-12 w-full rounded-lg border border-border bg-surface-2 px-3 text-[15px] text-text placeholder:text-faint focus:border-border-strong focus:outline-none"
+          className="min-h-12 w-full rounded-[var(--r-md)] border bg-surface px-3.5 text-[15px] text-text placeholder:text-faint focus:outline-none"
+          style={{ borderColor: 'var(--border-card)' }}
         />
-      </Section>
 
-      <Section title={`Exercises${drafts.length ? ` (${drafts.length})` : ''}`}>
-        <div className="flex flex-col gap-3">
+        <div className="mt-3.5 flex flex-col gap-3">
           {drafts.map((d, i) => (
             <Card key={d.exercise.id + i} className="flex flex-col gap-3">
               <div className="flex items-start justify-between gap-2">
@@ -212,19 +227,15 @@ export function RoutineBuilder() {
             </Card>
           ))}
 
-          <Button variant="secondary" block onClick={() => setPicking(true)}>
-            + Add exercise
-          </Button>
+          <button
+            onClick={() => setPicking(true)}
+            className="h-12 w-full rounded-[var(--r-md)] border border-dashed text-[14px] font-semibold text-accent"
+            style={{ borderColor: 'var(--border-strong)' }}
+          >
+            ＋ Add exercise
+          </button>
         </div>
-      </Section>
-
-      <Button
-        block
-        disabled={!name.trim() || drafts.length === 0 || saving}
-        onClick={() => void save()}
-      >
-        {saving ? 'Saving…' : 'Save routine'}
-      </Button>
+      </div>
 
       {picking && (
         <ExercisePicker
@@ -235,7 +246,7 @@ export function RoutineBuilder() {
           }}
         />
       )}
-    </Screen>
+    </div>
   );
 }
 
