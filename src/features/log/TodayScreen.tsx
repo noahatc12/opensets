@@ -16,6 +16,7 @@ import {
   startSessionFromTemplate,
   getActiveWorkoutSession,
 } from '../../db/repositories';
+import { seedSampleData } from '../../db/sampleData';
 import { ActiveSession } from './ActiveSession';
 
 const nowIso = () => new Date().toISOString();
@@ -35,7 +36,7 @@ function startOfWeek(d: Date): number {
 }
 
 export function TodayScreen() {
-  useCatalog();
+  const catalog = useCatalog();
   const navigate = useNavigate();
   const activeSessionId = useSessionStore((s) => s.activeSessionId);
   const beginSession = useSessionStore((s) => s.beginSession);
@@ -113,6 +114,13 @@ export function TodayScreen() {
                   className="text-[13px] text-muted underline-offset-2 hover:underline"
                 >
                   Build manually
+                </button>
+                <button
+                  onClick={() => void seedSampleData(catalog ?? [], new Date().toISOString())}
+                  disabled={!catalog}
+                  className="text-[13px] text-faint underline-offset-2 hover:underline disabled:opacity-40"
+                >
+                  Load sample data
                 </button>
               </div>
             }

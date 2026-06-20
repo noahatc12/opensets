@@ -1,5 +1,7 @@
 import { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useLiveQuery } from 'dexie-react-hooks';
+import { db } from '../../db/db';
 import { useSettings, updateSettings } from '../../db/hooks';
 import { useThemeStore } from '../../state/theme';
 import {
@@ -59,6 +61,7 @@ const SectionLabel = ({ children }: { children: React.ReactNode }) => (
 export function SettingsScreen() {
   const navigate = useNavigate();
   const settings = useSettings();
+  const goalCount = useLiveQuery(() => db.goals.count());
   const sel = useThemeStore((s) => s.selection);
   const fileRef = useRef<HTMLInputElement>(null);
   const [feedback, setFeedback] = useState<string | null>(null);
@@ -125,15 +128,23 @@ export function SettingsScreen() {
             label="Plate inventory"
             value={
               <span className="flex gap-1">
-                {settings.plateInventoryKg.slice(-3).map((p) => (
-                  <span
-                    key={p}
-                    className="rounded-[var(--r-pill)] bg-bg px-[7px] py-[3px] text-[10px] text-muted"
-                    style={numFont}
-                  >
-                    {p}
+                {[...settings.plateInventoryKg]
+                  .sort((a, b) => b - a)
+                  .slice(0, 2)
+                  .map((p) => (
+                    <span
+                      key={p}
+                      className="rounded-[var(--r-pill)] bg-bg px-[7px] py-[3px] text-[10px] text-muted"
+                      style={numFont}
+                    >
+                      {p}
+                    </span>
+                  ))}
+                {settings.plateInventoryKg.length > 2 && (
+                  <span className="rounded-[var(--r-pill)] bg-bg px-[7px] py-[3px] text-[10px] text-muted" style={numFont}>
+                    +{settings.plateInventoryKg.length - 2}
                   </span>
-                ))}
+                )}
               </span>
             }
             onClick={() => setFeedback('Plate editor coming soon.')}
@@ -147,6 +158,15 @@ export function SettingsScreen() {
               </span>
             }
             onClick={() => setFeedback('Rest defaults coming soon.')}
+          />
+          <Row
+            label="Goals"
+            value={
+              <span className="text-[13px] text-muted">
+                {goalCount ?? 0} active
+              </span>
+            }
+            onClick={() => setFeedback('Goals coming soon.')}
           />
           <Row label="Body measurements" onClick={() => setFeedback('Measurements coming soon.')} last />
         </Group>

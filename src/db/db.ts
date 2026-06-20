@@ -33,7 +33,7 @@ export const DEFAULT_SETTINGS: UserSettings = {
   // Standard kg gym set (each denomination usable as a pair). Microplates off by default.
   plateInventoryKg: [1.25, 2.5, 5, 10, 15, 20, 25],
   defaultRestWarmupSec: 60,
-  defaultRestWorkSec: 150,
+  defaultRestWorkSec: 120,
   theme: 'dark',
   soundOn: true,
   backupNudgeEvery: 10,
