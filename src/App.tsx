@@ -5,6 +5,7 @@ import { ReloadPrompt } from './components/ReloadPrompt';
 import { useSessionStore } from './state/session';
 import { TodayScreen } from './features/log/TodayScreen';
 import { RoutineBuilder } from './features/programs/RoutineBuilder';
+import { PlanScreen } from './features/programs/PlanScreen';
 import { LibraryScreen } from './features/library/LibraryScreen';
 import { HistoryScreen } from './features/analytics/HistoryScreen';
 import { SettingsScreen } from './features/settings/SettingsScreen';
@@ -39,6 +40,7 @@ export default function App() {
         <Route element={<AppShell />}>
           <Route index element={<Navigate to="/today" replace />} />
           <Route path="/today" element={<TodayScreen />} />
+          <Route path="/plan" element={<PlanScreen />} />
           <Route path="/routine/new" element={<RoutineBuilder />} />
           <Route path="/library" element={<LibraryScreen />} />
           <Route path="/history" element={<HistoryScreen />} />
