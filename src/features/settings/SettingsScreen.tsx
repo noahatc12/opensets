@@ -147,7 +147,7 @@ export function SettingsScreen() {
                 )}
               </span>
             }
-            onClick={() => setFeedback('Plate editor coming soon.')}
+            onClick={() => navigate('/plates')}
           />
           <Row
             label="Default rest"
@@ -157,7 +157,7 @@ export function SettingsScreen() {
                 {String(settings.defaultRestWorkSec % 60).padStart(2, '0')}
               </span>
             }
-            onClick={() => setFeedback('Rest defaults coming soon.')}
+            onClick={() => navigate('/rest-defaults')}
           />
           <Row
             label="Goals"
@@ -166,9 +166,9 @@ export function SettingsScreen() {
                 {goalCount ?? 0} active
               </span>
             }
-            onClick={() => setFeedback('Goals coming soon.')}
+            onClick={() => navigate('/goals')}
           />
-          <Row label="Body measurements" onClick={() => setFeedback('Measurements coming soon.')} last />
+          <Row label="Body measurements" onClick={() => navigate('/measurements')} last />
         </Group>
 
         <SectionLabel>App</SectionLabel>

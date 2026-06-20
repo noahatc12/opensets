@@ -18,6 +18,10 @@ import { ExerciseDetailScreen } from './features/library/ExerciseDetailScreen';
 import { HistoryScreen } from './features/analytics/HistoryScreen';
 import { SettingsScreen } from './features/settings/SettingsScreen';
 import { AppearanceScreen } from './features/settings/AppearanceScreen';
+import { PlatesScreen } from './features/settings/PlatesScreen';
+import { RestDefaultsScreen } from './features/settings/RestDefaultsScreen';
+import { GoalsScreen } from './features/settings/GoalsScreen';
+import { MeasurementsScreen } from './features/settings/MeasurementsScreen';
 import { OnboardingScreen } from './features/onboarding/OnboardingScreen';
 
 const TAB_ROUTES = ['/today', '/plan', '/library', '/history'];
@@ -62,6 +66,10 @@ export default function App() {
           <Route path="/history" element={<HistoryScreen />} />
           <Route path="/settings" element={<SettingsScreen />} />
           <Route path="/appearance" element={<AppearanceScreen />} />
+          <Route path="/plates" element={<PlatesScreen />} />
+          <Route path="/rest-defaults" element={<RestDefaultsScreen />} />
+          <Route path="/goals" element={<GoalsScreen />} />
+          <Route path="/measurements" element={<MeasurementsScreen />} />
           <Route path="/onboarding" element={<OnboardingScreen />} />
           <Route path="*" element={<Navigate to="/today" replace />} />
         </Route>

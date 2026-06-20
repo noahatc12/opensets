@@ -10,7 +10,8 @@ import {
   completeSessionAndAdvance,
   detectAndMarkPRs,
 } from '../../db/repositories';
-import type { PrescribedSet, SetType } from '../../engine/types';
+import type { PrescribedSet, SetType, PRKind } from '../../engine/types';
+import { PrCelebration } from './PrCelebration';
 
 /* Ported from the Claude Design "Tempo" prototype (reference/OpenSets.dc.html):
    centered hero — scoreboard weight×reps, paired steppers, RPE, why-this-weight,
@@ -48,6 +49,10 @@ export function ActiveSession() {
   const [finishing, setFinishing] = useState(false);
   const [whyOpen, setWhyOpen] = useState(false);
   const [now, setNow] = useState(() => Date.now());
+  const [celebrate, setCelebrate] = useState<{
+    kinds: PRKind[];
+    e1rm: number | null;
+  } | null>(null);
 
   // Active-set edit state, reset when the active set (exercise / set index) changes.
   const [weight, setWeight] = useState(0);
@@ -103,7 +108,10 @@ export function ActiveSession() {
       completed: true,
       ...(rpe !== undefined ? { rpe } : {}),
     });
-    await detectAndMarkPRs(loggedRow);
+    const pr = await detectAndMarkPRs(loggedRow);
+    if (pr.kinds.length > 0) {
+      setCelebrate({ kinds: pr.kinds, e1rm: pr.e1rm });
+    }
     setWhyOpen(false);
     startRest(slot!.restWorkSec);
   }
@@ -119,7 +127,14 @@ export function ActiveSession() {
   const restRemain = rest ? Math.max(0, Math.ceil((rest.endsAt - now) / 1000)) : 0;
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="relative flex h-full flex-col">
+      {celebrate && (
+        <PrCelebration
+          kinds={celebrate.kinds}
+          e1rm={celebrate.e1rm}
+          onDismiss={() => setCelebrate(null)}
+        />
+      )}
       {/* Top bar */}
       <div
         className="flex flex-none items-center justify-between px-[22px] pb-3 pt-[max(0.625rem,env(safe-area-inset-top))]"

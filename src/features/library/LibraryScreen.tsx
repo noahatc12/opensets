@@ -49,7 +49,7 @@ export function LibraryScreen() {
 
   const results = useMemo(() => {
     if (!catalog) return [];
-    let list = searchCatalog(catalog, query, 200);
+    let list = searchCatalog(catalog, query, catalog.length);
     if (facet) {
       const f = facet.toLowerCase();
       list = list.filter(
@@ -70,7 +70,7 @@ export function LibraryScreen() {
             )),
       );
     }
-    return list.slice(0, 80);
+    return list;
   }, [catalog, query, facet]);
 
   return (
@@ -84,7 +84,7 @@ export function LibraryScreen() {
             Library
           </div>
           <span className="rounded-[var(--r-md)] bg-surface px-3.5 py-2 text-[13px] font-semibold text-faint">
-            873 exercises
+            {catalog ? `${catalog.length} exercises` : '…'}
           </span>
         </div>
         <div

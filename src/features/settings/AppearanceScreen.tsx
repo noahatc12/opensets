@@ -4,6 +4,7 @@ import { Segmented } from '../../components/Segmented';
 import { useThemeStore } from '../../state/theme';
 import { CURATED_THEMES } from '../../theme';
 import { cn } from '../../components/cn';
+import { CustomThemePicker } from './CustomThemePicker';
 
 export function AppearanceScreen() {
   const navigate = useNavigate();
@@ -119,69 +120,15 @@ export function AppearanceScreen() {
           </div>
 
           {sel.theme === 'custom' && (
-            <div className="mt-4 flex flex-col gap-3 rounded-[var(--r-lg)] bg-surface p-4">
-              <ColorField
-                label="Accent"
-                value={sel.custom?.accent ?? '#cda35f'}
-                onChange={(accent) =>
-                  update({
-                    theme: 'custom',
-                    custom: {
-                      baseColor: sel.custom?.baseColor ?? '#0E0D0B',
-                      accent,
-                    },
-                  })
-                }
+            <div className="mt-4">
+              <CustomThemePicker
+                value={sel.custom ?? { baseColor: '#0E0D0B', accent: '#cda35f' }}
+                onChange={(custom) => update({ theme: 'custom', custom })}
               />
-              <ColorField
-                label="Base"
-                value={sel.custom?.baseColor ?? '#0E0D0B'}
-                onChange={(baseColor) =>
-                  update({
-                    theme: 'custom',
-                    custom: {
-                      baseColor,
-                      accent: sel.custom?.accent ?? '#cda35f',
-                    },
-                  })
-                }
-              />
-              <p className="text-[12px] leading-snug text-muted">
-                Surfaces, borders, and text are derived from your base + accent so it
-                always reads as one palette.
-              </p>
             </div>
           )}
         </Section>
       </Screen>
     </div>
-  );
-}
-
-function ColorField({
-  label,
-  value,
-  onChange,
-}: {
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-}) {
-  return (
-    <label className="flex items-center justify-between">
-      <span className="text-[14px] font-medium text-text">{label}</span>
-      <span className="flex items-center gap-2">
-        <span className="text-[12px] text-muted" style={{ fontFamily: 'var(--font-num)' }}>
-          {value.toUpperCase()}
-        </span>
-        <input
-          type="color"
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          className="size-9 cursor-pointer rounded-[var(--r-sm)] border border-border bg-transparent"
-          aria-label={label}
-        />
-      </span>
-    </label>
   );
 }

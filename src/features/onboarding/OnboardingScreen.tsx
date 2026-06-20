@@ -1,9 +1,6 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCatalog } from '../library/useCatalog';
-import { searchCatalog } from '../../db/catalog';
-import type { Exercise } from '../../db/types';
-import type { ProgressionRule } from '../../engine/types';
 import {
   createProgram,
   setActiveProgram,
@@ -12,6 +9,12 @@ import {
   makeSlot,
   seedExerciseState,
 } from '../../db/repositories';
+import {
+  generatePlan,
+  type Goal,
+  type Equipment,
+  type Experience,
+} from './generator';
 
 /* Ported from the Tempo prototype onboarding wizard (6 steps). On finish it
    generates a simple starter routine from the chosen goal/experience. */
@@ -42,41 +45,43 @@ export function OnboardingScreen() {
   const [experience, setExperience] = useState<string>('Intermediate');
   const [busy, setBusy] = useState(false);
 
-  async function finish() {
-    if (!catalog) return;
-    setBusy(true);
-    const stronger = goal === 'Get stronger';
-    const novice = experience === 'Novice';
-    const increment = 2.5;
-    const rule: ProgressionRule =
-      stronger || novice
-        ? { kind: 'linear', incrementKg: increment, failsBeforeDeload: 3, deloadPct: 0.1 }
-        : { kind: 'double', repMin: 8, repMax: 12, incrementKg: increment, perSet: false };
-    const scheme = stronger || novice ? { sets: 3, repTarget: 5 } : { sets: 3, repRange: [8, 12] as [number, number] };
+  // The generated plan — recomputed as the answers change, used for both the
+  // step-5 preview and the actual build so they always agree.
+  const plan = useMemo(
+    () =>
+      catalog
+        ? generatePlan(catalog, {
+            goal: goal as Goal,
+            days,
+            equipment: equipment as Equipment,
+            experience: experience as Experience,
+          })
+        : null,
+    [catalog, goal, days, equipment, experience],
+  );
 
-    const queries = ['barbell squat', 'barbell bench press', 'barbell deadlift', 'overhead press', 'bent over barbell row'];
-    const picks: Exercise[] = [];
-    const seen = new Set<string>();
-    for (const q of queries) {
-      const hit = searchCatalog(catalog, q, 5).find((e) => !seen.has(e.id));
-      if (hit) {
-        picks.push(hit);
-        seen.add(hit.id);
-      }
+  async function finish() {
+    if (!plan) return;
+    setBusy(true);
+    const now = nowIso();
+    const program = await createProgram(plan.programName, now);
+    await setActiveProgram(program.id);
+
+    for (let di = 0; di < plan.days.length; di++) {
+      const day = plan.days[di]!;
+      const tpl = await createTemplate(program.id, day.name, di);
+      const slots = day.slots.map((sp, i) =>
+        makeSlot(sp.exerciseId, i, sp.rule, sp.scheme, sp.rest),
+      );
+      tpl.slots = slots;
+      await saveTemplate(tpl);
+      await Promise.all(
+        slots.map((slot, i) =>
+          seedExerciseState(program.id, slot, day.slots[i]!.startWeightKg, now),
+        ),
+      );
     }
 
-    const now = nowIso();
-    const program = await createProgram(`${goal} · ${days}d`, now);
-    await setActiveProgram(program.id);
-    const tpl = await createTemplate(program.id, 'Day 1', 0);
-    const slots = picks.map((ex, i) =>
-      makeSlot(ex.id, i, rule, scheme, { warmupSec: 60, workSec: 180 }),
-    );
-    tpl.slots = slots;
-    await saveTemplate(tpl);
-    await Promise.all(
-      slots.map((slot, i) => seedExerciseState(program.id, slot, ex0Weight(picks[i]!), now)),
-    );
     try {
       localStorage.setItem('opensets-onboarded', '1');
     } catch {
@@ -198,21 +203,37 @@ export function OnboardingScreen() {
         )}
 
         {step === 5 && (
-          <Step n="Recommended" title={`${goal} starter`} accentLabel>
+          <Step n="Recommended" title={`${goal} · ${days} days`} accentLabel>
             <p className="mt-1.5 text-[14px] leading-relaxed text-muted">
-              {days} days · {goal === 'Get stronger' || experience === 'Novice' ? 'linear' : 'double'} progression · built for {experience.toLowerCase()} {goal.toLowerCase()}.
+              {goal === 'Get stronger' || experience === 'Novice' ? 'Linear' : 'Double'} progression ·{' '}
+              {equipment.toLowerCase()} · built for {experience.toLowerCase()} {goal.toLowerCase()}.
             </p>
-            <div className="mt-5 flex flex-col gap-2">
-              {['Squat', 'Bench Press', 'Deadlift', 'Overhead Press', 'Row'].map((name, i) => (
+            <div className="mt-5 flex flex-col gap-3.5">
+              {(plan?.days ?? []).map((day) => (
                 <div
-                  key={name}
-                  className="flex items-center gap-3 rounded-[var(--r-md)] border px-4 py-3.5"
+                  key={day.name}
+                  className="rounded-[var(--r-md)] border p-3.5"
                   style={{ background: 'var(--surface)', borderColor: 'var(--border-card)' }}
                 >
-                  <span className="w-[26px] text-[11px] text-accent" style={{ fontFamily: 'var(--font-num)' }}>
-                    {i + 1}
-                  </span>
-                  <span className="flex-1 text-[14px] font-semibold text-text">{name}</span>
+                  <div className="mb-2.5 flex items-center justify-between">
+                    <span className="text-[13px] font-bold text-text">{day.name}</span>
+                    <span className="text-[11px] text-faint" style={{ fontFamily: 'var(--font-num)' }}>
+                      {day.slots.length} exercises
+                    </span>
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    {day.slots.map((s, i) => (
+                      <div key={s.exerciseId} className="flex items-center gap-2.5">
+                        <span className="w-[18px] text-[11px] text-accent" style={{ fontFamily: 'var(--font-num)' }}>
+                          {i + 1}
+                        </span>
+                        <span className="flex-1 truncate text-[13px] text-text">{s.exerciseName}</span>
+                        <span className="text-[11px] text-muted" style={{ fontFamily: 'var(--font-num)' }}>
+                          {s.scheme.sets}×{s.scheme.repTarget ?? `${s.scheme.repRange?.[0]}–${s.scheme.repRange?.[1]}`}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               ))}
             </div>
@@ -255,8 +276,4 @@ function Step({
       {children}
     </div>
   );
-}
-
-function ex0Weight(ex: Exercise): number {
-  return ex.isBodyweight ? 0 : 20;
 }

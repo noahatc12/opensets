@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../db/db';
@@ -20,30 +20,80 @@ const numFont = {
   fontVariantNumeric: 'tabular-nums' as const,
 };
 
-function Img({ src, label }: { src?: string; label: string }) {
+function Slide({ src, label }: { src?: string; label: string }) {
   const [failed, setFailed] = useState(false);
   if (src && !failed) {
     return (
       <img
         src={src}
-        alt=""
+        alt={label}
         onError={() => setFailed(true)}
-        className="aspect-square flex-1 rounded-[var(--r-md)] object-cover"
+        className="aspect-[4/3] w-full object-cover"
         style={{ background: 'var(--surface)' }}
       />
     );
   }
   return (
     <div
-      className="flex aspect-square flex-1 flex-col items-center justify-center gap-1.5 rounded-[var(--r-md)] text-faint"
-      style={{ background: 'var(--surface)', border: '1px dashed var(--border-strong)' }}
+      className="flex aspect-[4/3] w-full flex-col items-center justify-center gap-1.5 text-faint"
+      style={{ background: 'var(--surface)' }}
     >
-      <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
         <rect x="3" y="5" width="18" height="14" rx="2" stroke="currentColor" strokeWidth="1.5" />
         <circle cx="8.5" cy="10" r="1.5" fill="currentColor" />
         <path d="M5 17l4.5-4 3 2.5L17 11l2 2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
       <span className="text-[10px]">{label}</span>
+    </div>
+  );
+}
+
+/* Swipeable image gallery (house-listing style): horizontal scroll-snap so
+   swiping through the photos never scrolls the vertical page. Dots track the
+   active slide. Exercise photos come as [start, end]. */
+function ImageCarousel({ images }: { images: string[] }) {
+  const [active, setActive] = useState(0);
+  const ref = useRef<HTMLDivElement>(null);
+  const labels = ['Start', 'End'];
+
+  function onScroll() {
+    const el = ref.current;
+    if (!el || el.clientWidth === 0) return;
+    setActive(Math.round(el.scrollLeft / el.clientWidth));
+  }
+
+  return (
+    <div>
+      <div
+        ref={ref}
+        onScroll={onScroll}
+        className="os-scroll flex overflow-x-auto rounded-[var(--r-md)]"
+        style={{ scrollSnapType: 'x mandatory', WebkitOverflowScrolling: 'touch' }}
+      >
+        {images.map((src, i) => (
+          <div
+            key={i}
+            className="w-full flex-none"
+            style={{ scrollSnapAlign: 'center', scrollSnapStop: 'always' }}
+          >
+            <Slide src={src} label={labels[i] ?? `${i + 1}`} />
+          </div>
+        ))}
+      </div>
+      {images.length > 1 && (
+        <div className="mt-2.5 flex justify-center gap-1.5">
+          {images.map((_, i) => (
+            <span
+              key={i}
+              className="h-[6px] rounded-full transition-all duration-200"
+              style={{
+                width: i === active ? 18 : 6,
+                background: i === active ? 'var(--accent)' : 'var(--surface-2)',
+              }}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -153,10 +203,7 @@ export function ExerciseDetailScreen() {
       </div>
 
       <div className="os-scroll flex-1 overflow-auto px-[22px] pb-8 pt-1.5">
-        <div className="flex gap-2.5">
-          <Img src={ex.images[0]} label="Start" />
-          <Img src={ex.images[1]} label="End" />
-        </div>
+        <ImageCarousel images={ex.images} />
 
         <div className="mt-3.5 flex flex-wrap gap-1.5">
           {ex.primaryMuscles.map((m) => (
