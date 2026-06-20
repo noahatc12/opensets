@@ -64,7 +64,7 @@ export function AppearanceScreen() {
         <SectionLabel first>Design template</SectionLabel>
         <div className="grid grid-cols-2 gap-2.5">
           <button
-            onClick={() => update({ ds: 'tempo' })}
+            onClick={() => update({ ds: 'tempo', theme: 'tempo' })}
             className="rounded-[var(--r-md)] px-4 py-[15px] text-left"
             style={{
               background: 'var(--surface)',
@@ -79,7 +79,7 @@ export function AppearanceScreen() {
             </div>
           </button>
           <button
-            onClick={() => update({ ds: 'readout' })}
+            onClick={() => update({ ds: 'readout', theme: 'teal', mode: 'dark' })}
             className="rounded-[var(--r-md)] px-4 py-[15px] text-left"
             style={{
               background: 'var(--surface)',

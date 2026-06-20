@@ -8,7 +8,7 @@ mkdirSync('.shots', { recursive: true });
 const browser = await chromium.launch();
 const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 });
 await ctx.addInitScript(() =>
-  localStorage.setItem('opensets-theme', JSON.stringify({ mode: 'dark', theme: 'tempo', ds: 'readout' })),
+  localStorage.setItem('opensets-theme', JSON.stringify({ mode: 'dark', theme: 'teal', ds: 'readout' })),
 );
 const page = await ctx.newPage();
 const errors = [];
@@ -22,6 +22,18 @@ if (await seed.count()) {
   await seed.first().click();
   await page.waitForTimeout(1500);
 }
+
+// Today (populated) in Readout.
+await page.goto(`${BASE}#/today`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(700);
+await page.screenshot({ path: '.shots/readout-today.png', fullPage: true });
+console.log('shot: readout-today');
+
+// Library in Readout.
+await page.goto(`${BASE}#/library`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(700);
+await page.screenshot({ path: '.shots/readout-library.png', fullPage: true });
+console.log('shot: readout-library');
 
 // Trends in Readout.
 await page.goto(`${BASE}#/history`, { waitUntil: 'networkidle' });
