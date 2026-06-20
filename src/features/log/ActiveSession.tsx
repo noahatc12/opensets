@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useLiveQuery } from 'dexie-react-hooks';
+import { db } from '../../db/db';
 import { useActiveWorkout } from './useActiveWorkout';
 import { useSessionStore } from '../../state/session';
 import { useThemeStore } from '../../state/theme';
@@ -73,6 +75,19 @@ export function ActiveSession() {
     kinds: PRKind[];
     e1rm: number | null;
   } | null>(null);
+  // Set-logged undo snackbar: holds the id of the set to soft-delete on Undo.
+  const [toast, setToast] = useState<{ setId: string } | null>(null);
+
+  const program = useLiveQuery(
+    () => (session?.programId ? db.programs.get(session.programId) : undefined),
+    [session?.programId],
+  );
+  const template = useLiveQuery(
+    () => (session?.templateId ? db.templates.get(session.templateId) : undefined),
+    [session?.templateId],
+  );
+  const sessionTitle =
+    program && template ? `${program.name} · ${template.name}` : 'Workout';
 
   // Active-set edit state, reset when the active set (exercise / set index) changes.
   const [weight, setWeight] = useState(0);
@@ -83,6 +98,13 @@ export function ActiveSession() {
     const id = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(id);
   }, []);
+
+  // Auto-dismiss the set-logged toast after ~3.5s; reset the timer per toast.
+  useEffect(() => {
+    if (!toast) return;
+    const id = setTimeout(() => setToast(null), 3500);
+    return () => clearTimeout(id);
+  }, [toast]);
 
   const slots = session?.executedSlots ?? [];
   const slot = slots[Math.min(current, Math.max(0, slots.length - 1))];
@@ -134,6 +156,7 @@ export function ActiveSession() {
     if (pr.kinds.length > 0) {
       setCelebrate({ kinds: pr.kinds, e1rm: pr.e1rm });
     }
+    setToast({ setId: loggedRow.id });
     setWhyOpen(false);
     startRest(slot!.restWorkSec);
   }
@@ -719,7 +742,7 @@ export function ActiveSession() {
         </button>
         <div className="text-center">
           <div className="whitespace-nowrap text-[13px] font-semibold text-text">
-            Workout
+            {sessionTitle}
           </div>
           <div className="mt-0.5 text-[11.5px] text-accent" style={numFont}>
             {elapsed} elapsed
@@ -834,6 +857,30 @@ export function ActiveSession() {
           </button>
         )}
       </div>
+
+      {/* set-logged undo toast (reference 1116-1123): above the Log CTA / rest bar */}
+      {toast && (
+        <div
+          className="absolute left-[18px] right-[18px] bottom-[calc(96px+env(safe-area-inset-bottom))] z-10 flex items-center gap-3 rounded-[var(--r-md)] px-4 py-3.5"
+          style={{
+            background: 'var(--elevated)',
+            border: '1px solid var(--border)',
+            boxShadow: 'var(--shadow-lg)',
+            animation: 'os-toast-in var(--dur-base) var(--ease-out)',
+          }}
+        >
+          <span className="flex-1 text-[13px] font-medium text-text">Set logged</span>
+          <button
+            onClick={() => {
+              void softDeleteSet(toast.setId, nowIso());
+              setToast(null);
+            }}
+            className="border-none bg-transparent text-[13px] font-bold text-accent"
+          >
+            Undo
+          </button>
+        </div>
+      )}
     </div>
   );
 }

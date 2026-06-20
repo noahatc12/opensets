@@ -141,6 +141,14 @@ export function TodayScreen() {
   const lastPRe1rm =
     lastPR && lastPR.weightKg > 0 ? e1rm(lastPR.weightKg, lastPR.reps) : null;
 
+  const weekTarget = templates && templates.length > 0 ? templates.length : 4;
+  const lastPRDaysAgo = lastPR
+    ? Math.max(
+        0,
+        Math.floor((new Date().getTime() - Date.parse(lastPR.date)) / 86_400_000),
+      )
+    : 0;
+
   const recent = (completed ?? [])
     .slice()
     .sort((a, b) => b.startedAt.localeCompare(a.startedAt))
@@ -205,18 +213,31 @@ export function TodayScreen() {
       <div className="mt-3.5 flex gap-3">
         <div className="flex-1 rounded-[var(--r-lg)] bg-surface p-4">
           <div className="text-[11px] font-medium text-muted">This week</div>
-          <div className="mt-1 text-[24px] text-text" style={numFont}>
+          <div className="mt-1 text-[24px] font-semibold text-text" style={numFont}>
             {thisWeek}
+            <span className="text-[13px] text-muted">/{weekTarget}</span>
           </div>
-          <div className="mt-2.5 text-[11px] text-faint">workouts</div>
+          <div className="mt-2.5 flex gap-[5px]">
+            {Array.from({ length: weekTarget }, (_, i) => (
+              <span
+                key={i}
+                className="h-[5px] flex-1 rounded-[3px]"
+                style={{
+                  background: i < thisWeek ? 'var(--accent)' : 'var(--surface-2)',
+                }}
+              />
+            ))}
+          </div>
         </div>
         <div className="flex-1 rounded-[var(--r-lg)] bg-surface p-4">
           <div className="text-[11px] font-medium text-muted">Last PR</div>
-          <div className="mt-1 text-[24px] text-pr" style={numFont}>
+          <div className="mt-1 text-[24px] font-semibold text-pr" style={numFont}>
             {lastPRe1rm ? Math.round(lastPRe1rm * 10) / 10 : '—'}
           </div>
           <div className="mt-2 text-[11px] text-muted">
-            {lastPRe1rm ? 'e1RM' : 'no PRs yet'}
+            {lastPR && lastPRe1rm
+              ? `${nameOf(lastPR.exerciseId)} e1RM · ${lastPRDaysAgo}d ago`
+              : 'no PRs yet'}
           </div>
         </div>
       </div>

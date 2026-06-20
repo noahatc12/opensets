@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../db/db';
@@ -32,7 +32,41 @@ function areaPaths(values: number[], w = 330, h = 140) {
     .map(([x, y], i) => `${i === 0 ? 'M' : 'L'}${x.toFixed(1)},${y.toFixed(1)}`)
     .join(' ');
   const area = `${line} L${pts[pts.length - 1]![0].toFixed(1)},${h - 12} L${pts[0]![0].toFixed(1)},${h - 12} Z`;
-  return { line, area, last: pts[pts.length - 1]! };
+  return { line, area, pts, last: pts[pts.length - 1]! };
+}
+
+/** e1RM series point carrying the date + PR flag (drives range filter, month axis, PR dot). */
+type SeriesPoint = { date: string; value: number; isPR: boolean };
+
+/** Range options for the analytics selector. ms windows anchored to the latest data point. */
+const RANGE_MS: Record<'4W' | '3M' | '1Y', number> = {
+  '4W': 28 * 86_400_000,
+  '3M': 91 * 86_400_000,
+  '1Y': 365 * 86_400_000,
+};
+
+/** Filter a date-sorted series to a range window anchored at its latest point ('All' = passthrough). */
+function filterByRange(series: SeriesPoint[], range: '4W' | '3M' | '1Y' | 'All'): SeriesPoint[] {
+  if (range === 'All' || series.length === 0) return series;
+  const last = series[series.length - 1]!;
+  const cutoff = new Date(last.date).getTime() - RANGE_MS[range];
+  const out = series.filter((p) => new Date(p.date).getTime() >= cutoff);
+  return out.length >= 2 ? out : series;
+}
+
+/** Derive up to 4 evenly-spaced month labels (e.g. "Mar") spanning the series date range. */
+function monthTicks(series: SeriesPoint[]): string[] {
+  if (series.length === 0) return [];
+  const first = new Date(series[0]!.date).getTime();
+  const last = new Date(series[series.length - 1]!.date).getTime();
+  const span = last - first || 1;
+  const n = 4;
+  const ticks: string[] = [];
+  for (let i = 0; i < n; i++) {
+    const t = first + (span * i) / (n - 1);
+    ticks.push(new Date(t).toLocaleDateString('en-US', { month: 'short' }));
+  }
+  return ticks;
 }
 
 /**
@@ -67,6 +101,7 @@ export function HistoryScreen() {
   const navigate = useNavigate();
   const ds = useThemeStore((s) => s.selection.ds) ?? 'tempo';
   const sets = useLiveQuery(() => db.sets.toArray());
+  const [range, setRange] = useState<'4W' | '3M' | '1Y' | 'All'>('3M');
 
   const live = useMemo(
     () => (sets ?? []).filter((s) => !s.deletedAt && s.completed),
@@ -91,13 +126,19 @@ export function HistoryScreen() {
     }
     let topId = '';
     let topTrend: number[] = [];
+    let topSeries: SeriesPoint[] = [];
     for (const [id, arr] of byExercise) {
-      const trend = arr
+      const eligible = arr
         .filter((s) => isE1rmEligible(s))
-        .sort((a, b) => a.date.localeCompare(b.date))
-        .map((s) => e1rm(s.weightKg, s.reps));
+        .sort((a, b) => a.date.localeCompare(b.date));
+      const trend = eligible.map((s) => e1rm(s.weightKg, s.reps));
       if (trend.length > topTrend.length) {
         topTrend = trend;
+        topSeries = eligible.map((s) => ({
+          date: s.date,
+          value: e1rm(s.weightKg, s.reps),
+          isPR: (s.isPR?.length ?? 0) > 0,
+        }));
         topId = id;
       }
     }
@@ -134,6 +175,7 @@ export function HistoryScreen() {
       tonnage,
       topId,
       topTrend,
+      topSeries,
       e1rmDelta,
       latestE1rm: topTrend[topTrend.length - 1] ?? null,
       volume,
@@ -170,12 +212,46 @@ export function HistoryScreen() {
 
   // ---- Tempo layout (existing) ---------------------------------------------
   function TempoBody() {
-    const chart = a.topTrend.length >= 2 ? areaPaths(a.topTrend) : null;
+    const ranges = ['4W', '3M', '1Y', 'All'] as const;
+    const series = filterByRange(a.topSeries, range);
+    const values = series.map((p) => p.value);
+    const chart = values.length >= 2 ? areaPaths(values) : null;
+    const months = chart ? monthTicks(series) : [];
+    // Latest PR point in the displayed range → its plotted coordinate for the PR marker.
+    const prIdx = chart ? series.reduce((acc, p, i) => (p.isPR ? i : acc), -1) : -1;
+    const prPt = chart && prIdx >= 0 ? chart.pts[prIdx] : undefined;
+    const latest = values.length > 0 ? values[values.length - 1]! : (a.latestE1rm ?? 0);
+    const delta =
+      values.length >= 2 ? ((values[values.length - 1]! - values[0]!) / values[0]!) * 100 : 0;
     const MAX_VOL = Math.max(20, ...a.volume.map(([, n]) => n));
     return (
       <>
         <div className="text-[30px] font-bold text-text" style={{ letterSpacing: 'var(--tracking-tight)' }}>
           Trends
+        </div>
+
+        {/* range selector */}
+        <div className="mt-4 flex gap-1">
+          {ranges.map((r) => {
+            const active = r === range;
+            return (
+              <button
+                key={r}
+                onClick={() => setRange(r)}
+                className="h-9 flex-1 text-[13px]"
+                style={{
+                  border: 'none',
+                  borderRadius: 'var(--r-sm)',
+                  cursor: 'pointer',
+                  background: active ? 'var(--accent)' : 'var(--surface)',
+                  color: active ? 'var(--accent-ink)' : 'var(--muted)',
+                  fontWeight: active ? 700 : 600,
+                }}
+              >
+                {r}
+              </button>
+            );
+          })}
         </div>
 
         {/* e1RM */}
@@ -184,16 +260,16 @@ export function HistoryScreen() {
             <div className="text-[13px] text-muted">{topName} · estimated 1RM</div>
             <div className="mt-2 flex items-baseline gap-2.5">
               <span className="text-text" style={{ fontSize: 'var(--num-md)', ...numFont }}>
-                {Math.round((a.latestE1rm ?? 0) * 10) / 10}
+                {Math.round(latest * 10) / 10}
               </span>
               <span className="text-[15px] text-muted">kg</span>
-              {a.e1rmDelta !== 0 && (
+              {delta !== 0 && (
                 <span
                   className="ml-auto text-[13px] font-semibold"
-                  style={{ color: a.e1rmDelta >= 0 ? 'var(--accent)' : 'var(--danger)' }}
+                  style={{ color: delta >= 0 ? 'var(--accent)' : 'var(--danger)' }}
                 >
-                  {a.e1rmDelta >= 0 ? '+' : ''}
-                  {a.e1rmDelta.toFixed(1)}%
+                  {delta >= 0 ? '+' : ''}
+                  {delta.toFixed(1)}%
                 </span>
               )}
             </div>
@@ -206,8 +282,16 @@ export function HistoryScreen() {
               </defs>
               <path d={chart.area} fill="url(#osArea)" />
               <path d={chart.line} fill="none" stroke="var(--accent)" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+              {prPt && (
+                <circle cx={prPt[0]} cy={prPt[1]} r="4" fill="var(--bg)" stroke="var(--pr)" strokeWidth="2.2" />
+              )}
               <circle cx={chart.last[0]} cy={chart.last[1]} r="4.5" fill="var(--accent)" />
             </svg>
+            <div className="flex justify-between text-[10px] text-faint" style={{ padding: '0 2px' }}>
+              {months.map((m, i) => (
+                <span key={i}>{m}</span>
+              ))}
+            </div>
           </div>
         )}
 

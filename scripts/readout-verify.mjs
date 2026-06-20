@@ -23,11 +23,17 @@ if (await seed.count()) {
   await page.waitForTimeout(1500);
 }
 
-// Today (populated) in Readout.
+// Today (populated).
 await page.goto(`${BASE}#/today`, { waitUntil: 'networkidle' });
 await page.waitForTimeout(700);
 await page.screenshot({ path: '.shots/readout-today.png', fullPage: true });
-console.log('shot: readout-today');
+console.log('shot: today');
+
+// Plan.
+await page.goto(`${BASE}#/plan`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(700);
+await page.screenshot({ path: '.shots/tempo-plan.png', fullPage: true });
+console.log('shot: plan');
 
 // Library in Readout.
 await page.goto(`${BASE}#/library`, { waitUntil: 'networkidle' });
