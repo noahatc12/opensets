@@ -36,18 +36,18 @@ const LINEAR: ProgressionRule = {
   deloadPct: 0.1,
 };
 
-async function seedActiveSession(): Promise<{ session: WorkoutSession; programId: string }> {
+async function seedActiveSession(
+  exerciseIds: string[] = ['bench'],
+): Promise<{ session: WorkoutSession; programId: string }> {
   await db.settings.put({ key: 'user', ...DEFAULT_SETTINGS });
   const program = await createProgram('Test Program', now);
   await setActiveProgram(program.id);
   const tpl = await createTemplate(program.id, 'Day 1', 0);
-  const slot = makeSlot('bench', 0, LINEAR, { sets: 3, repTarget: 5 }, {
-    warmupSec: 60,
-    workSec: 120,
-  });
-  tpl.slots = [slot];
+  tpl.slots = exerciseIds.map((id, i) =>
+    makeSlot(id, i, LINEAR, { sets: 3, repTarget: 5 }, { warmupSec: 60, workSec: 120 }),
+  );
   await saveTemplate(tpl);
-  await seedExerciseState(program.id, slot, 60, now);
+  for (const slot of tpl.slots) await seedExerciseState(program.id, slot, 60, now);
   const session = await startSessionFromTemplate(tpl, now);
   useSessionStore.getState().beginSession(session.id);
   return { session, programId: program.id };
@@ -166,6 +166,52 @@ describe('Session resume on reload', () => {
     // The logger (not the Today hub) renders once the active session is picked up.
     await waitFor(() => {
       expect(useSessionStore.getState().activeSessionId).toBe(session.id);
+    });
+  });
+});
+
+describe('Mid-workout Skip', () => {
+  it('removes the current exercise from the session (template untouched)', async () => {
+    const { session } = await seedActiveSession(['bench', 'squat']);
+    const user = userEvent.setup();
+    renderLogger();
+    await logButton();
+    await user.click(screen.getByRole('button', { name: 'Skip' }));
+    await waitFor(async () => {
+      const s = await db.sessions.get(session.id);
+      expect(s!.executedSlots).toHaveLength(1);
+      expect(s!.executedSlots![0]!.exerciseId).toBe('squat');
+    });
+    // The template (program day) is NOT mutated — still 2 slots.
+    const tpl = (await db.templates.toArray())[0]!;
+    expect(tpl.slots).toHaveLength(2);
+  });
+});
+
+describe('Crash recovery snapshot', () => {
+  it('saves and restores the current exercise + rest timer across a reload', async () => {
+    const { session } = await seedActiveSession(['bench', 'squat']);
+    const user = userEvent.setup();
+    const view = renderLogger();
+    await logButton();
+    // Log → rest auto-starts; advance to the 2nd exercise → snapshot should capture both.
+    await user.click(await logButton());
+    await user.click(screen.getByRole('button', { name: 'Next exercise' }));
+    await waitFor(async () => {
+      const snap = await db.activeSession.get('current');
+      expect(snap?.sessionId).toBe(session.id);
+      const p = snap!.payload as { currentExercise: number; rest: unknown };
+      expect(p.currentExercise).toBe(1);
+      expect(p.rest).not.toBeNull();
+    });
+    // Simulate a reload: unmount, clear ephemeral store, resume the session fresh.
+    view.unmount();
+    useSessionStore.setState({ activeSessionId: null, currentExercise: 0, rest: null });
+    useSessionStore.getState().beginSession(session.id);
+    renderLogger();
+    await waitFor(() => {
+      expect(useSessionStore.getState().currentExercise).toBe(1);
+      expect(useSessionStore.getState().rest).not.toBeNull();
     });
   });
 });
