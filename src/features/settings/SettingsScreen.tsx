@@ -9,6 +9,7 @@ import {
   importFromJson,
   ImportError,
 } from '../../db/exportImport';
+import { ChevronRightIcon, ChevronLeftIcon, ShieldIcon } from '../../components/icons';
 
 /* Ported from the Tempo prototype Settings screen: grouped list rows
    (Units / Training / App) + privacy card + footer. */
@@ -47,7 +48,7 @@ function Row({
     >
       <span className="flex-1 text-[14px] font-medium text-text">{label}</span>
       {value}
-      {onClick && <span className="text-[18px] text-faint">›</span>}
+      {onClick && <ChevronRightIcon className="size-[18px] text-faint" />}
     </button>
   );
 }
@@ -85,8 +86,8 @@ export function SettingsScreen() {
   return (
     <div className="flex h-full flex-col">
       <div className="flex items-center gap-2.5 px-[18px] pb-2.5 pt-[max(0.5rem,env(safe-area-inset-top))]">
-        <button onClick={() => navigate('/today')} className="size-10 bg-transparent text-[22px] text-muted" aria-label="Back">
-          ‹
+        <button onClick={() => navigate('/today')} className="grid size-10 place-items-center bg-transparent text-muted" aria-label="Back">
+          <ChevronLeftIcon className="size-[22px]" />
         </button>
         <div className="text-[22px] font-bold text-text" style={{ letterSpacing: 'var(--tracking-snug)' }}>
           Settings
@@ -209,9 +210,7 @@ export function SettingsScreen() {
           }}
         >
           <div className="flex items-center gap-2">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-              <path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6z" stroke="var(--accent)" strokeWidth="1.6" strokeLinejoin="round" />
-            </svg>
+            <ShieldIcon className="size-4 text-accent" />
             <span className="text-[13px] font-bold text-accent">Private by default</span>
           </div>
           <p className="mt-1.5 text-[12.5px] leading-snug text-muted">

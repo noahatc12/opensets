@@ -14,6 +14,7 @@ import {
   makeSlot,
   seedExerciseState,
 } from '../../db/repositories';
+import { ChevronLeftIcon, CloseIcon, PlusIcon } from '../../components/icons';
 
 type RuleKind = 'linear' | 'double' | 'manual';
 
@@ -106,8 +107,8 @@ export function RoutineBuilder() {
     <div className="flex h-full flex-col">
       <div className="flex items-center justify-between px-[18px] pb-2 pt-[max(0.5rem,env(safe-area-inset-top))]">
         <div className="flex items-center gap-1.5">
-          <button onClick={() => navigate('/today')} className="size-10 bg-transparent text-[22px] text-muted" aria-label="Back">
-            ‹
+          <button onClick={() => navigate('/today')} className="grid size-10 place-items-center bg-transparent text-muted" aria-label="Back">
+            <ChevronLeftIcon className="size-[22px]" />
           </button>
           <div className="text-[20px] font-bold text-text" style={{ letterSpacing: 'var(--tracking-snug)' }}>
             New routine
@@ -144,7 +145,7 @@ export function RoutineBuilder() {
                   aria-label="Remove exercise"
                   className="text-faint hover:text-danger"
                 >
-                  ✕
+                  <CloseIcon className="size-[18px]" />
                 </button>
               </div>
 
@@ -229,10 +230,10 @@ export function RoutineBuilder() {
 
           <button
             onClick={() => setPicking(true)}
-            className="h-12 w-full rounded-[var(--r-md)] border border-dashed text-[14px] font-semibold text-accent"
+            className="flex h-12 w-full items-center justify-center gap-1.5 rounded-[var(--r-md)] border border-dashed text-[14px] font-semibold text-accent"
             style={{ borderColor: 'var(--border-strong)' }}
           >
-            ＋ Add exercise
+            <PlusIcon className="size-[18px]" /> Add exercise
           </button>
         </div>
       </div>

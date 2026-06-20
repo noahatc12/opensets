@@ -13,6 +13,15 @@ import {
 } from '../../db/repositories';
 import type { PrescribedSet, SetType, PRKind } from '../../engine/types';
 import { PrCelebration } from './PrCelebration';
+import {
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  ChevronDownIcon,
+  ChevronUpIcon,
+  CloseIcon,
+  PlusIcon,
+  MinusIcon,
+} from '../../components/icons';
 
 /* Ported from the Claude Design prototype (reference/OpenSets.dc.html). Two
    templates share one shell (top bar, mid-session actions, rest bar, PR overlay)
@@ -270,7 +279,11 @@ export function ActiveSession() {
                   <span className="flex-1 text-[12.5px] leading-[1.4] text-text">
                     {pres.reason}
                   </span>
-                  <span className="text-[18px] text-faint">{whyOpen ? '⌃' : '⌄'}</span>
+                  {whyOpen ? (
+                    <ChevronUpIcon className="size-[18px] text-faint" />
+                  ) : (
+                    <ChevronDownIcon className="size-[18px] text-faint" />
+                  )}
                 </button>
                 {whyOpen && (
                   <div className="mt-2 rounded-[var(--r-md)] bg-bg px-4 py-3.5 text-[12.5px] leading-[1.55] text-muted">
@@ -318,7 +331,7 @@ export function ActiveSession() {
               className="text-faint"
               aria-label="Undo set"
             >
-              ✕
+              <CloseIcon className="size-4" />
             </button>
           </div>
         ))}
@@ -502,19 +515,19 @@ export function ActiveSession() {
                       <div className="flex gap-2">
                         <button
                           onClick={() => setWeight((w) => Math.max(0, Math.round((w - 2.5) * 100) / 100))}
-                          className="size-[46px] rounded-[var(--r-sm)] border bg-surface-2 text-[22px] text-text"
+                          className="grid size-[46px] place-items-center rounded-[var(--r-sm)] border bg-surface-2 text-text"
                           style={{ borderColor: 'var(--border-strong)' }}
                           aria-label="decrease weight"
                         >
-                          −
+                          <MinusIcon className="size-6" />
                         </button>
                         <button
                           onClick={() => setWeight((w) => Math.round((w + 2.5) * 100) / 100)}
-                          className="size-[46px] rounded-[var(--r-sm)] border bg-surface-2 text-[22px] text-text"
+                          className="grid size-[46px] place-items-center rounded-[var(--r-sm)] border bg-surface-2 text-text"
                           style={{ borderColor: 'var(--border-strong)' }}
                           aria-label="increase weight"
                         >
-                          +
+                          <PlusIcon className="size-6" />
                         </button>
                       </div>
                     </div>
@@ -538,19 +551,19 @@ export function ActiveSession() {
                       <div className="flex gap-2">
                         <button
                           onClick={() => setReps((r) => Math.max(0, r - 1))}
-                          className="size-[46px] rounded-[var(--r-sm)] border bg-surface-2 text-[22px] text-text"
+                          className="grid size-[46px] place-items-center rounded-[var(--r-sm)] border bg-surface-2 text-text"
                           style={{ borderColor: 'var(--border-strong)' }}
                           aria-label="decrease reps"
                         >
-                          −
+                          <MinusIcon className="size-6" />
                         </button>
                         <button
                           onClick={() => setReps((r) => r + 1)}
-                          className="size-[46px] rounded-[var(--r-sm)] border bg-surface-2 text-[22px] text-text"
+                          className="grid size-[46px] place-items-center rounded-[var(--r-sm)] border bg-surface-2 text-text"
                           style={{ borderColor: 'var(--border-strong)' }}
                           aria-label="increase reps"
                         >
-                          +
+                          <PlusIcon className="size-6" />
                         </button>
                       </div>
                     </div>
@@ -601,7 +614,11 @@ export function ActiveSession() {
                         <span className="flex-1 text-[12.5px] leading-[1.45] text-muted">
                           {pres.reason}
                         </span>
-                        <span className="text-[16px] text-faint">{whyOpen ? '⌃' : '⌄'}</span>
+                        {whyOpen ? (
+                          <ChevronUpIcon className="size-4 flex-none text-faint" />
+                        ) : (
+                          <ChevronDownIcon className="size-4 flex-none text-faint" />
+                        )}
                       </button>
                       {whyOpen && (
                         <div className="mt-2 rounded-[var(--r-sm)] bg-bg px-3 py-3 text-[12.5px] leading-[1.55] text-muted">
@@ -695,10 +712,10 @@ export function ActiveSession() {
       >
         <button
           onClick={() => void finish()}
-          className="size-[42px] border-none bg-transparent text-[22px] text-muted"
+          className="grid size-[42px] place-items-center border-none bg-transparent text-muted"
           aria-label="Back"
         >
-          ‹
+          <ChevronLeftIcon className="size-[22px]" />
         </button>
         <div className="text-center">
           <div className="whitespace-nowrap text-[13px] font-semibold text-text">
@@ -726,9 +743,10 @@ export function ActiveSession() {
       <div className="flex flex-none items-center gap-[7px] px-[22px] pb-2 pt-0.5">
         <button
           onClick={() => setCurrent(Math.max(0, current - 1))}
-          className="size-[42px] flex-none rounded-[var(--r-sm)] bg-surface text-[18px] text-muted"
+          className="grid size-[42px] flex-none place-items-center rounded-[var(--r-sm)] bg-surface text-muted"
+          aria-label="Previous exercise"
         >
-          ‹
+          <ChevronLeftIcon className="size-[18px]" />
         </button>
         <button className="h-[42px] flex-1 rounded-[var(--r-sm)] bg-surface text-[13px] font-semibold text-text">
           Swap
@@ -741,9 +759,10 @@ export function ActiveSession() {
         </button>
         <button
           onClick={() => setCurrent(Math.min(slots.length - 1, current + 1))}
-          className="size-[42px] flex-none rounded-[var(--r-sm)] bg-surface text-[18px] text-muted"
+          className="grid size-[42px] flex-none place-items-center rounded-[var(--r-sm)] bg-surface text-muted"
+          aria-label="Next exercise"
         >
-          ›
+          <ChevronRightIcon className="size-[18px]" />
         </button>
       </div>
 
@@ -832,18 +851,18 @@ function StepRow({
     <div className="flex flex-1 items-center justify-between rounded-[var(--r-lg)] bg-bg p-1.5">
       <button
         onClick={onDec}
-        className="size-12 rounded-[var(--r-md)] bg-surface-2 text-[24px] text-text"
+        className="grid size-12 place-items-center rounded-[var(--r-md)] bg-surface-2 text-text"
         aria-label={`decrease ${label}`}
       >
-        −
+        <MinusIcon className="size-6" />
       </button>
       <span className="text-[12px] font-semibold text-muted">{label}</span>
       <button
         onClick={onInc}
-        className="size-12 rounded-[var(--r-md)] bg-surface-2 text-[24px] text-text"
+        className="grid size-12 place-items-center rounded-[var(--r-md)] bg-surface-2 text-text"
         aria-label={`increase ${label}`}
       >
-        +
+        <PlusIcon className="size-6" />
       </button>
     </div>
   );

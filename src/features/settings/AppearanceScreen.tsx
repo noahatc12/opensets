@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import { useThemeStore } from '../../state/theme';
 import { CURATED_THEMES } from '../../theme';
 import { CustomThemePicker } from './CustomThemePicker';
+import { ChevronLeftIcon } from '../../components/icons';
 
 /* Ported faithfully from the Tempo prototype Appearance screen
    (OpenSets.dc.html lines 699-808): Design template cards → Mode segmented →
@@ -49,10 +50,10 @@ export function AppearanceScreen() {
       <div className="flex items-center gap-2.5 px-[18px] pb-2.5 pt-[max(0.5rem,env(safe-area-inset-top))]">
         <button
           onClick={() => navigate('/settings')}
-          className="size-10 bg-transparent text-[22px] text-muted"
+          className="grid size-10 place-items-center bg-transparent text-muted"
           aria-label="Back"
         >
-          ‹
+          <ChevronLeftIcon className="size-[22px]" />
         </button>
         <div className="text-[22px] font-bold text-text" style={{ letterSpacing: 'var(--tracking-snug)' }}>
           Appearance

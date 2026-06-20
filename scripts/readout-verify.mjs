@@ -8,7 +8,7 @@ mkdirSync('.shots', { recursive: true });
 const browser = await chromium.launch();
 const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 });
 await ctx.addInitScript(() =>
-  localStorage.setItem('opensets-theme', JSON.stringify({ mode: 'dark', theme: 'teal', ds: 'readout' })),
+  localStorage.setItem('opensets-theme', JSON.stringify({ mode: 'dark', theme: "tempo", ds: "tempo" })),
 );
 const page = await ctx.newPage();
 const errors = [];
@@ -48,7 +48,7 @@ const start = page.getByText('Start workout', { exact: false });
 if (await start.count()) {
   await start.first().click();
   await page.waitForTimeout(1000);
-  await page.screenshot({ path: '.shots/readout-session.png', fullPage: true });
+  await page.screenshot({ path: '.shots/tempo-session.png', fullPage: true });
   console.log('shot: readout-session');
 } else {
   console.log('no Start workout button found');

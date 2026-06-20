@@ -4,6 +4,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../db/db';
 import { newId } from '../../db/ids';
 import type { Measurement } from '../../db/types';
+import { ChevronLeftIcon } from '../../components/icons';
 
 /* Ported from the Tempo prototype Measurements screen (showMeasurements): a back
    header + stat cards (Bodyweight / Waist) + a recent-measurements list and a
@@ -205,10 +206,10 @@ export function MeasurementsScreen() {
       <div className="flex items-center gap-2.5 px-[18px] pb-2 pt-[max(0.5rem,env(safe-area-inset-top))]">
         <button
           onClick={() => navigate('/settings')}
-          className="size-10 bg-transparent text-[22px] text-muted"
+          className="grid size-10 place-items-center bg-transparent text-muted"
           aria-label="Back"
         >
-          ‹
+          <ChevronLeftIcon className="size-[22px]" />
         </button>
         <div
           className="text-[20px] font-bold text-text"

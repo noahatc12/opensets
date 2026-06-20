@@ -4,6 +4,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../db/db';
 import { newId } from '../../db/ids';
 import type { Goal, GoalType } from '../../db/types';
+import { ChevronLeftIcon, PlusIcon } from '../../components/icons';
 
 /* Ported from the Tempo prototype Goals screen (showGoals): a back header +
    scroll list of goal cards (title · percent · progress bar · subline) and a
@@ -210,10 +211,10 @@ export function GoalsScreen() {
       <div className="flex items-center gap-2.5 px-[18px] pb-2 pt-[max(0.5rem,env(safe-area-inset-top))]">
         <button
           onClick={() => navigate('/settings')}
-          className="size-10 bg-transparent text-[22px] text-muted"
+          className="grid size-10 place-items-center bg-transparent text-muted"
           aria-label="Back"
         >
-          ‹
+          <ChevronLeftIcon className="size-[22px]" />
         </button>
         <div
           className="text-[20px] font-bold text-text"
@@ -238,10 +239,11 @@ export function GoalsScreen() {
 
         <button
           onClick={() => setAdding(true)}
-          className="mt-4 h-12 w-full rounded-[var(--r-md)] text-[14px] font-semibold text-accent"
+          className="mt-4 flex h-12 w-full items-center justify-center gap-1.5 rounded-[var(--r-md)] text-[14px] font-semibold text-accent"
           style={{ border: '1px dashed var(--border-strong)', background: 'transparent' }}
         >
-          ＋ New goal
+          <PlusIcon className="size-[18px]" />
+          New goal
         </button>
       </div>
 

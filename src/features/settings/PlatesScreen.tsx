@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { useSettings, updateSettings } from '../../db/hooks';
+import { ChevronLeftIcon, CheckIcon, PlusIcon } from '../../components/icons';
 
 /* Ported from the Tempo prototype "showPlates" screen (OpenSets.dc.html
    lines 616-634). The prototype shows a per-side stepper, but our data model
@@ -51,10 +52,10 @@ export function PlatesScreen() {
       <div className="flex items-center gap-2.5 px-[18px] pb-2 pt-[max(0.5rem,env(safe-area-inset-top))]">
         <button
           onClick={() => navigate('/settings')}
-          className="size-10 bg-transparent text-[22px] text-muted"
+          className="grid size-10 place-items-center bg-transparent text-muted"
           aria-label="Back"
         >
-          ‹
+          <ChevronLeftIcon className="size-[22px]" />
         </button>
         <div
           className="text-[20px] font-bold text-text"
@@ -107,17 +108,9 @@ export function PlatesScreen() {
                   }}
                 >
                   {isOwned ? (
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                      <path
-                        d="M5 12.5l4 4 10-10"
-                        stroke="currentColor"
-                        strokeWidth="2.4"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
+                    <CheckIcon className="size-[14px]" />
                   ) : (
-                    <span className="text-[16px] leading-none">＋</span>
+                    <PlusIcon className="size-4" />
                   )}
                 </span>
               </button>

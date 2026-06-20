@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useCatalog } from './useCatalog';
 import { searchCatalog } from '../../db/catalog';
 import type { Exercise } from '../../db/types';
+import { SearchIcon, ChevronRightIcon } from '../../components/icons';
 
 /* Ported from the Tempo prototype Library screen: title + New, search field,
    facet chips, exercise rows (thumbnail + name + muscle·equipment·mechanic). */
@@ -91,10 +92,7 @@ export function LibraryScreen() {
           className="mt-3.5 flex h-[46px] items-center gap-2.5 rounded-[var(--r-md)] border px-3.5"
           style={{ background: 'var(--surface)', borderColor: 'var(--border-card)' }}
         >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" className="text-faint">
-            <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="1.7" />
-            <path d="M20 20l-4-4" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
-          </svg>
+          <SearchIcon className="size-[18px] text-faint" />
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
@@ -155,7 +153,7 @@ export function LibraryScreen() {
                       .join(' · ')}
                   </div>
                 </div>
-                <span className="text-[18px] text-faint">›</span>
+                <ChevronRightIcon className="size-[18px] text-faint" />
               </button>
             ))}
             {results.length === 0 && (

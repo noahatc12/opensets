@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSettings, updateSettings } from '../../db/hooks';
+import { ChevronLeftIcon, PlusIcon, MinusIcon } from '../../components/icons';
 
 /* Ported from the OpenSets prototype `showRestDefaults` screen (Rest timer):
    header (‹ back + title) + scroll body. The prototype's per-type rows are a
@@ -55,10 +56,10 @@ function StepperRow({
         <button
           onClick={() => set(seconds - step)}
           aria-label={`Decrease ${label}`}
-          className="grid size-[34px] place-items-center rounded-[var(--r-pill)] text-[20px] text-muted"
+          className="grid size-[34px] place-items-center rounded-[var(--r-pill)] text-muted"
           style={{ background: 'var(--bg)' }}
         >
-          −
+          <MinusIcon className="size-5" />
         </button>
         <span
           className="w-[58px] text-center text-[16px] font-semibold text-accent"
@@ -69,10 +70,10 @@ function StepperRow({
         <button
           onClick={() => set(seconds + step)}
           aria-label={`Increase ${label}`}
-          className="grid size-[34px] place-items-center rounded-[var(--r-pill)] text-[20px] text-muted"
+          className="grid size-[34px] place-items-center rounded-[var(--r-pill)] text-muted"
           style={{ background: 'var(--bg)' }}
         >
-          +
+          <PlusIcon className="size-5" />
         </button>
       </div>
     </div>
@@ -89,10 +90,10 @@ export function RestDefaultsScreen() {
       <div className="flex items-center gap-2.5 px-[18px] pb-2 pt-[max(0.5rem,env(safe-area-inset-top))]">
         <button
           onClick={() => navigate('/settings')}
-          className="size-10 bg-transparent text-[22px] text-muted"
+          className="grid size-10 place-items-center bg-transparent text-muted"
           aria-label="Back"
         >
-          ‹
+          <ChevronLeftIcon className="size-[22px]" />
         </button>
         <div
           className="text-[20px] font-bold text-text"

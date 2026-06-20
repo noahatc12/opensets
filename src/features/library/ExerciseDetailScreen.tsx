@@ -6,6 +6,7 @@ import { useCatalog } from './useCatalog';
 import { getCatalogExercise } from '../../db/catalog';
 import { e1rm, isE1rmEligible } from '../../engine';
 import type { Muscle, LoggedSet } from '../../db/types';
+import { ChevronLeftIcon } from '../../components/icons';
 
 const titleCase = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 const MUSCLE_LABELS: Partial<Record<Muscle, string>> = {
@@ -162,8 +163,8 @@ export function ExerciseDetailScreen() {
     return (
       <div className="p-8 text-center text-muted">
         <p>Exercise not found.</p>
-        <button onClick={() => navigate('/library')} className="mt-4 text-accent">
-          ‹ Back to library
+        <button onClick={() => navigate('/library')} className="mt-4 inline-flex items-center gap-1 text-accent">
+          <ChevronLeftIcon className="size-[18px]" /> Back to library
         </button>
       </div>
     );
@@ -192,10 +193,10 @@ export function ExerciseDetailScreen() {
       <div className="flex items-center gap-2.5 px-[18px] pb-2 pt-[max(0.5rem,env(safe-area-inset-top))]">
         <button
           onClick={() => navigate('/library')}
-          className="size-10 bg-transparent text-[22px] text-muted"
+          className="grid size-10 place-items-center bg-transparent text-muted"
           aria-label="Back"
         >
-          ‹
+          <ChevronLeftIcon className="size-[22px]" />
         </button>
         <div
           className="text-[20px] font-bold text-text"

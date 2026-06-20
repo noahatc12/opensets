@@ -1,4 +1,5 @@
 import { cn } from './cn';
+import { MinusIcon, PlusIcon } from './icons';
 
 interface StepperProps {
   value: number;
@@ -38,10 +39,10 @@ export function Stepper({
         type="button"
         aria-label={`Decrease ${ariaLabel}`}
         onClick={() => set(value - step)}
-        className="grid size-11 place-items-center text-xl text-muted hover:text-text disabled:opacity-30"
+        className="grid size-11 place-items-center text-muted hover:text-text disabled:opacity-30"
         disabled={value <= min}
       >
-        −
+        <MinusIcon className="size-5" />
       </button>
       <span className="tnum min-w-14 text-center text-[15px] font-semibold text-text">
         {fmt(value)}
@@ -55,9 +56,9 @@ export function Stepper({
         type="button"
         aria-label={`Increase ${ariaLabel}`}
         onClick={() => set(value + step)}
-        className="grid size-11 place-items-center text-xl text-muted hover:text-text"
+        className="grid size-11 place-items-center text-muted hover:text-text"
       >
-        +
+        <PlusIcon className="size-5" />
       </button>
     </div>
   );

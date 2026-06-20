@@ -1,5 +1,6 @@
 import { useRegisterSW } from 'virtual:pwa-register/react';
 import { Button } from './Button';
+import { CloseIcon } from './icons';
 
 /**
  * In-app "update ready — reload" toast (spec §9). With registerType:'autoUpdate'
@@ -31,7 +32,7 @@ export function ReloadPrompt() {
           className="text-faint hover:text-muted"
           onClick={() => setNeedRefresh(false)}
         >
-          ✕
+          <CloseIcon className="size-[18px]" />
         </button>
       </div>
     </div>

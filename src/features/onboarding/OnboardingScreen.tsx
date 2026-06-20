@@ -15,6 +15,7 @@ import {
   type Equipment,
   type Experience,
 } from './generator';
+import { ChevronLeftIcon } from '../../components/icons';
 
 /* Ported from the Tempo prototype onboarding wizard (6 steps). On finish it
    generates a simple starter routine from the chosen goal/experience. */
@@ -103,10 +104,10 @@ export function OnboardingScreen() {
       <div className="flex items-center gap-3.5 px-[22px] pb-3 pt-[max(0.625rem,env(safe-area-inset-top))]">
         <button
           onClick={() => (step === 0 ? navigate('/today') : setStep((s) => s - 1))}
-          className="size-[38px] bg-transparent text-[22px] text-muted"
+          className="grid size-[38px] place-items-center bg-transparent text-muted"
           aria-label="Back"
         >
-          ‹
+          <ChevronLeftIcon className="size-[22px]" />
         </button>
         <div className="h-[5px] flex-1 overflow-hidden rounded-[3px]" style={{ background: 'var(--surface-2)' }}>
           <div
