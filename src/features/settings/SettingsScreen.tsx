@@ -10,6 +10,7 @@ import {
   ImportError,
 } from '../../db/exportImport';
 import { ChevronRightIcon, ChevronLeftIcon, ShieldIcon } from '../../components/icons';
+import { fmtWeight } from '../../lib/units';
 
 /* Ported from the Tempo prototype Settings screen: grouped list rows
    (Units / Training / App) + privacy card + footer. */
@@ -157,7 +158,7 @@ export function SettingsScreen() {
                       className="rounded-[var(--r-pill)] bg-bg px-[7px] py-[3px] text-[10px] text-muted"
                       style={numFont}
                     >
-                      {p}
+                      {fmtWeight(p, settings.units)}
                     </span>
                   ))}
                 {settings.plateInventoryKg.length > 2 && (

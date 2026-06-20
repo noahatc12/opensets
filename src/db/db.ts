@@ -8,6 +8,7 @@
  * reversible. See ./backup.ts for the snapshot helper and the v2 wiring pattern.
  */
 import Dexie, { type Table } from 'dexie';
+import { lbToKg } from '../lib/units';
 import type {
   Exercise,
   Program,
@@ -29,9 +30,12 @@ export const SCHEMA_VERSION = 1;
 
 export const DEFAULT_SETTINGS: UserSettings = {
   units: 'lb',
-  barKg: 20,
-  // Standard kg gym set (each denomination usable as a pair). Microplates off by default.
-  plateInventoryKg: [1.25, 2.5, 5, 10, 15, 20, 25],
+  // 45 lb Olympic bar (canonical kg). Plates default to the standard US lb set,
+  // stored as kg-equivalents; a kg user re-picks their set on the Plates screen.
+  barKg: Math.round(lbToKg(45) * 1000) / 1000,
+  plateInventoryKg: [45, 35, 25, 10, 5, 2.5]
+    .map((lb) => Math.round(lbToKg(lb) * 1000) / 1000)
+    .sort((a, b) => a - b),
   defaultRestWarmupSec: 60,
   defaultRestWorkSec: 120,
   theme: 'dark',

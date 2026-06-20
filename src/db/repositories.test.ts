@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { db } from './db';
+import { db, DEFAULT_SETTINGS } from './db';
 import {
   createProgram,
   setActiveProgram,
@@ -33,6 +33,15 @@ async function wipe() {
     db.sets.clear(),
     db.exerciseState.clear(),
   ]);
+  // Pin kg settings so the loadable-weight rounding assertions are deterministic
+  // regardless of the shipping default unit (now lb).
+  await db.settings.put({
+    key: 'user',
+    ...DEFAULT_SETTINGS,
+    units: 'kg',
+    barKg: 20,
+    plateInventoryKg: [1.25, 2.5, 5, 10, 15, 20, 25],
+  });
 }
 beforeEach(wipe);
 
