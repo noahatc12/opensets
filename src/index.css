@@ -26,6 +26,18 @@ body {
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  /* Native-app feel: no text selection on chrome, no blue tap flash on mobile. */
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* …but inputs/editable fields stay selectable so the user can type and edit. */
+input,
+textarea,
+[contenteditable='true'] {
+  user-select: text;
+  -webkit-user-select: text;
 }
 
 /* Accessible focus ring on keyboard nav. */
@@ -38,4 +50,15 @@ body {
 /* Tabular numerals so logged values don't jitter as they change. */
 .tnum {
   font-variant-numeric: tabular-nums;
+}
+
+/* Hide scrollbars app-wide — the design has none (mobile PWA); scrolling still
+   works via touch/wheel. Matches the prototype's .os-scroll treatment. */
+* {
+  scrollbar-width: none;
+}
+*::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
 }
