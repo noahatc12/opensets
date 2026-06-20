@@ -11,12 +11,24 @@ import {
 } from '../../db/exportImport';
 import { ChevronRightIcon, ChevronLeftIcon, ShieldIcon } from '../../components/icons';
 import { fmtWeight } from '../../lib/units';
+import { usePersistentStorage } from './usePersistentStorage';
+import { t } from '../../i18n/strings';
 
 /* Ported from the Tempo prototype Settings screen: grouped list rows
-   (Units / Training / App) + privacy card + footer. */
+   (Units / Training / Storage / App) + privacy card + footer. */
 
 const nowIso = () => new Date().toISOString();
 const numFont = { fontFamily: 'var(--font-num)' as const };
+
+/** Compact byte formatter for storage usage/quota. */
+function fmtBytes(n: number): string {
+  if (n < 1024) return `${n} B`;
+  const kb = n / 1024;
+  if (kb < 1024) return `${Math.round(kb)} KB`;
+  const mb = kb / 1024;
+  if (mb < 1024) return `${mb < 10 ? mb.toFixed(1) : Math.round(mb)} MB`;
+  return `${(mb / 1024).toFixed(1)} GB`;
+}
 
 function Group({ children }: { children: React.ReactNode }) {
   return (
@@ -68,6 +80,7 @@ export function SettingsScreen() {
   const settings = useSettings();
   const goalCount = useLiveQuery(() => db.goals.count());
   const sel = useThemeStore((s) => s.selection);
+  const storage = usePersistentStorage();
   const fileRef = useRef<HTMLInputElement>(null);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [confirmReset, setConfirmReset] = useState(false);
@@ -217,6 +230,48 @@ export function SettingsScreen() {
           <p role="status" className="mt-3 text-center text-[12px] text-muted">
             {feedback}
           </p>
+        )}
+
+        {storage.supported && (
+          <>
+            <SectionLabel>Storage</SectionLabel>
+            <div
+              className="overflow-hidden rounded-[var(--r-md)] border"
+              style={{ background: 'var(--surface)', borderColor: 'var(--border-card)' }}
+            >
+              <div
+                className="px-4 py-3.5"
+                style={!storage.persisted ? { borderBottom: '1px solid var(--border)' } : undefined}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-[14px] font-medium text-text">On-device storage</span>
+                  <span
+                    className="text-[12px] font-semibold"
+                    style={{ color: storage.persisted ? 'var(--success)' : 'var(--muted)' }}
+                  >
+                    {storage.persisted ? 'Persistent' : 'Best-effort'}
+                  </span>
+                </div>
+                <p className="mt-1 text-[12px] leading-snug text-muted">
+                  {storage.persisted ? t.settings.storagePersisted : t.settings.storageBestEffort}
+                </p>
+                {storage.usageBytes !== null && (
+                  <p className="mt-1.5 text-[11px] text-faint" style={numFont}>
+                    {t.settings.usage} {fmtBytes(storage.usageBytes)}
+                    {storage.quotaBytes ? ` of ${fmtBytes(storage.quotaBytes)}` : ''}
+                  </p>
+                )}
+              </div>
+              {!storage.persisted && (
+                <button
+                  onClick={() => void storage.request()}
+                  className="flex w-full items-center px-4 py-3.5 text-left text-[14px] font-medium text-accent"
+                >
+                  {t.settings.requestPersist}
+                </button>
+              )}
+            </div>
+          </>
         )}
 
         <SectionLabel>Data</SectionLabel>
