@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { HashRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { TabBar } from './components/TabBar';
 import { ReloadPrompt } from './components/ReloadPrompt';
+import { useSessionStore } from './state/session';
 import { TodayScreen } from './features/log/TodayScreen';
 import { RoutineBuilder } from './features/programs/RoutineBuilder';
 import { LibraryScreen } from './features/library/LibraryScreen';
@@ -9,6 +10,8 @@ import { HistoryScreen } from './features/analytics/HistoryScreen';
 import { SettingsScreen } from './features/settings/SettingsScreen';
 
 function AppShell() {
+  const inSession = useSessionStore((s) => s.activeSessionId !== null);
+
   // Storage durability ladder (spec §9): request persistence post-load. Browsers
   // grant silently for installed / engaged PWAs; Settings exposes the status.
   useEffect(() => {
@@ -22,7 +25,8 @@ function AppShell() {
       <main className="flex-1 overflow-y-auto overscroll-contain">
         <Outlet />
       </main>
-      <TabBar />
+      {/* The active-session screen owns the full height + its own bottom CTA. */}
+      {!inSession && <TabBar />}
       <ReloadPrompt />
     </div>
   );

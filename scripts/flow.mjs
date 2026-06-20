@@ -49,9 +49,9 @@ await page.getByRole('button', { name: 'Start workout' }).click();
 await page.waitForTimeout(400);
 await shot('4-session');
 
-// Log set 1 (the active row's check button).
-await page.locator('.border-accent button').last().click();
-await page.waitForTimeout(400);
+// Log set 1 (the bottom Log CTA).
+await page.getByRole('button', { name: /Log Set/ }).click();
+await page.waitForTimeout(500);
 await shot('5-logged-rest');
 
 console.log(

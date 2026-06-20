@@ -17,7 +17,6 @@ import {
   getActiveWorkoutSession,
 } from '../../db/repositories';
 import { ActiveSession } from './ActiveSession';
-import { RestTimer } from './RestTimer';
 
 const nowIso = () => new Date().toISOString();
 const nameOf = (id: string) => getCatalogExercise(id)?.name ?? id;
@@ -44,12 +43,7 @@ export function TodayScreen() {
   }, [activeSessionId, beginSession]);
 
   if (activeSessionId) {
-    return (
-      <>
-        <ActiveSession />
-        <RestTimer />
-      </>
-    );
+    return <ActiveSession />;
   }
 
   const tpl = templates?.[0];
