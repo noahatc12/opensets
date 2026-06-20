@@ -13,6 +13,7 @@ export default defineConfig([
     'coverage',
     'public/data',
     'node_modules',
+    'design',
   ]),
   {
     files: ['**/*.{ts,tsx}'],
