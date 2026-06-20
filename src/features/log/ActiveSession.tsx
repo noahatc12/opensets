@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../db/db';
+import { useSettings } from '../../db/hooks';
+import { fmtWeight, weightStepKg, weightStepLabel } from '../../lib/units';
 import { useActiveWorkout } from './useActiveWorkout';
 import { useSessionStore } from '../../state/session';
 import { useThemeStore } from '../../state/theme';
@@ -57,6 +59,7 @@ const numFont = {
 
 export function ActiveSession() {
   useCatalog();
+  const { units } = useSettings();
   const { session, prescriptions, lastByExercise, logged } = useActiveWorkout();
   const current = useSessionStore((s) => s.currentExercise);
   const setCurrent = useSessionStore((s) => s.setCurrentExercise);
@@ -132,7 +135,7 @@ export function ActiveSession() {
 
   const last = lastByExercise[exId] ?? [];
   const lastLine = last.length
-    ? `last ${fmt(last[0]!.weightKg)} × ${last.map((s) => s.reps).join(', ')}`
+    ? `last ${fmtWeight(last[0]!.weightKg, units)} × ${last.map((s) => s.reps).join(', ')}`
     : 'first time';
   const totalSets = pres?.sets.length ?? 0;
   const exerciseComplete = totalSets > 0 && activeIndex >= totalSets;
@@ -177,8 +180,10 @@ export function ActiveSession() {
         .join(' · ')
     : '';
   const lastWeights = last.length
-    ? `${fmt(last[0]!.weightKg)}×${last.map((s) => s.reps).join(',')}`
+    ? `${fmtWeight(last[0]!.weightKg, units)}×${last.map((s) => s.reps).join(',')}`
     : '';
+  const wStep = weightStepKg(units);
+  const wStepLabel = weightStepLabel(units);
 
   /* ---- Tempo scroll body (reference 84-151): centered hero + done-set glances ----
      Plain JSX-returning closures (not components) so they share the parent's state
@@ -228,9 +233,9 @@ export function ActiveSession() {
                   ...numFont,
                 }}
               >
-                {fmt(weight)}
+                {fmtWeight(weight, units)}
               </span>
-              <span className="text-[18px] font-medium text-muted">kg</span>
+              <span className="text-[18px] font-medium text-muted">{units}</span>
               <span className="mx-2 text-[28px] font-light text-faint">×</span>
               <span
                 className="text-text"
@@ -249,9 +254,9 @@ export function ActiveSession() {
             {/* steppers */}
             <div className="mt-[22px] flex gap-3">
               <StepRow
-                label="2.5 kg"
-                onDec={() => setWeight((w) => Math.max(0, Math.round((w - 2.5) * 100) / 100))}
-                onInc={() => setWeight((w) => Math.round((w + 2.5) * 100) / 100)}
+                label={wStepLabel}
+                onDec={() => setWeight((w) => Math.max(0, Math.round((w - wStep) * 100) / 100))}
+                onInc={() => setWeight((w) => Math.round((w + wStep) * 100) / 100)}
               />
               <StepRow
                 label="rep"
@@ -313,7 +318,7 @@ export function ActiveSession() {
                     <Row k="Rule" v={activeSlot.progressionRule.kind} />
                     <Row
                       k="Last session"
-                      v={last.length ? `${fmt(last[0]!.weightKg)} kg · ${last.map((s) => s.reps).join('/')} reps` : '—'}
+                      v={last.length ? `${fmtWeight(last[0]!.weightKg, units)} ${units} · ${last.map((s) => s.reps).join('/')} reps` : '—'}
                     />
                     {pres.flags.length > 0 && (
                       <Row k="Flags" v={pres.flags.join(', ')} accent />
@@ -338,7 +343,7 @@ export function ActiveSession() {
             <span>
               Set {d.order + 1} logged —{' '}
               <span className="text-text" style={numFont}>
-                {fmt(d.weightKg)} kg × {d.reps}
+                {fmtWeight(d.weightKg, units)} {units} × {d.reps}
               </span>
             </span>
             {d.isPR && d.isPR.length > 0 && (
@@ -380,14 +385,17 @@ export function ActiveSession() {
       <>
         {/* exercise header */}
         <div className="pb-3.5">
-          <div className="flex items-baseline justify-between">
+          <div className="flex items-baseline justify-between gap-2.5">
             <div
-              className="whitespace-nowrap text-[25px] font-extrabold text-text"
+              className="min-w-0 flex-1 truncate text-[25px] font-extrabold text-text"
               style={{ letterSpacing: 'var(--tracking-snug)' }}
             >
               {nameOf(exId)}
             </div>
-            <div className="text-[12px] text-muted" style={{ fontFamily: 'var(--font-num)' }}>
+            <div
+              className="flex-none whitespace-nowrap text-[12px] text-muted"
+              style={{ fontFamily: 'var(--font-num)' }}
+            >
               {Math.min(activeIndex + 1, totalForGrid)} / {totalForGrid}
             </div>
           </div>
@@ -449,8 +457,8 @@ export function ActiveSession() {
                     className="text-[17px] font-semibold text-muted"
                     style={numFont}
                   >
-                    {fmt(done.weightKg)}
-                    <span className="text-[11px] text-faint">kg</span> × {done.reps}
+                    {fmtWeight(done.weightKg, units)}
+                    <span className="text-[11px] text-faint">{units}</span> × {done.reps}
                   </span>
                   {isPr ? (
                     <span
@@ -531,13 +539,13 @@ export function ActiveSession() {
                           className="text-[52px] leading-none text-text"
                           style={{ letterSpacing: 'var(--tracking-snug)', ...numFont }}
                         >
-                          {fmt(weight)}
+                          {fmtWeight(weight, units)}
                         </span>
-                        <span className="text-[14px] font-semibold text-muted">kg</span>
+                        <span className="text-[14px] font-semibold text-muted">{units}</span>
                       </div>
                       <div className="flex gap-2">
                         <button
-                          onClick={() => setWeight((w) => Math.max(0, Math.round((w - 2.5) * 100) / 100))}
+                          onClick={() => setWeight((w) => Math.max(0, Math.round((w - wStep) * 100) / 100))}
                           className="grid size-[46px] place-items-center rounded-[var(--r-sm)] border bg-surface-2 text-text"
                           style={{ borderColor: 'var(--border-strong)' }}
                           aria-label="decrease weight"
@@ -545,7 +553,7 @@ export function ActiveSession() {
                           <MinusIcon className="size-6" />
                         </button>
                         <button
-                          onClick={() => setWeight((w) => Math.round((w + 2.5) * 100) / 100)}
+                          onClick={() => setWeight((w) => Math.round((w + wStep) * 100) / 100)}
                           className="grid size-[46px] place-items-center rounded-[var(--r-sm)] border bg-surface-2 text-text"
                           style={{ borderColor: 'var(--border-strong)' }}
                           aria-label="increase weight"
@@ -648,7 +656,7 @@ export function ActiveSession() {
                           <Row k="Rule" v={activeSlot.progressionRule.kind} />
                           <Row
                             k="Last session"
-                            v={last.length ? `${fmt(last[0]!.weightKg)} kg · ${last.map((s) => s.reps).join('/')} reps` : '—'}
+                            v={last.length ? `${fmtWeight(last[0]!.weightKg, units)} ${units} · ${last.map((s) => s.reps).join('/')} reps` : '—'}
                           />
                           {pres.flags.length > 0 && (
                             <Row k="Flags" v={pres.flags.join(', ')} accent />
@@ -676,8 +684,8 @@ export function ActiveSession() {
                   {i + 1}
                 </span>
                 <span className="text-[17px] font-semibold text-text" style={numFont}>
-                  {prescribed ? fmt(prescribed.targetWeightKg) : '—'}
-                  <span className="text-[11px] text-faint">kg</span> ×{' '}
+                  {prescribed ? fmtWeight(prescribed.targetWeightKg, units) : '—'}
+                  <span className="text-[11px] text-faint">{units}</span> ×{' '}
                   {prescribed ? `${prescribed.targetReps}${isAmrapSet ? '+' : ''}` : '—'}
                 </span>
                 {isAmrapSet ? (
@@ -836,7 +844,7 @@ export function ActiveSession() {
               </svg>
               Log Set {activeIndex + 1} ·{' '}
               <span style={{ fontFamily: 'var(--font-num)', fontVariantNumeric: 'tabular-nums' }}>
-                {fmt(weight)} × {fmt(reps)}
+                {fmtWeight(weight, units)} × {fmt(reps)}
               </span>
             </button>
           ) : (

@@ -8,6 +8,8 @@ import { getCatalogExercise } from '../../db/catalog';
 import { e1rm, isE1rmEligible } from '../../engine';
 import { EmptyState } from '../../components/EmptyState';
 import { HistoryIcon } from '../../components/icons';
+import { useSettings } from '../../db/hooks';
+import { toUnit, roundDisplay } from '../../lib/units';
 import type { LoggedSet } from '../../db/types';
 
 const numFont = {
@@ -100,6 +102,7 @@ export function HistoryScreen() {
   useCatalog();
   const navigate = useNavigate();
   const ds = useThemeStore((s) => s.selection.ds) ?? 'tempo';
+  const { units } = useSettings();
   const sets = useLiveQuery(() => db.sets.toArray());
   const [range, setRange] = useState<'4W' | '3M' | '1Y' | 'All'>('3M');
 
@@ -260,9 +263,9 @@ export function HistoryScreen() {
             <div className="text-[13px] text-muted">{topName} · estimated 1RM</div>
             <div className="mt-2 flex items-baseline gap-2.5">
               <span className="text-text" style={{ fontSize: 'var(--num-md)', ...numFont }}>
-                {Math.round(latest * 10) / 10}
+                {roundDisplay(toUnit(latest, units), units)}
               </span>
-              <span className="text-[15px] text-muted">kg</span>
+              <span className="text-[15px] text-muted">{units}</span>
               {delta !== 0 && (
                 <span
                   className="ml-auto text-[13px] font-semibold"
@@ -300,8 +303,10 @@ export function HistoryScreen() {
           <div className="flex-1 rounded-[var(--r-lg)] bg-surface p-4">
             <div className="text-[11px] text-muted">Tonnage</div>
             <div className="mt-1 text-[22px] text-text" style={numFont}>
-              {a.tonnage.toFixed(1)}
-              <span className="text-[12px] text-muted"> t</span>
+              {units === 'lb'
+                ? (toUnit(a.tonnage * 1000, 'lb') / 1000).toFixed(1)
+                : a.tonnage.toFixed(1)}
+              <span className="text-[12px] text-muted"> {units === 'lb' ? 'k lb' : 't'}</span>
             </div>
           </div>
           <div className="flex-1 rounded-[var(--r-lg)] bg-surface p-4">
@@ -427,9 +432,9 @@ export function HistoryScreen() {
                 <div style={capLabel}>{topName} · e1RM</div>
                 <div className="mt-1.5 flex items-baseline gap-2">
                   <span style={{ fontSize: '34px', letterSpacing: 'var(--tracking-snug)', ...numFont }} className="text-text">
-                    {Math.round((a.latestE1rm ?? 0) * 10) / 10}
+                    {roundDisplay(toUnit(a.latestE1rm ?? 0, units), units)}
                   </span>
-                  <span className="text-[13px] font-semibold text-muted">kg</span>
+                  <span className="text-[13px] font-semibold text-muted">{units}</span>
                 </div>
               </div>
               {a.e1rmDelta !== 0 && (
@@ -482,8 +487,10 @@ export function HistoryScreen() {
           <div className="flex-1 p-3" style={{ ...card, borderRadius: 'var(--r-md)' }}>
             <div style={{ ...capLabel, fontSize: '9.5px', letterSpacing: '.1em' }}>Tonnage</div>
             <div className="mt-1.5 text-[22px] text-text" style={numFont}>
-              {a.tonnage.toFixed(1)}
-              <span className="text-[12px] text-muted">t</span>
+              {units === 'lb'
+                ? (toUnit(a.tonnage * 1000, 'lb') / 1000).toFixed(1)
+                : a.tonnage.toFixed(1)}
+              <span className="text-[12px] text-muted">{units === 'lb' ? ' k lb' : 't'}</span>
             </div>
           </div>
           <div className="flex-1 p-3" style={{ ...card, borderRadius: 'var(--r-md)' }}>

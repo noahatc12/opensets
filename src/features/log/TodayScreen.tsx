@@ -10,6 +10,8 @@ import { useSessionStore } from '../../state/session';
 import { useCatalog } from '../library/useCatalog';
 import { getCatalogExercise } from '../../db/catalog';
 import { e1rm } from '../../engine';
+import { useSettings } from '../../db/hooks';
+import { toUnit, roundDisplay } from '../../lib/units';
 import {
   getActiveProgram,
   listTemplates,
@@ -38,6 +40,7 @@ function startOfWeek(d: Date): number {
 export function TodayScreen() {
   const catalog = useCatalog();
   const navigate = useNavigate();
+  const { units } = useSettings();
   const activeSessionId = useSessionStore((s) => s.activeSessionId);
   const beginSession = useSessionStore((s) => s.beginSession);
 
@@ -232,7 +235,7 @@ export function TodayScreen() {
         <div className="flex-1 rounded-[var(--r-lg)] bg-surface p-4">
           <div className="text-[11px] font-medium text-muted">Last PR</div>
           <div className="mt-1 text-[24px] font-semibold text-pr" style={numFont}>
-            {lastPRe1rm ? Math.round(lastPRe1rm * 10) / 10 : '—'}
+            {lastPRe1rm ? roundDisplay(toUnit(lastPRe1rm, units), units) : '—'}
           </div>
           <div className="mt-2 text-[11px] text-muted">
             {lastPR && lastPRe1rm

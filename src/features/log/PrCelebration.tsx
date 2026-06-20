@@ -1,7 +1,10 @@
 /* Ported from the OpenSets prototype PR celebration overlay
    (reference/OpenSets.dc.html, "PR CELEBRATION" block ~L1124).
    Full-screen centered overlay, tappable to dismiss, --pr accent + glow.
-   Pure presentational — no data layer. */
+   Pure presentational — reads only the kg/lb units setting for display. */
+
+import { useSettings } from '../../db/hooks';
+import { roundDisplay, toUnit } from '../../lib/units';
 
 type PrKind = 'weight' | 'reps' | 'e1rm';
 
@@ -32,8 +35,9 @@ export function PrCelebration({
   e1rm?: number | null;
   onDismiss: () => void;
 }) {
+  const { units } = useSettings();
   const e1rmDisplay =
-    e1rm != null ? Math.round(e1rm * 10) / 10 : null;
+    e1rm != null ? roundDisplay(toUnit(e1rm, units), units) : null;
 
   return (
     <div
@@ -83,7 +87,7 @@ export function PrCelebration({
             >
               {e1rmDisplay}
             </span>
-            <span className="text-[18px] font-semibold text-muted">kg</span>
+            <span className="text-[18px] font-semibold text-muted">{units}</span>
           </div>
         )}
 

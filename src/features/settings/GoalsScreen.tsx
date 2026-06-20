@@ -5,6 +5,9 @@ import { db } from '../../db/db';
 import { newId } from '../../db/ids';
 import type { Goal, GoalType } from '../../db/types';
 import { ChevronLeftIcon, PlusIcon } from '../../components/icons';
+import { useSettings } from '../../db/hooks';
+import { fmtWeight, lbToKg } from '../../lib/units';
+import type { WeightUnit } from '../../lib/units';
 
 /* Ported from the Tempo prototype Goals screen (showGoals): a back header +
    scroll list of goal cards (title · percent · progress bar · subline) and a
@@ -32,21 +35,32 @@ const GOAL_TYPES: { value: GoalType; label: string; unit: string }[] = [
 
 const typeMeta = (t: GoalType) => GOAL_TYPES.find((g) => g.value === t);
 
-function goalTitle(goal: Goal): string {
+/** Goal types whose target is a canonical-kg weight (everything else is cm/min/etc). */
+const isWeightGoal = (t: GoalType) => t === 'liftTarget' || t === 'bodyweight';
+
+/** target value + unit label for display, converting weight targets to the user's unit. */
+function displayTarget(goal: Goal, units: WeightUnit): { value: string; unit: string } {
+  if (isWeightGoal(goal.type)) {
+    return { value: fmtWeight(goal.target, units), unit: units };
+  }
+  const meta = typeMeta(goal.type);
+  return { value: String(goal.target), unit: meta?.unit ?? '' };
+}
+
+function goalTitle(goal: Goal, units: WeightUnit): string {
   const meta = typeMeta(goal.type);
   const label = meta?.label ?? goal.type;
-  const unit = meta?.unit ?? '';
-  return `${label} ${goal.target}${unit ? ` ${unit}` : ''}`.trim();
+  const { value, unit } = displayTarget(goal, units);
+  return `${label} ${value}${unit ? ` ${unit}` : ''}`.trim();
 }
 
-function goalSubline(goal: Goal): string {
-  const meta = typeMeta(goal.type);
-  const unit = meta?.unit ?? '';
+function goalSubline(goal: Goal, units: WeightUnit): string {
+  const { value, unit } = displayTarget(goal, units);
   const verb = goal.direction === 'increase' ? 'Reach' : 'Reduce to';
-  return `${verb} ${goal.target}${unit ? ` ${unit}` : ''} · tracking`;
+  return `${verb} ${value}${unit ? ` ${unit}` : ''} · tracking`;
 }
 
-function GoalCard({ goal }: { goal: Goal }) {
+function GoalCard({ goal, units }: { goal: Goal; units: WeightUnit }) {
   // No stored current value yet — show the target honestly at 0% rather than
   // inventing a percentage. Achieved goals read full.
   const pct = goal.status === 'achieved' ? 100 : 0;
@@ -61,7 +75,7 @@ function GoalCard({ goal }: { goal: Goal }) {
     >
       <div className="flex items-baseline justify-between">
         <span className="whitespace-nowrap text-[14px] font-semibold text-text">
-          {goalTitle(goal)}
+          {goalTitle(goal, units)}
         </span>
         <span
           className="text-[13px]"
@@ -80,27 +94,31 @@ function GoalCard({ goal }: { goal: Goal }) {
         />
       </div>
       <div className="mt-2 text-[11.5px] text-muted" style={{ fontFamily: 'var(--font-num)' }}>
-        {goalSubline(goal)}
+        {goalSubline(goal, units)}
       </div>
     </div>
   );
 }
 
-function AddGoalSheet({ onClose }: { onClose: () => void }) {
+function AddGoalSheet({ onClose, units }: { onClose: () => void; units: WeightUnit }) {
   const [type, setType] = useState<GoalType>('liftTarget');
   const [target, setTarget] = useState('');
   const [direction, setDirection] = useState<Goal['direction']>('increase');
 
-  const unit = typeMeta(type)?.unit ?? '';
+  // Weight goals collect input in the user's unit and show {units}; others use their fixed unit.
+  const weight = isWeightGoal(type);
+  const unit = weight ? units : typeMeta(type)?.unit ?? '';
   const targetNum = Number(target);
   const valid = target.trim() !== '' && Number.isFinite(targetNum) && targetNum > 0;
 
   async function save() {
     if (!valid) return;
+    // Store canonical kg: convert weight targets entered in lb; everything else stored as-is.
+    const storedTarget = weight && units === 'lb' ? lbToKg(targetNum) : targetNum;
     const goal: Goal = {
       id: newId(),
       type,
-      target: targetNum,
+      target: storedTarget,
       direction,
       status: 'active',
       createdAt: nowIso(),
@@ -201,6 +219,7 @@ function AddGoalSheet({ onClose }: { onClose: () => void }) {
 
 export function GoalsScreen() {
   const navigate = useNavigate();
+  const { units } = useSettings();
   const goals = useLiveQuery(() => db.goals.toArray());
   const [adding, setAdding] = useState(false);
 
@@ -228,7 +247,7 @@ export function GoalsScreen() {
         {active.length > 0 ? (
           <div className="flex flex-col gap-3">
             {active.map((g) => (
-              <GoalCard key={g.id} goal={g} />
+              <GoalCard key={g.id} goal={g} units={units} />
             ))}
           </div>
         ) : (
@@ -247,7 +266,7 @@ export function GoalsScreen() {
         </button>
       </div>
 
-      {adding && <AddGoalSheet onClose={() => setAdding(false)} />}
+      {adding && <AddGoalSheet onClose={() => setAdding(false)} units={units} />}
     </div>
   );
 }

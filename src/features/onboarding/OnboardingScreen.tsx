@@ -16,6 +16,10 @@ import {
   type Experience,
 } from './generator';
 import { ChevronLeftIcon } from '../../components/icons';
+import { db } from '../../db/db';
+import { newId } from '../../db/ids';
+import { useSettings } from '../../db/hooks';
+import { lbToKg } from '../../lib/units';
 
 /* Ported from the Tempo prototype onboarding wizard (6 steps). On finish it
    generates a simple starter routine from the chosen goal/experience. */
@@ -44,7 +48,9 @@ export function OnboardingScreen() {
   const [days, setDays] = useState(4);
   const [equipment, setEquipment] = useState<string>('Full gym');
   const [experience, setExperience] = useState<string>('Intermediate');
+  const [bodyweight, setBodyweight] = useState('');
   const [busy, setBusy] = useState(false);
+  const { units } = useSettings();
 
   // The generated plan — recomputed as the answers change, used for both the
   // step-5 preview and the actual build so they always agree.
@@ -81,6 +87,16 @@ export function OnboardingScreen() {
           seedExerciseState(program.id, slot, day.slots[i]!.startWeightKg, now),
         ),
       );
+    }
+
+    const bw = parseFloat(bodyweight);
+    if (!Number.isNaN(bw) && bw > 0) {
+      await db.measurements.add({
+        id: newId(),
+        type: 'bodyweight',
+        date: now,
+        valueKg: units === 'lb' ? lbToKg(bw) : bw,
+      });
     }
 
     try {
@@ -194,12 +210,33 @@ export function OnboardingScreen() {
         {step === 4 && (
           <Step n="Step 4 · optional" title="A few numbers">
             <p className="mt-1.5 text-[13px] leading-relaxed text-muted">
-              Tailors load jumps and bodyweight goals. Skip anytime.
+              Your bodyweight lets OpenSets track bodyweight-relative progress and
+              bodyweight goals. Skip anytime.
             </p>
-            <p className="mt-6 text-[13px] text-faint">
-              (Optional profile inputs land with the full plan generator — for now your
-              starter plan is built from your goal and experience.)
-            </p>
+            <label className="mt-6 block">
+              <span
+                className="mb-2 block text-[11px] font-bold uppercase text-faint"
+                style={{ letterSpacing: 'var(--tracking-caps)', fontFamily: 'var(--font-label)' }}
+              >
+                Bodyweight
+              </span>
+              <div
+                className="flex items-center gap-2 rounded-[var(--r-md)] border px-4 py-3.5"
+                style={{ background: 'var(--surface)', borderColor: 'var(--border-card)' }}
+              >
+                <input
+                  type="number"
+                  inputMode="decimal"
+                  value={bodyweight}
+                  onChange={(e) => setBodyweight(e.target.value)}
+                  placeholder="—"
+                  aria-label="Bodyweight"
+                  className="min-w-0 flex-1 bg-transparent text-[18px] text-text placeholder:text-faint focus:outline-none"
+                  style={{ fontFamily: 'var(--font-num)' }}
+                />
+                <span className="text-[14px] text-muted">{units}</span>
+              </div>
+            </label>
           </Step>
         )}
 

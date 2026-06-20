@@ -5,6 +5,8 @@ import { db } from '../../db/db';
 import { useCatalog } from './useCatalog';
 import { getCatalogExercise } from '../../db/catalog';
 import { e1rm, isE1rmEligible } from '../../engine';
+import { useSettings } from '../../db/hooks';
+import { toUnit, roundDisplay } from '../../lib/units';
 import type { Muscle, LoggedSet } from '../../db/types';
 import { ChevronLeftIcon } from '../../components/icons';
 
@@ -136,6 +138,7 @@ function Engagement({ name, pct, primary }: { name: string; pct: number; primary
 export function ExerciseDetailScreen() {
   const catalog = useCatalog();
   const navigate = useNavigate();
+  const { units } = useSettings();
   const { id = '' } = useParams();
   const ex = catalog ? getCatalogExercise(decodeURIComponent(id)) : undefined;
 
@@ -263,8 +266,8 @@ export function ExerciseDetailScreen() {
             <span className="text-[12px] text-muted">Your e1RM</span>
             {latestE1rm ? (
               <span className="text-[20px] text-text" style={numFont}>
-                {Math.round(latestE1rm * 10) / 10}{' '}
-                <span className="text-[12px] text-muted">kg</span>
+                {roundDisplay(toUnit(latestE1rm, units), units)}{' '}
+                <span className="text-[12px] text-muted">{units}</span>
               </span>
             ) : (
               <span className="text-[12px] text-faint">no history yet</span>

@@ -5,6 +5,9 @@ import { db } from '../../db/db';
 import { newId } from '../../db/ids';
 import type { Measurement } from '../../db/types';
 import { ChevronLeftIcon } from '../../components/icons';
+import { useSettings } from '../../db/hooks';
+import { fmtWeight, lbToKg } from '../../lib/units';
+import type { WeightUnit } from '../../lib/units';
 
 /* Ported from the Tempo prototype Measurements screen (showMeasurements): a back
    header + stat cards (Bodyweight / Waist) + a recent-measurements list and a
@@ -30,8 +33,16 @@ const today = () => nowIso().slice(0, 10);
 
 /** Bodyweight stores a weight (kg); every other type stores a length (cm). */
 const isWeight = (type: string) => type === 'bodyweight';
-const unitFor = (type: string) => (isWeight(type) ? 'kg' : 'cm');
+/** Unit label for a type: weight follows the kg/lb setting; lengths are always cm. */
+const unitFor = (type: string, units: WeightUnit) => (isWeight(type) ? units : 'cm');
+/** Raw stored value (canonical kg for weight, cm otherwise). */
 const valueOf = (m: Measurement) => (isWeight(m.type) ? m.valueKg : m.valueCm);
+/** Display string for a measurement value: weight converts to the user's unit, lengths render as-is. */
+const displayValue = (m: Measurement, units: WeightUnit): string | undefined => {
+  const v = valueOf(m);
+  if (v === undefined) return undefined;
+  return isWeight(m.type) ? fmtWeight(v, units) : String(v);
+};
 
 const MEASUREMENT_TYPES: { value: string; label: string }[] = [
   { value: 'bodyweight', label: 'Bodyweight' },
@@ -53,7 +64,7 @@ function fmtDate(iso: string): string {
   return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
 
-function StatCard({ label, value, unit }: { label: string; value?: number; unit: string }) {
+function StatCard({ label, value, unit }: { label: string; value?: string; unit: string }) {
   return (
     <div
       className="flex-1 rounded-[var(--r-md)] border p-4"
@@ -71,8 +82,8 @@ function StatCard({ label, value, unit }: { label: string; value?: number; unit:
   );
 }
 
-function MeasurementRow({ m }: { m: Measurement }) {
-  const v = valueOf(m);
+function MeasurementRow({ m, units }: { m: Measurement; units: WeightUnit }) {
+  const display = displayValue(m, units);
   return (
     <div
       className="flex items-center justify-between rounded-[var(--r-md)] border px-4 py-3"
@@ -85,29 +96,31 @@ function MeasurementRow({ m }: { m: Measurement }) {
         </span>
       </div>
       <span className="text-[15px] text-text" style={numFont}>
-        {v !== undefined ? v : '—'}
-        <span className="text-[12px] text-muted">{unitFor(m.type)}</span>
+        {display !== undefined ? display : '—'}
+        <span className="text-[12px] text-muted">{unitFor(m.type, units)}</span>
       </span>
     </div>
   );
 }
 
-function LogMeasurementSheet({ onClose }: { onClose: () => void }) {
+function LogMeasurementSheet({ onClose, units }: { onClose: () => void; units: WeightUnit }) {
   const [type, setType] = useState<string>('bodyweight');
   const [value, setValue] = useState('');
   const [date, setDate] = useState(today());
 
-  const unit = unitFor(type);
+  const unit = unitFor(type, units);
   const valueNum = Number(value);
   const valid = value.trim() !== '' && Number.isFinite(valueNum) && valueNum > 0 && date !== '';
 
   async function save() {
     if (!valid) return;
+    // Bodyweight is entered in the user's unit but stored canonical kg; lengths store cm as-is.
+    const storedWeightKg = units === 'lb' ? lbToKg(valueNum) : valueNum;
     const m: Measurement = {
       id: newId(),
       type,
       date: nowIso(),
-      ...(isWeight(type) ? { valueKg: valueNum } : { valueCm: valueNum }),
+      ...(isWeight(type) ? { valueKg: storedWeightKg } : { valueCm: valueNum }),
     };
     await db.measurements.add(m);
     onClose();
@@ -193,6 +206,7 @@ function LogMeasurementSheet({ onClose }: { onClose: () => void }) {
 
 export function MeasurementsScreen() {
   const navigate = useNavigate();
+  const { units } = useSettings();
   const measurements = useLiveQuery(() => db.measurements.toArray());
   const [logging, setLogging] = useState(false);
 
@@ -221,8 +235,16 @@ export function MeasurementsScreen() {
 
       <div className="os-scroll flex-1 overflow-auto px-[22px] pb-7 pt-1.5">
         <div className="flex gap-2.5">
-          <StatCard label="Bodyweight" value={bodyweight?.valueKg} unit="kg" />
-          <StatCard label="Waist" value={waist?.valueCm} unit="cm" />
+          <StatCard
+            label="Bodyweight"
+            value={bodyweight?.valueKg !== undefined ? fmtWeight(bodyweight.valueKg, units) : undefined}
+            unit={units}
+          />
+          <StatCard
+            label="Waist"
+            value={waist?.valueCm !== undefined ? String(waist.valueCm) : undefined}
+            unit="cm"
+          />
         </div>
 
         <div
@@ -234,7 +256,7 @@ export function MeasurementsScreen() {
         {recent.length > 0 ? (
           <div className="flex flex-col gap-2">
             {recent.map((m) => (
-              <MeasurementRow key={m.id} m={m} />
+              <MeasurementRow key={m.id} m={m} units={units} />
             ))}
           </div>
         ) : (
@@ -252,7 +274,7 @@ export function MeasurementsScreen() {
         </button>
       </div>
 
-      {logging && <LogMeasurementSheet onClose={() => setLogging(false)} />}
+      {logging && <LogMeasurementSheet onClose={() => setLogging(false)} units={units} />}
     </div>
   );
 }
