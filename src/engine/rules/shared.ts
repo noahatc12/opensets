@@ -1,9 +1,25 @@
 /** Shared helpers for the progression rules. Pure. */
-import type { PrescribedSet, SetResult, SetScheme } from '../types';
+import { roundToLoadable } from '../rounding';
+import type { EngineSettings, PrescribedSet, SetResult, SetScheme } from '../types';
 
 /** Sets that count toward a progression decision (working + AMRAP, not warmups). */
 export function workingSets(lastSession: SetResult[]): SetResult[] {
   return lastSession.filter((s) => s.type === 'working' || s.type === 'amrap');
+}
+
+/** Round a barbell load to the nearest weight loadable from the lifter's plates. */
+export function roundLoad(weightKg: number, settings: EngineSettings): number {
+  return roundToLoadable(
+    weightKg,
+    settings.barKg,
+    settings.plateInventoryKg,
+    settings.rounding,
+  );
+}
+
+/** Did every working set hit (or beat) its rep target while completed? */
+export function allHit(work: SetResult[], targetReps: number): boolean {
+  return work.length > 0 && work.every((s) => s.completed && s.reps >= targetReps);
 }
 
 /** Build the prescribed sets for a scheme at a fixed weight + rep target. */
