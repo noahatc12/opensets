@@ -1,54 +1,30 @@
-import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useLiveQuery } from 'dexie-react-hooks';
-import { db } from '../../db/db';
-import { useSettings } from '../../db/hooks';
-import { fmtWeight, weightStepKg, weightStepLabel } from '../../lib/units';
-import { useActiveWorkout } from './useActiveWorkout';
-import { useSessionStore } from '../../state/session';
-import { useThemeStore } from '../../state/theme';
-import { useCatalog } from '../library/useCatalog';
+import { fmtWeight } from '../../lib/units';
 import { getCatalogExercise } from '../../db/catalog';
-import {
-  logSet,
-  softDeleteSet,
-  completeSessionAndAdvance,
-  detectAndMarkPRs,
-} from '../../db/repositories';
-import type { PrescribedSet, SetType, PRKind } from '../../engine/types';
+import { useLogger } from './useLogger';
 import { PrCelebration } from './PrCelebration';
+import { ExercisePicker } from '../library/ExercisePicker';
 import {
   ChevronLeftIcon,
   ChevronRightIcon,
   ChevronDownIcon,
   ChevronUpIcon,
-  CloseIcon,
-  PlusIcon,
   MinusIcon,
+  PlusIcon,
 } from '../../components/icons';
 
-/* Ported from the Claude Design prototype (reference/OpenSets.dc.html). Two
-   templates share one shell (top bar, mid-session actions, rest bar, PR overlay)
-   and branch only the scroll body + Log CTA:
-   - Tempo  (lines 84-151): centered hero scoreboard, paired steppers, done-set glances.
-   - Readout (lines 152-282): columnar set-list — header + per-set rows, the active
-     set rendered as a columnar hero card with Weight │ Reps stepper columns.
-   Inline, token-based styles to match the reference exactly. */
+/* Readout logger — the single active logger for the build. It is a PRESENTATIONAL
+   shell over useLogger(): every value and action comes from the hook, so a future
+   Tempo skin is a second component over the same logic, not a rebuild. Ported from
+   the Claude Design prototype (reference/OpenSets.dc.html): columnar set-list —
+   header + per-set rows, the active set a columnar hero card with Weight │ Reps. */
 
-const nowIso = () => new Date().toISOString();
 const nameOf = (id: string) => getCatalogExercise(id)?.name ?? id;
-const fmt = (n: number) => (Number.isInteger(n) ? String(n) : String(n));
+const fmt = (n: number) => String(n);
 
 function clock(totalSec: number): string {
   const m = Math.floor(totalSec / 60);
   const s = totalSec % 60;
   return `${m}:${String(s).padStart(2, '0')}`;
-}
-
-/** "lowerBack" / "barbell" -> "Lower Back" / "Barbell" for the Readout meta row. */
-function titleCase(s: string): string {
-  const spaced = s.replace(/([a-z])([A-Z])/g, '$1 $2');
-  return spaced.charAt(0).toUpperCase() + spaced.slice(1);
 }
 
 const numFont = {
@@ -58,331 +34,109 @@ const numFont = {
 };
 
 export function ActiveSession() {
-  useCatalog();
-  const { units, restAutoStart } = useSettings();
-  const { session, prescriptions, lastByExercise, logged } = useActiveWorkout();
-  const current = useSessionStore((s) => s.currentExercise);
-  const setCurrent = useSessionStore((s) => s.setCurrentExercise);
-  const startRest = useSessionStore((s) => s.startRest);
-  const adjustRest = useSessionStore((s) => s.adjustRest);
-  const stopRest = useSessionStore((s) => s.stopRest);
-  const rest = useSessionStore((s) => s.rest);
-  const endSession = useSessionStore((s) => s.endSession);
-  const ds = useThemeStore((s) => s.selection.ds) ?? 'tempo';
-  const navigate = useNavigate();
+  const vm = useLogger();
+  if (!vm) return null;
+  const {
+    sessionTitle,
+    elapsed,
+    exId,
+    metaLine,
+    lastWeights,
+    totalSets,
+    activeIndex,
+    exerciseComplete,
+    doneSets,
+    pres,
+    activePrescribed,
+    activeSlot,
+    last,
+    slots,
+    current,
+    setCurrent,
+    units,
+    weight,
+    reps,
+    rpe,
+    setWeight,
+    setReps,
+    setRpe,
+    wStep,
+    rest,
+    restRemain,
+    adjustRest,
+    stopRest,
+    whyOpen,
+    setWhyOpen,
+    celebrate,
+    setCelebrate,
+    toast,
+    setToast,
+    finishing,
+    multiTabConflict,
+    pickerMode,
+    log,
+    finish,
+    undoSet,
+    skip,
+    openSwap,
+    openAdd,
+    closePicker,
+    onPickExercise,
+  } = vm;
 
-  const [finishing, setFinishing] = useState(false);
-  const [whyOpen, setWhyOpen] = useState(false);
-  const [now, setNow] = useState(() => Date.now());
-  const [celebrate, setCelebrate] = useState<{
-    kinds: PRKind[];
-    e1rm: number | null;
-  } | null>(null);
-  // Set-logged undo snackbar: holds the id of the set to soft-delete on Undo.
-  const [toast, setToast] = useState<{ setId: string } | null>(null);
+  const totalForGrid = Math.max(totalSets, 1);
 
-  const program = useLiveQuery(
-    () => (session?.programId ? db.programs.get(session.programId) : undefined),
-    [session?.programId],
-  );
-  const template = useLiveQuery(
-    () => (session?.templateId ? db.templates.get(session.templateId) : undefined),
-    [session?.templateId],
-  );
-  const sessionTitle =
-    program && template ? `${program.name} · ${template.name}` : 'Workout';
-
-  // Active-set edit state, reset when the active set (exercise / set index) changes.
-  const [weight, setWeight] = useState(0);
-  const [reps, setReps] = useState(0);
-  const [rpe, setRpe] = useState<number | undefined>(undefined);
-
-  useEffect(() => {
-    const id = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(id);
-  }, []);
-
-  // Auto-dismiss the set-logged toast after ~3.5s; reset the timer per toast.
-  useEffect(() => {
-    if (!toast) return;
-    const id = setTimeout(() => setToast(null), 3500);
-    return () => clearTimeout(id);
-  }, [toast]);
-
-  const slots = session?.executedSlots ?? [];
-  const slot = slots[Math.min(current, Math.max(0, slots.length - 1))];
-  const exId = slot?.exerciseId ?? '';
-  const pres = exId ? prescriptions[exId] : undefined;
-  const doneSets = logged
-    .filter((l) => l.exerciseId === exId)
-    .sort((a, b) => a.order - b.order);
-  const activeIndex = doneSets.length;
-  const activePrescribed: PrescribedSet | undefined = pres?.sets[activeIndex];
-
-  // Sync the editable values to the active prescribed set.
-  const sig = `${exId}:${activeIndex}:${activePrescribed?.targetWeightKg}:${activePrescribed?.targetReps}`;
-  const [sigSeen, setSigSeen] = useState('');
-  if (sig !== sigSeen && activePrescribed) {
-    setSigSeen(sig);
-    setWeight(activePrescribed.targetWeightKg);
-    setReps(activePrescribed.targetReps);
-    setRpe(undefined);
-  }
-
-  if (!session || !slot) return null;
-  // Stable non-undefined capture so the nested body closures keep the narrowing.
-  const activeSlot = slot;
-
-  const last = lastByExercise[exId] ?? [];
-  const lastLine = last.length
-    ? `last ${fmtWeight(last[0]!.weightKg, units)} × ${last.map((s) => s.reps).join(', ')}`
-    : 'first time';
-  const totalSets = pres?.sets.length ?? 0;
-  const exerciseComplete = totalSets > 0 && activeIndex >= totalSets;
-  const elapsed = clock(Math.max(0, Math.floor((now - Date.parse(session.startedAt)) / 1000)));
-  const isAmrap = activePrescribed?.amrap ?? false;
-
-  async function log() {
-    if (!activePrescribed) return;
-    const loggedRow = await logSet({
-      sessionId: session!.id,
-      exerciseId: exId,
-      date: session!.date,
-      order: activeIndex,
-      type: (isAmrap ? 'amrap' : 'working') as SetType,
-      weightKg: weight,
-      reps,
-      completed: true,
-      ...(rpe !== undefined ? { rpe } : {}),
-    });
-    const pr = await detectAndMarkPRs(loggedRow);
-    if (pr.kinds.length > 0) {
-      setCelebrate({ kinds: pr.kinds, e1rm: pr.e1rm });
-    }
-    setToast({ setId: loggedRow.id });
-    setWhyOpen(false);
-    if (restAutoStart ?? true) startRest(slot!.restWorkSec);
-  }
-
-  async function finish() {
-    setFinishing(true);
-    stopRest();
-    await completeSessionAndAdvance(session!.id, nowIso());
-    endSession();
-    navigate('/today');
-  }
-
-  const restRemain = rest ? Math.max(0, Math.ceil((rest.endsAt - now) / 1000)) : 0;
-  const ex = exId ? getCatalogExercise(exId) : undefined;
-  const metaLine = ex
-    ? [ex.equipment ? titleCase(ex.equipment) : null, ex.primaryMuscles[0] ? titleCase(ex.primaryMuscles[0]) : null]
-        .filter(Boolean)
-        .join(' · ')
-    : '';
-  const lastWeights = last.length
-    ? `${fmtWeight(last[0]!.weightKg, units)}×${last.map((s) => s.reps).join(',')}`
-    : '';
-  const wStep = weightStepKg(units);
-  const wStepLabel = weightStepLabel(units);
-
-  /* ---- Tempo scroll body (reference 84-151): centered hero + done-set glances ----
-     Plain JSX-returning closures (not components) so they share the parent's state
-     and handlers without re-mounting. */
-  function tempoBody() {
-    return (
-      <>
-        {/* exercise header */}
-        <div className="pb-1.5 text-center">
-          <div
-            className="text-[28px] font-bold text-text"
-            style={{ letterSpacing: 'var(--tracking-tight)' }}
-          >
-            {nameOf(exId)}
+  return (
+    <div className="relative flex h-full flex-col">
+      {celebrate && (
+        <PrCelebration
+          kinds={celebrate.kinds}
+          e1rm={celebrate.e1rm}
+          onDismiss={() => setCelebrate(null)}
+        />
+      )}
+      {/* Top bar */}
+      <div className="flex flex-none items-center justify-between px-[22px] pb-3 pt-[max(0.625rem,env(safe-area-inset-top))]">
+        <button
+          onClick={() => void finish()}
+          className="grid size-[42px] place-items-center border-none bg-transparent text-muted"
+          aria-label="Back"
+        >
+          <ChevronLeftIcon className="size-[22px]" />
+        </button>
+        <div className="text-center">
+          <div className="whitespace-nowrap text-[13px] font-semibold text-text">
+            {sessionTitle}
           </div>
-          <div className="mt-[5px] text-[13px] text-muted" style={numFont}>
-            {exerciseComplete
-              ? `${totalSets} of ${totalSets} done`
-              : `Set ${activeIndex + 1} of ${totalSets} · ${lastLine}`}
-          </div>
-          <div className="mt-3.5 flex justify-center gap-2">
-            {Array.from({ length: Math.max(totalSets, 1) }).map((_, i) => (
-              <span
-                key={i}
-                className="h-[5px] w-8 rounded-[3px]"
-                style={{
-                  background: i < activeIndex ? 'var(--accent)' : 'var(--surface-2)',
-                }}
-              />
-            ))}
+          <div className="mt-0.5 text-[11.5px] text-accent" style={numFont}>
+            {elapsed} elapsed
           </div>
         </div>
+        <button
+          onClick={() => void finish()}
+          disabled={finishing}
+          className="h-[42px] border-none bg-transparent px-2.5 text-[14px] font-semibold text-muted"
+        >
+          {finishing ? '…' : 'Finish'}
+        </button>
+      </div>
 
-        {/* hero set card */}
-        {!exerciseComplete && activePrescribed && (
-          <div
-            className="mt-3.5 rounded-[var(--r-2xl)] border bg-surface px-5 pb-5 pt-6"
-            style={{ borderColor: 'var(--border-card)', boxShadow: 'var(--hairline-top)' }}
-          >
-            <div className="flex items-baseline justify-center gap-[7px]">
-              <span
-                className="text-text"
-                style={{
-                  fontSize: 'var(--num-xl)',
-                  lineHeight: 0.9,
-                  letterSpacing: 'var(--tracking-tight)',
-                  ...numFont,
-                }}
-              >
-                {fmtWeight(weight, units)}
-              </span>
-              <span className="text-[18px] font-medium text-muted">{units}</span>
-              <span className="mx-2 text-[28px] font-light text-faint">×</span>
-              <span
-                className="text-text"
-                style={{
-                  fontSize: 'var(--num-xl)',
-                  lineHeight: 0.9,
-                  letterSpacing: 'var(--tracking-tight)',
-                  ...numFont,
-                }}
-              >
-                {fmt(reps)}
-              </span>
-              <span className="text-[18px] font-medium text-muted">reps</span>
-            </div>
+      {multiTabConflict && (
+        <div
+          className="mx-[22px] mb-2 flex-none rounded-[var(--r-md)] px-3.5 py-2.5 text-[12px] font-medium"
+          style={{
+            background: 'color-mix(in oklab, var(--danger) 12%, var(--surface))',
+            border: '1px solid color-mix(in oklab, var(--danger) 32%, transparent)',
+            color: 'var(--danger)',
+          }}
+        >
+          This workout is open in another tab. Logging is paused here to protect your
+          data — finish in the original tab.
+        </div>
+      )}
 
-            {/* steppers */}
-            <div className="mt-[22px] flex gap-3">
-              <StepRow
-                label={wStepLabel}
-                onDec={() => setWeight((w) => Math.max(0, Math.round((w - wStep) * 100) / 100))}
-                onInc={() => setWeight((w) => Math.round((w + wStep) * 100) / 100)}
-              />
-              <StepRow
-                label="rep"
-                onDec={() => setReps((r) => Math.max(0, r - 1))}
-                onInc={() => setReps((r) => r + 1)}
-              />
-            </div>
-
-            {/* RPE */}
-            <div className="mt-3.5 flex items-center gap-2">
-              <span className="text-[12px] font-semibold text-muted">RPE</span>
-              {[7, 8, 9].map((n) => {
-                const sel = rpe === n;
-                return (
-                  <button
-                    key={n}
-                    onClick={() => setRpe(sel ? undefined : n)}
-                    className="rounded-[var(--r-pill)] px-[13px] py-[7px] text-[13px]"
-                    style={{
-                      fontFamily: 'var(--font-num)',
-                      background: sel ? 'var(--accent)' : 'var(--bg)',
-                      color: sel ? 'var(--accent-ink)' : 'var(--muted)',
-                      fontWeight: sel ? 700 : 400,
-                    }}
-                  >
-                    {n}
-                  </button>
-                );
-              })}
-              <span className="ml-auto text-[11px] text-faint">optional</span>
-            </div>
-
-            {/* why this weight */}
-            {pres?.reason && (
-              <>
-                <button
-                  onClick={() => setWhyOpen((v) => !v)}
-                  className="mt-4 flex w-full items-center gap-2.5 rounded-[var(--r-md)] px-4 py-[13px] text-left"
-                  style={{
-                    background: 'color-mix(in oklab, var(--accent) 9%, var(--surface))',
-                    border: '1px solid color-mix(in oklab, var(--accent) 22%, transparent)',
-                  }}
-                >
-                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="flex-none">
-                    <circle cx="8" cy="8" r="7" stroke="var(--accent)" strokeWidth="1.3" />
-                    <path d="M8 7.2v4M8 4.8h.01" stroke="var(--accent)" strokeWidth="1.5" strokeLinecap="round" />
-                  </svg>
-                  <span className="flex-1 text-[12.5px] leading-[1.4] text-text">
-                    {pres.reason}
-                  </span>
-                  {whyOpen ? (
-                    <ChevronUpIcon className="size-[18px] text-faint" />
-                  ) : (
-                    <ChevronDownIcon className="size-[18px] text-faint" />
-                  )}
-                </button>
-                {whyOpen && (
-                  <div className="mt-2 rounded-[var(--r-md)] bg-bg px-4 py-3.5 text-[12.5px] leading-[1.55] text-muted">
-                    <Row k="Rule" v={activeSlot.progressionRule.kind} />
-                    <Row
-                      k="Last session"
-                      v={last.length ? `${fmtWeight(last[0]!.weightKg, units)} ${units} · ${last.map((s) => s.reps).join('/')} reps` : '—'}
-                    />
-                    {pres.flags.length > 0 && (
-                      <Row k="Flags" v={pres.flags.join(', ')} accent />
-                    )}
-                  </div>
-                )}
-              </>
-            )}
-          </div>
-        )}
-
-        {/* done-set glances */}
-        {doneSets.map((d) => (
-          <div
-            key={d.id}
-            className="mt-[18px] flex items-center justify-center gap-2.5 text-[13px] text-muted"
-          >
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-              <circle cx="8" cy="8" r="7.5" fill="color-mix(in oklab, var(--accent) 18%, transparent)" />
-              <path d="M5 8l2 2 4-4.5" stroke="var(--accent)" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-            <span>
-              Set {d.order + 1} logged —{' '}
-              <span className="text-text" style={numFont}>
-                {fmtWeight(d.weightKg, units)} {units} × {d.reps}
-              </span>
-            </span>
-            {d.isPR && d.isPR.length > 0 && (
-              <span
-                className="rounded px-1.5 text-[10px] font-bold uppercase tracking-wide text-pr"
-                style={{ border: '1px solid color-mix(in oklab, var(--pr) 40%, transparent)' }}
-              >
-                PR
-              </span>
-            )}
-            <button
-              onClick={() => void softDeleteSet(d.id, nowIso())}
-              className="text-faint"
-              aria-label="Undo set"
-            >
-              <CloseIcon className="size-4" />
-            </button>
-          </div>
-        ))}
-
-        {exerciseComplete && current < slots.length - 1 && (
-          <button
-            onClick={() => setCurrent(current + 1)}
-            className="mt-5 w-full rounded-[var(--r-lg)] bg-surface-2 py-3.5 text-[14px] font-semibold text-text"
-          >
-            Next: {nameOf(slots[current + 1]!.exerciseId)} →
-          </button>
-        )}
-
-        <div className="h-2" />
-      </>
-    );
-  }
-
-  /* ---- Readout scroll body (reference 152-282): columnar set-list ---- */
-  function readoutBody() {
-    const totalForGrid = Math.max(totalSets, 1);
-    return (
-      <>
+      {/* Scroll area — Readout columnar set-list */}
+      <div className="os-scroll flex-1 overflow-auto px-[22px] pb-2 pt-1">
         {/* exercise header */}
         <div className="pb-3.5">
           <div className="flex items-baseline justify-between gap-2.5">
@@ -401,9 +155,7 @@ export function ActiveSession() {
           </div>
           <div className="mt-1.5 flex items-center gap-2.5">
             {metaLine && <span className="text-[12.5px] text-muted">{metaLine}</span>}
-            {metaLine && lastWeights && (
-              <span className="size-[3px] rounded-full bg-faint" />
-            )}
+            {metaLine && lastWeights && <span className="size-[3px] rounded-full bg-faint" />}
             {lastWeights && (
               <span
                 className="text-[12px] text-muted"
@@ -418,9 +170,7 @@ export function ActiveSession() {
               <div
                 key={i}
                 className="h-[3px] flex-1 rounded-[2px]"
-                style={{
-                  background: i < activeIndex ? 'var(--accent)' : 'var(--surface-2)',
-                }}
+                style={{ background: i < activeIndex ? 'var(--accent)' : 'var(--surface-2)' }}
               />
             ))}
           </div>
@@ -447,16 +197,10 @@ export function ActiveSession() {
                       : 'var(--border-card)',
                   }}
                 >
-                  <span
-                    className="w-3.5 text-[13px] text-faint"
-                    style={{ fontFamily: 'var(--font-num)' }}
-                  >
+                  <span className="w-3.5 text-[13px] text-faint" style={{ fontFamily: 'var(--font-num)' }}>
                     {done.order + 1}
                   </span>
-                  <span
-                    className="text-[17px] font-semibold text-muted"
-                    style={numFont}
-                  >
+                  <span className="text-[17px] font-semibold text-muted" style={numFont}>
                     {fmtWeight(done.weightKg, units)}
                     <span className="text-[11px] text-faint">{units}</span> × {done.reps}
                   </span>
@@ -642,9 +386,7 @@ export function ActiveSession() {
                           <circle cx="8" cy="8" r="7" stroke="var(--accent)" strokeWidth="1.3" />
                           <path d="M8 7.2v4M8 4.8h.01" stroke="var(--accent)" strokeWidth="1.5" strokeLinecap="round" />
                         </svg>
-                        <span className="flex-1 text-[12.5px] leading-[1.45] text-muted">
-                          {pres.reason}
-                        </span>
+                        <span className="flex-1 text-[12.5px] leading-[1.45] text-muted">{pres.reason}</span>
                         {whyOpen ? (
                           <ChevronUpIcon className="size-4 flex-none text-faint" />
                         ) : (
@@ -658,9 +400,7 @@ export function ActiveSession() {
                             k="Last session"
                             v={last.length ? `${fmtWeight(last[0]!.weightKg, units)} ${units} · ${last.map((s) => s.reps).join('/')} reps` : '—'}
                           />
-                          {pres.flags.length > 0 && (
-                            <Row k="Flags" v={pres.flags.join(', ')} accent />
-                          )}
+                          {pres.flags.length > 0 && <Row k="Flags" v={pres.flags.join(', ')} accent />}
                         </div>
                       )}
                     </>
@@ -669,7 +409,7 @@ export function ActiveSession() {
               );
             }
 
-            // Upcoming set (or, when the exercise is complete, the active index row): plain row.
+            // Upcoming set (or, when complete, the active-index row): plain row.
             const isAmrapSet = prescribed?.amrap ?? false;
             return (
               <div
@@ -677,10 +417,7 @@ export function ActiveSession() {
                 className="flex items-center gap-3.5 rounded-[var(--r-md)] border bg-surface px-4 py-[11px]"
                 style={{ borderColor: 'var(--border-card)' }}
               >
-                <span
-                  className="w-3.5 text-[13px] text-faint"
-                  style={{ fontFamily: 'var(--font-num)' }}
-                >
+                <span className="w-3.5 text-[13px] text-faint" style={{ fontFamily: 'var(--font-num)' }}>
                   {i + 1}
                 </span>
                 <span className="text-[17px] font-semibold text-text" style={numFont}>
@@ -722,52 +459,6 @@ export function ActiveSession() {
         )}
 
         <div className="h-2" />
-      </>
-    );
-  }
-
-  const isReadout = ds === 'readout';
-
-  return (
-    <div className="relative flex h-full flex-col">
-      {celebrate && (
-        <PrCelebration
-          kinds={celebrate.kinds}
-          e1rm={celebrate.e1rm}
-          onDismiss={() => setCelebrate(null)}
-        />
-      )}
-      {/* Top bar */}
-      <div
-        className="flex flex-none items-center justify-between px-[22px] pb-3 pt-[max(0.625rem,env(safe-area-inset-top))]"
-      >
-        <button
-          onClick={() => void finish()}
-          className="grid size-[42px] place-items-center border-none bg-transparent text-muted"
-          aria-label="Back"
-        >
-          <ChevronLeftIcon className="size-[22px]" />
-        </button>
-        <div className="text-center">
-          <div className="whitespace-nowrap text-[13px] font-semibold text-text">
-            {sessionTitle}
-          </div>
-          <div className="mt-0.5 text-[11.5px] text-accent" style={numFont}>
-            {elapsed} elapsed
-          </div>
-        </div>
-        <button
-          onClick={() => void finish()}
-          disabled={finishing}
-          className="h-[42px] border-none bg-transparent px-2.5 text-[14px] font-semibold text-muted"
-        >
-          {finishing ? '…' : 'Finish'}
-        </button>
-      </div>
-
-      {/* Scroll area */}
-      <div className="os-scroll flex-1 overflow-auto px-[22px] pb-2 pt-1">
-        {isReadout ? readoutBody() : tempoBody()}
       </div>
 
       {/* mid-session actions */}
@@ -779,13 +470,22 @@ export function ActiveSession() {
         >
           <ChevronLeftIcon className="size-[18px]" />
         </button>
-        <button className="h-[42px] flex-1 rounded-[var(--r-sm)] bg-surface text-[13px] font-semibold text-text">
+        <button
+          onClick={openSwap}
+          className="h-[42px] flex-1 rounded-[var(--r-sm)] bg-surface text-[13px] font-semibold text-text"
+        >
           Swap
         </button>
-        <button className="h-[42px] flex-1 rounded-[var(--r-sm)] bg-surface text-[13px] font-semibold text-text">
+        <button
+          onClick={() => void skip()}
+          className="h-[42px] flex-1 rounded-[var(--r-sm)] bg-surface text-[13px] font-semibold text-text"
+        >
           Skip
         </button>
-        <button className="h-[42px] flex-1 rounded-[var(--r-sm)] bg-surface text-[13px] font-semibold text-text">
+        <button
+          onClick={openAdd}
+          className="h-[42px] flex-1 rounded-[var(--r-sm)] bg-surface text-[13px] font-semibold text-text"
+        >
           Add
         </button>
         <button
@@ -804,9 +504,7 @@ export function ActiveSession() {
       >
         {rest && (
           <div className="mb-3 flex items-center gap-3.5 rounded-[var(--r-lg)] bg-surface px-4 py-[11px]">
-            <span className="text-[11px] font-bold uppercase tracking-wide text-muted">
-              Rest
-            </span>
+            <span className="text-[11px] font-bold uppercase tracking-wide text-muted">Rest</span>
             <span className="text-[26px] leading-none text-text" style={numFont}>
               {clock(restRemain)}
             </span>
@@ -833,28 +531,20 @@ export function ActiveSession() {
           </div>
         )}
         {!exerciseComplete && activePrescribed ? (
-          isReadout ? (
-            <button
-              onClick={() => void log()}
-              className="flex h-[60px] w-full items-center justify-center gap-2.5 rounded-[var(--r-lg)] bg-accent text-[16px] font-bold text-accent-ink"
-              style={{ letterSpacing: '.01em' }}
-            >
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                <path d="M4 10.5L8 14.5L16 5.5" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-              Log Set {activeIndex + 1} ·{' '}
-              <span style={{ fontFamily: 'var(--font-num)', fontVariantNumeric: 'tabular-nums' }}>
-                {fmtWeight(weight, units)} × {fmt(reps)}
-              </span>
-            </button>
-          ) : (
-            <button
-              onClick={() => void log()}
-              className="h-[62px] w-full rounded-[var(--r-xl)] bg-accent text-[17px] font-bold text-accent-ink"
-            >
-              Log Set {activeIndex + 1}
-            </button>
-          )
+          <button
+            onClick={() => void log()}
+            disabled={multiTabConflict}
+            className="flex h-[60px] w-full items-center justify-center gap-2.5 rounded-[var(--r-lg)] bg-accent text-[16px] font-bold text-accent-ink disabled:opacity-50"
+            style={{ letterSpacing: '.01em' }}
+          >
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+              <path d="M4 10.5L8 14.5L16 5.5" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            Log Set {activeIndex + 1} ·{' '}
+            <span style={{ fontFamily: 'var(--font-num)', fontVariantNumeric: 'tabular-nums' }}>
+              {fmtWeight(weight, units)} × {fmt(reps)}
+            </span>
+          </button>
         ) : (
           <button
             onClick={() => void finish()}
@@ -866,7 +556,7 @@ export function ActiveSession() {
         )}
       </div>
 
-      {/* set-logged undo toast (reference 1116-1123): above the Log CTA / rest bar */}
+      {/* set-logged undo toast: above the Log CTA / rest bar */}
       {toast && (
         <div
           className="absolute left-[18px] right-[18px] bottom-[calc(96px+env(safe-area-inset-bottom))] z-10 flex items-center gap-3 rounded-[var(--r-md)] px-4 py-3.5"
@@ -880,7 +570,7 @@ export function ActiveSession() {
           <span className="flex-1 text-[13px] font-medium text-text">Set logged</span>
           <button
             onClick={() => {
-              void softDeleteSet(toast.setId, nowIso());
+              void undoSet(toast.setId);
               setToast(null);
             }}
             className="border-none bg-transparent text-[13px] font-bold text-accent"
@@ -889,36 +579,10 @@ export function ActiveSession() {
           </button>
         </div>
       )}
-    </div>
-  );
-}
 
-function StepRow({
-  label,
-  onDec,
-  onInc,
-}: {
-  label: string;
-  onDec: () => void;
-  onInc: () => void;
-}) {
-  return (
-    <div className="flex flex-1 items-center justify-between rounded-[var(--r-lg)] bg-bg p-1.5">
-      <button
-        onClick={onDec}
-        className="grid size-12 place-items-center rounded-[var(--r-md)] bg-surface-2 text-text"
-        aria-label={`decrease ${label}`}
-      >
-        <MinusIcon className="size-6" />
-      </button>
-      <span className="text-[12px] font-semibold text-muted">{label}</span>
-      <button
-        onClick={onInc}
-        className="grid size-12 place-items-center rounded-[var(--r-md)] bg-surface-2 text-text"
-        aria-label={`increase ${label}`}
-      >
-        <PlusIcon className="size-6" />
-      </button>
+      {pickerMode && (
+        <ExercisePicker onPick={(ex) => void onPickExercise(ex)} onClose={closePicker} />
+      )}
     </div>
   );
 }
@@ -927,11 +591,7 @@ function Row({ k, v, accent }: { k: string; v: string; accent?: boolean }) {
   return (
     <div className="flex justify-between py-[3px]">
       <span>{k}</span>
-      <span
-        className={accent ? 'font-semibold text-success' : 'font-semibold text-text'}
-      >
-        {v}
-      </span>
+      <span className={accent ? 'font-semibold text-success' : 'font-semibold text-text'}>{v}</span>
     </div>
   );
 }
