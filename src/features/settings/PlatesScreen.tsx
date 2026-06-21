@@ -74,7 +74,8 @@ export function PlatesScreen() {
 
       <div className="os-scroll flex-1 overflow-auto px-[22px] pb-7 pt-1.5">
         <div className="mx-0.5 mb-3.5 text-[13px] leading-[1.4] text-muted">
-          Plates you own, per side. Used to round prescriptions to loadable weights.
+          Select the plate denominations you own — assumed available on both sides.
+          Prescriptions round to the nearest weight these can load.
         </div>
 
         <div className="flex flex-col gap-2">

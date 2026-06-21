@@ -166,7 +166,14 @@ async function buildIndex(
   const index = new Document({
     document: {
       id: 'id',
-      index: ['name', 'nameNorm', 'primaryMuscles', 'equipment', 'category'],
+      index: [
+        'name',
+        'nameNorm',
+        'primaryMuscles',
+        'secondaryMuscles',
+        'equipment',
+        'category',
+      ],
     },
     tokenize: 'forward',
   });
