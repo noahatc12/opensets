@@ -35,7 +35,7 @@ export interface PlanSlotSpec {
   rule: ProgressionRule;
   scheme: { sets: number; repTarget?: number; repRange?: [number, number] };
   rest: { warmupSec: number; workSec: number };
-  startWeightKg: number;
+  startWeightLb: number;
 }
 
 export interface PlanDay {
@@ -151,11 +151,13 @@ function score(ex: Exercise, pat: Pattern, pool: ReadonlySet<string>): number {
   return s;
 }
 
+// Conservative starting working weights in lb (canonical). Week-1 calibration is
+// the real source of truth; these only prefill plausible numbers.
 function startWeight(ex: Exercise, compound: boolean): number {
   if (ex.isBodyweight || ex.equipment === 'bodyweight') return 0;
-  if (ex.equipment === 'barbell') return compound ? 40 : 20;
-  if (ex.equipment === 'dumbbell' || ex.equipment === 'kettlebell') return compound ? 12 : 6;
-  return compound ? 30 : 15;
+  if (ex.equipment === 'barbell') return compound ? 95 : 45;
+  if (ex.equipment === 'dumbbell' || ex.equipment === 'kettlebell') return compound ? 30 : 15;
+  return compound ? 50 : 25;
 }
 
 export function generatePlan(catalog: Exercise[], params: PlanParams): GeneratedPlan {
@@ -167,13 +169,13 @@ export function generatePlan(catalog: Exercise[], params: PlanParams): Generated
   const perDay = exercisesPerDay(experience);
 
   const compoundRule: ProgressionRule = strength
-    ? { kind: 'linear', incrementKg: 2.5, failsBeforeDeload: 3, deloadPct: 0.1 }
-    : { kind: 'double', repMin: fatLoss ? 8 : 6, repMax: fatLoss ? 12 : 10, incrementKg: 2.5, perSet: false };
+    ? { kind: 'linear', incrementLb: 2.5, failsBeforeDeload: 3, deloadPct: 0.1 }
+    : { kind: 'double', repMin: fatLoss ? 8 : 6, repMax: fatLoss ? 12 : 10, incrementLb: 2.5, perSet: false };
   const isoRule: ProgressionRule = {
     kind: 'double',
     repMin: fatLoss ? 12 : 10,
     repMax: fatLoss ? 15 : 14,
-    incrementKg: 1.25,
+    incrementLb: 1.25,
     perSet: false,
   };
 
@@ -226,7 +228,7 @@ export function generatePlan(catalog: Exercise[], params: PlanParams): Generated
         rest: pat.compound
           ? { warmupSec: 60, workSec: rest.compoundSec }
           : { warmupSec: 45, workSec: rest.isolationSec },
-        startWeightKg: startWeight(chosen, pat.compound),
+        startWeightLb: startWeight(chosen, pat.compound),
       });
     }
     planDays.push({ name: types[di]!, slots });

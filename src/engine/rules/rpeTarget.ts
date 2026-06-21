@@ -29,7 +29,7 @@ export function rpeTargetNext(
   scheme: SetScheme,
 ): NextPrescriptionResult {
   const work = workingSets(lastSession);
-  let weight = state.workingWeightKg;
+  let weight = state.workingWeightLb;
   let reason: string;
 
   if (work.length === 0) {
@@ -37,11 +37,11 @@ export function rpeTargetNext(
   } else {
     const top = work[work.length - 1]!;
     if (top.rpe === undefined) {
-      reason = `Hold ${fmt(weight)} kg — log RPE to autoregulate.`;
+      reason = `Hold ${fmt(weight)} lb — log RPE to autoregulate.`;
     } else {
       const deviation = rule.targetRpe - top.rpe; // logged easier (lower RPE) → positive → add load
       const adj = Math.max(-0.1, Math.min(0.1, deviation * rule.loadStepPct));
-      weight = state.workingWeightKg * (1 + adj);
+      weight = state.workingWeightLb * (1 + adj);
       reason =
         adj > 0
           ? `+${pct(adj)} — top set RPE ${fmt(top.rpe)} under target ${fmt(rule.targetRpe)}.`
@@ -60,6 +60,6 @@ export function rpeTargetNext(
 
   return {
     prescription: { sets, reason, flags: [] },
-    nextState: { ...state, workingWeightKg: rounded },
+    nextState: { ...state, workingWeightLb: rounded },
   };
 }

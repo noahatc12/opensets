@@ -3,7 +3,7 @@
  *
  * State holds the training max (TM). `cyclePos` is the week index (0–3) of the
  * pending prescription. Called at completion, it advances the wave and returns
- * the next week. After the deload week (W4) the TM increases by `tmIncrementKg`.
+ * the next week. After the deload week (W4) the TM increases by `tmIncrementLb`.
  * If the W3 top AMRAP set fails (< 1 rep), the TM resets to 90% of the session's
  * e1RM. Variants add BBB (5×10 @ 50% TM) or FSL (5×5 @ the week's first weight).
  */
@@ -45,7 +45,7 @@ function buildWave(
     return {
       type: amrap ? 'amrap' : 'working',
       targetReps: w.reps[i]!,
-      targetWeightKg: roundLoad(p * tm, settings),
+      targetWeightLb: roundLoad(p * tm, settings),
       ...(amrap ? { amrap: true } : {}),
     };
   });
@@ -53,11 +53,11 @@ function buildWave(
   if (week !== 3 && variant === 'bbb') {
     const bbb = roundLoad(0.5 * tm, settings);
     for (let i = 0; i < 5; i++)
-      sets.push({ type: 'working', targetReps: 10, targetWeightKg: bbb });
+      sets.push({ type: 'working', targetReps: 10, targetWeightLb: bbb });
   } else if (week !== 3 && variant === 'fsl') {
     const fsl = roundLoad(w.pcts[0] * tm, settings);
     for (let i = 0; i < 5; i++)
-      sets.push({ type: 'working', targetReps: 5, targetWeightKg: fsl });
+      sets.push({ type: 'working', targetReps: 5, targetWeightLb: fsl });
   }
   return sets;
 }
@@ -68,7 +68,7 @@ export function percent531Next(
   lastSession: SetResult[],
   settings: EngineSettings,
 ): NextPrescriptionResult {
-  const tm0 = state.trainingMaxKg ?? state.workingWeightKg;
+  const tm0 = state.trainingMaxLb ?? state.workingWeightLb;
   const week = ((state.cyclePos % 4) + 4) % 4;
   const work = workingSets(lastSession);
   const flags: PrescriptionFlag[] = [];
@@ -77,7 +77,7 @@ export function percent531Next(
   let reason: string;
 
   if (work.length === 0) {
-    reason = `5/3/1 Week ${week + 1} — TM ${fmt(tm)} kg.`;
+    reason = `5/3/1 Week ${week + 1} — TM ${fmt(tm)} lb.`;
   } else {
     if (week === 2) {
       const top = work[work.length - 1]!;
@@ -86,19 +86,19 @@ export function percent531Next(
         flags.push('deload');
       }
     } else if (week === 3) {
-      tm = tm0 + rule.tmIncrementKg;
+      tm = tm0 + rule.tmIncrementLb;
       flags.push('tmIncrease');
     }
     targetWeek = (week + 1) % 4;
     reason = flags.includes('tmIncrease')
-      ? `New cycle — TM +${fmt(rule.tmIncrementKg)} kg to ${fmt(tm)} kg.`
+      ? `New cycle — TM +${fmt(rule.tmIncrementLb)} lb to ${fmt(tm)} lb.`
       : flags.includes('deload')
-        ? `Missed the top set — TM reset to ${fmt(tm)} kg (≈90% e1RM).`
-        : `5/3/1 Week ${targetWeek + 1} — TM ${fmt(tm)} kg.`;
+        ? `Missed the top set — TM reset to ${fmt(tm)} lb (≈90% e1RM).`
+        : `5/3/1 Week ${targetWeek + 1} — TM ${fmt(tm)} lb.`;
   }
 
   return {
     prescription: { sets: buildWave(tm, targetWeek, rule.variant, settings), reason, flags },
-    nextState: { ...state, trainingMaxKg: tm, cyclePos: targetWeek, workingWeightKg: tm },
+    nextState: { ...state, trainingMaxLb: tm, cyclePos: targetWeek, workingWeightLb: tm },
   };
 }

@@ -6,9 +6,9 @@ import {
   platesForWeight,
 } from './rounding';
 
-// Standard kg gym set (denominations; each usable as a pair, unlimited quantity).
-const STD = [1.25, 2.5, 5, 10, 15, 20, 25];
-const NO_MICRO = [2.5, 5, 10, 15, 20, 25]; // smallest jump 2.5/side = 5 kg total
+// Standard lb gym set (denominations; each usable as a pair, unlimited quantity).
+const STD = [1.25, 2.5, 5, 10, 25, 35, 45];
+const NO_MICRO = [2.5, 5, 10, 15, 20, 25]; // smallest jump 2.5/side = 5 lb total
 const MICRO = [0.25, 0.5, 1.25, 2.5, 5, 10, 20]; // microplates present
 const BAR = 20;
 
@@ -27,7 +27,7 @@ describe('roundToLoadable', () => {
   });
 
   it('nearest mode picks the closest achievable load', () => {
-    // Without microplates, smallest step is 5 kg total. 61 → nearest of {60,65} = 60.
+    // Without microplates, smallest step is 5 lb total. 61 → nearest of {60,65} = 60.
     expect(roundToLoadable(61, BAR, NO_MICRO)).toBe(60);
     // 63.5 → nearest of {60,65} = 65.
     expect(roundToLoadable(63.5, BAR, NO_MICRO)).toBe(65);
@@ -45,7 +45,7 @@ describe('roundToLoadable', () => {
   });
 
   it('uses microplates when present to hit finer targets', () => {
-    // 61 with 0.25 microplates → 61 exactly (2×0.5 = 1 kg over 60).
+    // 61 with 0.25 microplates → 61 exactly (2×0.5 = 1 lb over 60).
     expect(roundToLoadable(61, BAR, MICRO)).toBe(61);
     expect(roundToLoadable(60.5, BAR, MICRO)).toBe(60.5);
   });
@@ -88,12 +88,12 @@ describe('generateWarmupRamp', () => {
     expect(ramp.length).toBeGreaterThan(0);
     // strictly ascending, all loadable, all below the working weight
     for (let i = 0; i < ramp.length; i++) {
-      expect(isLoadable(ramp[i]!.weightKg, BAR, STD)).toBe(true);
-      expect(ramp[i]!.weightKg).toBeLessThan(100);
+      expect(isLoadable(ramp[i]!.weightLb, BAR, STD)).toBe(true);
+      expect(ramp[i]!.weightLb).toBeLessThan(100);
       if (i > 0)
-        expect(ramp[i]!.weightKg).toBeGreaterThan(ramp[i - 1]!.weightKg);
+        expect(ramp[i]!.weightLb).toBeGreaterThan(ramp[i - 1]!.weightLb);
     }
-    expect(ramp[0]!.weightKg).toBe(BAR); // starts at the empty bar
+    expect(ramp[0]!.weightLb).toBe(BAR); // starts at the empty bar
   });
 
   it('returns no warmups when the working weight is the bar or lighter', () => {
@@ -102,16 +102,16 @@ describe('generateWarmupRamp', () => {
   });
 
   it('collapses to just the bar when percentages round at/below it (skip branches)', () => {
-    // 25 kg working: 40/60/80% all round down to the bar → only the bar survives.
+    // 25 lb working: 40/60/80% all round down to the bar → only the bar survives.
     const ramp = generateWarmupRamp(25, BAR, STD);
-    expect(ramp).toEqual([{ weightKg: BAR, reps: 8 }]);
+    expect(ramp).toEqual([{ weightLb: BAR, reps: 8 }]);
   });
 });
 
 describe('platesForWeight', () => {
   it('breaks a loadable weight into largest-first per-side plates', () => {
-    expect(platesForWeight(100, BAR, STD)).toEqual([25, 15]); // 20 + 2×40
-    expect(platesForWeight(62.5, BAR, STD)).toEqual([20, 1.25]); // 20 + 2×21.25
+    expect(platesForWeight(100, BAR, STD)).toEqual([35, 5]); // 20 + 2×40 = 35+5 per side
+    expect(platesForWeight(62.5, BAR, STD)).toEqual([10, 10, 1.25]); // 20 + 2×21.25
   });
 
   it('returns an empty breakdown for the bar alone', () => {

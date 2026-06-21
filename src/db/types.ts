@@ -152,7 +152,7 @@ export interface LoggedSet {
   date: string;
   order: number;
   type: SetType;
-  weightKg: number;
+  weightLb: number;
   reps: number;
   durationSec?: number;
   distanceM?: number;
@@ -198,8 +198,9 @@ export interface Measurement {
   id: string;
   date: string;
   type: string;
-  valueCm?: number;
-  valueKg?: number;
+  /** Body-length measurements (waist, arm, …) in inches — imperial canonical, no toggle. */
+  valueIn?: number;
+  valueLb?: number;
   note?: string;
 }
 
@@ -213,8 +214,8 @@ export interface ProgressPhoto {
 
 export interface UserSettings {
   units: 'kg' | 'lb';
-  barKg: number;
-  plateInventoryKg: number[];
+  barLb: number;
+  plateInventoryLb: number[];
   defaultRestWarmupSec: number;
   defaultRestWorkSec: number;
   /** Per-exercise-type rest defaults (seconds), keyed by mechanic class.

@@ -21,14 +21,14 @@ import type { ProgressionRule } from '../engine/types';
 const DAY_MS = 86_400_000;
 
 function startWeight(ex: Exercise): number {
-  const n = ex.nameNorm;
-  if (n.includes('deadlift')) return 100;
-  if (n.includes('squat')) return 80;
-  if (n.includes('bench') || n.includes('row')) return 60;
-  if (n.includes('press')) return 45;
+  const n = ex.nameNorm; // lb (canonical)
+  if (n.includes('deadlift')) return 225;
+  if (n.includes('squat')) return 185;
+  if (n.includes('bench') || n.includes('row')) return 135;
+  if (n.includes('press')) return 95;
   if (n.includes('curl') || n.includes('extension') || n.includes('pushdown') || n.includes('raise'))
-    return 20;
-  return ex.isBodyweight ? 0 : 40;
+    return 40;
+  return ex.isBodyweight ? 0 : 90;
 }
 
 export async function seedSampleData(catalog: Exercise[], now: string): Promise<void> {
@@ -55,7 +55,7 @@ export async function seedSampleData(catalog: Exercise[], now: string): Promise<
     ['Legs', ['barbell full squat', 'romanian deadlift', 'leg press', 'leg extension']],
   ];
 
-  const rule: ProgressionRule = { kind: 'double', repMin: 8, repMax: 12, incrementKg: 2.5, perSet: false };
+  const rule: ProgressionRule = { kind: 'double', repMin: 8, repMax: 12, incrementLb: 2.5, perSet: false };
   const templates = [];
   for (let i = 0; i < dayDefs.length; i++) {
     const [name, queries] = dayDefs[i]!;
@@ -105,7 +105,7 @@ export async function seedSampleData(catalog: Exercise[], now: string): Promise<
             date,
             order: s,
             type: 'working',
-            weightKg: w,
+            weightLb: w,
             reps: 8 + (s === 0 ? 2 : 0),
             completed: true,
             rpe: 8,
@@ -123,13 +123,13 @@ export async function seedSampleData(catalog: Exercise[], now: string): Promise<
   // render their populated card layouts (instead of empty states).
   const benchId = templates[0]?.exs[0]?.id;
   const goals: Goal[] = [
-    { id: newId(), type: 'bodyweight', target: 82, direction: 'increase', status: 'active', createdAt: now },
+    { id: newId(), type: 'bodyweight', target: 185, direction: 'increase', status: 'active', createdAt: now },
     ...(benchId
       ? [
           {
             id: newId(),
             type: 'liftTarget' as const,
-            target: 100,
+            target: 225,
             direction: 'increase' as const,
             exerciseId: benchId,
             status: 'active' as const,
@@ -146,9 +146,9 @@ export async function seedSampleData(catalog: Exercise[], now: string): Promise<
       id: newId(),
       date: new Date(nowMs - wk * 7 * DAY_MS).toISOString(),
       type: 'bodyweight',
-      valueKg: Math.round((80 + (4 - wk) * 0.6) * 10) / 10,
+      valueLb: Math.round((178 + (4 - wk) * 1.2) * 10) / 10,
     });
   }
-  measurements.push({ id: newId(), date: now, type: 'waist', valueCm: 82 });
+  measurements.push({ id: newId(), date: now, type: 'waist', valueIn: 32 });
   await db.measurements.bulkAdd(measurements);
 }

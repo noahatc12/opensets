@@ -3,11 +3,11 @@ import { detectPRs } from './prs';
 import type { SetResult } from './types';
 
 const s = (
-  weightKg: number,
+  weightLb: number,
   reps: number,
   over: Partial<SetResult> = {},
 ): SetResult => ({
-  weightKg,
+  weightLb,
   reps,
   type: 'working',
   completed: true,

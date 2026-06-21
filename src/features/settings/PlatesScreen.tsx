@@ -1,12 +1,12 @@
 import { useNavigate } from 'react-router-dom';
 import { useSettings, updateSettings } from '../../db/hooks';
-import { lbToKg } from '../../lib/units';
+import { kgToLb } from '../../lib/units';
 import { ChevronLeftIcon, CheckIcon, PlusIcon } from '../../components/icons';
 
 /* Ported from the Tempo prototype "showPlates" screen (OpenSets.dc.html
    lines 616-634). Plates are a physical, unit-specific thing: a kg gym has
    25/20/15… kg plates, a lb gym has 45/35/25… lb plates. We show the set for
-   the user's unit and store the kg-equivalent (plateInventoryKg is canonical).
+   the user's unit and store the lb-equivalent (plateInventoryLb is canonical).
    Each row is an own/not-own toggle (the model is a flat set, not per-side
    counts). Persists via updateSettings. */
 
@@ -23,37 +23,38 @@ const LB_PLATES = [45, 35, 25, 10, 5, 2.5, 1.25];
 const KG_BARS = [10, 15, 20, 25];
 const LB_BARS = [35, 45, 55];
 
-const EPS = 0.02; // kg tolerance for matching a converted denomination
+const EPS = 0.02; // lb tolerance for matching a converted denomination
 
 export function PlatesScreen() {
   const navigate = useNavigate();
   const settings = useSettings();
   const lb = settings.units === 'lb';
 
-  /** Display denomination → its canonical kg (rounded to avoid float drift). */
-  const toKg = (v: number) => Math.round((lb ? lbToKg(v) : v) * 1000) / 1000;
-  const ownsKg = (kg: number) => settings.plateInventoryKg.some((x) => Math.abs(x - kg) < EPS);
+  /** Display denomination → its canonical lb (rounded to avoid float drift).
+   *  lb mode: the denomination IS lb; kg mode: convert kg → lb. */
+  const toLb = (v: number) => Math.round((lb ? v : kgToLb(v)) * 1000) / 1000;
+  const ownsLb = (val: number) => settings.plateInventoryLb.some((x) => Math.abs(x - val) < EPS);
 
   const plates = lb ? LB_PLATES : KG_PLATES;
   const bars = lb ? LB_BARS : KG_BARS;
 
   function togglePlate(displayVal: number): void {
-    const kg = toKg(displayVal);
-    const has = settings.plateInventoryKg.some((x) => Math.abs(x - kg) < EPS);
+    const val = toLb(displayVal);
+    const has = settings.plateInventoryLb.some((x) => Math.abs(x - val) < EPS);
     const next = has
-      ? settings.plateInventoryKg.filter((x) => Math.abs(x - kg) >= EPS)
-      : [...settings.plateInventoryKg, kg];
-    void updateSettings({ plateInventoryKg: next.sort((a, b) => a - b) });
+      ? settings.plateInventoryLb.filter((x) => Math.abs(x - val) >= EPS)
+      : [...settings.plateInventoryLb, val];
+    void updateSettings({ plateInventoryLb: next.sort((a, b) => a - b) });
   }
 
-  /** Swatch sizing/tint, scaled by the canonical kg (mirrors prototype). */
-  function swatch(kg: number): { size: number; bg: string } {
-    if (kg >= 25) return { size: 16, bg: 'var(--accent)' };
-    if (kg >= 20) return { size: 16, bg: 'color-mix(in oklab, var(--accent) 70%, var(--surface-2))' };
-    if (kg >= 10) return { size: 14, bg: 'color-mix(in oklab, var(--accent) 50%, var(--surface-2))' };
-    if (kg >= 5) return { size: 12, bg: 'var(--surface-2)' };
-    if (kg >= 2.5) return { size: 10, bg: 'var(--surface-2)' };
-    if (kg >= 1.25) return { size: 9, bg: 'var(--surface-2)' };
+  /** Swatch sizing/tint, scaled by the canonical lb value (mirrors prototype). */
+  function swatch(val: number): { size: number; bg: string } {
+    if (val >= 45) return { size: 16, bg: 'var(--accent)' };
+    if (val >= 35) return { size: 16, bg: 'color-mix(in oklab, var(--accent) 70%, var(--surface-2))' };
+    if (val >= 25) return { size: 14, bg: 'color-mix(in oklab, var(--accent) 50%, var(--surface-2))' };
+    if (val >= 10) return { size: 12, bg: 'var(--surface-2)' };
+    if (val >= 5) return { size: 10, bg: 'var(--surface-2)' };
+    if (val >= 2.5) return { size: 9, bg: 'var(--surface-2)' };
     return { size: 8, bg: 'var(--surface-2)' };
   }
 
@@ -80,9 +81,9 @@ export function PlatesScreen() {
 
         <div className="flex flex-col gap-2">
           {plates.map((d) => {
-            const kg = toKg(d);
+            const kg = toLb(d);
             const sw = swatch(kg);
-            const isOwned = ownsKg(kg);
+            const isOwned = ownsLb(kg);
             return (
               <button
                 key={d}
@@ -132,11 +133,11 @@ export function PlatesScreen() {
           <span className="text-[14px] font-semibold text-text">Barbell</span>
           <div className="flex gap-1 rounded-[var(--r-sm)] p-1" style={{ background: 'var(--bg)' }}>
             {bars.map((b) => {
-              const active = Math.abs(settings.barKg - toKg(b)) < EPS;
+              const active = Math.abs(settings.barLb - toLb(b)) < EPS;
               return (
                 <button
                   key={b}
-                  onClick={() => void updateSettings({ barKg: toKg(b) })}
+                  onClick={() => void updateSettings({ barLb: toLb(b) })}
                   className="rounded-[7px] px-3 py-1.5 text-[13px]"
                   style={{
                     ...numFont,

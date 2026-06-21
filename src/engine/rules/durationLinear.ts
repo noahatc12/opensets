@@ -1,7 +1,7 @@
 /**
  * durationLinear (spec §6.2) — timed holds & cardio minutes. Pure.
  *
- * The "load" is a duration (seconds), carried in `workingWeightKg`. Every
+ * The "load" is a duration (seconds), carried in `workingWeightLb`. Every
  * `everyNSessions` completed sessions, the target grows by `incrementSec`;
  * `cyclePos` counts sessions toward the next bump. Prescriptions are `timed` sets
  * carrying `targetDurationSec` (no barbell load).
@@ -35,7 +35,7 @@ export function durationLinearNext(
   // A completed session is any completed set (timed/cardio sit outside workingSets).
   const did =
     lastSession.some((s) => s.completed) || workingSets(lastSession).length > 0;
-  let duration = state.workingWeightKg;
+  let duration = state.workingWeightLb;
   let cyclePos = state.cyclePos;
   let reason: string;
 
@@ -44,7 +44,7 @@ export function durationLinearNext(
   } else {
     cyclePos = state.cyclePos + 1;
     if (cyclePos >= rule.everyNSessions) {
-      duration = state.workingWeightKg + rule.incrementSec;
+      duration = state.workingWeightLb + rule.incrementSec;
       cyclePos = 0;
       reason = `+${rule.incrementSec}s — up to ${fmtDur(duration)}.`;
     } else {
@@ -55,11 +55,11 @@ export function durationLinearNext(
   const n = Math.max(1, scheme.sets);
   const sets: PrescribedSet[] = [];
   for (let i = 0; i < n; i++) {
-    sets.push({ type: 'timed', targetReps: 1, targetWeightKg: 0, targetDurationSec: duration });
+    sets.push({ type: 'timed', targetReps: 1, targetWeightLb: 0, targetDurationSec: duration });
   }
 
   return {
     prescription: { sets, reason, flags: [] },
-    nextState: { ...state, workingWeightKg: duration, cyclePos },
+    nextState: { ...state, workingWeightLb: duration, cyclePos },
   };
 }

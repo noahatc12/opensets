@@ -4,23 +4,23 @@ import { isLoadable } from '../rounding';
 import type { EngineSettings, ExerciseState, ProgressionRule, SetResult, SetScheme } from '../types';
 
 const settings: EngineSettings = {
-  barKg: 20,
-  plateInventoryKg: [1.25, 2.5, 5, 10, 15, 20, 25],
+  barLb: 45,
+  plateInventoryLb: [1.25, 2.5, 5, 10, 25, 35, 45],
   rounding: 'nearest',
-  units: 'kg',
+  units: 'lb',
 };
 const rule = (repIncrement = 1) =>
   ({ kind: 'repsOnly', repIncrement }) as Extract<ProgressionRule, { kind: 'repsOnly' }>;
 const scheme: SetScheme = { sets: 3, repTarget: 8 };
 const state = (over: Partial<ExerciseState> = {}): ExerciseState => ({
-  workingWeightKg: 0,
+  workingWeightLb: 0,
   consecutiveFails: 0,
   stage: 0,
   cyclePos: 0,
   ...over,
 });
 const bw = (reps: number, n = 3, completed = true): SetResult[] =>
-  Array.from({ length: n }, () => ({ weightKg: 0, reps, type: 'working' as const, completed }));
+  Array.from({ length: n }, () => ({ weightLb: 0, reps, type: 'working' as const, completed }));
 
 describe('repsOnly (bodyweight)', () => {
   it('seeds the base rep target from the scheme', () => {
@@ -49,19 +49,19 @@ describe('repsOnly (bodyweight)', () => {
   });
 
   it('bodyweight load (0) passes through unrounded', () => {
-    const r = repsOnlyNext(rule(), state({ workingWeightKg: 0 }), [], settings, scheme);
-    expect(r.prescription.sets[0]!.targetWeightKg).toBe(0);
+    const r = repsOnlyNext(rule(), state({ workingWeightLb: 0 }), [], settings, scheme);
+    expect(r.prescription.sets[0]!.targetWeightLb).toBe(0);
   });
 
   it('assisted (negative) load passes through unrounded', () => {
-    const r = repsOnlyNext(rule(), state({ workingWeightKg: -15 }), [], settings, scheme);
-    expect(r.prescription.sets[0]!.targetWeightKg).toBe(-15);
-    expect(r.nextState.workingWeightKg).toBe(-15);
+    const r = repsOnlyNext(rule(), state({ workingWeightLb: -15 }), [], settings, scheme);
+    expect(r.prescription.sets[0]!.targetWeightLb).toBe(-15);
+    expect(r.nextState.workingWeightLb).toBe(-15);
   });
 
   it('a positive added load IS plate-rounded and loadable', () => {
-    const r = repsOnlyNext(rule(), state({ workingWeightKg: 24 }), [], settings, scheme);
-    expect(isLoadable(r.prescription.sets[0]!.targetWeightKg, settings.barKg, settings.plateInventoryKg)).toBe(true);
+    const r = repsOnlyNext(rule(), state({ workingWeightLb: 24 }), [], settings, scheme);
+    expect(isLoadable(r.prescription.sets[0]!.targetWeightLb, settings.barLb, settings.plateInventoryLb)).toBe(true);
   });
 
   it('falls back to the rep-range floor when no repTarget is set', () => {

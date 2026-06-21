@@ -10,18 +10,18 @@ import type { SetResult } from './types';
 export const EWMA_ALPHA = 0.3;
 
 /** Epley: w·(1 + r/30). */
-export function e1rmEpley(weightKg: number, reps: number): number {
-  return weightKg * (1 + reps / 30);
+export function e1rmEpley(weightLb: number, reps: number): number {
+  return weightLb * (1 + reps / 30);
 }
 
 /** Brzycki: w·36/(37 − r). Undefined at r ≥ 37 (never eligible — reps are ≤ 10). */
-export function e1rmBrzycki(weightKg: number, reps: number): number {
-  return (weightKg * 36) / (37 - reps);
+export function e1rmBrzycki(weightLb: number, reps: number): number {
+  return (weightLb * 36) / (37 - reps);
 }
 
 /** Mean of Epley and Brzycki (the displayed/stored e1RM). */
-export function e1rm(weightKg: number, reps: number): number {
-  return (e1rmEpley(weightKg, reps) + e1rmBrzycki(weightKg, reps)) / 2;
+export function e1rm(weightLb: number, reps: number): number {
+  return (e1rmEpley(weightLb, reps) + e1rmBrzycki(weightLb, reps)) / 2;
 }
 
 /** Whether a logged set should contribute an e1RM data point (spec §6.3). */
@@ -29,7 +29,7 @@ export function isE1rmEligible(set: SetResult): boolean {
   return (
     (set.type === 'working' || set.type === 'amrap') &&
     set.completed &&
-    set.weightKg > 0 &&
+    set.weightLb > 0 &&
     set.reps >= 1 &&
     set.reps <= 10
   );
@@ -49,7 +49,7 @@ export function bestSessionE1rm(sets: SetResult[]): number | null {
   let best: number | null = null;
   for (const s of sets) {
     if (!isE1rmEligible(s)) continue;
-    const v = e1rm(s.weightKg, s.reps);
+    const v = e1rm(s.weightLb, s.reps);
     if (best === null || v > best) best = v;
   }
   return best;

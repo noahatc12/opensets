@@ -155,7 +155,7 @@ export function ExerciseDetailScreen() {
       .filter((s) => !s.deletedAt)
       .filter((s) => isE1rmEligible(s))
       .sort((a, b) => a.date.localeCompare(b.date))
-      .map((s) => e1rm(s.weightKg, s.reps));
+      .map((s) => e1rm(s.weightLb, s.reps));
     return eligible;
   }, [sets]);
 

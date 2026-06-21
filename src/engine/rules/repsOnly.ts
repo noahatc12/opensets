@@ -3,7 +3,7 @@
  *
  * Progress the rep target by `repIncrement` once every set hits it; otherwise hold
  * and build reps. The current rep target lives in `state.stage`. External load
- * (`workingWeightKg`) passes through: 0 = pure bodyweight, negative = assisted —
+ * (`workingWeightLb`) passes through: 0 = pure bodyweight, negative = assisted —
  * neither is plate-rounded (only a positive barbell load is). When a user attaches
  * external load, the slot converts to `double` (a generator concern, not here).
  */
@@ -42,7 +42,7 @@ export function repsOnlyNext(
   }
 
   // Only a positive barbell load rounds; bodyweight (0) / assisted (negative) pass through.
-  const w = state.workingWeightKg;
+  const w = state.workingWeightLb;
   const loadKg = w > 0 ? roundLoad(w, settings) : w;
 
   return {
@@ -51,6 +51,6 @@ export function repsOnlyNext(
       reason,
       flags: [],
     },
-    nextState: { ...state, stage: target, workingWeightKg: loadKg },
+    nextState: { ...state, stage: target, workingWeightLb: loadKg },
   };
 }

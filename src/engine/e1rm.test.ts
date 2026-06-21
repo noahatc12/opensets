@@ -11,7 +11,7 @@ import {
 import type { SetResult } from './types';
 
 const work = (over: Partial<SetResult> = {}): SetResult => ({
-  weightKg: 100,
+  weightLb: 100,
   reps: 5,
   type: 'working',
   completed: true,
@@ -49,8 +49,8 @@ describe('isE1rmEligible', () => {
   it('excludes warmups, incomplete sets, and non-positive loads', () => {
     expect(isE1rmEligible(work({ type: 'warmup' }))).toBe(false);
     expect(isE1rmEligible(work({ completed: false }))).toBe(false);
-    expect(isE1rmEligible(work({ weightKg: 0 }))).toBe(false); // bodyweight
-    expect(isE1rmEligible(work({ weightKg: -10 }))).toBe(false); // assisted
+    expect(isE1rmEligible(work({ weightLb: 0 }))).toBe(false); // bodyweight
+    expect(isE1rmEligible(work({ weightLb: -10 }))).toBe(false); // assisted
     expect(isE1rmEligible(work({ reps: 0 }))).toBe(false);
   });
 });
@@ -71,17 +71,17 @@ describe('ewma', () => {
 describe('bestSessionE1rm', () => {
   it('returns the max e1RM among eligible sets', () => {
     const best = bestSessionE1rm([
-      work({ weightKg: 100, reps: 5 }),
-      work({ weightKg: 110, reps: 3 }),
-      work({ weightKg: 90, reps: 8 }),
+      work({ weightLb: 100, reps: 5 }),
+      work({ weightLb: 110, reps: 3 }),
+      work({ weightLb: 90, reps: 8 }),
     ]);
     expect(best).toBeCloseTo(e1rm(110, 3), 6);
   });
   it('ignores ineligible sets (warmups, >10 reps, incomplete)', () => {
     const best = bestSessionE1rm([
-      work({ type: 'warmup', weightKg: 200, reps: 1 }),
-      work({ weightKg: 80, reps: 20 }),
-      work({ weightKg: 100, reps: 5 }),
+      work({ type: 'warmup', weightLb: 200, reps: 1 }),
+      work({ weightLb: 80, reps: 20 }),
+      work({ weightLb: 100, reps: 5 }),
     ]);
     expect(best).toBeCloseTo(e1rm(100, 5), 6);
   });

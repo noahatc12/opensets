@@ -19,7 +19,7 @@ import { ChevronLeftIcon } from '../../components/icons';
 import { db } from '../../db/db';
 import { newId } from '../../db/ids';
 import { useSettings } from '../../db/hooks';
-import { lbToKg } from '../../lib/units';
+import { kgToLb } from '../../lib/units';
 
 /* Ported from the Tempo prototype onboarding wizard (6 steps). On finish it
    generates a simple starter routine from the chosen goal/experience. */
@@ -85,7 +85,7 @@ export function OnboardingScreen() {
       await saveTemplate(tpl);
       await Promise.all(
         slots.map((slot, i) =>
-          seedExerciseState(program.id, slot, day.slots[i]!.startWeightKg, now),
+          seedExerciseState(program.id, slot, day.slots[i]!.startWeightLb, now),
         ),
       );
     }
@@ -96,7 +96,7 @@ export function OnboardingScreen() {
         id: newId(),
         type: 'bodyweight',
         date: now,
-        valueKg: units === 'lb' ? lbToKg(bw) : bw,
+        valueLb: units === 'kg' ? kgToLb(bw) : bw,
       });
     }
 

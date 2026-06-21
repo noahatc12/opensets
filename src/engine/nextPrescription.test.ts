@@ -9,13 +9,13 @@ import type {
 } from './types';
 
 const settings: EngineSettings = {
-  barKg: 20,
-  plateInventoryKg: [1.25, 2.5, 5, 10, 15, 20, 25],
+  barLb: 45,
+  plateInventoryLb: [1.25, 2.5, 5, 10, 25, 35, 45],
   rounding: 'nearest',
-  units: 'kg',
+  units: 'lb',
 };
 const state: ExerciseState = {
-  workingWeightKg: 60,
+  workingWeightLb: 60,
   consecutiveFails: 0,
   stage: 0,
   cyclePos: 0,
@@ -26,17 +26,17 @@ const noHistory: SetResult[] = [];
 describe('nextPrescription (dispatcher)', () => {
   it('dispatches linear', () => {
     const r = nextPrescription(
-      { kind: 'linear', incrementKg: 5, failsBeforeDeload: 3, deloadPct: 0.1 },
+      { kind: 'linear', incrementLb: 5, failsBeforeDeload: 3, deloadPct: 0.1 },
       state,
       [
-        { weightKg: 60, reps: 5, type: 'working', completed: true },
-        { weightKg: 60, reps: 5, type: 'working', completed: true },
-        { weightKg: 60, reps: 5, type: 'working', completed: true },
+        { weightLb: 60, reps: 5, type: 'working', completed: true },
+        { weightLb: 60, reps: 5, type: 'working', completed: true },
+        { weightLb: 60, reps: 5, type: 'working', completed: true },
       ],
       settings,
       scheme,
     );
-    expect(r.nextState.workingWeightKg).toBe(65);
+    expect(r.nextState.workingWeightLb).toBe(65);
   });
 
   it('dispatches double', () => {
@@ -45,10 +45,10 @@ describe('nextPrescription (dispatcher)', () => {
         kind: 'double',
         repMin: 8,
         repMax: 12,
-        incrementKg: 2.5,
+        incrementLb: 2.5,
         perSet: false,
       },
-      { ...state, workingWeightKg: 30 },
+      { ...state, workingWeightLb: 30 },
       [],
       settings,
       { sets: 3, repRange: [8, 12] },
@@ -64,7 +64,7 @@ describe('nextPrescription (dispatcher)', () => {
       settings,
       scheme,
     );
-    expect(r.nextState.workingWeightKg).toBe(60);
+    expect(r.nextState.workingWeightLb).toBe(60);
     expect(r.prescription.reason).toMatch(/manual/i);
   });
 
@@ -72,11 +72,11 @@ describe('nextPrescription (dispatcher)', () => {
     const r = nextPrescription(
       { kind: 'manual' },
       state,
-      [{ weightKg: 60, reps: 5, type: 'working', completed: true }],
+      [{ weightLb: 60, reps: 5, type: 'working', completed: true }],
       settings,
       scheme,
     );
-    expect(r.prescription.reason).toMatch(/adjust 60 kg/i);
+    expect(r.prescription.reason).toMatch(/adjust 60 lb/i);
   });
 
   it('manual defaults the rep target when the scheme is bare', () => {
@@ -87,7 +87,7 @@ describe('nextPrescription (dispatcher)', () => {
   });
 
   it.each([
-    { kind: 'percent531', variant: 'base', tmIncrementKg: 2.5 },
+    { kind: 'percent531', variant: 'base', tmIncrementLb: 2.5 },
     { kind: 'gzclp', tier: 1 },
     { kind: 'rpeTarget', targetRpe: 8, targetReps: 5, loadStepPct: 0.04 },
     { kind: 'apre', rm: 6 },

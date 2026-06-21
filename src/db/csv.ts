@@ -3,8 +3,9 @@
  * path (Strong/Hevy → OpenSets) and the anti-lock-in path (OpenSets → CSV).
  *
  * Pure functions over strings; the Dexie insertion + the unmatched-exercise
- * mapping UI sit on top of these. Imported sets are history-only: kg is canonical
- * (Hevy exports lbs → converted), and no progression state is inferred.
+ * mapping UI sit on top of these. Imported sets are history-only: lb is canonical
+ * (Hevy exports lbs → stored as-is; Strong kg → converted to lb), and no
+ * progression state is inferred.
  */
 import type { SetType } from '../engine/types';
 
@@ -17,7 +18,7 @@ export interface ImportedSet {
   workoutName: string;
   date: string;
   exerciseName: string;
-  weightKg: number;
+  weightLb: number;
   reps: number;
   rpe?: number;
   durationSec?: number;
@@ -136,7 +137,7 @@ export function parseWorkoutCsv(
         workoutName: get(row, 'title')?.trim() ?? '',
         date: get(row, 'start_time')?.trim() ?? '',
         exerciseName: get(row, 'exercise_title')?.trim() ?? '',
-        weightKg: lbs !== undefined ? round2(lbs * LB_TO_KG) : 0,
+        weightLb: lbs ?? 0, // Hevy is already pounds — store as-is
         reps: reps ?? 0,
         rpe: num(get(row, 'rpe')),
         durationSec: num(get(row, 'duration_seconds')),
@@ -146,17 +147,18 @@ export function parseWorkoutCsv(
     } else {
       const reps = num(get(row, 'reps'));
       const w = num(get(row, 'weight'));
-      const kg =
+      // Strong's Weight column is unit-ambiguous: lb stores as-is; kg converts to lb.
+      const lb =
         w === undefined
           ? 0
           : opts.strongUnit === 'lb'
-            ? round2(w * LB_TO_KG)
-            : w;
+            ? w
+            : round2(w / LB_TO_KG);
       sets.push({
         workoutName: get(row, 'workout name')?.trim() ?? '',
         date: get(row, 'date')?.trim() ?? '',
         exerciseName: get(row, 'exercise name')?.trim() ?? '',
-        weightKg: kg,
+        weightLb: lb,
         reps: reps ?? 0,
         rpe: num(get(row, 'rpe')),
         durationSec: num(get(row, 'seconds')),
@@ -181,7 +183,7 @@ export interface ExportRow {
   exerciseName: string;
   setIndex: number;
   setType: SetType;
-  weightKg: number;
+  weightLb: number;
   reps: number;
   rpe?: number;
   durationSec?: number;
@@ -194,7 +196,7 @@ const EXPORT_HEADERS = [
   'exercise_name',
   'set_index',
   'set_type',
-  'weight_kg',
+  'weight_lb',
   'reps',
   'rpe',
   'duration_seconds',
@@ -207,7 +209,7 @@ function csvCell(v: string | number | undefined): string {
   return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
 }
 
-/** Serialize sets to a clean, portable kg-canonical CSV (anti-lock-in export). */
+/** Serialize sets to a clean, portable lb-canonical CSV (anti-lock-in export). */
 export function serializeSetsToCsv(rows: ExportRow[]): string {
   const lines = [EXPORT_HEADERS.join(',')];
   for (const r of rows) {
@@ -218,7 +220,7 @@ export function serializeSetsToCsv(rows: ExportRow[]): string {
         r.exerciseName,
         r.setIndex,
         r.setType,
-        r.weightKg,
+        r.weightLb,
         r.reps,
         r.rpe,
         r.durationSec,

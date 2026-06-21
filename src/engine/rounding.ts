@@ -1,6 +1,6 @@
 /**
- * Plate-loading math (spec §6.1, §6.3). Pure. Works in integer centi-kilograms to
- * avoid floating-point drift (0.01 kg resolution covers 0.25 kg microplates).
+ * Plate-loading math (spec §6.1, §6.3). Pure. Works in integer centi-pounds to
+ * avoid floating-point drift (0.01 lb resolution covers 1.25 lb microplates).
  *
  * Model: a barbell loaded symmetrically — total = bar + 2 × (sum of plates per
  * side). Plate denominations come from the user's inventory and may be used in any
@@ -9,10 +9,10 @@
 import type { RoundingMode } from './types';
 
 const SCALE = 100;
-const cs = (kg: number) => Math.round(kg * SCALE);
-const kg = (centi: number) => centi / SCALE;
+const cs = (lb: number) => Math.round(lb * SCALE);
+const lb = (centi: number) => centi / SCALE;
 
-/** Reachable per-side sums (in centi-kg) up to `boundCs`, from unlimited plate
+/** Reachable per-side sums (in centi-lb) up to `boundCs`, from unlimited plate
  *  pairs. Callers pass only positive plate denominations. */
 function reachablePerSide(plateCs: number[], boundCs: number): boolean[] {
   const reach = new Array<boolean>(boundCs + 1).fill(false);
@@ -26,21 +26,21 @@ function reachablePerSide(plateCs: number[], boundCs: number): boolean[] {
 }
 
 /**
- * Snap `targetKg` to the nearest weight loadable from `plates` on a `barKg` bar.
+ * Snap `targetLb` to the nearest weight loadable from `plates` on a `barLb` bar.
  * Targets at or below the empty bar return the bar. Modes: 'nearest' (tie → lower,
  * the conservative choice), 'down' (≤ target), 'up' (≥ target).
  */
 export function roundToLoadable(
-  targetKg: number,
-  barKg: number,
+  targetLb: number,
+  barLb: number,
   plates: number[],
   mode: RoundingMode = 'nearest',
 ): number {
-  const perSideCs = cs((targetKg - barKg) / 2);
-  if (perSideCs <= 0) return barKg;
+  const perSideCs = cs((targetLb - barLb) / 2);
+  if (perSideCs <= 0) return barLb;
 
   const plateCs = plates.map(cs).filter((p) => p > 0);
-  if (plateCs.length === 0) return barKg;
+  if (plateCs.length === 0) return barLb;
 
   const maxPlate = Math.max(...plateCs);
   const bound = perSideCs + maxPlate; // allow rounding up by at most one plate
@@ -75,16 +75,16 @@ export function roundToLoadable(
     }
   }
 
-  return barKg + 2 * kg(best);
+  return barLb + 2 * lb(best);
 }
 
-/** True iff `weightKg` is exactly loadable: the bar, or bar + plate pairs. */
+/** True iff `weightLb` is exactly loadable: the bar, or bar + plate pairs. */
 export function isLoadable(
-  weightKg: number,
-  barKg: number,
+  weightLb: number,
+  barLb: number,
   plates: number[],
 ): boolean {
-  const perSideCs = cs((weightKg - barKg) / 2);
+  const perSideCs = cs((weightLb - barLb) / 2);
   if (perSideCs < 0) return false;
   if (perSideCs === 0) return true;
   const plateCs = plates.map(cs).filter((p) => p > 0);
@@ -93,43 +93,43 @@ export function isLoadable(
 }
 
 export interface WarmupSet {
-  weightKg: number;
+  weightLb: number;
   reps: number;
 }
 
 /**
- * Warm-up ramp toward `workingKg` (spec §6.1 calculators): empty bar, then ~40/60/80%
+ * Warm-up ramp toward `workingLb` (spec §6.1 calculators): empty bar, then ~40/60/80%
  * plate-rounded down, ascending and de-duplicated, all strictly below the work set.
  * Returns [] when the working weight is the bar or lighter.
  */
 export function generateWarmupRamp(
-  workingKg: number,
-  barKg: number,
+  workingLb: number,
+  barLb: number,
   plates: number[],
 ): WarmupSet[] {
-  if (workingKg <= barKg) return [];
+  if (workingLb <= barLb) return [];
 
   const steps: WarmupSet[] = [
-    { weightKg: barKg, reps: 8 },
+    { weightLb: barLb, reps: 8 },
     {
-      weightKg: roundToLoadable(workingKg * 0.4, barKg, plates, 'down'),
+      weightLb: roundToLoadable(workingLb * 0.4, barLb, plates, 'down'),
       reps: 5,
     },
     {
-      weightKg: roundToLoadable(workingKg * 0.6, barKg, plates, 'down'),
+      weightLb: roundToLoadable(workingLb * 0.6, barLb, plates, 'down'),
       reps: 3,
     },
     {
-      weightKg: roundToLoadable(workingKg * 0.8, barKg, plates, 'down'),
+      weightLb: roundToLoadable(workingLb * 0.8, barLb, plates, 'down'),
       reps: 2,
     },
   ];
 
   const out: WarmupSet[] = [];
   for (const step of steps) {
-    if (step.weightKg >= workingKg) continue;
+    if (step.weightLb >= workingLb) continue;
     const prev = out[out.length - 1];
-    if (prev && step.weightKg <= prev.weightKg) continue; // keep strictly ascending
+    if (prev && step.weightLb <= prev.weightLb) continue; // keep strictly ascending
     out.push(step);
   }
   return out;
@@ -137,15 +137,15 @@ export function generateWarmupRamp(
 
 /**
  * Per-side plate breakdown for a loadable weight (the plate calculator). Returns
- * plates largest-first in kg, or null if the weight is not exactly loadable from
+ * plates largest-first in lb, or null if the weight is not exactly loadable from
  * the inventory (round with {@link roundToLoadable} first). Empty array = bar only.
  */
 export function platesForWeight(
-  weightKg: number,
-  barKg: number,
+  weightLb: number,
+  barLb: number,
   plates: number[],
 ): number[] | null {
-  const perSideCs = cs((weightKg - barKg) / 2);
+  const perSideCs = cs((weightLb - barLb) / 2);
   if (perSideCs < 0) return null;
   if (perSideCs === 0) return [];
 
@@ -166,5 +166,5 @@ export function platesForWeight(
     out.push(p);
     s -= p;
   }
-  return out.map(kg);
+  return out.map(lb);
 }

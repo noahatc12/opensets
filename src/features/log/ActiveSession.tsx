@@ -201,7 +201,7 @@ export function ActiveSession() {
                     {done.order + 1}
                   </span>
                   <span className="text-[17px] font-semibold text-muted" style={numFont}>
-                    {fmtWeight(done.weightKg, units)}
+                    {fmtWeight(done.weightLb, units)}
                     <span className="text-[11px] text-faint">{units}</span> × {done.reps}
                   </span>
                   {isPr ? (
@@ -398,7 +398,7 @@ export function ActiveSession() {
                           <Row k="Rule" v={activeSlot.progressionRule.kind} />
                           <Row
                             k="Last session"
-                            v={last.length ? `${fmtWeight(last[0]!.weightKg, units)} ${units} · ${last.map((s) => s.reps).join('/')} reps` : '—'}
+                            v={last.length ? `${fmtWeight(last[0]!.weightLb, units)} ${units} · ${last.map((s) => s.reps).join('/')} reps` : '—'}
                           />
                           {pres.flags.length > 0 && <Row k="Flags" v={pres.flags.join(', ')} accent />}
                         </div>
@@ -421,7 +421,7 @@ export function ActiveSession() {
                   {i + 1}
                 </span>
                 <span className="text-[17px] font-semibold text-text" style={numFont}>
-                  {prescribed ? fmtWeight(prescribed.targetWeightKg, units) : '—'}
+                  {prescribed ? fmtWeight(prescribed.targetWeightLb, units) : '—'}
                   <span className="text-[11px] text-faint">{units}</span> ×{' '}
                   {prescribed ? `${prescribed.targetReps}${isAmrapSet ? '+' : ''}` : '—'}
                 </span>

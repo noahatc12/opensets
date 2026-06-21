@@ -9,7 +9,7 @@ import { useNavigate } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../db/db';
 import { useSettings } from '../../db/hooks';
-import { fmtWeight, weightStepKg, weightStepLabel } from '../../lib/units';
+import { fmtWeight, weightStepLb, weightStepLabel } from '../../lib/units';
 import { useActiveWorkout } from './useActiveWorkout';
 import { useSessionStore, type RestTimer } from '../../state/session';
 import { getCatalogExercise } from '../../db/catalog';
@@ -50,7 +50,7 @@ const ADD_RULE: ProgressionRule = {
   kind: 'double',
   repMin: 8,
   repMax: 12,
-  incrementKg: 2.5,
+  incrementLb: 2.5,
   perSet: false,
 };
 const ADD_SCHEME = { sets: 3, repRange: [8, 12] as [number, number] };
@@ -238,11 +238,11 @@ export function useLogger(): LoggerVM | null {
   const activePrescribed: PrescribedSet | undefined = pres?.sets[activeIndex];
 
   // Sync the editable values to the active prescribed set.
-  const sig = `${exId}:${activeIndex}:${activePrescribed?.targetWeightKg}:${activePrescribed?.targetReps}`;
+  const sig = `${exId}:${activeIndex}:${activePrescribed?.targetWeightLb}:${activePrescribed?.targetReps}`;
   const [sigSeen, setSigSeen] = useState('');
   if (sig !== sigSeen && activePrescribed) {
     setSigSeen(sig);
-    setWeight(activePrescribed.targetWeightKg);
+    setWeight(activePrescribed.targetWeightLb);
     setReps(activePrescribed.targetReps);
     setRpe(undefined);
   }
@@ -269,9 +269,9 @@ export function useLogger(): LoggerVM | null {
         .join(' · ')
     : '';
   const lastWeights = last.length
-    ? `${fmtWeight(last[0]!.weightKg, units)}×${last.map((s) => s.reps).join(',')}`
+    ? `${fmtWeight(last[0]!.weightLb, units)}×${last.map((s) => s.reps).join(',')}`
     : '';
-  const wStep = weightStepKg(units);
+  const wStep = weightStepLb(units);
   const wStepLabel = weightStepLabel(units);
 
   async function log() {
@@ -282,7 +282,7 @@ export function useLogger(): LoggerVM | null {
       date: session!.date,
       order: activeIndex,
       type: (isAmrap ? 'amrap' : 'working') as SetType,
-      weightKg: weight,
+      weightLb: weight,
       reps,
       completed: true,
       ...(rpe !== undefined ? { rpe } : {}),

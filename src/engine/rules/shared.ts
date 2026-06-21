@@ -8,11 +8,11 @@ export function workingSets(lastSession: SetResult[]): SetResult[] {
 }
 
 /** Round a barbell load to the nearest weight loadable from the lifter's plates. */
-export function roundLoad(weightKg: number, settings: EngineSettings): number {
+export function roundLoad(weightLb: number, settings: EngineSettings): number {
   return roundToLoadable(
-    weightKg,
-    settings.barKg,
-    settings.plateInventoryKg,
+    weightLb,
+    settings.barLb,
+    settings.plateInventoryLb,
     settings.rounding,
   );
 }
@@ -26,7 +26,7 @@ export function allHit(work: SetResult[], targetReps: number): boolean {
 export function buildSets(
   scheme: SetScheme,
   targetReps: number,
-  weightKg: number,
+  weightLb: number,
 ): PrescribedSet[] {
   const n = Math.max(1, scheme.sets);
   const out: PrescribedSet[] = [];
@@ -36,7 +36,7 @@ export function buildSets(
     out.push({
       type: amrap ? 'amrap' : 'working',
       targetReps,
-      targetWeightKg: weightKg,
+      targetWeightLb: weightLb,
       ...(amrap ? { amrap: true } : {}),
     });
   }

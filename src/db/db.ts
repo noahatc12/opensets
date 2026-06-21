@@ -8,7 +8,6 @@
  * reversible. See ./backup.ts for the snapshot helper and the v2 wiring pattern.
  */
 import Dexie, { type Table } from 'dexie';
-import { lbToKg } from '../lib/units';
 import type {
   Exercise,
   Program,
@@ -30,12 +29,10 @@ export const SCHEMA_VERSION = 1;
 
 export const DEFAULT_SETTINGS: UserSettings = {
   units: 'lb',
-  // 45 lb Olympic bar (canonical kg). Plates default to the standard US lb set,
-  // stored as kg-equivalents; a kg user re-picks their set on the Plates screen.
-  barKg: Math.round(lbToKg(45) * 1000) / 1000,
-  plateInventoryKg: [45, 35, 25, 10, 5, 2.5]
-    .map((lb) => Math.round(lbToKg(lb) * 1000) / 1000)
-    .sort((a, b) => a - b),
+  // 45 lb Olympic bar + standard US plate set incl. the 1.25 lb fractional pair
+  // (spec §6.1). lb is canonical; a kg user re-picks their set on the Plates screen.
+  barLb: 45,
+  plateInventoryLb: [1.25, 2.5, 5, 10, 25, 35, 45],
   defaultRestWarmupSec: 60,
   defaultRestWorkSec: 120,
   restCompoundSec: 180,
@@ -61,7 +58,9 @@ export class OpenSetsDB extends Dexie {
   activeSession!: Table<ActiveSessionRow, string>;
   backups!: Table<BackupRow, string>;
 
-  constructor(name = 'opensets') {
+  // 'opensets-lb' is a fresh database for the pounds-first model — the old kg
+  // 'opensets' DB (dev/sample data only) is abandoned, not migrated.
+  constructor(name = 'opensets-lb') {
     super(name);
 
     // --- v1 (spec §8). Keep this block forever; add version(2) below it. ---

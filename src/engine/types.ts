@@ -25,7 +25,7 @@ export type PRKind = 'weight' | 'reps' | 'e1rm';
 /** A single performed set, as logged. */
 export interface SetResult {
   /** External load. 0 = pure bodyweight; negative = assisted. */
-  weightKg: number;
+  weightLb: number;
   reps: number;
   /** Timed holds & cardio. */
   durationSec?: number;
@@ -46,7 +46,7 @@ export interface SetResult {
 export type ProgressionRule =
   | {
       kind: 'linear';
-      incrementKg: number;
+      incrementLb: number;
       failsBeforeDeload: number;
       deloadPct: number;
     }
@@ -55,14 +55,14 @@ export type ProgressionRule =
       kind: 'double';
       repMin: number;
       repMax: number;
-      incrementKg: number;
+      incrementLb: number;
       perSet: boolean;
     }
   // week derived from cycle position
   | {
       kind: 'percent531';
       variant: 'base' | 'bbb' | 'fsl';
-      tmIncrementKg: number;
+      tmIncrementLb: number;
     }
   | { kind: 'gzclp'; tier: 1 | 2 | 3 }
   | {
@@ -83,16 +83,16 @@ export type ProgressionKind = ProgressionRule['kind'];
 
 /** Mutable per-exercise progression state (spec §6.1). Persisted as ExerciseStateRow (§8). */
 export interface ExerciseState {
-  workingWeightKg: number;
+  workingWeightLb: number;
   /** 5/3/1 training max. */
-  trainingMaxKg?: number;
+  trainingMaxLb?: number;
   consecutiveFails: number;
   /** GZCLP stage index, wave position, etc. */
   stage: number;
   /** Week-in-cycle for percentage schemes; session counter for durationLinear. */
   cyclePos: number;
   /** Stage-machine anchor weight (GZCLP T2 "last 3×10 weight" for the reset). */
-  anchorKg?: number;
+  anchorLb?: number;
 }
 
 /** Flags surfaced on a prescription, driving UI badges (spec §6.1). */
@@ -106,7 +106,7 @@ export type PrescriptionFlag =
 export interface PrescribedSet {
   type: SetType;
   targetReps: number;
-  targetWeightKg: number;
+  targetWeightLb: number;
   amrap?: boolean;
   targetRpe?: number;
   /** Timed holds & cardio (durationLinear) — seconds to hold / minutes-as-seconds. */
@@ -126,13 +126,13 @@ export type RoundingMode = 'nearest' | 'down' | 'up';
 
 /**
  * Settings the engine needs but does not own. Passed in to keep the module pure
- * (no reading global config / DB). `plateInventoryKg` is the set of plate
+ * (no reading global config / DB). `plateInventoryLb` is the set of plate
  * denominations the lifter owns; loads must be loadable from PAIRS of these.
  */
 export interface EngineSettings {
-  barKg: number;
+  barLb: number;
   /** Available plate denominations in kg (each usable as a pair). */
-  plateInventoryKg: number[];
+  plateInventoryLb: number[];
   rounding: RoundingMode;
   /** Display units. Storage/computation is always kg; this is informational only. */
   units: 'kg' | 'lb';

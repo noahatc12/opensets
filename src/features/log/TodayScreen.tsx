@@ -142,7 +142,7 @@ export function TodayScreen() {
     .slice()
     .sort((a, b) => b.date.localeCompare(a.date))[0];
   const lastPRe1rm =
-    lastPR && lastPR.weightKg > 0 ? e1rm(lastPR.weightKg, lastPR.reps) : null;
+    lastPR && lastPR.weightLb > 0 ? e1rm(lastPR.weightLb, lastPR.reps) : null;
 
   const weekTarget = templates && templates.length > 0 ? templates.length : 4;
   const lastPRDaysAgo = lastPR

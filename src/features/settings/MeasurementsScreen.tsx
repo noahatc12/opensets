@@ -6,7 +6,7 @@ import { newId } from '../../db/ids';
 import type { Measurement, ProgressPhoto } from '../../db/types';
 import { ChevronLeftIcon } from '../../components/icons';
 import { useSettings } from '../../db/hooks';
-import { fmtWeight, lbToKg, toUnit } from '../../lib/units';
+import { fmtWeight, kgToLb, toUnit } from '../../lib/units';
 import type { WeightUnit } from '../../lib/units';
 
 /* Ported from the Tempo prototype Measurements screen (showMeasurements): a back
@@ -29,12 +29,12 @@ const capsLabel = {
 const nowIso = () => new Date().toISOString();
 const today = () => nowIso().slice(0, 10);
 
-/** Bodyweight stores a weight (kg); every other type stores a length (cm). */
+/** Bodyweight stores a weight (lb); every other type stores a length (inches). */
 const isWeight = (type: string) => type === 'bodyweight';
-/** Unit label for a type: weight follows the kg/lb setting; lengths are always cm. */
-const unitFor = (type: string, units: WeightUnit) => (isWeight(type) ? units : 'cm');
-/** Raw stored value (canonical kg for weight, cm otherwise). */
-const valueOf = (m: Measurement) => (isWeight(m.type) ? m.valueKg : m.valueCm);
+/** Unit label for a type: weight follows the kg/lb setting; lengths are always inches. */
+const unitFor = (type: string, units: WeightUnit) => (isWeight(type) ? units : 'in');
+/** Raw stored value (canonical lb for weight, inches otherwise). */
+const valueOf = (m: Measurement) => (isWeight(m.type) ? m.valueLb : m.valueIn);
 /** Display string for a measurement value: weight converts to the user's unit, lengths render as-is. */
 const displayValue = (m: Measurement, units: WeightUnit): string | undefined => {
   const v = valueOf(m);
@@ -179,8 +179,8 @@ function CameraIcon() {
 /** Resolve a measurement type's latest value (display units) for a photo caption. */
 function captionWeight(rows: Measurement[], units: WeightUnit): string | undefined {
   const bw = rows.find((m) => m.type === 'bodyweight');
-  if (!bw || bw.valueKg === undefined) return undefined;
-  return `${fmtWeight(bw.valueKg, units)} ${units}`;
+  if (!bw || bw.valueLb === undefined) return undefined;
+  return `${fmtWeight(bw.valueLb, units)} ${units}`;
 }
 
 /** A single empty "Add photo" tile that opens a file picker and stores the Blob. */
@@ -317,13 +317,13 @@ function LogMeasurementSheet({ onClose, units }: { onClose: () => void; units: W
 
   async function save() {
     if (!valid) return;
-    // Bodyweight is entered in the user's unit but stored canonical kg; lengths store cm as-is.
-    const storedWeightKg = units === 'lb' ? lbToKg(valueNum) : valueNum;
+    // Bodyweight is entered in the user's unit but stored canonical lb; lengths store inches as-is.
+    const storedWeightLb = units === 'kg' ? kgToLb(valueNum) : valueNum;
     const m: Measurement = {
       id: newId(),
       type,
       date: nowIso(),
-      ...(isWeight(type) ? { valueKg: storedWeightKg } : { valueCm: valueNum }),
+      ...(isWeight(type) ? { valueLb: storedWeightLb } : { valueIn: valueNum }),
     };
     await db.measurements.add(m);
     onClose();
@@ -439,7 +439,7 @@ export function MeasurementsScreen() {
       <div className="os-scroll flex-1 overflow-auto px-[22px] pb-7 pt-1.5">
         <div className="flex gap-2.5">
           <StatCard label="Bodyweight" stat={bodyweightStat} type="bodyweight" unit={units} />
-          <StatCard label="Waist" stat={waistStat} type="waist" unit="cm" />
+          <StatCard label="Waist" stat={waistStat} type="waist" unit="in" />
         </div>
 
         <ProgressPhotos caption={photoCaption} />

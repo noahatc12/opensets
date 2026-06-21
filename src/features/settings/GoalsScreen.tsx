@@ -7,7 +7,7 @@ import type { Goal, GoalType, Measurement } from '../../db/types';
 import { ChevronLeftIcon, PlusIcon } from '../../components/icons';
 import { useSettings } from '../../db/hooks';
 import { e1rm, isE1rmEligible } from '../../engine';
-import { fmtWeight, lbToKg, toUnit } from '../../lib/units';
+import { fmtWeight, kgToLb, toUnit } from '../../lib/units';
 import type { WeightUnit } from '../../lib/units';
 
 /* Ported from the Tempo prototype Goals screen (showGoals): a back header +
@@ -26,9 +26,9 @@ const numFont = {
 const nowIso = () => new Date().toISOString();
 
 const GOAL_TYPES: { value: GoalType; label: string; unit: string }[] = [
-  { value: 'liftTarget', label: 'Lift target', unit: 'kg' },
-  { value: 'bodyweight', label: 'Bodyweight', unit: 'kg' },
-  { value: 'measurement', label: 'Body measurement', unit: 'cm' },
+  { value: 'liftTarget', label: 'Lift target', unit: 'lb' },
+  { value: 'bodyweight', label: 'Bodyweight', unit: 'lb' },
+  { value: 'measurement', label: 'Body measurement', unit: 'in' },
   { value: 'weeklyCardioMin', label: 'Weekly cardio', unit: 'min' },
   { value: 'weeklySetsMuscle', label: 'Weekly sets / muscle', unit: 'sets' },
   { value: 'streak', label: 'Training streak', unit: 'weeks' },
@@ -36,7 +36,7 @@ const GOAL_TYPES: { value: GoalType; label: string; unit: string }[] = [
 
 const typeMeta = (t: GoalType) => GOAL_TYPES.find((g) => g.value === t);
 
-/** Goal types whose target is a canonical-kg weight (everything else is cm/min/etc). */
+/** Goal types whose target is a canonical-lb weight (everything else is in/min/etc). */
 const isWeightGoal = (t: GoalType) => t === 'liftTarget' || t === 'bodyweight';
 
 /** target value + unit label for display, converting weight targets to the user's unit. */
@@ -67,7 +67,7 @@ function latestMeasurement(rows: Measurement[], type: string): Measurement | und
   return best;
 }
 
-/** Progress toward a target given a direction. Both args canonical (kg / cm). */
+/** Progress toward a target given a direction. Both args canonical (lb / in). */
 function pctToward(current: number, target: number, direction: Goal['direction']): number {
   if (target <= 0 || current <= 0) return 0;
   const ratio = direction === 'decrease' ? target / current : current / target;
@@ -75,15 +75,15 @@ function pctToward(current: number, target: number, direction: Goal['direction']
 }
 
 /** Format a current/target line in the right unit. Weight goals convert to {units}. */
-function progressSubline(goal: Goal, currentKg: number | null, units: WeightUnit): string {
+function progressSubline(goal: Goal, currentLb: number | null, units: WeightUnit): string {
   const { value: targetStr, unit } = displayTarget(goal, units);
-  if (currentKg === null) {
+  if (currentLb === null) {
     const verb = goal.direction === 'increase' ? 'Reach' : 'Reduce to';
     return `${verb} ${targetStr}${unit ? ` ${unit}` : ''} · tracking`;
   }
   const currentStr = isWeightGoal(goal.type)
-    ? fmtWeight(currentKg, units)
-    : String(Math.round(toUnit(currentKg, units) * 10) / 10);
+    ? fmtWeight(currentLb, units)
+    : String(Math.round(toUnit(currentLb, units) * 10) / 10);
   return `${currentStr} / ${targetStr}${unit ? ` ${unit}` : ''}`;
 }
 
@@ -95,7 +95,7 @@ function GoalCard({ goal, units }: { goal: Goal; units: WeightUnit }) {
     let best = 0;
     for (const s of sets) {
       if (s.deletedAt || !isE1rmEligible(s)) continue;
-      best = Math.max(best, e1rm(s.weightKg, s.reps));
+      best = Math.max(best, e1rm(s.weightLb, s.reps));
     }
     return best;
   }, [goal.type, goal.exerciseId]);
@@ -109,13 +109,13 @@ function GoalCard({ goal, units }: { goal: Goal; units: WeightUnit }) {
     [goal.type],
   );
 
-  // Resolve current value (canonical kg/cm) per goal type. null = no source mapped.
+  // Resolve current value (canonical lb/in) per goal type. null = no source mapped.
   let current: number | null = null;
   if (goal.type === 'liftTarget') {
     current = liftCurrent != null && liftCurrent > 0 ? liftCurrent : null;
   } else if (goal.type === 'bodyweight') {
     const m = latestMeasurement(measureRows ?? [], 'bodyweight');
-    current = m?.valueKg ?? null;
+    current = m?.valueLb ?? null;
   }
   // 'measurement' goals carry no measurement-type link on Goal, so they stay
   // unmapped (0%) rather than guessing which measurement to read.
@@ -177,8 +177,8 @@ function AddGoalSheet({ onClose, units }: { onClose: () => void; units: WeightUn
 
   async function save() {
     if (!valid) return;
-    // Store canonical kg: convert weight targets entered in lb; everything else stored as-is.
-    const storedTarget = weight && units === 'lb' ? lbToKg(targetNum) : targetNum;
+    // Store canonical lb: convert weight targets entered in kg; everything else stored as-is.
+    const storedTarget = weight && units === 'kg' ? kgToLb(targetNum) : targetNum;
     const goal: Goal = {
       id: newId(),
       type,

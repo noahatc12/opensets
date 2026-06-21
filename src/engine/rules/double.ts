@@ -30,7 +30,7 @@ export function doubleNext(
 ): NextPrescriptionResult {
   const work = workingSets(lastSession);
 
-  let weight = state.workingWeightKg;
+  let weight = state.workingWeightLb;
   const flags: PrescriptionFlag[] = [];
   let reason: string;
 
@@ -39,18 +39,18 @@ export function doubleNext(
   } else {
     const allMax = work.every((s) => s.completed && s.reps >= rule.repMax);
     if (allMax) {
-      weight = state.workingWeightKg + rule.incrementKg;
-      reason = `+${fmt(rule.incrementKg)} kg — hit ${rule.repMax} on all sets.`;
+      weight = state.workingWeightLb + rule.incrementLb;
+      reason = `+${fmt(rule.incrementLb)} lb — hit ${rule.repMax} on all sets.`;
     } else {
-      weight = state.workingWeightKg;
-      reason = `Hold ${fmt(weight)} kg — add reps toward ${rule.repMin}–${rule.repMax}.`;
+      weight = state.workingWeightLb;
+      reason = `Hold ${fmt(weight)} lb — add reps toward ${rule.repMin}–${rule.repMax}.`;
     }
   }
 
   const rounded = roundToLoadable(
     weight,
-    settings.barKg,
-    settings.plateInventoryKg,
+    settings.barLb,
+    settings.plateInventoryLb,
   );
   // Target the top of the range; the UI shows the full min–max from the scheme.
   return {
@@ -59,6 +59,6 @@ export function doubleNext(
       reason,
       flags,
     },
-    nextState: { ...state, workingWeightKg: rounded, consecutiveFails: 0 },
+    nextState: { ...state, workingWeightLb: rounded, consecutiveFails: 0 },
   };
 }

@@ -39,8 +39,8 @@ async function wipe() {
     key: 'user',
     ...DEFAULT_SETTINGS,
     units: 'kg',
-    barKg: 20,
-    plateInventoryKg: [1.25, 2.5, 5, 10, 15, 20, 25],
+    barLb: 20,
+    plateInventoryLb: [1.25, 2.5, 5, 10, 15, 20, 25],
   });
 }
 beforeEach(wipe);
@@ -49,7 +49,7 @@ function linearSlot(): ExerciseSlot {
   return makeSlot(
     'ex_squat',
     0,
-    { kind: 'linear', incrementKg: 5, failsBeforeDeload: 3, deloadPct: 0.1 },
+    { kind: 'linear', incrementLb: 5, failsBeforeDeload: 3, deloadPct: 0.1 },
     { sets: 3, repTarget: 5 },
     { warmupSec: 60, workSec: 180 },
   );
@@ -76,7 +76,7 @@ function loggedSet(
     date: '2026-06-19',
     order,
     type: 'working',
-    weightKg: 60,
+    weightLb: 60,
     reps: 5,
     completed: true,
     ...over,
@@ -99,16 +99,16 @@ describe('exercise state seeding', () => {
   it('seeds the starting weight and a starting prescription', async () => {
     const { program, slot } = await setupProgram();
     const row = await seedExerciseState(program.id, slot, 60, NOW);
-    expect(row.workingWeightKg).toBe(60);
+    expect(row.workingWeightLb).toBe(60);
     expect(row.pending?.sets).toHaveLength(3);
-    expect(row.pending?.sets[0]?.targetWeightKg).toBe(60);
+    expect(row.pending?.sets[0]?.targetWeightLb).toBe(60);
     expect(row.pending?.reason).toMatch(/starting weight/i);
   });
 
   it('prescriptionForSlot seeds on first call (bar weight) then reuses the cache', async () => {
     const { program, slot } = await setupProgram();
     const p = await prescriptionForSlot(program.id, slot, NOW);
-    expect(p.sets[0]?.targetWeightKg).toBe(20); // empty bar default
+    expect(p.sets[0]?.targetWeightLb).toBe(20); // empty bar default
     const state = await getExerciseState(program.id, 'ex_squat');
     expect(state?.pending).toBeDefined();
   });
@@ -126,8 +126,8 @@ describe('full workout cycle advances progression', () => {
     await completeSessionAndAdvance(session.id, NOW);
 
     const state = await getExerciseState(program.id, 'ex_squat');
-    expect(state?.workingWeightKg).toBe(65); // 60 + 5
-    expect(state?.pending?.reason).toMatch(/\+5 kg/);
+    expect(state?.workingWeightLb).toBe(65); // 60 + 5
+    expect(state?.pending?.reason).toMatch(/\+5 lb/);
     expect((await db.sessions.get(session.id))?.status).toBe('completed');
   });
 
@@ -140,7 +140,7 @@ describe('full workout cycle advances progression', () => {
     await logSet(loggedSet(session.id, 2, { reps: 3 })); // short
     await completeSessionAndAdvance(session.id, NOW);
     const state = await getExerciseState(program.id, 'ex_squat');
-    expect(state?.workingWeightKg).toBe(60);
+    expect(state?.workingWeightLb).toBe(60);
     expect(state?.pending?.reason).toMatch(/repeat/i);
   });
 });
@@ -178,24 +178,24 @@ describe('set logging, undo, and last-session lookup', () => {
   it('returns the most recent completed session as last-session input', async () => {
     const { tpl } = await setupProgram();
     const s1 = await startSessionFromTemplate(tpl, NOW);
-    await logSet(loggedSet(s1.id, 0, { date: '2026-06-19', weightKg: 60 }));
+    await logSet(loggedSet(s1.id, 0, { date: '2026-06-19', weightLb: 60 }));
     const s2 = await startSessionFromTemplate(tpl, LATER);
-    await logSet(loggedSet(s2.id, 0, { date: '2026-06-20', weightKg: 65 }));
+    await logSet(loggedSet(s2.id, 0, { date: '2026-06-20', weightLb: 65 }));
 
     const last = await lastWorkingSetsForExercise('ex_squat');
     expect(last).toHaveLength(1);
-    expect(last[0]!.weightKg).toBe(65); // the newer session
+    expect(last[0]!.weightLb).toBe(65); // the newer session
   });
 
   it('can exclude the in-progress session from the last-session lookup', async () => {
     const { tpl } = await setupProgram();
     const s1 = await startSessionFromTemplate(tpl, NOW);
-    await logSet(loggedSet(s1.id, 0, { date: '2026-06-19', weightKg: 60 }));
+    await logSet(loggedSet(s1.id, 0, { date: '2026-06-19', weightLb: 60 }));
     const s2 = await startSessionFromTemplate(tpl, LATER);
-    await logSet(loggedSet(s2.id, 0, { date: '2026-06-20', weightKg: 65 }));
+    await logSet(loggedSet(s2.id, 0, { date: '2026-06-20', weightLb: 65 }));
 
     const last = await lastWorkingSetsForExercise('ex_squat', s2.id);
-    expect(last[0]!.weightKg).toBe(60); // falls back to the earlier session
+    expect(last[0]!.weightLb).toBe(60); // falls back to the earlier session
   });
 });
 
@@ -203,10 +203,10 @@ describe('PR detection + history', () => {
   it('marks a heavier set as a PR, persists the flag, and lists it', async () => {
     const { tpl } = await setupProgram();
     const s1 = await startSessionFromTemplate(tpl, NOW);
-    await logSet(loggedSet(s1.id, 0, { date: '2026-06-19', weightKg: 60 }));
+    await logSet(loggedSet(s1.id, 0, { date: '2026-06-19', weightLb: 60 }));
     const s2 = await startSessionFromTemplate(tpl, LATER);
     const heavy = await logSet(
-      loggedSet(s2.id, 0, { date: '2026-06-20', weightKg: 70 }),
+      loggedSet(s2.id, 0, { date: '2026-06-20', weightLb: 70 }),
     );
 
     const result = await detectAndMarkPRs(heavy);

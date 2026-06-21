@@ -27,37 +27,37 @@ export function linearNext(
   const targetReps = scheme.repTarget ?? scheme.repRange?.[0] ?? 1;
   const work = workingSets(lastSession);
 
-  let weight = state.workingWeightKg;
+  let weight = state.workingWeightLb;
   let consecutiveFails = state.consecutiveFails;
   const flags: PrescriptionFlag[] = [];
   let reason: string;
 
   if (work.length === 0) {
-    reason = `Starting weight — ${fmt(weight)} kg.`;
+    reason = `Starting weight — ${fmt(weight)} lb.`;
   } else {
     const allHit = work.every((s) => s.completed && s.reps >= targetReps);
     if (allHit) {
-      weight = state.workingWeightKg + rule.incrementKg;
+      weight = state.workingWeightLb + rule.incrementLb;
       consecutiveFails = 0;
-      reason = `+${fmt(rule.incrementKg)} kg — hit ${targetReps} on all sets last time.`;
+      reason = `+${fmt(rule.incrementLb)} lb — hit ${targetReps} on all sets last time.`;
     } else {
       consecutiveFails += 1;
       if (consecutiveFails >= rule.failsBeforeDeload) {
-        weight = state.workingWeightKg * (1 - rule.deloadPct);
+        weight = state.workingWeightLb * (1 - rule.deloadPct);
         consecutiveFails = 0;
         flags.push('deload');
         reason = `Deload −${fmt(Math.round(rule.deloadPct * 100))}% after ${rule.failsBeforeDeload} misses.`;
       } else {
-        weight = state.workingWeightKg;
-        reason = `Repeat ${fmt(weight)} kg — missed last time (${consecutiveFails}/${rule.failsBeforeDeload}).`;
+        weight = state.workingWeightLb;
+        reason = `Repeat ${fmt(weight)} lb — missed last time (${consecutiveFails}/${rule.failsBeforeDeload}).`;
       }
     }
   }
 
   const rounded = roundToLoadable(
     weight,
-    settings.barKg,
-    settings.plateInventoryKg,
+    settings.barLb,
+    settings.plateInventoryLb,
   );
   return {
     prescription: {
@@ -65,6 +65,6 @@ export function linearNext(
       reason,
       flags,
     },
-    nextState: { ...state, workingWeightKg: rounded, consecutiveFails },
+    nextState: { ...state, workingWeightLb: rounded, consecutiveFails },
   };
 }

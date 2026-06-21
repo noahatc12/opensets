@@ -60,12 +60,12 @@ describe('parseWorkoutCsv — Hevy', () => {
     'Push,2026-06-19T17:00:00Z,Bench Press,1,warmup,45,10,,,',
   ].join('\n');
 
-  it('converts lbs to kg and maps fields/types', () => {
+  it('stores Hevy lbs as-is (lb canonical) and maps fields/types', () => {
     const { format, sets } = parseWorkoutCsv(csv);
     expect(format).toBe('hevy');
     expect(sets).toHaveLength(2);
     expect(sets[0]!.exerciseName).toBe('Bench Press');
-    expect(sets[0]!.weightKg).toBeCloseTo(61.23, 1); // 135 lb
+    expect(sets[0]!.weightLb).toBe(135); // already pounds
     expect(sets[0]!.reps).toBe(5);
     expect(sets[0]!.rpe).toBe(8);
     expect(sets[0]!.setType).toBe('working');
@@ -79,16 +79,16 @@ describe('parseWorkoutCsv — Strong', () => {
     '2026-06-19,Legs,Squat,1,100,5,,,9',
   ].join('\n');
 
-  it('treats Strong weight as kg by default', () => {
+  it('converts Strong kg → lb by default', () => {
     const { format, sets } = parseWorkoutCsv(csv);
     expect(format).toBe('strong');
-    expect(sets[0]!.weightKg).toBe(100);
+    expect(sets[0]!.weightLb).toBeCloseTo(220.46, 1); // 100 kg → lb
     expect(sets[0]!.reps).toBe(5);
     expect(sets[0]!.rpe).toBe(9);
   });
-  it('converts when told the file is in lb', () => {
+  it('stores as-is when told the file is already in lb', () => {
     const { sets } = parseWorkoutCsv(csv, { strongUnit: 'lb' });
-    expect(sets[0]!.weightKg).toBeCloseTo(45.36, 1);
+    expect(sets[0]!.weightLb).toBe(100);
   });
 });
 
@@ -109,7 +109,7 @@ describe('serializeSetsToCsv', () => {
       exerciseName: 'Back Squat',
       setIndex: 0,
       setType: 'working',
-      weightKg: 100,
+      weightLb: 100,
       reps: 5,
       rpe: 8,
     },
@@ -118,7 +118,7 @@ describe('serializeSetsToCsv', () => {
   it('writes a header and quotes fields containing commas', () => {
     const out = serializeSetsToCsv(rows);
     const lines = out.split('\n');
-    expect(lines[0]).toContain('weight_kg');
+    expect(lines[0]).toContain('weight_lb');
     expect(lines[1]).toContain('"Legs, heavy"');
     expect(lines[1]).toContain('100');
   });

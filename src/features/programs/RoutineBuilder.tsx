@@ -25,8 +25,8 @@ interface SlotDraft {
   repTarget: number;
   repMin: number;
   repMax: number;
-  incrementKg: number;
-  startingWeightKg: number;
+  incrementLb: number;
+  startingWeightLb: number;
   restWorkSec: number;
 }
 
@@ -38,8 +38,8 @@ function draftFor(exercise: Exercise): SlotDraft {
     repTarget: 5,
     repMin: 8,
     repMax: 12,
-    incrementKg: 2.5,
-    startingWeightKg: exercise.isBodyweight ? 0 : 20,
+    incrementLb: 2.5,
+    startingWeightLb: exercise.isBodyweight ? 0 : 20,
     restWorkSec: 180,
   };
 }
@@ -70,7 +70,7 @@ export function RoutineBuilder() {
         d.ruleKind === 'linear'
           ? {
               kind: 'linear',
-              incrementKg: d.incrementKg,
+              incrementLb: d.incrementLb,
               failsBeforeDeload: 3,
               deloadPct: 0.1,
             }
@@ -79,7 +79,7 @@ export function RoutineBuilder() {
                 kind: 'double',
                 repMin: d.repMin,
                 repMax: d.repMax,
-                incrementKg: d.incrementKg,
+                incrementLb: d.incrementLb,
                 perSet: false,
               }
             : { kind: 'manual' };
@@ -97,7 +97,7 @@ export function RoutineBuilder() {
 
     await Promise.all(
       slots.map((slot, i) =>
-        seedExerciseState(program.id, slot, drafts[i]!.startingWeightKg, now),
+        seedExerciseState(program.id, slot, drafts[i]!.startingWeightLb, now),
       ),
     );
     navigate('/today');
@@ -205,11 +205,11 @@ export function RoutineBuilder() {
                 <Labeled label="Start (kg)">
                   <Stepper
                     ariaLabel="starting weight"
-                    value={d.startingWeightKg}
+                    value={d.startingWeightLb}
                     min={0}
                     step={2.5}
-                    onChange={(startingWeightKg) =>
-                      update(i, { startingWeightKg })
+                    onChange={(startingWeightLb) =>
+                      update(i, { startingWeightLb })
                     }
                   />
                 </Labeled>
@@ -217,10 +217,10 @@ export function RoutineBuilder() {
                   <Labeled label="+kg / step">
                     <Stepper
                       ariaLabel="increment"
-                      value={d.incrementKg}
+                      value={d.incrementLb}
                       min={1.25}
                       step={1.25}
-                      onChange={(incrementKg) => update(i, { incrementKg })}
+                      onChange={(incrementLb) => update(i, { incrementLb })}
                     />
                   </Labeled>
                 )}

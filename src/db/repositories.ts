@@ -32,8 +32,8 @@ const localDate = (iso: string) => iso.slice(0, 10);
 
 function engineSettings(s: UserSettings): EngineSettings {
   return {
-    barKg: s.barKg,
-    plateInventoryKg: s.plateInventoryKg,
+    barLb: s.barLb,
+    plateInventoryLb: s.plateInventoryLb,
     rounding: 'nearest',
     units: s.units,
   };
@@ -50,7 +50,7 @@ function schemeOf(slot: ExerciseSlot): SetScheme {
 
 function toSetResult(s: LoggedSet): SetResult {
   return {
-    weightKg: s.weightKg,
+    weightLb: s.weightLb,
     reps: s.reps,
     type: s.type,
     completed: s.completed,
@@ -159,12 +159,12 @@ export function getExerciseState(
 export async function seedExerciseState(
   programId: string,
   slot: ExerciseSlot,
-  startingWeightKg: number,
+  startingWeightLb: number,
   now: string,
 ): Promise<ExerciseStateRow> {
   const settings = engineSettings(await getSettings());
   const base: ExerciseState = {
-    workingWeightKg: startingWeightKg,
+    workingWeightLb: startingWeightLb,
     consecutiveFails: 0,
     stage: 0,
     cyclePos: 0,
@@ -198,7 +198,7 @@ export async function prescriptionForSlot(
   const seeded = await seedExerciseState(
     programId,
     slot,
-    (await getSettings()).barKg,
+    (await getSettings()).barLb,
     now,
   );
   return seeded.pending!;
@@ -300,7 +300,7 @@ function startStateFromLogged(logged: LoggedSet[]): ExerciseState {
     (s) => s.type === 'working' || s.type === 'amrap',
   );
   return {
-    workingWeightKg: working?.weightKg ?? 0,
+    workingWeightLb: working?.weightLb ?? 0,
     consecutiveFails: 0,
     stage: 0,
     cyclePos: 0,

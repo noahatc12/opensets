@@ -162,7 +162,7 @@ export function SettingsScreen() {
             label="Plate inventory"
             value={
               <span className="flex gap-1">
-                {[...settings.plateInventoryKg]
+                {[...settings.plateInventoryLb]
                   .sort((a, b) => b - a)
                   .slice(0, 2)
                   .map((p) => (
@@ -174,9 +174,9 @@ export function SettingsScreen() {
                       {fmtWeight(p, settings.units)}
                     </span>
                   ))}
-                {settings.plateInventoryKg.length > 2 && (
+                {settings.plateInventoryLb.length > 2 && (
                   <span className="rounded-[var(--r-pill)] bg-bg px-[7px] py-[3px] text-[10px] text-muted" style={numFont}>
-                    +{settings.plateInventoryKg.length - 2}
+                    +{settings.plateInventoryLb.length - 2}
                   </span>
                 )}
               </span>

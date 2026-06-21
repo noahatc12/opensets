@@ -87,11 +87,11 @@ function manualNext(
   const targetReps = scheme.repTarget ?? scheme.repRange?.[0] ?? 1;
   const repeated = workingSets(lastSession).length > 0;
   const reason = repeated
-    ? `Manual — adjust ${fmt(state.workingWeightKg)} kg as you see fit.`
+    ? `Manual — adjust ${fmt(state.workingWeightLb)} lb as you see fit.`
     : `Manual — set your weight.`;
   return {
     prescription: {
-      sets: buildSets(scheme, targetReps, state.workingWeightKg),
+      sets: buildSets(scheme, targetReps, state.workingWeightLb),
       reason,
       flags: [],
     },

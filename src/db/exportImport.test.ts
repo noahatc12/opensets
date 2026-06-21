@@ -77,7 +77,7 @@ async function seed() {
         scheme: { sets: 3, repTarget: 5 },
         progressionRule: {
           kind: 'linear',
-          incrementKg: 5,
+          incrementLb: 5,
           failsBeforeDeload: 3,
           deloadPct: 0.1,
         },
@@ -104,7 +104,7 @@ async function seed() {
     date: '2026-06-02',
     order: 0,
     type: 'working',
-    weightKg: 60,
+    weightLb: 60,
     reps: 5,
     completed: true,
     isPR: ['weight'],
@@ -112,7 +112,7 @@ async function seed() {
   const stateRow: ExerciseStateRow = {
     programId: 'prog_1',
     exerciseId: 'ex_squat',
-    workingWeightKg: 60,
+    workingWeightLb: 60,
     consecutiveFails: 0,
     stage: 0,
     cyclePos: 0,
@@ -122,7 +122,7 @@ async function seed() {
     id: 'm_1',
     date: '2026-06-01',
     type: 'bodyweight',
-    valueKg: 80,
+    valueLb: 80,
   };
   const goal: Goal = {
     id: 'goal_1',
@@ -137,8 +137,8 @@ async function seed() {
   const settings: UserSettingsRow = {
     key: 'user',
     units: 'kg',
-    barKg: 20,
-    plateInventoryKg: [1.25, 2.5, 5, 10, 15, 20, 25],
+    barLb: 20,
+    plateInventoryLb: [1.25, 2.5, 5, 10, 15, 20, 25],
     defaultRestWarmupSec: 60,
     defaultRestWorkSec: 150,
     restCompoundSec: 180,
@@ -203,12 +203,12 @@ describe('full-DB export → wipe → import (P0 exit gate)', () => {
     await importEnvelope(env);
 
     const set = await db.sets.get('set_1');
-    expect(set?.weightKg).toBe(60);
+    expect(set?.weightLb).toBe(60);
     expect(set?.isPR).toEqual(['weight']);
     const tpl = await db.templates.get('tpl_a');
     expect(tpl?.slots[0]?.progressionRule).toEqual({
       kind: 'linear',
-      incrementKg: 5,
+      incrementLb: 5,
       failsBeforeDeload: 3,
       deloadPct: 0.1,
     });
@@ -262,6 +262,6 @@ describe('createBackup (pre-migration snapshots, keep 2)', () => {
     await seed();
     const row = await createBackup('bk_x', '2026-06-04T00:00:00.000Z');
     expect(row.envelope.data.exercises).toHaveLength(1);
-    expect(row.envelope.data.sets[0]?.weightKg).toBe(60);
+    expect(row.envelope.data.sets[0]?.weightLb).toBe(60);
   });
 });

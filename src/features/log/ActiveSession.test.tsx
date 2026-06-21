@@ -31,7 +31,7 @@ import type { ProgressionRule } from '../../engine/types';
 const now = '2026-06-20T10:00:00.000Z';
 const LINEAR: ProgressionRule = {
   kind: 'linear',
-  incrementKg: 2.5,
+  incrementLb: 2.5,
   failsBeforeDeload: 3,
   deloadPct: 0.1,
 };
@@ -102,7 +102,7 @@ describe('Readout logger — core flow (pinned pre-extraction)', () => {
     await waitFor(async () => {
       const sets = await getSessionSets(session.id);
       expect(sets).toHaveLength(1);
-      expect(sets[0]!.weightKg).toBeGreaterThan(target.targetWeightKg);
+      expect(sets[0]!.weightLb).toBeGreaterThan(target.targetWeightLb);
       expect(sets[0]!.reps).toBe(target.targetReps + 1);
     });
   });

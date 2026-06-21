@@ -137,7 +137,7 @@ export function HistoryScreen() {
     const tonnage =
       live
         .filter((s) => s.type === 'working' || s.type === 'amrap')
-        .reduce((t, s) => t + Math.max(0, s.weightKg) * s.reps, 0) / 1000;
+        .reduce((t, s) => t + Math.max(0, s.weightLb) * s.reps, 0) / 1000;
 
     // Top-tracked exercise by eligible-set count → its e1RM trend.
     const byExercise = new Map<string, LoggedSet[]>();
@@ -153,12 +153,12 @@ export function HistoryScreen() {
       const eligible = arr
         .filter((s) => isE1rmEligible(s))
         .sort((a, b) => a.date.localeCompare(b.date));
-      const trend = eligible.map((s) => e1rm(s.weightKg, s.reps));
+      const trend = eligible.map((s) => e1rm(s.weightLb, s.reps));
       if (trend.length > topTrend.length) {
         topTrend = trend;
         topSeries = eligible.map((s) => ({
           date: s.date,
-          value: e1rm(s.weightKg, s.reps),
+          value: e1rm(s.weightLb, s.reps),
           isPR: (s.isPR?.length ?? 0) > 0,
         }));
         topId = id;

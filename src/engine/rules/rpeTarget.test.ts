@@ -4,10 +4,10 @@ import { isLoadable } from '../rounding';
 import type { EngineSettings, ExerciseState, ProgressionRule, SetResult, SetScheme } from '../types';
 
 const settings: EngineSettings = {
-  barKg: 20,
-  plateInventoryKg: [1.25, 2.5, 5, 10, 15, 20, 25],
+  barLb: 45,
+  plateInventoryLb: [1.25, 2.5, 5, 10, 25, 35, 45],
   rounding: 'nearest',
-  units: 'kg',
+  units: 'lb',
 };
 const rule = { kind: 'rpeTarget', targetRpe: 8, targetReps: 5, loadStepPct: 0.04 } as Extract<
   ProgressionRule,
@@ -15,13 +15,13 @@ const rule = { kind: 'rpeTarget', targetRpe: 8, targetReps: 5, loadStepPct: 0.04
 >;
 const scheme: SetScheme = { sets: 3 };
 const state = (w = 100): ExerciseState => ({
-  workingWeightKg: w,
+  workingWeightLb: w,
   consecutiveFails: 0,
   stage: 0,
   cyclePos: 0,
 });
 const top = (rpe: number | undefined): SetResult[] => [
-  { weightKg: 100, reps: 5, type: 'working', completed: true, ...(rpe !== undefined ? { rpe } : {}) },
+  { weightLb: 100, reps: 5, type: 'working', completed: true, ...(rpe !== undefined ? { rpe } : {}) },
 ];
 
 describe('RPE-target autoregulation', () => {
@@ -35,13 +35,13 @@ describe('RPE-target autoregulation', () => {
 
   it('top set under target → adds load', () => {
     const r = rpeTargetNext(rule, state(100), top(7), settings, scheme);
-    expect(r.nextState.workingWeightKg).toBeGreaterThan(100); // ~104 → rounded
+    expect(r.nextState.workingWeightLb).toBeGreaterThan(100); // ~104 → rounded
     expect(r.prescription.reason).toMatch(/\+4%/);
   });
 
   it('top set over target → drops load', () => {
     const r = rpeTargetNext(rule, state(100), top(9), settings, scheme);
-    expect(r.nextState.workingWeightKg).toBeLessThan(100); // ~96
+    expect(r.nextState.workingWeightLb).toBeLessThan(100); // ~96
     expect(r.prescription.reason).toMatch(/−4%/);
   });
 
@@ -52,20 +52,20 @@ describe('RPE-target autoregulation', () => {
 
   it('clamps the adjustment to ±10%', () => {
     const r = rpeTargetNext(rule, state(100), top(5), settings, scheme); // dev +3 → +12% → clamp +10%
-    expect(r.nextState.workingWeightKg).toBeLessThanOrEqual(110);
-    expect(r.nextState.workingWeightKg).toBeGreaterThan(105);
+    expect(r.nextState.workingWeightLb).toBeLessThanOrEqual(110);
+    expect(r.nextState.workingWeightLb).toBeGreaterThan(105);
   });
 
   it('holds when no RPE was logged', () => {
     const r = rpeTargetNext(rule, state(100), top(undefined), settings, scheme);
     expect(r.prescription.reason).toMatch(/log RPE/i);
-    expect(r.nextState.workingWeightKg).toBe(100);
+    expect(r.nextState.workingWeightLb).toBe(100);
   });
 
   it('every prescribed weight is loadable', () => {
     const r = rpeTargetNext(rule, state(100), top(6), settings, scheme);
     expect(
-      r.prescription.sets.every((s) => isLoadable(s.targetWeightKg, settings.barKg, settings.plateInventoryKg)),
+      r.prescription.sets.every((s) => isLoadable(s.targetWeightLb, settings.barLb, settings.plateInventoryLb)),
     ).toBe(true);
   });
 });
