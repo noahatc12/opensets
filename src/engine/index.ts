@@ -1,9 +1,9 @@
 /**
  * OpenSets progression engine — public entry point (spec §6.1).
  *
- * Pure module (see ENGINE PURITY LAW in ./types.ts). Phase 1 implements `linear`,
- * `double`, and `manual`; the remaining rules (5/3/1, GZCLP, RPE, APRE, repsOnly,
- * durationLinear) land in Phase 2 and throw a clear message until then.
+ * Pure module (see ENGINE PURITY LAW in ./types.ts). All nine progression rules
+ * compute: linear / double / manual (P1) plus 5/3/1, GZCLP, RPE-target, APRE,
+ * repsOnly, durationLinear (P2). Plus e1RM / EWMA trend and plateau detection.
  */
 export * from './types';
 export {
@@ -23,6 +23,7 @@ export {
   bestSessionE1rm,
   EWMA_ALPHA,
 } from './e1rm';
+export { detectPlateau, ewmaSeries, type PlateauResult } from './plateau';
 
 import type {
   EngineSettings,
@@ -34,6 +35,12 @@ import type {
 } from './types';
 import { linearNext } from './rules/linear';
 import { doubleNext } from './rules/double';
+import { percent531Next } from './rules/percent531';
+import { gzclpNext } from './rules/gzclp';
+import { rpeTargetNext } from './rules/rpeTarget';
+import { apreNext } from './rules/apre';
+import { repsOnlyNext } from './rules/repsOnly';
+import { durationLinearNext } from './rules/durationLinear';
 import { buildSets, fmt, workingSets } from './rules/shared';
 
 /**
@@ -57,14 +64,17 @@ export function nextPrescription(
     case 'manual':
       return manualNext(state, lastSession, scheme);
     case 'percent531':
+      return percent531Next(rule, state, lastSession, settings);
     case 'gzclp':
+      return gzclpNext(rule, state, lastSession, settings);
     case 'rpeTarget':
+      return rpeTargetNext(rule, state, lastSession, settings, scheme);
     case 'apre':
+      return apreNext(rule, state, lastSession, settings);
     case 'repsOnly':
+      return repsOnlyNext(rule, state, lastSession, settings, scheme);
     case 'durationLinear':
-      throw new Error(
-        `Progression rule "${rule.kind}" is implemented in Phase 2 — not available yet.`,
-      );
+      return durationLinearNext(rule, state, lastSession, settings, scheme);
   }
 }
 

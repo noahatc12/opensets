@@ -89,8 +89,10 @@ export interface ExerciseState {
   consecutiveFails: number;
   /** GZCLP stage index, wave position, etc. */
   stage: number;
-  /** Week-in-cycle for percentage schemes. */
+  /** Week-in-cycle for percentage schemes; session counter for durationLinear. */
   cyclePos: number;
+  /** Stage-machine anchor weight (GZCLP T2 "last 3×10 weight" for the reset). */
+  anchorKg?: number;
 }
 
 /** Flags surfaced on a prescription, driving UI badges (spec §6.1). */
@@ -107,6 +109,8 @@ export interface PrescribedSet {
   targetWeightKg: number;
   amrap?: boolean;
   targetRpe?: number;
+  /** Timed holds & cardio (durationLinear) — seconds to hold / minutes-as-seconds. */
+  targetDurationSec?: number;
 }
 
 /** The engine's output for the next session of one exercise (spec §6.1). */
