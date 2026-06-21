@@ -2,12 +2,14 @@
 
 Out-of-phase ideas and deferred work. Per the scope rule, anything valuable that belongs to a later phase lands here instead of getting built now. Adding a feature to a phase means removing one of equal size (spec §3, §5).
 
+## Shipped — pulled forward, no longer parked
+- **Full progression engine** — linear/double, 5/3/1, GZCLP, RPE, APRE, reps-only/duration, plus EWMA(e1RM) trend + plateau detection. Built, merged, and unit-tested (131/131 green). Previously parked to P2/P3.
+
 ## Deferred to a later phase (from the spec's own roadmap)
 - **CSV import (Strong/Hevy)** — P1 (§12). Header sniffing + exercise-name mapping UI.
 - **CSV export to Strong/Hevy** — P1 refinement (anti-lock-in signal).
-- **Progression engine rules beyond linear/double** — P2 (5/3/1, GZCLP, RPE, APRE, durationLinear).
 - **Plan generator wizard v2** — P2 (§6.6).
-- **Mesocycle builder, readiness check-ins, plateau detection, volume heatmap, analytics, goals, Gist sync** — P3.
+- **Mesocycle builder, readiness check-ins, volume heatmap, analytics, goals, Gist sync** — P3.
 - **Muscle-map browser, YouTube embeds, custom-exercise photos, program share links, Spanish i18n, README-as-portfolio** — P4.
 
 ## Explicitly not scheduled (spec §18 parking lot)

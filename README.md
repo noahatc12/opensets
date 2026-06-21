@@ -38,7 +38,7 @@ for the full specification.
 ### Inviolable constraints
 
 100% client-side · no paid APIs / no shipped keys · no accounts · offline-first ·
-engine purity · **kg is canonical** (lb is display-only) · migrations never lose data
+engine purity · **lb is canonical** (pounds + inches; kg/cm are display-only) · migrations never lose data
 (pre-migration snapshots) · privacy is a feature (no event telemetry) · health safety
 rails stay in (pacing only, never calories/macros).
 
