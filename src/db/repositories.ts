@@ -311,7 +311,19 @@ function startStateFromLogged(logged: LoggedSet[]): ExerciseState {
 
 export async function logSet(set: Omit<LoggedSet, 'id'>): Promise<LoggedSet> {
   const row: LoggedSet = { ...set, id: newId() };
-  await db.sets.add(row);
+  // Durability barrier: await the rw transaction's COMPLETION (commit), not just
+  // the add request's success. A bare add lets the caller proceed (and Dexie's
+  // optimistic liveQuery flip the set to "logged") while the transaction is still
+  // in flight; if the page is then torn down — a reload, or the user backgrounding
+  // / reopening the app right after logging — the uncommitted transaction is
+  // aborted and the set is silently lost. This was reproducible (~50%+) when a
+  // concurrent write (e.g. the sample-data seed) starved the commit. Awaiting the
+  // transaction guarantees the set is committed before "Set logged" is shown, so a
+  // reopen always finds it. (Commit survives reload; this is not, and need not be,
+  // protection against an OS/process crash before physical flush.)
+  await db.transaction('rw', db.sets, async () => {
+    await db.sets.add(row);
+  });
   return row;
 }
 
