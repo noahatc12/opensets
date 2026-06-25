@@ -404,7 +404,15 @@ export function HistoryScreen() {
 
   // ---- Readout layout (instrument-style port of prototype 422-505) ----------
   function ReadoutBody() {
-    const chart = a.topTrend.length >= 2 ? readoutPaths(a.topTrend) : null;
+    // Range-aware like TempoBody: filter the e1RM series to the selected window,
+    // derive the chart + month axis + latest/delta from it (not the full trend).
+    const series = filterByRange(a.topSeries, range);
+    const values = series.map((p) => p.value);
+    const chart = values.length >= 2 ? readoutPaths(values) : null;
+    const months = chart ? monthTicks(series) : [];
+    const latest = values.length > 0 ? values[values.length - 1]! : (a.latestE1rm ?? 0);
+    const delta =
+      values.length >= 2 ? ((values[values.length - 1]! - values[0]!) / values[0]!) * 100 : 0;
     const MAX_VOL = Math.max(20, ...a.volume.map(([, n]) => n));
     const capLabel = {
       fontSize: '10px',
@@ -424,28 +432,34 @@ export function HistoryScreen() {
           Analytics
         </div>
 
-        {/* period selector (instrument segmented control — static, matches prototype) */}
+        {/* period selector (instrument segmented control — wired to range) */}
         <div
           className="mt-4 flex gap-1.5 p-1"
           style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--r-md)' }}
         >
-          {(['3M', '4W', '1Y', 'ALL'] as const).map((p, i) => (
-            <button
-              key={p}
-              className="h-[34px] flex-1 text-[12px]"
-              style={{
-                border: 'none',
-                borderRadius: 'var(--r-sm)',
-                cursor: 'pointer',
-                fontFamily: 'var(--font-num)',
-                background: i === 0 ? 'var(--accent)' : 'transparent',
-                color: i === 0 ? 'var(--accent-ink)' : 'var(--muted)',
-                fontWeight: i === 0 ? 700 : 400,
-              }}
-            >
-              {p}
-            </button>
-          ))}
+          {([['3M', '3M'], ['4W', '4W'], ['1Y', '1Y'], ['ALL', 'All']] as const).map(
+            ([label, value]) => {
+              const active = value === range;
+              return (
+                <button
+                  key={value}
+                  onClick={() => setRange(value)}
+                  className="h-[34px] flex-1 text-[12px]"
+                  style={{
+                    border: 'none',
+                    borderRadius: 'var(--r-sm)',
+                    cursor: 'pointer',
+                    fontFamily: 'var(--font-num)',
+                    background: active ? 'var(--accent)' : 'transparent',
+                    color: active ? 'var(--accent-ink)' : 'var(--muted)',
+                    fontWeight: active ? 700 : 400,
+                  }}
+                >
+                  {label}
+                </button>
+              );
+            },
+          )}
         </div>
 
         {/* e1RM card */}
@@ -456,18 +470,18 @@ export function HistoryScreen() {
                 <div style={capLabel}>{topName} · e1RM</div>
                 <div className="mt-1.5 flex items-baseline gap-2">
                   <span style={{ fontSize: '34px', letterSpacing: 'var(--tracking-snug)', ...numFont }} className="text-text">
-                    {roundDisplay(toUnit(a.latestE1rm ?? 0, units), units)}
+                    {roundDisplay(toUnit(latest, units), units)}
                   </span>
                   <span className="text-[13px] font-semibold text-muted">{units}</span>
                 </div>
               </div>
-              {a.e1rmDelta !== 0 && (
+              {delta !== 0 && (
                 <span
                   className="text-[12px] font-bold"
                   style={{
-                    color: a.e1rmDelta >= 0 ? 'var(--accent)' : 'var(--danger)',
+                    color: delta >= 0 ? 'var(--accent)' : 'var(--danger)',
                     background:
-                      a.e1rmDelta >= 0
+                      delta >= 0
                         ? 'color-mix(in oklab, var(--accent) 12%, transparent)'
                         : 'color-mix(in oklab, var(--danger) 12%, transparent)',
                     padding: '4px 9px',
@@ -475,8 +489,8 @@ export function HistoryScreen() {
                     fontFamily: 'var(--font-num)',
                   }}
                 >
-                  {a.e1rmDelta >= 0 ? '▲ ' : '▼ '}
-                  {Math.abs(a.e1rmDelta).toFixed(1)}%
+                  {delta >= 0 ? '▲ ' : '▼ '}
+                  {Math.abs(delta).toFixed(1)}%
                 </span>
               )}
             </div>
@@ -498,10 +512,9 @@ export function HistoryScreen() {
               className="flex justify-between"
               style={{ fontSize: '9.5px', color: 'var(--faint)', padding: '0 4px 4px', fontFamily: 'var(--font-label)' }}
             >
-              <span>MAR</span>
-              <span>APR</span>
-              <span>MAY</span>
-              <span>JUN</span>
+              {months.map((m, i) => (
+                <span key={i}>{m.toUpperCase()}</span>
+              ))}
             </div>
           </div>
         )}
