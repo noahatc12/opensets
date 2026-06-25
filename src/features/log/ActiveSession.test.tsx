@@ -68,7 +68,12 @@ async function logButton() {
 
 beforeEach(async () => {
   await Promise.all(db.tables.map((t) => t.clear()));
-  useSessionStore.setState({ activeSessionId: null, currentExercise: 0, rest: null });
+  useSessionStore.setState({
+    activeSessionId: null,
+    leftSessionId: null,
+    currentExercise: 0,
+    rest: null,
+  });
 });
 afterEach(() => {
   cleanup();
@@ -213,5 +218,63 @@ describe('Crash recovery snapshot', () => {
       expect(useSessionStore.getState().currentExercise).toBe(1);
       expect(useSessionStore.getState().rest).not.toBeNull();
     });
+  });
+});
+
+describe('Back is a non-destructive leave (#2)', () => {
+  const renderToday = () =>
+    render(
+      <MemoryRouter>
+        <TodayScreen />
+      </MemoryRouter>,
+    );
+
+  it('Back keeps the session active + resumable: no completion, no progression advance, snapshot kept', async () => {
+    const { session, programId } = await seedActiveSession();
+    const user = userEvent.setup();
+    renderToday(); // activeSessionId set → renders the active session
+    await user.click(await logButton()); // log one set
+    // Wait for the debounced recovery snapshot so "snapshot kept" is a real assertion.
+    await waitFor(async () => expect(await db.activeSession.get('current')).toBeTruthy());
+    const before = await getExerciseState(programId, 'bench');
+
+    await user.click(await screen.findByRole('button', { name: /Leave workout/ }));
+
+    await waitFor(async () => {
+      expect((await db.sessions.get(session.id))!.status).toBe('active'); // NOT completed
+    });
+    expect(await db.activeSession.get('current')).toBeTruthy(); // snapshot NOT cleared
+    expect((await getExerciseState(programId, 'bench'))!.updatedAt).toBe(before!.updatedAt); // NOT advanced
+    expect(await getSessionSets(session.id)).toHaveLength(1); // logged work intact
+    expect(await screen.findByRole('button', { name: /Resume workout/ })).toBeTruthy();
+  });
+
+  it('Resume from the hub returns to the live in-progress session with the logged set', async () => {
+    const { session } = await seedActiveSession();
+    const user = userEvent.setup();
+    renderToday();
+    await user.click(await logButton());
+    await user.click(await screen.findByRole('button', { name: /Leave workout/ }));
+    await user.click(await screen.findByRole('button', { name: /Resume workout/ }));
+    await waitFor(() =>
+      expect(useSessionStore.getState().activeSessionId).toBe(session.id),
+    );
+    expect(await getSessionSets(session.id)).toHaveLength(1);
+    await waitFor(() => screen.getByRole('button', { name: /Log Set/ }));
+  });
+
+  it('Finish (not Back) still finalizes: completes, advances progression, clears the snapshot', async () => {
+    const { session, programId } = await seedActiveSession();
+    const before = await getExerciseState(programId, 'bench');
+    const user = userEvent.setup();
+    renderLogger();
+    await user.click(await logButton());
+    await waitFor(async () => expect(await db.activeSession.get('current')).toBeTruthy());
+    await user.click(screen.getByRole('button', { name: 'Finish' }));
+    await waitFor(async () => {
+      expect((await db.sessions.get(session.id))!.status).toBe('completed');
+    });
+    expect(await db.activeSession.get('current')).toBeFalsy(); // snapshot cleared
+    expect((await getExerciseState(programId, 'bench'))!.updatedAt).not.toBe(before!.updatedAt); // advanced
   });
 });

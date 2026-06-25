@@ -13,9 +13,17 @@ export interface RestTimer {
 
 interface SessionUIState {
   activeSessionId: string | null;
+  /** A session the user deliberately LEFT (via Back) this app-session. It stays
+   *  active + resumable in Dexie; this flag only suppresses TodayScreen's
+   *  auto-resume for it, so leaving lands on the hub instead of bouncing back in.
+   *  Null on a cold reopen (in-memory), so cold-reopen auto-resume is unaffected. */
+  leftSessionId: string | null;
   currentExercise: number;
   rest: RestTimer | null;
   beginSession: (sessionId: string) => void;
+  /** Leave the active session WITHOUT finalizing it (no completion, no progression
+   *  advance, snapshot kept). Back uses this; Finish uses completeSessionAndAdvance. */
+  leaveSession: () => void;
   endSession: () => void;
   setCurrentExercise: (i: number) => void;
   startRest: (seconds: number) => void;
@@ -29,12 +37,20 @@ interface SessionUIState {
 
 export const useSessionStore = create<SessionUIState>((set) => ({
   activeSessionId: null,
+  leftSessionId: null,
   currentExercise: 0,
   rest: null,
   beginSession: (sessionId) =>
-    set({ activeSessionId: sessionId, currentExercise: 0, rest: null }),
+    set({ activeSessionId: sessionId, leftSessionId: null, currentExercise: 0, rest: null }),
+  leaveSession: () =>
+    set((s) => ({
+      leftSessionId: s.activeSessionId,
+      activeSessionId: null,
+      currentExercise: 0,
+      rest: null,
+    })),
   endSession: () =>
-    set({ activeSessionId: null, currentExercise: 0, rest: null }),
+    set({ activeSessionId: null, leftSessionId: null, currentExercise: 0, rest: null }),
   setCurrentExercise: (i) => set({ currentExercise: i }),
   startRest: (seconds) =>
     set({

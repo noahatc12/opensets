@@ -42,8 +42,11 @@ export function TodayScreen() {
   const navigate = useNavigate();
   const { units } = useSettings();
   const activeSessionId = useSessionStore((s) => s.activeSessionId);
+  const leftSessionId = useSessionStore((s) => s.leftSessionId);
   const beginSession = useSessionStore((s) => s.beginSession);
 
+  // The in-progress session, if any (live). Drives auto-resume + the Resume control.
+  const resumable = useLiveQuery(() => getActiveWorkoutSession());
   const activeProgram = useLiveQuery(() => getActiveProgram());
   const templates = useLiveQuery(
     () => (activeProgram ? listTemplates(activeProgram.id) : Promise.resolve([])),
@@ -56,10 +59,10 @@ export function TodayScreen() {
 
   useEffect(() => {
     if (activeSessionId) return;
-    void getActiveWorkoutSession().then((s) => {
-      if (s) beginSession(s.id);
-    });
-  }, [activeSessionId, beginSession]);
+    // Auto-resume on a cold reopen, but NOT a session the user just LEFT via Back —
+    // that one is offered through the Resume control instead of bouncing back in.
+    if (resumable && resumable.id !== leftSessionId) beginSession(resumable.id);
+  }, [activeSessionId, resumable, leftSessionId, beginSession]);
 
   if (activeSessionId) return <ActiveSession />;
 
@@ -92,10 +95,23 @@ export function TodayScreen() {
     </div>
   );
 
+  // Resume control for a session the user left via Back (kept active + resumable).
+  // Rendered in every hub state so an in-progress workout can never be stranded.
+  const resumeBanner = resumable ? (
+    <button
+      onClick={() => beginSession(resumable.id)}
+      className="mt-4 flex w-full items-center justify-between gap-2 rounded-[var(--r-lg)] bg-accent px-4 py-3.5 text-left text-[15px] font-bold text-accent-ink"
+    >
+      <span>Resume workout in progress</span>
+      <ChevronRightIcon className="size-[18px]" />
+    </button>
+  ) : null;
+
   if (!ready) {
     return (
       <div className="h-full overflow-auto px-[22px] pb-6 pt-[max(1rem,env(safe-area-inset-top))]">
         {Header}
+        {resumeBanner}
         <div className="mt-6">
           <EmptyState
             icon={<DumbbellIcon />}
@@ -166,6 +182,7 @@ export function TodayScreen() {
   return (
     <div className="h-full overflow-auto px-[22px] pb-24 pt-[max(1rem,env(safe-area-inset-top))]">
       {Header}
+      {resumeBanner}
 
       {/* today's workout card */}
       <div
@@ -204,12 +221,16 @@ export function TodayScreen() {
             </span>
           )}
         </div>
-        <button
-          onClick={() => void start()}
-          className="mt-[18px] h-14 w-full rounded-[var(--r-lg)] bg-accent text-[16px] font-bold text-accent-ink"
-        >
-          Start workout
-        </button>
+        {/* While a workout is in progress (left via Back), Resume is the only entry —
+            no "Start" here, so a second active session can't be spawned. */}
+        {!resumable && (
+          <button
+            onClick={() => void start()}
+            className="mt-[18px] h-14 w-full rounded-[var(--r-lg)] bg-accent text-[16px] font-bold text-accent-ink"
+          >
+            Start workout
+          </button>
+        )}
       </div>
 
       {/* stats */}

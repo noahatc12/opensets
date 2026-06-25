@@ -76,6 +76,7 @@ export function ActiveSession() {
     pickerMode,
     log,
     finish,
+    leave,
     undoSet,
     skip,
     openSwap,
@@ -98,9 +99,9 @@ export function ActiveSession() {
       {/* Top bar */}
       <div className="flex flex-none items-center justify-between px-[22px] pb-3 pt-[max(0.625rem,env(safe-area-inset-top))]">
         <button
-          onClick={() => void finish()}
+          onClick={leave}
           className="grid size-[42px] place-items-center border-none bg-transparent text-muted"
-          aria-label="Back"
+          aria-label="Leave workout (keeps it resumable)"
         >
           <ChevronLeftIcon className="size-[22px]" />
         </button>

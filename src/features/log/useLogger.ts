@@ -119,6 +119,7 @@ export interface LoggerVM {
   // actions
   log: () => Promise<void>;
   finish: () => Promise<void>;
+  leave: () => void;
   undoSet: (setId: string) => Promise<void>;
   skip: () => Promise<void>;
   openSwap: () => void;
@@ -140,6 +141,7 @@ export function useLogger(): LoggerVM | null {
   const stopRest = useSessionStore((s) => s.stopRest);
   const rest = useSessionStore((s) => s.rest);
   const endSession = useSessionStore((s) => s.endSession);
+  const leaveSession = useSessionStore((s) => s.leaveSession);
   const restoreUI = useSessionStore((s) => s.restoreUI);
   const navigate = useNavigate();
 
@@ -305,6 +307,16 @@ export function useLogger(): LoggerVM | null {
     navigate('/today');
   }
 
+  /** Non-destructive leave: step out to Today without finalizing. The session stays
+   *  status:'active' in Dexie and its recovery snapshot is kept, so it's fully
+   *  resumable. Does NOT complete, advance progression, or clear the snapshot — a
+   *  misclick on Back can never finalize a workout. (Finish is the only finalize.) */
+  function leave() {
+    stopRest();
+    leaveSession();
+    navigate('/today');
+  }
+
   async function undoSet(setId: string) {
     await softDeleteSet(setId, nowIso());
   }
@@ -383,6 +395,7 @@ export function useLogger(): LoggerVM | null {
     pickerMode,
     log,
     finish,
+    leave,
     undoSet,
     skip,
     openSwap,
