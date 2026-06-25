@@ -6,6 +6,7 @@ import { useThemeStore } from '../../state/theme';
 import { useCatalog } from '../library/useCatalog';
 import { getCatalogExercise } from '../../db/catalog';
 import { e1rm, isE1rmEligible } from '../../engine';
+import { weeklyVolumeByMuscle } from './weeklyVolume';
 import { EmptyState } from '../../components/EmptyState';
 import { HistoryIcon } from '../../components/icons';
 import { useSettings } from '../../db/hooks';
@@ -169,16 +170,12 @@ export function HistoryScreen() {
         ? ((topTrend[topTrend.length - 1]! - topTrend[0]!) / topTrend[0]!) * 100
         : 0;
 
-    // Weekly volume = hard sets per primary muscle.
-    const muscleSets = new Map<string, number>();
-    for (const s of live) {
-      if (s.type !== 'working' && s.type !== 'amrap') continue;
-      const m = getCatalogExercise(s.exerciseId)?.primaryMuscles[0];
-      if (m) muscleSets.set(m, (muscleSets.get(m) ?? 0) + 1);
-    }
-    const volume = [...muscleSets.entries()]
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 4);
+    // Weekly hard-set volume per muscle (spec §242): rolling 7-day window,
+    // primary 1.0 / secondary 0.5 weighting. See weeklyVolumeByMuscle.
+    const volume = weeklyVolumeByMuscle(live, (id) => {
+      const ex = getCatalogExercise(id);
+      return ex ? { primary: ex.primaryMuscles, secondary: ex.secondaryMuscles } : undefined;
+    });
 
     // Intensity distribution by reps.
     const buckets = [0, 0, 0, 0]; // 1-5, 6-8, 9-12, 13+
