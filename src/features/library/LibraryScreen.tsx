@@ -337,7 +337,7 @@ export function LibraryScreen() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search exercises or muscles"
-            className="h-full flex-1 bg-transparent text-[14px] text-text placeholder:text-faint focus:outline-none"
+            className="h-full flex-1 bg-transparent text-[16px] text-text placeholder:text-faint focus:outline-none"
           />
           {query && (
             <button onClick={() => setQuery('')} aria-label="Clear search" className="text-faint">

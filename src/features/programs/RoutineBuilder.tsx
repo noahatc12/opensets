@@ -128,7 +128,7 @@ export function RoutineBuilder() {
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="Routine name (e.g. Upper / Lower A)"
-          className="min-h-12 w-full rounded-[var(--r-md)] border bg-surface px-3.5 text-[15px] text-text placeholder:text-faint focus:outline-none"
+          className="min-h-12 w-full rounded-[var(--r-md)] border bg-surface px-3.5 text-[16px] text-text placeholder:text-faint focus:outline-none"
           style={{ borderColor: 'var(--border-card)' }}
         />
 

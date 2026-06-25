@@ -17,6 +17,14 @@ body,
   height: 100%;
 }
 
+/* Stop the document shell rubber-banding past its bounds (iOS/trackpad).
+   Inner scrollers (.os-scroll / overflow-auto panes) keep their own
+   overscroll-contain — this is the outer shell only. */
+html,
+body {
+  overscroll-behavior: none;
+}
+
 body {
   margin: 0;
   background-color: var(--bg);

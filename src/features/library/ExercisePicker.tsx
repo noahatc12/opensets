@@ -38,7 +38,7 @@ export function ExercisePicker({ onPick, onClose }: Props) {
           value={q}
           onChange={(e) => setQ(e.target.value)}
           placeholder="Search exercises or muscles…"
-          className="min-h-11 flex-1 rounded-lg border border-border bg-surface-2 px-3 text-[15px] text-text placeholder:text-faint focus:border-border-strong focus:outline-none"
+          className="min-h-11 flex-1 rounded-lg border border-border bg-surface-2 px-3 text-[16px] text-text placeholder:text-faint focus:border-border-strong focus:outline-none"
         />
         <button
           type="button"
