@@ -29,11 +29,16 @@ export default defineConfig({
         categories: ['health', 'fitness', 'sports'],
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2}'],
-        // Exercise library data (public/data/*.json) is large and unused until P1.
-        // Its offline strategy (precache vs runtime cache) is decided with the
-        // library in P1; keep the P0 install shell lean.
-        globIgnores: ['**/data/**'],
+        // Precache the exercise library data (public/data/*.json) with the app
+        // shell so Library browse + search work fully offline after a single
+        // online load (P1 offline-first decision). Precache (vs runtime cache)
+        // caches at SW install, so the data is available offline even if the user
+        // never opened Library while online. The dataset is SHA-pinned, so these
+        // entries never churn the precache manifest. NOTE: exercises-index.json is
+        // ~1.9 MB, close to Workbox's default 2 MiB maximumFileSizeToCacheInBytes
+        // cap — if it ever crosses, offline search goes dead (precache silently
+        // skips the file); raise the cap then.
+        globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2,json}'],
         // Exercise images are served from jsDelivr (spec §7): cache-first, tolerate
         // opaque responses, bounded retention. Never a core-flow dependency.
         runtimeCaching: [
