@@ -65,7 +65,9 @@ export interface Mesocycle {
   phase: 'accumulation' | 'intensification' | 'deload';
   weekIndex: number;
   totalWeeks: number;
-  volumeTargets?: Partial<Record<Muscle, { mev: number; mrv: number }>>;
+  /** Per-muscle weekly working-set landmarks (MEV/MAV/MRV) — the generator writes
+   *  these from the engine's volume table; analytics (S12) charts logged volume vs them. */
+  volumeTargets?: Partial<Record<Muscle, { mev: number; mav: number; mrv: number }>>;
 }
 
 export interface Program {

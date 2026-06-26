@@ -95,6 +95,10 @@ export function OnboardingScreen() {
     const now = nowIso();
     const program = await createProgram(plan.program.name, now);
     await setActiveProgram(program.id);
+    // Persist the block mesocycle (null for self-periodizing GZCLP programs).
+    if (plan.mesocycle) {
+      await db.programs.update(program.id, { mesocycle: plan.mesocycle });
+    }
 
     for (let di = 0; di < plan.program.days.length; di++) {
       const day = plan.program.days[di]!;

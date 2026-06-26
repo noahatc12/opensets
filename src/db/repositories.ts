@@ -9,7 +9,14 @@
  */
 import { db, getSettings } from './db';
 import { newId } from './ids';
-import { nextPrescription, detectPRs, type PRResult } from '../engine';
+import {
+  nextPrescription,
+  detectPRs,
+  applyPeriodization,
+  buildMesocyclePlan,
+  phaseForWeek,
+  type PRResult,
+} from '../engine';
 import type {
   EngineSettings,
   ExerciseState,
@@ -22,6 +29,7 @@ import type {
   ExerciseSlot,
   ExerciseStateRow,
   LoggedSet,
+  Mesocycle,
   Program,
   UserSettings,
   WorkoutSession,
@@ -29,6 +37,14 @@ import type {
 } from './types';
 
 const localDate = (iso: string) => iso.slice(0, 10);
+
+/** Apply the program's current mesocycle phase/week to a prescription. No-op for
+ *  programs without a mesocycle (GZCLP, legacy) — the schedule is reconstructed
+ *  deterministically from totalWeeks, so only weekIndex needs storing. */
+function periodize(prescription: Prescription, meso: Mesocycle | undefined): Prescription {
+  if (!meso) return prescription;
+  return applyPeriodization(prescription, buildMesocyclePlan(meso.totalWeeks), meso.weekIndex);
+}
 
 function engineSettings(s: UserSettings): EngineSettings {
   return {
@@ -163,6 +179,7 @@ export async function seedExerciseState(
   now: string,
 ): Promise<ExerciseStateRow> {
   const settings = engineSettings(await getSettings());
+  const meso = (await db.programs.get(programId))?.mesocycle;
   const base: ExerciseState = {
     workingWeightLb: startingWeightLb,
     consecutiveFails: 0,
@@ -181,7 +198,7 @@ export async function seedExerciseState(
     programId,
     exerciseId: slot.exerciseId,
     updatedAt: now,
-    pending: prescription,
+    pending: periodize(prescription, meso),
   };
   await db.exerciseState.put(row);
   return row;
@@ -260,11 +277,34 @@ export async function completeSessionAndAdvance(
   const settings = engineSettings(await getSettings());
   const slots = session.executedSlots ?? [];
 
+  // Advance the mesocycle week (§2.2): a "training week" is one full pass through the
+  // program's day-templates, so weekIndex = completed sessions ÷ day-count (capped at
+  // the deload week). The next prescriptions are then periodized at the NEW week, so
+  // RPE/volume actually move forward as the user trains — not just a counter ticking.
+  let nextMeso: Mesocycle | undefined;
+  const meso = session.programId
+    ? (await db.programs.get(session.programId))?.mesocycle
+    : undefined;
+  if (meso && session.programId) {
+    const dayCount = Math.max(
+      1,
+      await db.templates.where('programId').equals(session.programId).count(),
+    );
+    const priorCompleted = (await db.sessions.where('programId').equals(session.programId).toArray())
+      .filter((s) => s.status === 'completed').length;
+    const weekIndex = Math.min(
+      Math.floor((priorCompleted + 1) / dayCount),
+      meso.totalWeeks - 1,
+    );
+    nextMeso = { ...meso, weekIndex, phase: phaseForWeek(buildMesocyclePlan(meso.totalWeeks), weekIndex) };
+  }
+
   await db.transaction(
     'rw',
     db.sessions,
     db.exerciseState,
     db.sets,
+    db.programs,
     async () => {
       for (const slot of slots) {
         const logged = await sessionSetsForExercise(sessionId, slot.exerciseId);
@@ -283,7 +323,7 @@ export async function completeSessionAndAdvance(
           programId: session.programId!,
           exerciseId: slot.exerciseId,
           updatedAt: now,
-          pending: prescription,
+          pending: periodize(prescription, nextMeso),
         };
         await db.exerciseState.put(row);
       }
@@ -291,6 +331,9 @@ export async function completeSessionAndAdvance(
         status: 'completed',
         endedAt: now,
       });
+      if (nextMeso && session.programId) {
+        await db.programs.update(session.programId, { mesocycle: nextMeso });
+      }
     },
   );
 }

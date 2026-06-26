@@ -25,11 +25,26 @@ export {
 } from './e1rm';
 export { detectPlateau, ewmaSeries, type PlateauResult } from './plateau';
 export {
+  buildMesocyclePlan,
+  phaseForWeek,
+  volumeFraction,
+  weeklyVolumeTarget,
+  targetRpeForWeek,
+  setMultiplier,
+  intensifierForPhase,
+  applyPeriodization,
+  landmarksFor,
+  type Phase,
+  type MesocyclePlan,
+  type VolumeLandmarks,
+} from './mesocycle';
+export {
   generatePlan,
   type GeneratorResult,
   type GeneratedProgram,
   type GeneratedDay,
   type GeneratedSlot,
+  type GeneratedMesocycle,
   type CardioProtocol,
   type GeneratedGoal,
   type CalibrationWeek,

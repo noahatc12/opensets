@@ -15,6 +15,12 @@
  * imports nothing from /src/db (the catalog passes db.Exercise[], which conforms).
  */
 import type { Muscle, ProgressionRule } from '../types';
+import {
+  buildMesocyclePlan,
+  landmarksFor,
+  type Phase,
+  type VolumeLandmarks,
+} from '../mesocycle';
 
 export type TrainingGoal =
   | 'Build muscle'
@@ -102,11 +108,21 @@ export interface CalibrationWeek {
   note: string;
 }
 
+/** Initial mesocycle written onto the program (structurally matches db `Mesocycle`).
+ *  Null for self-periodizing programs (GZCLP) that carry no block mesocycle. */
+export interface GeneratedMesocycle {
+  phase: Phase;
+  weekIndex: number;
+  totalWeeks: number;
+  volumeTargets: Partial<Record<Muscle, VolumeLandmarks>>;
+}
+
 export interface GeneratorResult {
   program: GeneratedProgram;
   cardioProtocol: CardioProtocol;
   goals: GeneratedGoal[];
   calibrationWeek: CalibrationWeek;
+  mesocycle: GeneratedMesocycle | null;
 }
 
 const DEFAULT_REST = { compoundSec: 180, isolationSec: 90 } as const;
@@ -286,6 +302,7 @@ export function generatePlan(
   const types = labelDays(splitForDays(days));
   const baseTypes = splitForDays(days);
   const used = new Set<string>();
+  const trainedMuscles = new Set<Muscle>();
   const planDays: GeneratedDay[] = [];
 
   for (let di = 0; di < types.length; di++) {
@@ -310,6 +327,7 @@ export function generatePlan(
       const chosen = best ?? bestUsedFallback;
       if (!chosen) continue;
       used.add(chosen.id);
+      for (const m of chosen.primaryMuscles) trainedMuscles.add(m);
 
       let rule: ProgressionRule;
       let scheme: GeneratedSlot['scheme'];
@@ -344,8 +362,24 @@ export function generatePlan(
     : goal === 'Recomposition' ? 'Recomp'
     : 'Hypertrophy';
 
+  // Block mesocycle (§2.2) — sized to the goal timeframe (default 6 wk). GZCLP is
+  // self-periodizing (its own stage machine), so those programs carry no mesocycle.
+  let mesocycle: GeneratedMesocycle | null = null;
+  if (!useGzclp) {
+    const plan = buildMesocyclePlan(profile.goalTimeframeWeeks ?? 6);
+    const volumeTargets: Partial<Record<Muscle, VolumeLandmarks>> = {};
+    for (const m of trainedMuscles) volumeTargets[m] = landmarksFor(m);
+    mesocycle = {
+      phase: plan.weeks[0]!,
+      weekIndex: 0,
+      totalWeeks: plan.totalWeeks,
+      volumeTargets,
+    };
+  }
+
   return {
     program: { name: `${goalShort} · ${days}d`, days: planDays },
+    mesocycle,
     // Scaffolds — shape only this session (filled by later waves).
     cardioProtocol: { weeklyMinutesTarget: 0, dailyStepTarget: 0, sessions: [] },
     goals: [],

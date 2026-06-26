@@ -59,6 +59,24 @@ describe('generatePlan — contract shape (§2.1)', () => {
   });
 });
 
+describe('mesocycle attached for block-periodized programs (§2.2)', () => {
+  it('hypertrophy gets a mesocycle with volume targets for trained muscles', () => {
+    const r = gen({ goal: 'Build muscle', goalTimeframeWeeks: 8 }, { experience: 'Intermediate' });
+    expect(r.mesocycle).not.toBeNull();
+    expect(r.mesocycle!.totalWeeks).toBe(8);
+    expect(r.mesocycle!.weekIndex).toBe(0);
+    expect(r.mesocycle!.phase).toBe('accumulation');
+    expect(Object.keys(r.mesocycle!.volumeTargets).length).toBeGreaterThan(0);
+    // a trained muscle carries MEV/MAV/MRV landmarks
+    const anyTarget = Object.values(r.mesocycle!.volumeTargets)[0]!;
+    expect(anyTarget.mev).toBeLessThan(anyTarget.mrv);
+  });
+
+  it('GZCLP (get-stronger + novice) is self-periodizing → no mesocycle', () => {
+    expect(gen({ goal: 'Get stronger' }, { experience: 'Novice' }).mesocycle).toBeNull();
+  });
+});
+
 describe('goal-override rule selection (§2.4)', () => {
   it('uses GZCLP for get-stronger + novice', () => {
     const kinds = new Set(allSlots(gen({ goal: 'Get stronger' }, { experience: 'Novice' })).map((s) => s.rule.kind));

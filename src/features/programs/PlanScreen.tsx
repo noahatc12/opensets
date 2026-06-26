@@ -58,6 +58,7 @@ export function PlanScreen() {
               ? {
                   week: activeProgram.mesocycle.weekIndex,
                   total: activeProgram.mesocycle.totalWeeks,
+                  phase: activeProgram.mesocycle.phase,
                 }
               : undefined
           }
@@ -100,7 +101,7 @@ function ActiveProgramView({
 }: {
   name: string;
   dayCount: number;
-  meso?: { week: number; total: number };
+  meso?: { week: number; total: number; phase: string };
   templates: TemplateRow[];
   onOpenBuilder: () => void;
   onGenerate: () => void;
@@ -134,7 +135,9 @@ function ActiveProgramView({
               fontVariantNumeric: 'tabular-nums',
             }}
           >
-            {meso ? `${dayLabel} · wk ${meso.week} of ${meso.total}` : dayLabel}
+            {meso
+              ? `${dayLabel} · wk ${meso.week + 1} of ${meso.total} · ${meso.phase[0]!.toUpperCase()}${meso.phase.slice(1)}`
+              : dayLabel}
           </span>
         </div>
         <div
