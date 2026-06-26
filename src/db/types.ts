@@ -13,30 +13,13 @@ import type {
   SetType,
   Prescription,
   PRKind,
+  Muscle,
 } from '../engine/types';
 
-export type { PRKind };
-
-/** Canonical muscle taxonomy (normalized from free-exercise-db in the build pipeline).
- *  NOTE: exact alignment to react-body-highlighter slugs is a P4 integration detail. */
-export type Muscle =
-  | 'abdominals'
-  | 'abductors'
-  | 'adductors'
-  | 'biceps'
-  | 'calves'
-  | 'chest'
-  | 'forearms'
-  | 'glutes'
-  | 'hamstrings'
-  | 'lats'
-  | 'lowerBack'
-  | 'middleBack'
-  | 'neck'
-  | 'quadriceps'
-  | 'shoulders'
-  | 'traps'
-  | 'triceps';
+// The Muscle taxonomy now lives in the pure engine (the plan generator needs it and
+// /src/engine may not import from /src/db). Re-exported here so existing consumers
+// keep importing it from `db/types` unchanged.
+export type { PRKind, Muscle };
 
 export type Equipment =
   | 'barbell'

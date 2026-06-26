@@ -11,10 +11,10 @@ import {
 } from '../../db/repositories';
 import {
   generatePlan,
-  type Goal,
-  type Equipment,
+  type TrainingGoal,
+  type EquipmentProfile,
   type Experience,
-} from './generator';
+} from '../../engine';
 import { ChevronLeftIcon } from '../../components/icons';
 import { db } from '../../db/db';
 import { newId } from '../../db/ids';
@@ -62,31 +62,42 @@ export function OnboardingScreen() {
   const [busy, setBusy] = useState(false);
   const { units, restCompoundSec, restIsolationSec } = useSettings();
 
+  // Bodyweight in canonical lb (for profile-scaled seeding), or undefined if unset.
+  const bodyweightLb = useMemo(() => {
+    const bw = parseFloat(bodyweight);
+    if (Number.isNaN(bw) || bw <= 0) return undefined;
+    return units === 'kg' ? kgToLb(bw) : bw;
+  }, [bodyweight, units]);
+
   // The generated plan — recomputed as the answers change, used for both the
-  // step-5 preview and the actual build so they always agree.
+  // step-5 preview and the actual build so they always agree. Now via the pure
+  // engine generator (the S2 contract): profile + preferences in, full plan out.
   const plan = useMemo(
     () =>
       catalog
-        ? generatePlan(catalog, {
-            goal: goal as Goal,
-            days,
-            equipment: equipment as Equipment,
-            experience: experience as Experience,
-            rest: { compoundSec: restCompoundSec, isolationSec: restIsolationSec },
-          })
+        ? generatePlan(
+            catalog,
+            { goal: goal as TrainingGoal, sex: sex ?? undefined, bodyweightLb },
+            {
+              days,
+              equipment: equipment as EquipmentProfile,
+              experience: experience as Experience,
+              rest: { compoundSec: restCompoundSec, isolationSec: restIsolationSec },
+            },
+          )
         : null,
-    [catalog, goal, days, equipment, experience, restCompoundSec, restIsolationSec],
+    [catalog, goal, sex, bodyweightLb, days, equipment, experience, restCompoundSec, restIsolationSec],
   );
 
   async function finish() {
     if (!plan) return;
     setBusy(true);
     const now = nowIso();
-    const program = await createProgram(plan.programName, now);
+    const program = await createProgram(plan.program.name, now);
     await setActiveProgram(program.id);
 
-    for (let di = 0; di < plan.days.length; di++) {
-      const day = plan.days[di]!;
+    for (let di = 0; di < plan.program.days.length; di++) {
+      const day = plan.program.days[di]!;
       const tpl = await createTemplate(program.id, day.name, di);
       const slots = day.slots.map((sp, i) =>
         makeSlot(sp.exerciseId, i, sp.rule, sp.scheme, sp.rest),
@@ -375,7 +386,7 @@ export function OnboardingScreen() {
               {equipment.toLowerCase()} · built for {experience.toLowerCase()} lifters.
             </p>
             <div className="mt-5 flex flex-col gap-3.5">
-              {(plan?.days ?? []).map((day) => (
+              {(plan?.program.days ?? []).map((day) => (
                 <div
                   key={day.name}
                   className="rounded-[var(--r-md)] border p-3.5"

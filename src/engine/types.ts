@@ -19,6 +19,28 @@ export type SetType =
   | 'timed'
   | 'cardio';
 
+/** Canonical muscle taxonomy (normalized from free-exercise-db in the build
+ *  pipeline). Lives in the engine because the plan generator selects by muscle;
+ *  re-exported from db/types for storage-layer consumers. */
+export type Muscle =
+  | 'abdominals'
+  | 'abductors'
+  | 'adductors'
+  | 'biceps'
+  | 'calves'
+  | 'chest'
+  | 'forearms'
+  | 'glutes'
+  | 'hamstrings'
+  | 'lats'
+  | 'lowerBack'
+  | 'middleBack'
+  | 'neck'
+  | 'quadriceps'
+  | 'shoulders'
+  | 'traps'
+  | 'triceps';
+
 /** Kinds of personal record the engine detects (spec §5 P1). */
 export type PRKind = 'weight' | 'reps' | 'e1rm';
 

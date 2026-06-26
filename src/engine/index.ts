@@ -24,6 +24,23 @@ export {
   EWMA_ALPHA,
 } from './e1rm';
 export { detectPlateau, ewmaSeries, type PlateauResult } from './plateau';
+export {
+  generatePlan,
+  type GeneratorResult,
+  type GeneratedProgram,
+  type GeneratedDay,
+  type GeneratedSlot,
+  type CardioProtocol,
+  type GeneratedGoal,
+  type CalibrationWeek,
+  type GenExercise,
+  type GenProfile,
+  type GenPreferences,
+  type TrainingGoal,
+  type EquipmentProfile,
+  type Experience,
+  type Sex,
+} from './generator';
 
 import type {
   EngineSettings,
