@@ -167,7 +167,7 @@ export function SettingsScreen() {
           </div>
         </div>
         <p className="mx-1 mt-2 text-[11px] leading-snug text-faint">
-          kg is canonical. lb is converted for display only — e.g. 84 kg = 185 lb.
+          lb is canonical. kg is converted for display only — e.g. 185 lb = 84 kg.
         </p>
 
         <SectionLabel>Profile</SectionLabel>

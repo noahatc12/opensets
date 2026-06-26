@@ -6,7 +6,7 @@
  * Every function is (inputs) -> outputs. Time and storage are passed in. This is
  * what makes the engine 100% unit-testable and is the centerpiece of the project.
  *
- * Storage rule (spec §8): kg is canonical. All loads here are kilograms. lb is a
+ * Storage rule (spec §8): lb is canonical. All loads here are pounds. kg is a
  * display-layer conversion only and never reaches this module.
  */
 
@@ -116,7 +116,7 @@ export interface PrescribedSet {
 /** The engine's output for the next session of one exercise (spec §6.1). */
 export interface Prescription {
   sets: PrescribedSet[];
-  /** Human-readable, surfaced + tappable in the UI: "+2.5 kg — hit 12/12/12 @ 50 kg". */
+  /** Human-readable, surfaced + tappable in the UI: "+5 lb — hit 12/12/12 @ 135 lb". */
   reason: string;
   flags: PrescriptionFlag[];
 }
@@ -131,10 +131,10 @@ export type RoundingMode = 'nearest' | 'down' | 'up';
  */
 export interface EngineSettings {
   barLb: number;
-  /** Available plate denominations in kg (each usable as a pair). */
+  /** Available plate denominations in lb (each usable as a pair). */
   plateInventoryLb: number[];
   rounding: RoundingMode;
-  /** Display units. Storage/computation is always kg; this is informational only. */
+  /** Display units. Storage/computation is always lb; this is informational only. */
   units: 'kg' | 'lb';
 }
 

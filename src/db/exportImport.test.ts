@@ -196,7 +196,7 @@ describe('full-DB export → wipe → import (P0 exit gate)', () => {
     expect(restored.data).toEqual(env.data);
   });
 
-  it('preserves the exact stored values (kg canonical, PR flags, nested slots)', async () => {
+  it('preserves the exact stored values (lb canonical, PR flags, nested slots)', async () => {
     await seed();
     const env = await buildEnvelope('2026-06-19T00:00:00.000Z');
     await wipe();

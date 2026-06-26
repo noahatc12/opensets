@@ -1,7 +1,8 @@
 /**
  * OpenSets persistence types (spec §8).
  *
- * Storage rules: kg is canonical for all loads (display converts); ISO-8601
+ * Storage rules: lb is canonical for all loads (kg is display-only); imperial
+ * throughout — height & body measurements in inches; ISO-8601
  * strings for dates; ULIDs for ids; soft-delete via `deletedAt` where undo
  * applies. The engine's ProgressionRule/ExerciseState are reused here so the
  * stored program references the exact rule shape the pure engine consumes.
