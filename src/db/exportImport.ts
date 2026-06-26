@@ -23,6 +23,7 @@ const EXPORT_TABLES = [
   'measurements',
   'goals',
   'settings',
+  'profile',
 ] as const;
 
 /** Read the entire database into a versioned envelope. `now` is an ISO string. */
@@ -37,6 +38,7 @@ export async function buildEnvelope(now: string): Promise<ExportEnvelope> {
     measurements,
     goals,
     settings,
+    profile,
   ] = await Promise.all([
     db.exercises.toArray(),
     db.programs.toArray(),
@@ -47,6 +49,7 @@ export async function buildEnvelope(now: string): Promise<ExportEnvelope> {
     db.measurements.toArray(),
     db.goals.toArray(),
     db.settings.toArray(),
+    db.profile.toArray(),
   ]);
   return {
     app: 'opensets',
@@ -62,6 +65,7 @@ export async function buildEnvelope(now: string): Promise<ExportEnvelope> {
       measurements,
       goals,
       settings,
+      profile,
     },
   };
 }
@@ -140,6 +144,7 @@ export async function importEnvelope(
       db.measurements,
       db.goals,
       db.settings,
+      db.profile,
     ],
     async () => {
       // Replace mode: clear every export table, then load. (Merge lands in P1.)
@@ -153,6 +158,7 @@ export async function importEnvelope(
         db.measurements.clear(),
         db.goals.clear(),
         db.settings.clear(),
+        db.profile.clear(),
       ]);
       await Promise.all([
         db.exercises.bulkAdd(d.exercises ?? []),
@@ -166,6 +172,7 @@ export async function importEnvelope(
         db.measurements.bulkAdd(d.measurements ?? []),
         db.goals.bulkAdd(d.goals ?? []),
         db.settings.bulkAdd(d.settings ?? []),
+        db.profile.bulkAdd(d.profile ?? []),
       ]);
     },
   );

@@ -22,6 +22,7 @@ import { PlatesScreen } from './features/settings/PlatesScreen';
 import { RestDefaultsScreen } from './features/settings/RestDefaultsScreen';
 import { GoalsScreen } from './features/settings/GoalsScreen';
 import { MeasurementsScreen } from './features/settings/MeasurementsScreen';
+import { ProfileScreen } from './features/settings/ProfileScreen';
 import { OnboardingScreen } from './features/onboarding/OnboardingScreen';
 
 const TAB_ROUTES = ['/today', '/plan', '/library', '/history'];
@@ -70,6 +71,7 @@ export default function App() {
           <Route path="/rest-defaults" element={<RestDefaultsScreen />} />
           <Route path="/goals" element={<GoalsScreen />} />
           <Route path="/measurements" element={<MeasurementsScreen />} />
+          <Route path="/profile" element={<ProfileScreen />} />
           <Route path="/onboarding" element={<OnboardingScreen />} />
           <Route path="*" element={<Navigate to="/today" replace />} />
         </Route>

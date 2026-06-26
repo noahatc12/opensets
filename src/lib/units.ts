@@ -45,3 +45,14 @@ export const weightStepLb = (unit: WeightUnit): number =>
 /** Label for the stepper increment in the current unit. */
 export const weightStepLabel = (unit: WeightUnit): string =>
   unit === 'kg' ? '2.5 kg' : '5 lb';
+
+// --- Height (stored canonical in inches; entered/shown as ft + in) ---
+
+/** Total inches → { ft, in } for ft/in display. `in` rounds to the nearest inch. */
+export const inToFtIn = (inches: number): { ft: number; in: number } => ({
+  ft: Math.floor(inches / 12),
+  in: Math.round(inches % 12),
+});
+
+/** feet + inches → total inches (canonical storage). */
+export const ftInToIn = (ft: number, inch: number): number => ft * 12 + inch;

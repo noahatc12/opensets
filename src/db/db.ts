@@ -19,13 +19,16 @@ import type {
   ProgressPhoto,
   Goal,
   UserSettingsRow,
+  ProfileRow,
   ActiveSessionRow,
   BackupRow,
   UserSettings,
 } from './types';
+import { newId } from './ids';
+import { preMigrationSnapshot } from './backup';
 
 /** Current code schema version. Bump alongside a new `version(n)` block below. */
-export const SCHEMA_VERSION = 1;
+export const SCHEMA_VERSION = 2;
 
 export const DEFAULT_SETTINGS: UserSettings = {
   units: 'lb',
@@ -55,6 +58,7 @@ export class OpenSetsDB extends Dexie {
   photos!: Table<ProgressPhoto, string>;
   goals!: Table<Goal, string>;
   settings!: Table<UserSettingsRow, string>;
+  profile!: Table<ProfileRow, string>;
   activeSession!: Table<ActiveSessionRow, string>;
   backups!: Table<BackupRow, string>;
 
@@ -78,6 +82,31 @@ export class OpenSetsDB extends Dexie {
       activeSession: 'key',
       backups: 'id, createdAt',
     });
+
+    // --- v2 (§6.6 profile): add the keyed `profile` singleton store. ---
+    // Adding an empty store touches no existing row, but we honor the inviolable
+    // migration contract on this first real upgrade: snapshot the still-current
+    // (v1) data into `backups` before the upgrade completes, so the machinery is
+    // exercised and proven (see ./backup.ts). Clock/id live in the db layer.
+    this.version(2)
+      .stores({
+        exercises: 'id, nameNorm, *primaryMuscles, equipment, category, isCustom',
+        programs: 'id, name, isActive',
+        templates: 'id, programId, dayIndex',
+        sessions: 'id, date, programId, templateId, status',
+        sets: 'id, sessionId, exerciseId, [exerciseId+date]',
+        exerciseState: '[programId+exerciseId]',
+        measurements: 'id, date, type',
+        photos: 'id, date',
+        goals: 'id, type, status',
+        settings: 'key',
+        activeSession: 'key',
+        backups: 'id, createdAt',
+        profile: 'key',
+      })
+      .upgrade(async (tx) => {
+        await preMigrationSnapshot(tx, newId(), new Date().toISOString());
+      });
 
     // Seed default settings on a brand-new database only.
     this.on('populate', () => {

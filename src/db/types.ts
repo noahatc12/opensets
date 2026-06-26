@@ -238,6 +238,42 @@ export interface UserSettingsRow extends UserSettings {
   key: 'user';
 }
 
+export type BiologicalSex = 'male' | 'female';
+
+/**
+ * User profile — the generator/nutrition input (spec §6.6 + §5). Captured in the
+ * onboarding wizard, edited in Settings → Profile. Every field is optional: the
+ * wizard is skippable, and downstream consumers (the generator in a later branch,
+ * nutrition after) handle a partial profile. Canonical units match the data model
+ * (lb/inches): height is stored in INCHES (displayed ft/in); bodyweight is NOT
+ * here — it stays a time-series `measurement` (valueLb). DOB is stored so age stays
+ * correct over time; age is derived where needed with a passed-in `now` (never a
+ * clock call in the pure engine).
+ */
+export interface Profile {
+  /** Biological sex — required by the Mifflin-St Jeor BMR formula (§5/§6.6). */
+  sex?: BiologicalSex;
+  /** ISO date (yyyy-mm-dd). Age = derived from this + a passed-in now. */
+  birthDate?: string;
+  /** Canonical height in inches (UI shows/enters ft + in). */
+  heightIn?: number;
+  /** Current body-fat %, optional. */
+  bodyFatPct?: number;
+  /** Training goal — mirrors the onboarding goal strings; the generator maps it later. */
+  goal?: string;
+  /** Physique-target extension: target body-fat % for body-comp goals. */
+  targetBodyFatPct?: number;
+  /** Goal timeframe in weeks (e.g. "visible abs in 8 weeks"). */
+  goalTimeframeWeeks?: number;
+  /** ISO timestamp of the last edit. */
+  updatedAt: string;
+}
+
+/** Profile is a keyed singleton row, same pattern as settings (spec §8: `profile: 'key'`). */
+export interface ProfileRow extends Profile {
+  key: 'user';
+}
+
 /** Crash-recovery singleton (spec §8: `activeSession: 'key'`). Filled in P1. */
 export interface ActiveSessionRow {
   key: 'current';
@@ -269,5 +305,7 @@ export interface ExportEnvelope {
     measurements: Measurement[];
     goals: Goal[];
     settings: UserSettingsRow[];
+    /** Added in schema v2; optional so v1 envelopes/snapshots remain valid. */
+    profile?: ProfileRow[];
   };
 }

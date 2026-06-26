@@ -18,8 +18,9 @@ import {
 import { ChevronLeftIcon } from '../../components/icons';
 import { db } from '../../db/db';
 import { newId } from '../../db/ids';
-import { useSettings } from '../../db/hooks';
-import { kgToLb } from '../../lib/units';
+import { useSettings, updateProfile } from '../../db/hooks';
+import { kgToLb, ftInToIn } from '../../lib/units';
+import type { BiologicalSex, Profile } from '../../db/types';
 
 /* Ported from the Tempo prototype onboarding wizard (6 steps). On finish it
    generates a simple starter routine from the chosen goal/experience. */
@@ -49,6 +50,15 @@ export function OnboardingScreen() {
   const [equipment, setEquipment] = useState<string>('Full gym');
   const [experience, setExperience] = useState<string>('Intermediate');
   const [bodyweight, setBodyweight] = useState('');
+  // Profile capture (all optional — the wizard is skippable). Height is canonical
+  // inches; entered as ft + in. Persisted to db.profile on finish (§6.6 input).
+  const [sex, setSex] = useState<BiologicalSex | null>(null);
+  const [dob, setDob] = useState('');
+  const [heightFt, setHeightFt] = useState('');
+  const [heightInch, setHeightInch] = useState('');
+  const [bodyFat, setBodyFat] = useState('');
+  const [targetBodyFat, setTargetBodyFat] = useState('');
+  const [timeframeWeeks, setTimeframeWeeks] = useState('');
   const [busy, setBusy] = useState(false);
   const { units, restCompoundSec, restIsolationSec } = useSettings();
 
@@ -99,6 +109,23 @@ export function OnboardingScreen() {
         valueLb: units === 'kg' ? kgToLb(bw) : bw,
       });
     }
+
+    // Persist the captured profile (always carries the chosen goal; numbers are
+    // optional). Height stored canonical in inches. Bodyweight stays a measurement.
+    const profile: Partial<Profile> = { goal };
+    if (sex) profile.sex = sex;
+    if (dob) profile.birthDate = dob;
+    const ft = parseInt(heightFt, 10);
+    const inch = parseInt(heightInch, 10);
+    const hIn = ftInToIn(Number.isNaN(ft) ? 0 : ft, Number.isNaN(inch) ? 0 : inch);
+    if (hIn > 0) profile.heightIn = hIn;
+    const bf = parseFloat(bodyFat);
+    if (!Number.isNaN(bf) && bf > 0) profile.bodyFatPct = bf;
+    const tbf = parseFloat(targetBodyFat);
+    if (!Number.isNaN(tbf) && tbf > 0) profile.targetBodyFatPct = tbf;
+    const wk = parseInt(timeframeWeeks, 10);
+    if (!Number.isNaN(wk) && wk > 0) profile.goalTimeframeWeeks = wk;
+    await updateProfile(profile);
 
     try {
       localStorage.setItem('opensets-onboarded', '1');
@@ -211,33 +238,133 @@ export function OnboardingScreen() {
         {step === 4 && (
           <Step n="Step 4 · optional" title="A few numbers">
             <p className="mt-1.5 text-[13px] leading-relaxed text-muted">
-              Your bodyweight lets OpenSets track bodyweight-relative progress and
-              bodyweight goals. Skip anytime.
+              These let OpenSets personalize your plan and (later) calorie/protein
+              targets. All optional — skip anything.
             </p>
-            <label className="mt-6 block">
-              <span
-                className="mb-2 block text-[11px] font-bold uppercase text-faint"
-                style={{ letterSpacing: 'var(--tracking-caps)', fontFamily: 'var(--font-label)' }}
-              >
-                Bodyweight
-              </span>
-              <div
-                className="flex items-center gap-2 rounded-[var(--r-md)] border px-4 py-3.5"
-                style={{ background: 'var(--surface)', borderColor: 'var(--border-card)' }}
-              >
+
+            <OnbLabel>Sex</OnbLabel>
+            <div className="flex gap-2.5">
+              {(['male', 'female'] as const).map((s) => (
+                <button
+                  key={s}
+                  onClick={() => setSex((cur) => (cur === s ? null : s))}
+                  className="flex-1 rounded-[var(--r-md)] px-4 py-3.5 text-[14px] font-bold capitalize"
+                  style={cardSel(sex === s)}
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
+
+            <OnbLabel>Date of birth</OnbLabel>
+            <OnbBox>
+              <input
+                type="date"
+                value={dob}
+                onChange={(e) => setDob(e.target.value)}
+                aria-label="Date of birth"
+                className="min-w-0 flex-1 bg-transparent text-[16px] text-text placeholder:text-faint focus:outline-none"
+                style={{ fontFamily: 'var(--font-num)' }}
+              />
+            </OnbBox>
+
+            <OnbLabel>Height</OnbLabel>
+            <div className="flex gap-2.5">
+              <OnbBox>
                 <input
                   type="number"
-                  inputMode="decimal"
-                  value={bodyweight}
-                  onChange={(e) => setBodyweight(e.target.value)}
+                  inputMode="numeric"
+                  value={heightFt}
+                  onChange={(e) => setHeightFt(e.target.value)}
                   placeholder="—"
-                  aria-label="Bodyweight"
+                  aria-label="Height feet"
                   className="min-w-0 flex-1 bg-transparent text-[18px] text-text placeholder:text-faint focus:outline-none"
                   style={{ fontFamily: 'var(--font-num)' }}
                 />
-                <span className="text-[14px] text-muted">{units}</span>
-              </div>
-            </label>
+                <span className="text-[14px] text-muted">ft</span>
+              </OnbBox>
+              <OnbBox>
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  value={heightInch}
+                  onChange={(e) => setHeightInch(e.target.value)}
+                  placeholder="—"
+                  aria-label="Height inches"
+                  className="min-w-0 flex-1 bg-transparent text-[18px] text-text placeholder:text-faint focus:outline-none"
+                  style={{ fontFamily: 'var(--font-num)' }}
+                />
+                <span className="text-[14px] text-muted">in</span>
+              </OnbBox>
+            </div>
+
+            <OnbLabel>Bodyweight</OnbLabel>
+            <OnbBox>
+              <input
+                type="number"
+                inputMode="decimal"
+                value={bodyweight}
+                onChange={(e) => setBodyweight(e.target.value)}
+                placeholder="—"
+                aria-label="Bodyweight"
+                className="min-w-0 flex-1 bg-transparent text-[18px] text-text placeholder:text-faint focus:outline-none"
+                style={{ fontFamily: 'var(--font-num)' }}
+              />
+              <span className="text-[14px] text-muted">{units}</span>
+            </OnbBox>
+
+            <OnbLabel>Body fat %</OnbLabel>
+            <OnbBox>
+              <input
+                type="number"
+                inputMode="decimal"
+                value={bodyFat}
+                onChange={(e) => setBodyFat(e.target.value)}
+                placeholder="—"
+                aria-label="Body fat percent"
+                className="min-w-0 flex-1 bg-transparent text-[18px] text-text placeholder:text-faint focus:outline-none"
+                style={{ fontFamily: 'var(--font-num)' }}
+              />
+              <span className="text-[14px] text-muted">%</span>
+            </OnbBox>
+
+            <div
+              className="mt-7 mb-1 text-[11px] font-bold uppercase text-faint"
+              style={{ letterSpacing: 'var(--tracking-caps)', fontFamily: 'var(--font-label)' }}
+            >
+              Goal target · optional
+            </div>
+            <p className="mb-1 text-[12px] leading-relaxed text-muted">
+              For a physique target — e.g. reach 12% body fat in 8 weeks.
+            </p>
+            <div className="flex gap-2.5">
+              <OnbBox>
+                <input
+                  type="number"
+                  inputMode="decimal"
+                  value={targetBodyFat}
+                  onChange={(e) => setTargetBodyFat(e.target.value)}
+                  placeholder="—"
+                  aria-label="Target body fat percent"
+                  className="min-w-0 flex-1 bg-transparent text-[18px] text-text placeholder:text-faint focus:outline-none"
+                  style={{ fontFamily: 'var(--font-num)' }}
+                />
+                <span className="text-[13px] text-muted">% BF</span>
+              </OnbBox>
+              <OnbBox>
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  value={timeframeWeeks}
+                  onChange={(e) => setTimeframeWeeks(e.target.value)}
+                  placeholder="—"
+                  aria-label="Goal timeframe weeks"
+                  className="min-w-0 flex-1 bg-transparent text-[18px] text-text placeholder:text-faint focus:outline-none"
+                  style={{ fontFamily: 'var(--font-num)' }}
+                />
+                <span className="text-[13px] text-muted">weeks</span>
+              </OnbBox>
+            </div>
           </Step>
         )}
 
@@ -315,6 +442,31 @@ function Step({
       <div className="mt-2 text-[26px] font-bold text-text" style={{ letterSpacing: 'var(--tracking-snug)' }}>
         {title}
       </div>
+      {children}
+    </div>
+  );
+}
+
+/** Small uppercase field label, spaced for the onboarding "numbers" step. */
+function OnbLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <div
+      className="mb-2 mt-5 text-[11px] font-bold uppercase text-faint"
+      style={{ letterSpacing: 'var(--tracking-caps)', fontFamily: 'var(--font-label)' }}
+    >
+      {children}
+    </div>
+  );
+}
+
+/** Bordered input box matching the onboarding surface idiom. `min-w-0` lets it
+ *  shrink to share width evenly when two sit side-by-side (e.g. ft/in). */
+function OnbBox({ children }: { children: React.ReactNode }) {
+  return (
+    <div
+      className="flex min-w-0 flex-1 items-center gap-2 rounded-[var(--r-md)] border px-4 py-3.5"
+      style={{ background: 'var(--surface)', borderColor: 'var(--border-card)' }}
+    >
       {children}
     </div>
   );

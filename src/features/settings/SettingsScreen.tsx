@@ -2,8 +2,9 @@ import { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../db/db';
-import { useSettings, updateSettings } from '../../db/hooks';
+import { useSettings, updateSettings, useProfile } from '../../db/hooks';
 import { useThemeStore } from '../../state/theme';
+import { inToFtIn } from '../../lib/units';
 import {
   downloadEnvelope,
   importFromJson,
@@ -78,7 +79,20 @@ const SectionLabel = ({ children }: { children: React.ReactNode }) => (
 export function SettingsScreen() {
   const navigate = useNavigate();
   const settings = useSettings();
+  const profile = useProfile();
   const goalCount = useLiveQuery(() => db.goals.count());
+
+  // Compact profile summary for the Settings row (e.g. "Male · 5'10\"").
+  const profileSummary = (() => {
+    if (!profile) return 'Set up';
+    const parts: string[] = [];
+    if (profile.sex) parts.push(profile.sex[0]!.toUpperCase() + profile.sex.slice(1));
+    if (profile.heightIn != null) {
+      const { ft, in: inch } = inToFtIn(profile.heightIn);
+      parts.push(`${ft}'${inch}"`);
+    }
+    return parts.length ? parts.join(' · ') : 'Edit';
+  })();
   const sel = useThemeStore((s) => s.selection);
   const storage = usePersistentStorage();
   const fileRef = useRef<HTMLInputElement>(null);
@@ -155,6 +169,16 @@ export function SettingsScreen() {
         <p className="mx-1 mt-2 text-[11px] leading-snug text-faint">
           kg is canonical. lb is converted for display only — e.g. 84 kg = 185 lb.
         </p>
+
+        <SectionLabel>Profile</SectionLabel>
+        <Group>
+          <Row
+            label="Your profile"
+            value={<span className="text-[13px] text-muted">{profileSummary}</span>}
+            onClick={() => navigate('/profile')}
+            last
+          />
+        </Group>
 
         <SectionLabel>Training</SectionLabel>
         <Group>
