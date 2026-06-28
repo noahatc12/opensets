@@ -138,13 +138,16 @@ export async function saveTemplate(tpl: WorkoutTemplate): Promise<void> {
   await db.templates.put(tpl);
 }
 
-/** Append a slot to a template, defaulting the rest/warm-up/substitution fields. */
+/** Append a slot to a template, defaulting the rest/warm-up/substitution fields.
+ *  `coaching` carries the generated tempo/cue/restTier (§3.3/§3.4/§3.7); omitted for
+ *  ad-hoc slots added mid-workout (they simply render without coaching detail). */
 export function makeSlot(
   exerciseId: string,
   order: number,
   rule: ProgressionRule,
   scheme: ExerciseSlot['scheme'],
   rest: { warmupSec: number; workSec: number },
+  coaching?: { tempo?: string; coachingCue?: string; restTier?: ExerciseSlot['restTier'] },
 ): ExerciseSlot {
   return {
     slotId: newId(),
@@ -156,6 +159,9 @@ export function makeSlot(
     restWorkSec: rest.workSec,
     warmupPolicy: 'auto',
     substitutionPolicy: 'carryState',
+    ...(coaching?.tempo ? { tempo: coaching.tempo } : {}),
+    ...(coaching?.coachingCue ? { coachingCue: coaching.coachingCue } : {}),
+    ...(coaching?.restTier ? { restTier: coaching.restTier } : {}),
   };
 }
 

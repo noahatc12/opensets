@@ -28,7 +28,7 @@ import { newId } from './ids';
 import { preMigrationSnapshot } from './backup';
 
 /** Current code schema version. Bump alongside a new `version(n)` block below. */
-export const SCHEMA_VERSION = 2;
+export const SCHEMA_VERSION = 3;
 
 export const DEFAULT_SETTINGS: UserSettings = {
   units: 'lb',
@@ -105,7 +105,32 @@ export class OpenSetsDB extends Dexie {
         profile: 'key',
       })
       .upgrade(async (tx) => {
-        await preMigrationSnapshot(tx, newId(), new Date().toISOString());
+        await preMigrationSnapshot(tx, newId(), new Date().toISOString(), 1);
+      });
+
+    // --- v3 (§3.3/§3.4/§3.7 prescription fields): tempo / coachingCue / restTier are
+    // optional fields embedded in templates.slots (not indexed), so no store/index
+    // change and no row transform is needed — old slots simply lack them (consumers
+    // read with `?? default`). We still honor the migration contract: a real version
+    // bump + pre-migration snapshot of the v2 data, so the round-trip stays provable.
+    this.version(3)
+      .stores({
+        exercises: 'id, nameNorm, *primaryMuscles, equipment, category, isCustom',
+        programs: 'id, name, isActive',
+        templates: 'id, programId, dayIndex',
+        sessions: 'id, date, programId, templateId, status',
+        sets: 'id, sessionId, exerciseId, [exerciseId+date]',
+        exerciseState: '[programId+exerciseId]',
+        measurements: 'id, date, type',
+        photos: 'id, date',
+        goals: 'id, type, status',
+        settings: 'key',
+        activeSession: 'key',
+        backups: 'id, createdAt',
+        profile: 'key',
+      })
+      .upgrade(async (tx) => {
+        await preMigrationSnapshot(tx, newId(), new Date().toISOString(), 2);
       });
 
     // Seed default settings on a brand-new database only.

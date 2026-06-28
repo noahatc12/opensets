@@ -63,6 +63,9 @@ export interface GenPreferences {
   rest?: { compoundSec: number; isolationSec: number };
 }
 
+/** Rest-tier buckets (§3.7) — re-declared engine-local (engine may not import db). */
+export type RestTier = 'heavy' | 'compound' | 'accessory' | 'isolation' | 'pump';
+
 export interface GeneratedSlot {
   exerciseId: string;
   exerciseName: string;
@@ -71,6 +74,12 @@ export interface GeneratedSlot {
   scheme: { sets: number; repTarget?: number; repRange?: [number, number] };
   rest: { warmupSec: number; workSec: number };
   startWeightLb: number;
+  /** §3.4 — 4-digit tempo, per movement pattern. */
+  tempo: string;
+  /** §3.3 — one-line coaching cue, per movement pattern. */
+  coachingCue: string;
+  /** §3.7 — rest-tier classification driving the rest shown pre-set. */
+  restTier: RestTier;
 }
 export interface GeneratedDay {
   name: string;
@@ -167,6 +176,30 @@ const P: Record<string, Pattern> = {
   horizRow: { key: 'horizRow', compound: true, muscles: ['middleBack', 'lats'], prefer: ['bent over barbell row', 'seated cable rows', 'one-arm dumbbell row'], includes: ['row'], excludes: ['upright'] },
   abs: { key: 'abs', compound: false, muscles: ['abdominals'], prefer: ['hanging leg raise', 'cable crunch', 'plank'], includes: ['crunch', 'plank', 'leg raise', 'sit-up', 'situp', 'hanging'] },
 };
+
+/** Per-pattern coaching data (§3.3/§3.4/§3.7): tempo string, one-line cue, rest tier.
+ *  Keyed by pattern key so each generated slot gets per-exercise values, not one
+ *  hardcoded default. Tempos follow the blueprints (compounds controlled-eccentric +
+ *  pause; isolations a touch faster with a squeeze). */
+const COACHING: Record<string, { tempo: string; cue: string; tier: RestTier }> = {
+  horizPress: { tempo: '3-1-1-0', cue: 'Tuck elbows ~45°; touch the chest, drive up.', tier: 'heavy' },
+  inclPress: { tempo: '3-1-1-0', cue: 'Full stretch at the bottom, squeeze at the top.', tier: 'accessory' },
+  vertPress: { tempo: '2-1-1-0', cue: 'Brace hard; press in a straight line past the forehead.', tier: 'heavy' },
+  lateralRaise: { tempo: '2-1-1-0', cue: 'Lead with the elbows; pinky-high, no swing.', tier: 'pump' },
+  rearDelt: { tempo: '2-1-1-0', cue: 'Elbows slightly bent; squeeze the rear delts, not the traps.', tier: 'pump' },
+  tricep: { tempo: '2-1-1-0', cue: 'Pin the elbows; lock out hard and squeeze.', tier: 'isolation' },
+  biceps: { tempo: '2-0-1-0', cue: 'No swing; control the negative, squeeze at the top.', tier: 'isolation' },
+  squat: { tempo: '3-1-1-0', cue: 'Brace, sit between the hips, knees track over toes.', tier: 'heavy' },
+  legPress: { tempo: '2-1-1-0', cue: 'Full ROM; don’t let the knees cave or the low back round.', tier: 'accessory' },
+  legExt: { tempo: '2-1-1-0', cue: 'Pause and squeeze the quad at the top.', tier: 'isolation' },
+  hinge: { tempo: '3-1-1-0', cue: 'Hips back, flat back, feel the hamstring stretch.', tier: 'heavy' },
+  legCurl: { tempo: '2-1-1-0', cue: 'Squeeze the hamstrings; slow the negative.', tier: 'isolation' },
+  calf: { tempo: '2-1-1-1', cue: 'Full stretch at the bottom, pause at the top.', tier: 'pump' },
+  vertPull: { tempo: '2-1-1-0', cue: 'Drive the elbows down; lead with the lats, not the arms.', tier: 'compound' },
+  horizRow: { tempo: '2-1-1-0', cue: 'Pull to the lower ribs; retract the shoulder blades.', tier: 'compound' },
+  abs: { tempo: '2-1-2-0', cue: 'Move slowly; brace and exhale through the crunch.', tier: 'pump' },
+};
+const DEFAULT_COACHING = { tempo: '2-0-1-0', cue: 'Control the weight through a full range of motion.', tier: 'accessory' as RestTier };
 
 const DAY_TEMPLATES: Record<string, Pattern[]> = {
   Push: [P.horizPress!, P.vertPress!, P.inclPress!, P.lateralRaise!, P.tricep!, P.rearDelt!],
@@ -341,6 +374,7 @@ export function generatePlan(
         scheme = pat.compound ? compoundScheme : isoScheme;
       }
 
+      const coaching = COACHING[pat.key] ?? DEFAULT_COACHING;
       slots.push({
         exerciseId: chosen.id,
         exerciseName: chosen.name,
@@ -351,6 +385,9 @@ export function generatePlan(
           ? { warmupSec: 60, workSec: rest.compoundSec }
           : { warmupSec: 45, workSec: rest.isolationSec },
         startWeightLb: seedWeight(chosen, pat.compound, profile, experience),
+        tempo: coaching.tempo,
+        coachingCue: coaching.cue,
+        restTier: coaching.tier,
       });
     }
     planDays.push({ name: types[di]!, slots });

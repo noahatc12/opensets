@@ -27,6 +27,13 @@ function clock(totalSec: number): string {
   return `${m}:${String(s).padStart(2, '0')}`;
 }
 
+/** "3-1-1-0" → "3·1·1·0" for a tidier tempo chip (decoded in the S11 education layer). */
+const fmtTempo = (t: string) => t.replace(/-/g, '·');
+/** Title-case a rest-tier key for display, e.g. "compound" → "Compound". */
+const titleTier = (t: string) => t.charAt(0).toUpperCase() + t.slice(1);
+/** Reps-in-reserve from a target RPE (RIR = 10 − RPE), floored at 0. §3.5. */
+const rirFromRpe = (rpe: number) => Math.max(0, Math.round((10 - rpe) * 10) / 10);
+
 const numFont = {
   fontFamily: 'var(--font-num)',
   fontWeight: 'var(--num-weight)' as unknown as number,
@@ -154,7 +161,34 @@ export function ActiveSession() {
               {Math.min(activeIndex + 1, totalForGrid)} / {totalForGrid}
             </div>
           </div>
-          <div className="mt-1.5 flex items-center gap-2.5">
+          {/* Coaching strip (§3.3/§3.4/§3.7): tempo · rest tier+duration · cue —
+              the generated per-exercise prescription detail, surfaced in the logger. */}
+          {(activeSlot.tempo || activeSlot.restTier || activeSlot.coachingCue) && (
+            <div className="mt-2 flex flex-col gap-1.5">
+              <div className="flex flex-wrap items-center gap-1.5">
+                {activeSlot.tempo && (
+                  <span
+                    className="rounded-[var(--r-pill)] px-2 py-[3px] text-[10.5px] font-semibold uppercase text-muted"
+                    style={{ fontFamily: 'var(--font-label)', letterSpacing: '.06em', background: 'var(--surface-2)' }}
+                  >
+                    Tempo {fmtTempo(activeSlot.tempo)}
+                  </span>
+                )}
+                {activeSlot.restTier && (
+                  <span
+                    className="rounded-[var(--r-pill)] px-2 py-[3px] text-[10.5px] font-semibold uppercase text-muted"
+                    style={{ fontFamily: 'var(--font-label)', letterSpacing: '.06em', background: 'var(--surface-2)' }}
+                  >
+                    {titleTier(activeSlot.restTier)} rest {clock(activeSlot.restWorkSec)}
+                  </span>
+                )}
+              </div>
+              {activeSlot.coachingCue && (
+                <span className="text-[12px] leading-snug text-muted">{activeSlot.coachingCue}</span>
+              )}
+            </div>
+          )}
+          <div className="mt-2 flex items-center gap-2.5">
             {metaLine && <span className="text-[12.5px] text-muted">{metaLine}</span>}
             {metaLine && lastWeights && <span className="size-[3px] rounded-full bg-faint" />}
             {lastWeights && (
@@ -259,16 +293,18 @@ export function ActiveSession() {
                     >
                       Set {activeIndex + 1} · Now
                     </span>
-                    <span
-                      className="rounded-[var(--r-pill)] px-2 py-[3px] text-[10px] uppercase text-muted"
-                      style={{
-                        fontFamily: 'var(--font-label)',
-                        letterSpacing: '.08em',
-                        background: 'color-mix(in oklab, var(--accent) 10%, transparent)',
-                      }}
-                    >
-                      Target RPE {activePrescribed.targetRpe ?? 8}
-                    </span>
+                    {activePrescribed.targetRpe !== undefined && (
+                      <span
+                        className="rounded-[var(--r-pill)] px-2 py-[3px] text-[10px] uppercase text-muted"
+                        style={{
+                          fontFamily: 'var(--font-label)',
+                          letterSpacing: '.08em',
+                          background: 'color-mix(in oklab, var(--accent) 10%, transparent)',
+                        }}
+                      >
+                        Target RPE {activePrescribed.targetRpe} · {rirFromRpe(activePrescribed.targetRpe)} RIR
+                      </span>
+                    )}
                   </div>
                   <div className="flex items-stretch gap-2.5">
                     {/* Weight column */}

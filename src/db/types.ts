@@ -93,10 +93,19 @@ export interface ExerciseSlot {
   restWarmupSec: number;
   restWorkSec: number;
   warmupPolicy: 'auto' | 'none' | 'custom';
+  /** 4-digit tempo string, e.g. "3-1-1-0" (ecc-pause-con-pause). §3.4. */
   tempo?: string;
+  /** One-line coaching cue surfaced in the logger, e.g. "Squeeze at the top". §3.3. */
+  coachingCue?: string;
+  /** Rest-tier classification driving the prescribed rest shown pre-set. §3.7. */
+  restTier?: RestTier;
   supersetGroup?: string;
   substitutionPolicy: 'carryState' | 'resetState';
 }
+
+/** Rest-tier buckets (§3.7) — coarse classification that maps to a rest duration.
+ *  Heavy compounds rest longest; pump/iso work shortest. */
+export type RestTier = 'heavy' | 'compound' | 'accessory' | 'isolation' | 'pump';
 
 export interface WorkoutTemplate {
   id: string;

@@ -104,7 +104,11 @@ export function OnboardingScreen() {
       const day = plan.program.days[di]!;
       const tpl = await createTemplate(program.id, day.name, di);
       const slots = day.slots.map((sp, i) =>
-        makeSlot(sp.exerciseId, i, sp.rule, sp.scheme, sp.rest),
+        makeSlot(sp.exerciseId, i, sp.rule, sp.scheme, sp.rest, {
+          tempo: sp.tempo,
+          coachingCue: sp.coachingCue,
+          restTier: sp.restTier,
+        }),
       );
       tpl.slots = slots;
       await saveTemplate(tpl);

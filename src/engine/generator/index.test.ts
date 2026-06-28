@@ -77,6 +77,29 @@ describe('mesocycle attached for block-periodized programs (§2.2)', () => {
   });
 });
 
+describe('per-slot prescription fields populated (§3.3/§3.4/§3.7)', () => {
+  it('every slot carries a non-empty tempo, coaching cue, and rest tier', () => {
+    for (const s of allSlots(gen())) {
+      expect(s.tempo).toMatch(/^\d-\d-\d-\d$/); // 4-digit tempo
+      expect(s.coachingCue.length).toBeGreaterThan(0);
+      expect(['heavy', 'compound', 'accessory', 'isolation', 'pump']).toContain(s.restTier);
+    }
+  });
+
+  it('the values are per-exercise, not one hardcoded value', () => {
+    const slots = allSlots(gen());
+    expect(new Set(slots.map((s) => s.coachingCue)).size).toBeGreaterThan(1);
+    expect(new Set(slots.map((s) => s.restTier)).size).toBeGreaterThan(1);
+    // a heavy compound (squat) rests in a heavier tier than a pump iso (lateral raise)
+    const squat = slots.find((s) => s.exerciseId === 'squat');
+    const lat = slots.find((s) => s.exerciseId === 'lat-raise');
+    if (squat && lat) {
+      expect(squat.restTier).toBe('heavy');
+      expect(lat.restTier).toBe('pump');
+    }
+  });
+});
+
 describe('goal-override rule selection (§2.4)', () => {
   it('uses GZCLP for get-stronger + novice', () => {
     const kinds = new Set(allSlots(gen({ goal: 'Get stronger' }, { experience: 'Novice' })).map((s) => s.rule.kind));

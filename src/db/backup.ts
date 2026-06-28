@@ -40,26 +40,29 @@ export async function createBackup(
 }
 
 /**
- * Wiring pattern for the first schema upgrade (kept here as the canonical example
- * so future migrations follow it). At the TOP of a `version(n).upgrade`, before
- * any table is transformed, snapshot the still-current data:
+ * Wiring pattern for a schema upgrade (the canonical example future migrations
+ * follow). At the TOP of a `version(n).upgrade`, before any table is transformed,
+ * snapshot the still-current data, passing the OLD version (n-1) explicitly:
  *
- *   this.version(2)
- *     .stores({ ...v2 schema... })
+ *   this.version(3)
+ *     .stores({ ...v3 schema... })
  *     .upgrade(async (tx) => {
- *       // 1) snapshot pre-migration state into `backups`
- *       await preMigrationSnapshot(tx, ulid(), new Date().toISOString());
- *       // 2) then transform rows to the v2 shape
+ *       // 1) snapshot pre-migration state into `backups` (old version = 2)
+ *       await preMigrationSnapshot(tx, ulid(), new Date().toISOString(), 2);
+ *       // 2) then transform rows to the v3 shape
  *       await tx.table('sets').toCollection().modify((s) => { ... });
  *     });
  *
- * Implemented against the upgrade transaction so the snapshot reflects the data
- * exactly as it was before migration.
+ * `fromVersion` is passed in (not derived from SCHEMA_VERSION) so that when a user
+ * upgrades across multiple versions in one open, each step's snapshot is labelled
+ * with ITS source version — not always `SCHEMA_VERSION - 1`, which would mislabel
+ * every step but the last.
  */
 export async function preMigrationSnapshot(
   tx: Transaction,
   id: string,
   now: string,
+  fromVersion: number = SCHEMA_VERSION - 1,
 ): Promise<void> {
   const tableNames = [
     'exercises',
@@ -80,15 +83,13 @@ export async function preMigrationSnapshot(
   );
   const data = Object.fromEntries(entries) as ExportEnvelope['data'];
 
-  // Snapshot reflects the OLD version (one below the code version mid-upgrade).
-  const oldVersion = SCHEMA_VERSION - 1;
   const row: BackupRow = {
     id,
     createdAt: now,
-    schemaVersion: oldVersion,
+    schemaVersion: fromVersion,
     envelope: {
       app: 'opensets',
-      schemaVersion: oldVersion,
+      schemaVersion: fromVersion,
       exportedAt: now,
       data,
     },
