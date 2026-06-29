@@ -76,6 +76,10 @@ export interface Program {
   isActive: boolean;
   createdAt: string;
   mesocycle?: Mesocycle;
+  /** Per-muscle weekly-set state the evolution engine advances over the block. R1
+   *  seeds it from landmarks (current = MEV) at creation; R3/R5 read + advance it.
+   *  Absent on self-periodizing (GZCLP) programs that carry no block mesocycle. */
+  volumeState?: Partial<Record<Muscle, MuscleVolumeState>>;
 }
 
 export interface ExerciseSlot {
@@ -235,6 +239,31 @@ export interface UserSettingsRow extends UserSettings {
 
 export type BiologicalSex = 'male' | 'female';
 
+/** Training-age / experience class — drives the goal×training-age progression router. */
+export type Experience = 'Novice' | 'Intermediate' | 'Advanced';
+/** Equipment environment available to the lifter. */
+export type EquipmentProfile = 'Full gym' | 'Home rack' | 'Minimal';
+/** User split preference. 'auto' (or unset) lets the split designer choose by
+ *  goal / days / training-age (R2). The others pin a specific split family. */
+export type SplitChoice =
+  | 'auto'
+  | 'fullBody'
+  | 'upperLower'
+  | 'pushPullLegs'
+  | 'pplArms'
+  | 'bodyPart';
+
+/** Per-muscle weekly working-set state the evolution engine advances across a block:
+ *  `current` is this week's target set count (seeded at MEV); mev/mav/mrv are the
+ *  landmarks it ramps within. Seeded at program creation from the engine volume table
+ *  (R1); read + advanced by the volume allocator / evolution engine (R3/R5). */
+export interface MuscleVolumeState {
+  current: number;
+  mev: number;
+  mav: number;
+  mrv: number;
+}
+
 /**
  * User profile — the generator/nutrition input (spec §6.6 + §5). Captured in the
  * onboarding wizard, edited in Settings → Profile. Every field is optional: the
@@ -260,6 +289,21 @@ export interface Profile {
   targetBodyFatPct?: number;
   /** Goal timeframe in weeks (e.g. "visible abs in 8 weeks"). */
   goalTimeframeWeeks?: number;
+  /** Training-age class. Was transient onboarding state pre-R1; now persisted so the
+   *  generator + evolution engine read it after onboarding (not just at first build). */
+  experience?: Experience;
+  /** Training days/week the user can commit — the real frequency constraint.
+   *  (Per-muscle frequency is DERIVED from the volume target, not a separate input;
+   *  see docs/generator-research.md §4.) Was transient onboarding state pre-R1. */
+  days?: number;
+  /** Equipment environment. Was transient onboarding state pre-R1; now persisted. */
+  equipment?: EquipmentProfile;
+  /** Split preference; 'auto'/unset lets the split designer (R2) choose. */
+  splitChoice?: SplitChoice;
+  /** Lagging/priority muscles to bias weekly volume toward (weak-point priority). */
+  priorityMuscles?: Muscle[];
+  /** Exercise ids to exclude from generation (injury/preference avoid-list; read by R4). */
+  avoidExerciseIds?: string[];
   /** ISO timestamp of the last edit. */
   updatedAt: string;
 }

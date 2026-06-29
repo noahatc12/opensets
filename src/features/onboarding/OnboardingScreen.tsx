@@ -20,7 +20,14 @@ import { db } from '../../db/db';
 import { newId } from '../../db/ids';
 import { useSettings, updateProfile } from '../../db/hooks';
 import { kgToLb, ftInToIn } from '../../lib/units';
-import type { BiologicalSex, Profile } from '../../db/types';
+import type {
+  BiologicalSex,
+  Muscle,
+  MuscleVolumeState,
+  Profile,
+  SplitChoice,
+} from '../../db/types';
+import { SPLITS, PRIORITY_MUSCLES } from './preferenceOptions';
 
 /* Ported from the Tempo prototype onboarding wizard (6 steps). On finish it
    generates a simple starter routine from the chosen goal/experience. */
@@ -49,6 +56,8 @@ export function OnboardingScreen() {
   const [days, setDays] = useState(4);
   const [equipment, setEquipment] = useState<string>('Full gym');
   const [experience, setExperience] = useState<string>('Intermediate');
+  const [splitChoice, setSplitChoice] = useState<SplitChoice>('auto');
+  const [priority, setPriority] = useState<Muscle[]>([]);
   const [bodyweight, setBodyweight] = useState('');
   // Profile capture (all optional — the wizard is skippable). Height is canonical
   // inches; entered as ft + in. Persisted to db.profile on finish (§6.6 input).
@@ -95,9 +104,17 @@ export function OnboardingScreen() {
     const now = nowIso();
     const program = await createProgram(plan.program.name, now);
     await setActiveProgram(program.id);
-    // Persist the block mesocycle (null for self-periodizing GZCLP programs).
+    // Persist the block mesocycle (null for self-periodizing GZCLP programs) and
+    // seed the per-muscle volume STATE from its landmarks — current starts at MEV
+    // (the block begins at minimum effective volume; R3/R5 ramp it toward MRV).
     if (plan.mesocycle) {
-      await db.programs.update(program.id, { mesocycle: plan.mesocycle });
+      const targets = plan.mesocycle.volumeTargets ?? {};
+      const volumeState: Partial<Record<Muscle, MuscleVolumeState>> = {};
+      for (const m of Object.keys(targets) as Muscle[]) {
+        const lm = targets[m];
+        if (lm) volumeState[m] = { current: lm.mev, mev: lm.mev, mav: lm.mav, mrv: lm.mrv };
+      }
+      await db.programs.update(program.id, { mesocycle: plan.mesocycle, volumeState });
     }
 
     for (let di = 0; di < plan.program.days.length; di++) {
@@ -132,6 +149,13 @@ export function OnboardingScreen() {
     // Persist the captured profile (always carries the chosen goal; numbers are
     // optional). Height stored canonical in inches. Bodyweight stays a measurement.
     const profile: Partial<Profile> = { goal };
+    // Persist the generation inputs (experience/days/equipment were transient pre-R1)
+    // + the new preference inputs, so the generator + evolution engine read them later.
+    profile.experience = experience as Profile['experience'];
+    profile.days = days;
+    profile.equipment = equipment as Profile['equipment'];
+    profile.splitChoice = splitChoice;
+    if (priority.length) profile.priorityMuscles = priority;
     if (sex) profile.sex = sex;
     if (dob) profile.birthDate = dob;
     const ft = parseInt(heightFt, 10);
@@ -235,6 +259,21 @@ export function OnboardingScreen() {
               {EQUIPMENT.map((e) => (
                 <button key={e} onClick={() => setEquipment(e)} className="rounded-[var(--r-pill)] px-4 py-2.5 text-[13px] font-semibold" style={cardSel(equipment === e)}>
                   {e}
+                </button>
+              ))}
+            </div>
+            <div className="mb-3.5 mt-[26px] text-[15px] font-semibold text-text">
+              Split <span className="text-[12px] font-normal text-faint">· optional</span>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {SPLITS.map((s) => (
+                <button
+                  key={s.id}
+                  onClick={() => setSplitChoice(s.id)}
+                  className="rounded-[var(--r-pill)] px-4 py-2.5 text-[13px] font-semibold"
+                  style={cardSel(splitChoice === s.id)}
+                >
+                  {s.label}
                 </button>
               ))}
             </div>
@@ -383,6 +422,27 @@ export function OnboardingScreen() {
                 />
                 <span className="text-[13px] text-muted">weeks</span>
               </OnbBox>
+            </div>
+
+            <OnbLabel>Priority muscles · optional</OnbLabel>
+            <p className="mb-2 text-[12px] leading-relaxed text-muted">
+              Lagging areas to bias extra volume toward.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {PRIORITY_MUSCLES.map((m) => (
+                <button
+                  key={m.id}
+                  onClick={() =>
+                    setPriority((cur) =>
+                      cur.includes(m.id) ? cur.filter((x) => x !== m.id) : [...cur, m.id],
+                    )
+                  }
+                  className="rounded-[var(--r-pill)] px-4 py-2.5 text-[13px] font-semibold"
+                  style={cardSel(priority.includes(m.id))}
+                >
+                  {m.label}
+                </button>
+              ))}
             </div>
           </Step>
         )}

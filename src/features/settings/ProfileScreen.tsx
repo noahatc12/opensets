@@ -5,15 +5,31 @@ import { db } from '../../db/db';
 import { updateProfile } from '../../db/hooks';
 import { ChevronLeftIcon } from '../../components/icons';
 import { inToFtIn, ftInToIn } from '../../lib/units';
-import type { BiologicalSex, Profile, ProfileRow } from '../../db/types';
+import { useCatalog } from '../library/useCatalog';
+import { getCatalogExercise } from '../../db/catalog';
+import { ExercisePicker } from '../library/ExercisePicker';
+import { SPLITS, PRIORITY_MUSCLES } from '../onboarding/preferenceOptions';
+import type {
+  BiologicalSex,
+  EquipmentProfile,
+  Experience,
+  Muscle,
+  Profile,
+  ProfileRow,
+  SplitChoice,
+} from '../../db/types';
 
 /* Settings → Profile (spec §6.6 input). Shows and edits the captured profile:
-   sex, date of birth, height (ft/in), body fat %, training goal + physique target.
-   Height is canonical inches; bodyweight is NOT here (it's a measurement). Fields
-   persist on change (toggles/goal) or blur (number/date inputs). The editable form
-   is a keyed child seeded from the persisted row via props — no setState-in-effect. */
+   sex/DOB/height/body-fat/goal + physique target (S1), plus the goal-aware generation
+   inputs (R1): training-age, days/week, equipment, split preference, priority muscles,
+   avoid-list. Height is canonical inches; bodyweight is NOT here (it's a measurement).
+   Fields persist on change (toggles/selects) or blur (number/date inputs). The editable
+   form is a keyed child seeded from the persisted row via props — no setState-in-effect. */
 
 const GOALS = ['Build muscle', 'Lose fat', 'Recomposition', 'Get stronger'] as const;
+const EXPERIENCE_OPTS: Experience[] = ['Novice', 'Intermediate', 'Advanced'];
+const EQUIPMENT_OPTS: EquipmentProfile[] = ['Full gym', 'Home rack', 'Minimal'];
+const DAY_OPTS = [3, 4, 5, 6];
 
 const numFont = { fontFamily: 'var(--font-num)' as const };
 
@@ -88,8 +104,39 @@ function ProfileForm({ initial }: { initial: ProfileRow | null }) {
   const [timeframeWeeks, setTimeframeWeeks] = useState(
     initial?.goalTimeframeWeeks != null ? String(initial.goalTimeframeWeeks) : '',
   );
+  // R1 goal-aware preference inputs.
+  const [experience, setExperience] = useState<Experience | ''>(initial?.experience ?? '');
+  const [days, setDays] = useState<number | null>(initial?.days ?? null);
+  const [equipment, setEquipment] = useState<EquipmentProfile | ''>(initial?.equipment ?? '');
+  const [splitChoice, setSplitChoice] = useState<SplitChoice>(initial?.splitChoice ?? 'auto');
+  const [priority, setPriority] = useState<Muscle[]>(initial?.priorityMuscles ?? []);
+  const [avoid, setAvoid] = useState<string[]>(initial?.avoidExerciseIds ?? []);
+  const [showPicker, setShowPicker] = useState(false);
+  const catalog = useCatalog();
 
   const save = (patch: Partial<Profile>) => void updateProfile(patch);
+
+  const togglePriority = (m: Muscle) =>
+    setPriority((cur) => {
+      const next = cur.includes(m) ? cur.filter((x) => x !== m) : [...cur, m];
+      save({ priorityMuscles: next });
+      return next;
+    });
+  const addAvoid = (id: string) => {
+    setShowPicker(false);
+    setAvoid((cur) => {
+      if (cur.includes(id)) return cur;
+      const next = [...cur, id];
+      save({ avoidExerciseIds: next });
+      return next;
+    });
+  };
+  const removeAvoid = (id: string) =>
+    setAvoid((cur) => {
+      const next = cur.filter((x) => x !== id);
+      save({ avoidExerciseIds: next });
+      return next;
+    });
 
   const numOrUndef = (s: string): number | undefined => {
     const n = parseFloat(s);
@@ -206,6 +253,74 @@ function ProfileForm({ initial }: { initial: ProfileRow | null }) {
         ))}
       </div>
 
+      <Label>Training age</Label>
+      <div className="flex gap-2.5">
+        {EXPERIENCE_OPTS.map((x) => (
+          <button
+            key={x}
+            onClick={() => {
+              setExperience(x);
+              save({ experience: x });
+            }}
+            className="flex-1 rounded-[var(--r-md)] px-3 py-3.5 text-[13px] font-bold"
+            style={cardSel(experience === x)}
+          >
+            {x}
+          </button>
+        ))}
+      </div>
+
+      <Label>Days per week</Label>
+      <div className="flex gap-2.5">
+        {DAY_OPTS.map((d) => (
+          <button
+            key={d}
+            onClick={() => {
+              setDays(d);
+              save({ days: d });
+            }}
+            className="flex-1 rounded-[var(--r-md)] py-3.5 text-[16px] font-bold"
+            style={{ ...cardSel(days === d), ...numFont }}
+          >
+            {d}
+          </button>
+        ))}
+      </div>
+
+      <Label>Equipment</Label>
+      <div className="flex flex-wrap gap-2">
+        {EQUIPMENT_OPTS.map((e) => (
+          <button
+            key={e}
+            onClick={() => {
+              setEquipment(e);
+              save({ equipment: e });
+            }}
+            className="rounded-[var(--r-pill)] px-4 py-2.5 text-[13px] font-semibold"
+            style={cardSel(equipment === e)}
+          >
+            {e}
+          </button>
+        ))}
+      </div>
+
+      <Label>Split</Label>
+      <div className="flex flex-wrap gap-2">
+        {SPLITS.map((s) => (
+          <button
+            key={s.id}
+            onClick={() => {
+              setSplitChoice(s.id);
+              save({ splitChoice: s.id });
+            }}
+            className="rounded-[var(--r-pill)] px-4 py-2.5 text-[13px] font-semibold"
+            style={cardSel(splitChoice === s.id)}
+          >
+            {s.label}
+          </button>
+        ))}
+      </div>
+
       <Label>Goal target · optional</Label>
       <p className="mb-2 text-[12px] leading-relaxed text-muted">
         For a physique target — e.g. reach 12% body fat in 8 weeks.
@@ -241,10 +356,60 @@ function ProfileForm({ initial }: { initial: ProfileRow | null }) {
         </Box>
       </div>
 
+      <Label>Priority muscles</Label>
+      <p className="mb-2 text-[12px] leading-relaxed text-muted">
+        Lagging areas to bias extra volume toward.
+      </p>
+      <div className="flex flex-wrap gap-2">
+        {PRIORITY_MUSCLES.map((m) => (
+          <button
+            key={m.id}
+            onClick={() => togglePriority(m.id)}
+            className="rounded-[var(--r-pill)] px-4 py-2.5 text-[13px] font-semibold"
+            style={cardSel(priority.includes(m.id))}
+          >
+            {m.label}
+          </button>
+        ))}
+      </div>
+
+      <Label>Avoid exercises</Label>
+      <p className="mb-2 text-[12px] leading-relaxed text-muted">
+        Excluded from generated plans (injury or preference).
+      </p>
+      <div className="flex flex-wrap items-center gap-2">
+        {avoid.map((id) => {
+          const ex = catalog ? getCatalogExercise(id) : undefined;
+          return (
+            <button
+              key={id}
+              onClick={() => removeAvoid(id)}
+              className="flex max-w-full items-center gap-1.5 rounded-[var(--r-pill)] px-3 py-2 text-[13px] font-semibold"
+              style={cardSel(true)}
+              aria-label={`Remove ${ex?.name ?? id}`}
+            >
+              <span className="truncate">{ex?.name ?? id}</span>
+              <span aria-hidden>×</span>
+            </button>
+          );
+        })}
+        <button
+          onClick={() => setShowPicker(true)}
+          className="rounded-[var(--r-pill)] px-4 py-2 text-[13px] font-semibold"
+          style={cardSel(false)}
+        >
+          + Add
+        </button>
+      </div>
+
       <p className="mx-1 mt-6 text-[11px] leading-snug text-faint">
         Height is stored in inches and shown in feet/inches. Bodyweight lives under
         Body measurements.
       </p>
+
+      {showPicker && (
+        <ExercisePicker onPick={(e) => addAvoid(e.id)} onClose={() => setShowPicker(false)} />
+      )}
     </div>
   );
 }

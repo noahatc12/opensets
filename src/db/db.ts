@@ -28,7 +28,7 @@ import { newId } from './ids';
 import { preMigrationSnapshot } from './backup';
 
 /** Current code schema version. Bump alongside a new `version(n)` block below. */
-export const SCHEMA_VERSION = 3;
+export const SCHEMA_VERSION = 4;
 
 export const DEFAULT_SETTINGS: UserSettings = {
   units: 'lb',
@@ -131,6 +131,32 @@ export class OpenSetsDB extends Dexie {
       })
       .upgrade(async (tx) => {
         await preMigrationSnapshot(tx, newId(), new Date().toISOString(), 2);
+      });
+
+    // --- v4 (R1 goal-aware preference inputs): Profile gains experience/days/
+    // equipment/splitChoice/priorityMuscles/avoidExerciseIds; Program gains
+    // volumeState. All are optional, non-indexed embedded fields (no store/index
+    // change, no row transform) — old rows simply lack them (consumers read with
+    // `?? default`). Honor the migration contract: version bump + pre-migration
+    // snapshot of the v3 data so the round-trip stays provable.
+    this.version(4)
+      .stores({
+        exercises: 'id, nameNorm, *primaryMuscles, equipment, category, isCustom',
+        programs: 'id, name, isActive',
+        templates: 'id, programId, dayIndex',
+        sessions: 'id, date, programId, templateId, status',
+        sets: 'id, sessionId, exerciseId, [exerciseId+date]',
+        exerciseState: '[programId+exerciseId]',
+        measurements: 'id, date, type',
+        photos: 'id, date',
+        goals: 'id, type, status',
+        settings: 'key',
+        activeSession: 'key',
+        backups: 'id, createdAt',
+        profile: 'key',
+      })
+      .upgrade(async (tx) => {
+        await preMigrationSnapshot(tx, newId(), new Date().toISOString(), 3);
       });
 
     // Seed default settings on a brand-new database only.

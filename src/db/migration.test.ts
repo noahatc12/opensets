@@ -58,15 +58,15 @@ async function seedV1(name: string): Promise<void> {
   v1.close();
 }
 
-describe('schema v1 → v3 migration (profile store + prescription fields)', () => {
+describe('schema v1 → v4 migration (profile store + prescription fields + preference inputs)', () => {
   const NAME = 'opensets-migr-test';
 
-  it('preserves all v1 data across BOTH upgrades and snapshots each step with its own source version', async () => {
+  it('preserves all v1 data across ALL upgrades and snapshots each step with its own source version', async () => {
     await Dexie.delete(NAME);
     await seedV1(NAME);
 
     const migrated = new OpenSetsDB(NAME);
-    await migrated.open(); // runs version(2) AND version(3) upgrades in sequence
+    await migrated.open(); // runs version(2), version(3) AND version(4) upgrades in sequence
 
     // The inviolable: every v1 row survives the version bumps.
     expect(await migrated.programs.get('p1')).toMatchObject({ name: 'My Program', isActive: true });
@@ -75,16 +75,16 @@ describe('schema v1 → v3 migration (profile store + prescription fields)', () 
     expect(await migrated.measurements.get('m1')).toMatchObject({ valueLb: 150 });
     expect(await migrated.profile.count()).toBe(0); // v2 store exists, empty
 
-    // TWO pre-migration snapshots, each labelled with ITS source version (1 then 2) —
+    // THREE pre-migration snapshots, each labelled with ITS source version (1, 2, 3) —
     // proves the fromVersion fix: not every step stamped SCHEMA_VERSION-1.
     const versions = (await migrated.backups.toArray()).map((b) => b.schemaVersion).sort();
-    expect(versions).toEqual([1, 2]);
+    expect(versions).toEqual([1, 2, 3]);
 
     migrated.close();
     await Dexie.delete(NAME);
   });
 
-  it('v2 → v3: existing template + slots survive the prescription-fields bump (snapshot labelled 2)', async () => {
+  it('v2 → v4: existing template + slots survive the prescription-fields bump (snapshots labelled 2, 3)', async () => {
     const N2 = 'opensets-migr-v2v3';
     await Dexie.delete(N2);
     // Seed a v2 DB (v1 stores + the profile store) with a template carrying a slot.
@@ -98,7 +98,7 @@ describe('schema v1 → v3 migration (profile store + prescription fields)', () 
     v2.close();
 
     const migrated = new OpenSetsDB(N2);
-    await migrated.open(); // runs only version(3)
+    await migrated.open(); // runs version(3) AND version(4)
 
     const tpl = await migrated.templates.get('t1');
     expect(tpl?.slots).toHaveLength(1);
@@ -109,13 +109,94 @@ describe('schema v1 → v3 migration (profile store + prescription fields)', () 
     await migrated.templates.put(tpl!);
     expect((await migrated.templates.get('t1'))!.slots[0]!.tempo).toBe('3-1-1-0');
 
-    // One snapshot, labelled with the v2 source version.
-    const backups = await migrated.backups.toArray();
-    expect(backups).toHaveLength(1);
-    expect(backups[0]!.schemaVersion).toBe(2);
+    // Two snapshots from this open — the v3 and v4 upgrade steps, each labelled with
+    // its own source version (proves the fromVersion fix across the new bump too).
+    const versions = (await migrated.backups.toArray()).map((b) => b.schemaVersion).sort();
+    expect(versions).toEqual([2, 3]);
 
     migrated.close();
     await Dexie.delete(N2);
+  });
+
+  it('v3 → v4: existing program survives the preference-inputs bump (snapshot labelled 3)', async () => {
+    const N3 = 'opensets-migr-v3v4';
+    await Dexie.delete(N3);
+    // Seed a v3 DB (v1 stores + profile) with a program + a profile row.
+    const v3 = new Dexie(N3);
+    v3.version(3).stores({ ...V1_STORES, profile: 'key' });
+    await v3.open();
+    await v3.table('programs').add({
+      id: 'p1', name: 'Recomp · 5d', isActive: true, createdAt: '2026-06-01T00:00:00.000Z',
+    });
+    await v3.table('profile').add({ key: 'user', goal: 'Recomposition', updatedAt: '2026-06-01T00:00:00.000Z' });
+    v3.close();
+
+    const migrated = new OpenSetsDB(N3);
+    await migrated.open(); // runs only version(4)
+
+    // Old program + profile intact; new optional fields simply absent and writable.
+    const prog = await migrated.programs.get('p1');
+    expect(prog).toMatchObject({ name: 'Recomp · 5d', isActive: true });
+    expect(prog!.volumeState).toBeUndefined();
+    const prof = await migrated.profile.get('user');
+    expect(prof).toMatchObject({ goal: 'Recomposition' });
+    expect(prof!.experience).toBeUndefined();
+    expect(prof!.priorityMuscles).toBeUndefined();
+
+    // One snapshot, labelled with the v3 source version.
+    const backups = await migrated.backups.toArray();
+    expect(backups).toHaveLength(1);
+    expect(backups[0]!.schemaVersion).toBe(3);
+
+    migrated.close();
+    await Dexie.delete(N3);
+  });
+});
+
+describe('R1 preference inputs + volume-state persistence', () => {
+  beforeEach(async () => {
+    await db.profile.clear();
+    await db.programs.clear();
+  });
+
+  it('persists the new goal-aware Profile fields and merge-patches them', async () => {
+    await updateProfile({
+      experience: 'Intermediate',
+      days: 5,
+      equipment: 'Full gym',
+      splitChoice: 'pplArms',
+      priorityMuscles: ['chest', 'biceps'],
+      avoidExerciseIds: ['Barbell_Squat'],
+    });
+    let p = await db.profile.get('user');
+    expect(p).toMatchObject({
+      experience: 'Intermediate',
+      days: 5,
+      equipment: 'Full gym',
+      splitChoice: 'pplArms',
+      priorityMuscles: ['chest', 'biceps'],
+      avoidExerciseIds: ['Barbell_Squat'],
+    });
+
+    // A later patch to one field leaves the others intact (merge semantics).
+    await updateProfile({ priorityMuscles: ['hamstrings'] });
+    p = await db.profile.get('user');
+    expect(p).toMatchObject({ splitChoice: 'pplArms', priorityMuscles: ['hamstrings'], days: 5 });
+  });
+
+  it('persists per-muscle volumeState on a Program and reads it back', async () => {
+    await db.programs.add({
+      id: 'pv', name: 'Hypertrophy · 5d', isActive: true, createdAt: '2026-06-28T00:00:00.000Z',
+      volumeState: {
+        chest: { current: 10, mev: 10, mav: 16, mrv: 22 },
+        biceps: { current: 8, mev: 8, mav: 14, mrv: 20 },
+      },
+    });
+    const prog = await db.programs.get('pv');
+    // current seeds at MEV (block starts at minimum effective volume).
+    expect(prog!.volumeState!.chest).toEqual({ current: 10, mev: 10, mav: 16, mrv: 22 });
+    expect(prog!.volumeState!.chest!.current).toBe(prog!.volumeState!.chest!.mev);
+    expect(prog!.volumeState!.biceps!.mrv).toBe(20);
   });
 });
 
