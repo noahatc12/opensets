@@ -15,15 +15,15 @@
 
 **3. Confidence tags.** `[Strong]` = well-replicated / adversarially-verified, high confidence. `[Mixed]` = real effect but contested or small-sample. `[Reconstructed]` = app internals inferred from public methodology, directionally accurate, exact constants approximate. Citations are author/year.
 
-**4. RESEARCH GAP — what's covered vs still thin.** The hypertrophy core (Part 1) was researched against the trained-young-male literature. A **second pass (2026-06-28; see Part 1B)** closed the strength *mechanics* — autoregulation, periodization-model equivalence, VBT thresholds, and taper/peak/deload. **Status by class:**
-> - **Strength — PARTIALLY covered (Part 1B).** Covered to codeable depth: load-prescription method equivalence, RPE/RIR autoregulation, VBT velocity-loss caps, and the taper/peak/deload model. **STILL thin (needs a sub-pass before R5b ships coach-grade):** the field-standard **%1RM working zones** (~80–95%), **phase-by-phase block durations** (accumulation→intensification→peak naming/length), **strength-specific weekly set counts**, and **plateau-reset mechanics**. The second pass explicitly did not reach these (NSCA/ACSM position-stand + periodization-text territory).
-> - **Novice linear progression — STILL NOT covered.** Increment sizing, stall/reset rules, novice→intermediate graduation. The second pass aimed at these but produced no verified claims; needs its own sourcing.
-> - **Older lifters (40+/50+) — STILL NOT covered.** Volume tolerance, recovery, joint management. Zero verified claims.
-> - **Female-specific — STILL NOT covered.** Volume/recovery differences (`[Mixed]`, commonly-asserted-but-thin by the prompt's own framing). Zero verified claims.
-> - **Fat-loss / deficit training — STILL thin.** Muscle-retention specifics in a deficit.
-> - **General-fitness / health goal — RESOLVED BY PRODUCT DECISION (not research):** "balanced moderate full-body/UL, sustainable" (Noah, 2026-06-28). Build R2 against it; not a research item.
+**4. RESEARCH GAP — what's covered vs still thin (after THREE passes).** Pass 1 = hypertrophy core; Pass 2 (Part 1B) = strength mechanics; Pass 3 (Part 1C, 2026-06-29) = strength intensity/volume tables + older/female modifiers. **Status by class:**
+> - **Strength — COVERED to codeable depth (Parts 1B + 1C).** Mechanics (1B: autoregulation, LP≈DUP, VBT caps, taper/deload) + **%1RM zones & rep↔%1RM lookup, strength weekly set-floor, load-specificity** (1C). Buildable for R5b.
+> - **Older lifters (40+/50+/60+) — COVERED (1C).** Can train heavy (70–85% 1RM, 2–3×/wk); outcome-specific volume modifier (low volume maxes hypertrophy/lean-mass, moderate-high for strength); no routine failure. Codeable modifiers.
+> - **Female-specific — COVERED with the lore separated out (1C).** Well-evidenced: between-SET fatigue resistance → tolerate more submax/accessory volume + shorter rest. Contested/sex-neutral: between-SESSION recovery (the "women recover faster" claim is thin/contradicted). Encode the between-set tolerance; keep between-session recovery sex-neutral.
+> - **STILL OPEN — and RECLASSIFIED as practitioner-canon, not journal-grade (three passes confirm):** **phase-by-phase block durations** (1b), **plateau-reset magnitude** (1d), and **novice linear-progression increments / stall-reset / graduation** (Gap 2). All three came back empty across passes — the harness's verdict: these numbers **only exist inside trademarked programs** (Starting Strength / 5-3-1 territory), which the IP boundary forbids cloning. **Decision: STOP researching them. Encode them as generic, field-standard practitioner-canon defaults, flagged `[Canon, not journal-grade]`** (generic conventions — e.g. ~5 lb lower / 2.5 lb upper per session, reset −10% after ~2–3 stalls, graduate when session-to-session linear adds fail; ~3–6 wk accumulation → ~2–4 wk intensification → 1 wk peak — common across many programs, so field-standard, not one program's IP). Versioned + adjustable.
+> - **Fat-loss / deficit training — STILL thin** (lower priority; muscle-retention-in-deficit specifics).
+> - **General-fitness / health goal — PRODUCT DECISION, not research:** "balanced moderate full-body/UL, sustainable" (Noah, 2026-06-28). Not a research item.
 >
-> Until the remaining sub-pass lands, the generator's defaults for novice / older / female / fat-loss / strength-intensity-zones are **principled extrapolation, not verified** — label them as such in-product and version them. **Gating: R1–R4 are unblocked; R5b's strength path can build the autoregulation + taper/deload engine now (Part 1B), but its %1RM-zone + phase-duration tables and the novice/older/female progression routers still need the remaining sub-pass.**
+> **Gating: R1–R4 unblocked. R5b is now fully buildable** — strength uses 1B mechanics + 1C tables; older/female use 1C modifiers; phase-durations/plateau-reset/novice use flagged practitioner-canon defaults (no further research owed). In-product, label canon/extrapolated defaults as such and version them.
 
 ---
 
@@ -176,9 +176,42 @@ A **complete 1-week training cessation** mid-block costs **lower-body strength e
 - Progression driver = **RPE/RIR autoregulation** (logged RPE vs target → next-session load step), with double-progression rep targets as the rep mechanic.
 - Periodization model = **whatever fits the schedule** (LP/DUP equivalent); the load-bearing parts are progressive overload + a **peak/taper** + a **reduce-don't-stop deload**.
 - Taper = **−30–50% volume, hold ≥85% intensity, 1–2 wk, longer for deadlift.**
-- **Still missing for full coach-grade strength (sub-pass):** the actual **%1RM intensity zones** per phase, **block phase durations**, **weekly set counts** at strength intensities, and **plateau-reset** mechanics. Build the autoregulation/taper/deload engine now; gate the intensity-table + novice/older/female routers on the remaining sub-pass.
+- **%1RM intensity zones, strength weekly set-counts, older/female modifiers → now covered in Part 1C.** Phase durations + plateau-reset → practitioner-canon defaults (see §4 + 1C close).
 
 **Sources (Part 1B):** Hickmott/Shattock 2022 *Sports Medicine-Open* (PMC8762534); Larsen 2021 *PeerJ* (PMC7810043); Jukic network meta 2025 *J Exerc Sci Fit* (PMC12336695); Zhang 2026 *Frontiers Public Health*; Jukic 2023 *Sports Medicine* (PMC9807551); Travis/Mujika 2020 *Sports* (PMC7552788); Travis 2021 *Frontiers Physiology* (PMC8582352); Bell/Helms 2024/25 deload recs (DCU); Coleman 2024 cessation-deload RCT (PMC10809978).
+
+---
+
+# PART 1C — STRENGTH TABLES + OLDER/FEMALE MODIFIERS (third research pass, 2026-06-29)
+
+> Third adversarially-verified pass (25 claims, **22 confirmed / 3 refuted**). Closed strength %1RM/volume tables + older-lifter + female modifiers. Phase durations, plateau-reset, and novice-linear-progression came back empty a third time — **reclassified as practitioner-canon (see §4); no further research owed.** IP boundary held.
+
+## C1. %1RM zones + rep↔%1RM lookup — `[Strong]`
+The field-standard repetition continuum (Schoenfeld/Grgic 2021, *Sports*) + the NSCA Training Load Chart give a **directly codeable load↔rep table**:
+- **Strength: 1–5 reps @ 80–100% 1RM** · **Hypertrophy: 8–12 @ 60–80%** · **Endurance: 15+ @ <60%.**
+- Rep→%1RM: **1RM 100 · 2RM 95 · 3RM 93 · 5RM 87 · 6RM 85 · 8RM 80 · 10RM 75 · 12RM 70.**
+- Load is **specific to strength** — heavy beats light for 1RM (ES=0.58, Schoenfeld/Grgic 2021). **Engineering default: strength phase ≥87% (≤5RM); 8RM=80% / 12RM=70% anchor lighter accessory work.**
+- *Caveat:* population average — **lower-body multi-joint lifts allow MORE reps at a given %1RM** (Nuzzo), so treat as approximate per-lift, calibrate from logged AMRAPs.
+
+## C2. Strength weekly set-FLOOR — `[Strong]` (it's a floor, not a growth target)
+**~3–6 hard sets/week per powerlift, 1–5 reps, >80% 1RM, RPE 7.5–9.5, over 6–12 wk** is the minimum effective dose for trained lifters (Androulakis-Korakakis 2021, *Front Sports Act Living*). **Critical scoping: this is a MAINTENANCE/time-constrained floor for already-strong lifters — explicitly "not optimal for long-term development."** Engine use: per-movement strength *floor*; growth phases prescribe **above** it (but still far below hypertrophy's 12–20). Confirms strength uses **direct-set counting** + much lower volume than hypertrophy.
+
+## C3. Older-lifter modifiers (40+/50+/60+) — `[Strong]`
+- **Train heavy — don't relegate to light loads.** NSCA position stand (Fragala et al. 2019, *JSCR*): **70–85% 1RM, 2–3×/wk**, 2–3 sets × 6–12 reps; **no routine failure** (50–70% of max reps in good form suffices, to protect joints/form); add power work at **40–60% @ high velocity**.
+- **Volume modifier is OUTCOME-SPECIFIC + generally downward** (SportsMed 2024 NMA, 151 RCTs): for 60+, **low volume (~≤12 sets/muscle) maxes hypertrophy/lean-mass** (higher adds nothing), **but moderate-high volume for STRENGTH.** Frequency 2–3×/wk (volume-confounded — distribution, not an independent lever).
+- **Engine: older → cap hypertrophy volume lower (~≤12 sets), keep intensity high (70–85%), avoid routine failure, raise the cap only for strength goals.**
+
+## C4. Female modifiers — `[Strong]` on the part that's real, `[Mixed]` on the lore
+- **WELL-EVIDENCED (encode it): between-SET fatigue resistance.** Women recover faster *between sets* at matched relative load and do ~2× the total reps in multi-set submax work (e.g. ~58 vs ~30 at 75% 1RM / 90s rest; 3 primary studies). Mechanism is inter-set recovery — **single-set reps-to-failure are equal**, and the advantage **disappears when both train to failure.** **Engine: women tolerate more submax/accessory VOLUME and shorter inter-set REST** (directional, not a literal 2× multiplier).
+- **CONTESTED / LORE (do NOT encode): between-SESSION recovery.** The popular "women recover faster between sessions" is **thin/contradicted** — one study shows women recovering *slower* after heavy squats (Davies 2018, small n); another shows no sex difference in 1RM recovery. **Engine: keep between-session recovery SEX-NEUTRAL** pending stronger evidence. The **refuted** claim (1-2): prescribing women higher *total weekly* volume as a general rule — do not encode.
+
+## C5. Reclassified — practitioner-canon, not journal-grade (three passes confirm)
+**Phase durations (1b), plateau-reset (1d), novice increments/reset/graduation (Gap 2)** produced zero verified claims across three passes; the harness's verdict is they **only exist inside trademarked programs** (the IP boundary forbids cloning). **Encode as generic field-standard defaults, flagged `[Canon, not journal-grade]`, versioned + adjustable:**
+- **Novice linear:** ~**5 lb lower-compound / 2.5 lb upper-compound / 1–2.5 lb isolation** per session; **reset −10%** after ~2–3 consecutive stalls; **graduate to weekly/periodized** when session-to-session adds stop landing. *(Generic across many novice programs → field-standard convention, not one program's table.)*
+- **Strength block:** ~**3–6 wk accumulation → 2–4 wk intensification → 1 wk peak/taper**; reps drop as %1RM climbs per C1.
+- **Plateau-reset:** drop to ~**90%** of the stalled load and rebuild; switch block emphasis if it re-stalls.
+
+**Sources (Part 1C):** Schoenfeld/Grgic 2021 *Sports* (PMC7927075) + NSCA Training Load Chart; Androulakis-Korakakis 2021 *Front Sports Act Living* (PMC8435792); Fragala et al. 2019 NSCA position stand (*JSCR* 33(8)); SportsMed 2024 older-adult NMA (PMID 39405023) + quadriceps meta (S0531556524002857); female between-set studies (PMC12790778, PMC10863198, PMC8618037); Davies 2018 *Front Physiol* 9:1480 (contested between-session).
 
 ---
 
@@ -225,4 +258,4 @@ Goal-aware components (detail + sequencing live in the ledger's redesign wave):
 ---
 
 ## Sources spine
-Pelland/Remmert/Zourdos 2026 (Sports Medicine, dose-response, PMID 41343037); Baz-Valle 2022 (volume ranges, PMC8884877); Schoenfeld/Ogborn/Krieger 2017 (volume, J Sports Sci), 2016 (frequency; rest intervals); Refalo 2023 (failure, PMC9935748); Vigotsky 2022 (EMG-invalid, DOI 10.1007/s40279-021-01619-2); Wolf 2025 / Havers 2025 (lengthened-position, PMC12621570); autoregulation meta (RPE≈fixed for 1RM); RP volume-landmark + set-increase methodology; Juggernaut AI / Fitbod public methodology. **Strength second pass (Part 1B):** Hickmott/Shattock 2022 + Larsen 2021 (autoregulation≈fixed); Zhang 2026 (LP≈DUP); Jukic 2023 (VBT thresholds); Travis/Mujika 2020 + Travis 2021 + Bell/Helms 2024-25 (taper/peak/deload); Coleman 2024 (cessation cost). Generated via two adversarially-verified deep-research passes (pass 1: 24 sources, 25 claims, 1 refuted; pass 2: 24 sources, 25 claims, **22 confirmed / 3 refuted**) + domain synthesis; 2026-06-28.
+Pelland/Remmert/Zourdos 2026 (Sports Medicine, dose-response, PMID 41343037); Baz-Valle 2022 (volume ranges, PMC8884877); Schoenfeld/Ogborn/Krieger 2017 (volume, J Sports Sci), 2016 (frequency; rest intervals); Refalo 2023 (failure, PMC9935748); Vigotsky 2022 (EMG-invalid, DOI 10.1007/s40279-021-01619-2); Wolf 2025 / Havers 2025 (lengthened-position, PMC12621570); autoregulation meta (RPE≈fixed for 1RM); RP volume-landmark + set-increase methodology; Juggernaut AI / Fitbod public methodology. **Strength second pass (Part 1B):** Hickmott/Shattock 2022 + Larsen 2021 (autoregulation≈fixed); Zhang 2026 (LP≈DUP); Jukic 2023 (VBT thresholds); Travis/Mujika 2020 + Travis 2021 + Bell/Helms 2024-25 (taper/peak/deload); Coleman 2024 (cessation cost). **Strength third pass (Part 1C):** Schoenfeld/Grgic 2021 (PMC7927075) + NSCA load chart; Androulakis-Korakakis 2021 (PMC8435792); Fragala 2019 NSCA position stand; SportsMed 2024 older-adult NMA; female between-set studies (PMC12790778/PMC10863198/PMC8618037); Davies 2018 (contested between-session). Generated via three adversarially-verified deep-research passes (pass 1: 25 claims, 1 refuted; pass 2: 25 claims, 3 refuted; pass 3: 25 claims, 3 refuted) + domain synthesis; 2026-06-28/29. Phase-durations/plateau-reset/novice-increments reclassified as practitioner-canon after 3 empty passes (encode generically, flagged).
