@@ -15,15 +15,15 @@
 
 **3. Confidence tags.** `[Strong]` = well-replicated / adversarially-verified, high confidence. `[Mixed]` = real effect but contested or small-sample. `[Reconstructed]` = app internals inferred from public methodology, directionally accurate, exact constants approximate. Citations are author/year.
 
-**4. RESEARCH GAP — this evidence skews hypertrophy / intermediate / young male.** The verified core (volume, failure, frequency, EMG, selection principles) was researched against the trained-young-male literature and a hypertrophy center of gravity. The following user classes are **under-researched here and must get a dedicated evidence pass before they can be served coach-grade**:
-> - **Strength programming specifics** — peaking blocks, intensity progression schemes, %1RM waving, how volume caps lower and intensity carries the load. (We have "strength saturates earlier, lean on load," not the mechanics.)
-> - **Novice linear progression** — increment sizing, stall/reset rules, when a novice graduates to intermediate programming.
-> - **General-fitness / health goal** — programming for the user who isn't chasing size or a 1RM.
-> - **Older lifters (40+/50+)** — volume tolerance, recovery, joint management modifiers.
-> - **Female-specific** — volume/recovery differences (commonly observed higher volume tolerance + faster between-session recovery, but less rigorously quantified — `[Mixed]`).
-> - **Fat-loss / deficit training** — muscle-retention specifics while in an energy deficit (maintain intensity, manage volume/fatigue).
+**4. RESEARCH GAP — what's covered vs still thin.** The hypertrophy core (Part 1) was researched against the trained-young-male literature. A **second pass (2026-06-28; see Part 1B)** closed the strength *mechanics* — autoregulation, periodization-model equivalence, VBT thresholds, and taper/peak/deload. **Status by class:**
+> - **Strength — PARTIALLY covered (Part 1B).** Covered to codeable depth: load-prescription method equivalence, RPE/RIR autoregulation, VBT velocity-loss caps, and the taper/peak/deload model. **STILL thin (needs a sub-pass before R5b ships coach-grade):** the field-standard **%1RM working zones** (~80–95%), **phase-by-phase block durations** (accumulation→intensification→peak naming/length), **strength-specific weekly set counts**, and **plateau-reset mechanics**. The second pass explicitly did not reach these (NSCA/ACSM position-stand + periodization-text territory).
+> - **Novice linear progression — STILL NOT covered.** Increment sizing, stall/reset rules, novice→intermediate graduation. The second pass aimed at these but produced no verified claims; needs its own sourcing.
+> - **Older lifters (40+/50+) — STILL NOT covered.** Volume tolerance, recovery, joint management. Zero verified claims.
+> - **Female-specific — STILL NOT covered.** Volume/recovery differences (`[Mixed]`, commonly-asserted-but-thin by the prompt's own framing). Zero verified claims.
+> - **Fat-loss / deficit training — STILL thin.** Muscle-retention specifics in a deficit.
+> - **General-fitness / health goal — RESOLVED BY PRODUCT DECISION (not research):** "balanced moderate full-body/UL, sustainable" (Noah, 2026-06-28). Build R2 against it; not a research item.
 >
-> Until that pass lands, the generator's defaults for those classes are **principled extrapolation, not verified** — label them as such in-product and version them.
+> Until the remaining sub-pass lands, the generator's defaults for novice / older / female / fat-loss / strength-intensity-zones are **principled extrapolation, not verified** — label them as such in-product and version them. **Gating: R1–R4 are unblocked; R5b's strength path can build the autoregulation + taper/deload engine now (Part 1B), but its %1RM-zone + phase-duration tables and the novice/older/female progression routers still need the remaining sub-pass.**
 
 ---
 
@@ -144,6 +144,44 @@ Start a block near MEV, add sets toward MRV across weeks, then deload. Signals t
 
 ---
 
+# PART 1B — STRENGTH PROGRESSION (second research pass, 2026-06-28)
+
+> Second adversarially-verified pass (24 sources, 25 claims, **22 confirmed / 3 refuted**), scoped to strength + under-served classes under the **non-proprietary IP boundary** (encode principles; do NOT clone Wendler 5/3/1 / Sheiko / Smolov / Texas Method parameter tables). It covered the strength *mechanics* below; it did **not** reach %1RM working zones, phase-by-phase durations, strength weekly-set-counts, novice, older-lifter, or female modifiers — those remain open (see READ-ME-FIRST §4).
+
+**The headline for an engine: for maximal strength, the *method* you pick barely matters when volume and intensity are matched. Autoregulation earns its place through readiness + letting good days express more load — not by out-gaining percentages.**
+
+## S1. Load-prescription method is interchangeable for 1RM — `[Strong]`
+Autoregulated (RPE/RIR or velocity-based) vs fixed-percentage loading produce **statistically equivalent 1RM gains** (Hickmott/Shattock et al. 2022, *Sports Medicine-Open*, 15 studies/133 trained; MD=2.07 kg, p=0.09, SMD=0.21 — small, non-significant; corroborated Larsen et al. 2021, *PeerJ*). **Encode autoregulation for readiness/intensity-enabling, not for a raw-1RM edge.** Nuance: a small effect (SMD=0.28) favored autoregulation *only* when its arm trained at higher relative intensity — equivalence holds at matched intensity; the edge is expressing higher loads on good days.
+
+## S2. Among autoregulation flavors, prefer RPE/RIR — `[Strong]`
+Subjective RPE/RIR shows a marginal trend over fixed loading (SMD=0.30, p=0.06); objective VBT shows essentially none (SMD=0.10, p=0.62); the two don't significantly differ (p=0.35). **Engine default: RPE/RIR-based load autoregulation** — non-inferior, possibly marginally better, no hardware needed. (A network meta-analysis ranked "APRE" — a generic double-progression rep-target principle, *not* a branded program — top by SUCRA probability for squat/bench, but with **no moderate/large between-method effects**, so it's a probabilistic rank, not proof. Three superiority sub-claims were **adversarially refuted** and must NOT be encoded: APRE-beats-RPE/PBRT-on-bench, RPE-out-gains-fixed-controls, VL≤25%-beats->25%.)
+
+## S3. Periodization MODEL is not load-bearing for strength — `[Strong]`
+Linear vs undulating produce equivalent strength gains, upper and lower body (Zhang et al. 2026, *Frontiers in Public Health*, 29 studies/704; both SMD≈0.08, CIs cross zero; corroborated by a prior 17-study meta + SBS/Nuckols reviews). **Pick the periodization model for scheduling/autoregulation fit, not for an inherent strength advantage** — given fixed volume + intensity.
+
+## S4. Velocity-loss cap (if VBT is ever added) — `[Strong]`
+VL threshold choice across ~10–40% does **not** significantly drive 1RM (Jukic et al. 2023, *Sports Medicine*; moderator p=0.097); numerical optimum ~10–30% (peak ES≈1.53 near 20% VL). **Default: a single moderate ~20% VL cap (range 10–30%)**; lower is more time-efficient. (VBT is optional — RPE is the cheaper primary per S2.)
+
+## S5. Taper / peak — `[Strong]` (this is the strength analogue of the hypertrophy deload, and it's *different*)
+The peak that distinguishes a strength block from a hypertrophy one (Travis/Mujika 2020, *Sports* PMC7552788; Travis et al. 2021, *Frontiers in Physiology*; Bell/Helms et al. 2024/25 deload recs):
+- **Volume:** cut **~30–50%** (range to ~60%; deeper >50–70% is worse); **never cut <25%** (floor ≥30–35%).
+- **Intensity:** **MAINTAIN ≥85% 1RM** (this is the key contrast with a hypertrophy *volume*-deload, which keeps load and cuts sets). Optionally reduce intensity ~25–30% only if recovery is prioritized.
+- **Duration/structure:** **1–2 weeks** (a 1-week step taper at ~50% volume cut suffices; up to 17–18 d for elite). Optionally precede with a **~1-week overreach** (volume-load ≥150%) then taper.
+- **Per-lift:** higher-fatigue lifts (**deadlift**) benefit from a **longer exponential taper** (deadlift +8% exponential vs +1% step; squat/bench similar either way).
+
+## S6. Deload design — reduce load, don't fully stop — `[Strong]`
+A **complete 1-week training cessation** mid-block costs **lower-body strength expression** (1RM/isometric) vs continuous training, while sparing hypertrophy, power, and endurance (Coleman et al. 2024, RCT, n=39; directional/Bayesian, modest magnitude). **Engine rule: strength-priority deloads REDUCE load/volume rather than fully stop.** (Scope caveat: this tested *complete cessation*, not reduced-load deloads — the latter remain field-standard.)
+
+## S7. Codeable strength-engine summary (R5b)
+- Progression driver = **RPE/RIR autoregulation** (logged RPE vs target → next-session load step), with double-progression rep targets as the rep mechanic.
+- Periodization model = **whatever fits the schedule** (LP/DUP equivalent); the load-bearing parts are progressive overload + a **peak/taper** + a **reduce-don't-stop deload**.
+- Taper = **−30–50% volume, hold ≥85% intensity, 1–2 wk, longer for deadlift.**
+- **Still missing for full coach-grade strength (sub-pass):** the actual **%1RM intensity zones** per phase, **block phase durations**, **weekly set counts** at strength intensities, and **plateau-reset** mechanics. Build the autoregulation/taper/deload engine now; gate the intensity-table + novice/older/female routers on the remaining sub-pass.
+
+**Sources (Part 1B):** Hickmott/Shattock 2022 *Sports Medicine-Open* (PMC8762534); Larsen 2021 *PeerJ* (PMC7810043); Jukic network meta 2025 *J Exerc Sci Fit* (PMC12336695); Zhang 2026 *Frontiers Public Health*; Jukic 2023 *Sports Medicine* (PMC9807551); Travis/Mujika 2020 *Sports* (PMC7552788); Travis 2021 *Frontiers Physiology* (PMC8582352); Bell/Helms 2024/25 deload recs (DCU); Coleman 2024 cessation-deload RCT (PMC10809978).
+
+---
+
 # PART 2 — HOW THE PROS DO IT
 
 *App internals are `[Reconstructed]` from public methodology / reviews — directionally accurate, exact constants approximate. **Encode the science, do not clone these proprietary tables/algorithms** (5/3/1-trademark boundary).*
@@ -187,4 +225,4 @@ Goal-aware components (detail + sequencing live in the ledger's redesign wave):
 ---
 
 ## Sources spine
-Pelland/Remmert/Zourdos 2026 (Sports Medicine, dose-response, PMID 41343037); Baz-Valle 2022 (volume ranges, PMC8884877); Schoenfeld/Ogborn/Krieger 2017 (volume, J Sports Sci), 2016 (frequency; rest intervals); Refalo 2023 (failure, PMC9935748); Vigotsky 2022 (EMG-invalid, DOI 10.1007/s40279-021-01619-2); Wolf 2025 / Havers 2025 (lengthened-position, PMC12621570); autoregulation meta (RPE≈fixed for 1RM); RP volume-landmark + set-increase methodology; Juggernaut AI / Fitbod public methodology. Generated via adversarially-verified deep-research pass (24 sources fetched, 25 claims 3-vote verified, 1 refuted) + domain synthesis; 2026-06-28.
+Pelland/Remmert/Zourdos 2026 (Sports Medicine, dose-response, PMID 41343037); Baz-Valle 2022 (volume ranges, PMC8884877); Schoenfeld/Ogborn/Krieger 2017 (volume, J Sports Sci), 2016 (frequency; rest intervals); Refalo 2023 (failure, PMC9935748); Vigotsky 2022 (EMG-invalid, DOI 10.1007/s40279-021-01619-2); Wolf 2025 / Havers 2025 (lengthened-position, PMC12621570); autoregulation meta (RPE≈fixed for 1RM); RP volume-landmark + set-increase methodology; Juggernaut AI / Fitbod public methodology. **Strength second pass (Part 1B):** Hickmott/Shattock 2022 + Larsen 2021 (autoregulation≈fixed); Zhang 2026 (LP≈DUP); Jukic 2023 (VBT thresholds); Travis/Mujika 2020 + Travis 2021 + Bell/Helms 2024-25 (taper/peak/deload); Coleman 2024 (cessation cost). Generated via two adversarially-verified deep-research passes (pass 1: 24 sources, 25 claims, 1 refuted; pass 2: 24 sources, 25 claims, **22 confirmed / 3 refuted**) + domain synthesis; 2026-06-28.
