@@ -26,10 +26,20 @@ export type TrainingGoal =
   | 'Build muscle'
   | 'Lose fat'
   | 'Recomposition'
-  | 'Get stronger';
+  | 'Get stronger'
+  | 'General fitness';
 export type EquipmentProfile = 'Full gym' | 'Home rack' | 'Minimal';
 export type Experience = 'Novice' | 'Intermediate' | 'Advanced';
 export type Sex = 'male' | 'female';
+/** User split preference (mirrors db `SplitChoice`; engine may not import db). 'auto'
+ *  (or omitted) lets the split designer choose by goal / days / training-age. */
+export type SplitChoice =
+  | 'auto'
+  | 'fullBody'
+  | 'upperLower'
+  | 'pushPullLegs'
+  | 'pplArms'
+  | 'bodyPart';
 
 /** Catalog fields the generator reads — a structural subset of db `Exercise`, kept
  *  engine-local so /src/engine imports nothing from /src/db. db.Exercise[] conforms. */
@@ -61,6 +71,10 @@ export interface GenPreferences {
   experience: Experience;
   /** Per-type rest defaults (seconds) from settings; omitted → built-in defaults. */
   rest?: { compoundSec: number; isolationSec: number };
+  /** Split preference (R1 input); omitted/'auto' → composer chooses. */
+  splitChoice?: SplitChoice;
+  /** Lagging/priority muscles to bias the split toward (R1 input); omitted → none. */
+  priorityMuscles?: readonly Muscle[];
 }
 
 /** Rest-tier buckets (§3.7) — re-declared engine-local (engine may not import db). */
@@ -201,6 +215,11 @@ const COACHING: Record<string, { tempo: string; cue: string; tier: RestTier }> =
 };
 const DEFAULT_COACHING = { tempo: '2-0-1-0', cue: 'Control the weight through a full range of motion.', tier: 'accessory' as RestTier };
 
+/* Day archetypes — each an ordered Pattern[] the per-pattern fill consumes (repeating a
+   pattern is fine: the `used` set makes the 2nd pick a different exercise for that pattern,
+   so a doubled slot adds variety/volume for that muscle). Push/Pull/Legs/Upper/Lower/Full
+   are the base set; Arms + the body-part days (Chest/Back/Shoulders) power pplArms /
+   bodyPart splits and priority arm-specialization. */
 const DAY_TEMPLATES: Record<string, Pattern[]> = {
   Push: [P.horizPress!, P.vertPress!, P.inclPress!, P.lateralRaise!, P.tricep!, P.rearDelt!],
   Pull: [P.vertPull!, P.horizRow!, P.hinge!, P.biceps!, P.rearDelt!, P.abs!],
@@ -208,16 +227,114 @@ const DAY_TEMPLATES: Record<string, Pattern[]> = {
   Upper: [P.horizPress!, P.vertPull!, P.vertPress!, P.horizRow!, P.biceps!, P.tricep!],
   Lower: [P.squat!, P.hinge!, P.legPress!, P.legCurl!, P.calf!, P.abs!],
   Full: [P.squat!, P.horizPress!, P.horizRow!, P.vertPress!, P.hinge!, P.abs!],
+  Arms: [P.tricep!, P.biceps!, P.tricep!, P.biceps!, P.tricep!, P.biceps!],
+  Chest: [P.horizPress!, P.inclPress!, P.horizPress!, P.inclPress!, P.lateralRaise!, P.tricep!],
+  Back: [P.vertPull!, P.horizRow!, P.vertPull!, P.horizRow!, P.biceps!, P.rearDelt!],
+  Shoulders: [P.vertPress!, P.lateralRaise!, P.rearDelt!, P.lateralRaise!, P.vertPress!, P.tricep!],
 };
 
-function splitForDays(days: number): string[] {
-  switch (days) {
+/* Representative pattern per priority muscle — inserted as an emphasis slot near the
+   front of a day that already trains the muscle, so after the per-day cap it pushes out a
+   tail accessory (priority "modulates within structure"; it never adds a day). */
+const PRIORITY_PATTERN: Partial<Record<Muscle, Pattern>> = {
+  chest: P.inclPress!, lats: P.vertPull!, middleBack: P.horizRow!, shoulders: P.lateralRaise!,
+  biceps: P.biceps!, triceps: P.tricep!, quadriceps: P.legExt!, hamstrings: P.legCurl!,
+  glutes: P.hinge!, calves: P.calf!, abdominals: P.abs!,
+};
+
+const alternate = (pair: string[], n: number): string[] =>
+  Array.from({ length: n }, (_, i) => pair[i % pair.length]!);
+const cycle = (seq: string[], n: number): string[] =>
+  Array.from({ length: n }, (_, i) => seq[i % seq.length]!);
+
+/** Honor an explicit split choice ONLY when it cleanly fits the day count; otherwise
+ *  return null so the composer falls back to the auto split (the conflict rule —
+ *  `days` is the hard constraint, `splitChoice` a preference). */
+function fitChoice(choice: SplitChoice, days: number): string[] | null {
+  switch (choice) {
+    case 'fullBody': return Array.from({ length: days }, () => 'Full');
+    case 'upperLower': return days === 4 || days === 6 ? alternate(['Upper', 'Lower'], days) : null;
+    case 'pushPullLegs': return days === 3 || days === 6 ? cycle(['Push', 'Pull', 'Legs'], days) : null;
+    case 'pplArms':
+      if (days === 4) return ['Push', 'Pull', 'Legs', 'Arms'];
+      if (days === 5) return ['Push', 'Pull', 'Legs', 'Arms', 'Upper'];
+      return null;
+    case 'bodyPart':
+      if (days === 5) return ['Chest', 'Back', 'Shoulders', 'Legs', 'Arms'];
+      if (days === 6) return ['Chest', 'Back', 'Shoulders', 'Legs', 'Arms', 'Upper'];
+      return null;
+    default: return null; // 'auto'
+  }
+}
+
+/** The auto split by class + goal + days. Novices, strength, and general-fitness lean to
+ *  full-body / upper-lower (high frequency, compounds recur); hypertrophy/recomp/fat-loss
+ *  for trained lifters distribute volume via push/pull/legs. `days` is always honored. */
+function autoSequence(goal: TrainingGoal, exp: Experience, days: number): string[] {
+  const balanced = exp === 'Novice' || goal === 'Get stronger' || goal === 'General fitness';
+  if (balanced) {
+    switch (days) {
+      case 3: return ['Full', 'Full', 'Full'];
+      case 4: return ['Upper', 'Lower', 'Upper', 'Lower'];
+      case 5: return ['Upper', 'Lower', 'Upper', 'Lower', 'Full'];
+      default: return ['Upper', 'Lower', 'Upper', 'Lower', 'Upper', 'Lower']; // 6
+    }
+  }
+  switch (days) { // hypertrophy / recomp / fat-loss, trained
     case 3: return ['Push', 'Pull', 'Legs'];
     case 4: return ['Upper', 'Lower', 'Upper', 'Lower'];
     case 5: return ['Push', 'Pull', 'Legs', 'Upper', 'Lower'];
-    case 6: return ['Push', 'Pull', 'Legs', 'Push', 'Pull', 'Legs'];
-    default: return ['Full', 'Full', 'Full'];
+    default: return ['Push', 'Pull', 'Legs', 'Push', 'Pull', 'Legs']; // 6
   }
+}
+
+/** Reallocate one secondary day to a dedicated Arms day when arm priority + day-budget
+ *  warrant it (priority "earns a dedicated day only with budget"): trained lifter, ≥5
+ *  days, arms flagged, and no Arms day already. Never adds a day — replaces one. */
+function withArmsSpecialization(
+  seq: string[], priority: readonly Muscle[], exp: Experience, days: number,
+): string[] {
+  const armPriority = priority.includes('biceps') || priority.includes('triceps');
+  if (!armPriority || exp === 'Novice' || days < 5 || seq.includes('Arms')) return seq;
+  // Reallocate the most redundant secondary day first (Upper/Full before a primary Pull),
+  // and never the leading day — so we don't sacrifice a primary movement day.
+  let idx = -1;
+  for (const t of ['Upper', 'Full', 'Pull']) {
+    idx = seq.findIndex((d, i) => i > 0 && d === t);
+    if (idx >= 0) break;
+  }
+  if (idx < 0) return seq;
+  const out = [...seq];
+  out[idx] = 'Arms';
+  return out;
+}
+
+/** Compose the week's day-type sequence from the goal-aware inputs. Deterministic:
+ *  same inputs → same sequence (exercise-level variety/rotation is R4, not here).
+ *  Exported for the split-matrix tests. */
+export function splitSequence(
+  goal: TrainingGoal, exp: Experience, days: number,
+  splitChoice: SplitChoice, priority: readonly Muscle[],
+): string[] {
+  // fitChoice returns null for 'auto' (and for any choice that doesn't fit the days),
+  // so the composer falls through to the auto split.
+  const base = fitChoice(splitChoice, days) ?? autoSequence(goal, exp, days);
+  return withArmsSpecialization(base, priority, exp, days);
+}
+
+/** Insert an emphasis slot for each priority muscle the day trains (after the first
+ *  matching pattern), so the per-day cap keeps the priority work and drops a tail
+ *  accessory. Days that don't train the muscle are untouched (no spurious slots). */
+function priorityEmphasis(base: Pattern[], priority: readonly Muscle[]): Pattern[] {
+  if (priority.length === 0) return base;
+  const out = [...base];
+  for (const m of priority) {
+    const pat = PRIORITY_PATTERN[m];
+    if (!pat) continue;
+    const idx = out.findIndex((p) => p.muscles.includes(m));
+    if (idx >= 0) out.splice(idx + 1, 0, pat);
+  }
+  return out;
 }
 
 /** Suffix repeated day-types: Push, Push -> Push A, Push B. */
@@ -332,14 +449,21 @@ export function generatePlan(
   const gzScheme = (tier: 1 | 2 | 3) =>
     tier === 1 ? { sets: 5, repTarget: 3 } : tier === 2 ? { sets: 3, repTarget: 10 } : { sets: 3, repTarget: 15 };
 
-  const types = labelDays(splitForDays(days));
-  const baseTypes = splitForDays(days);
+  // Goal/training-age-aware split designer (R2): composes the week's day structure from
+  // the persisted preference inputs, then biases it toward the priority muscles.
+  const baseTypes = splitSequence(
+    goal, experience, days,
+    preferences.splitChoice ?? 'auto',
+    preferences.priorityMuscles ?? [],
+  );
+  const types = labelDays(baseTypes);
   const used = new Set<string>();
   const trainedMuscles = new Set<Muscle>();
   const planDays: GeneratedDay[] = [];
 
   for (let di = 0; di < types.length; di++) {
-    const patterns = (DAY_TEMPLATES[baseTypes[di]!] ?? DAY_TEMPLATES.Full!).slice(0, perDay);
+    const base = DAY_TEMPLATES[baseTypes[di]!] ?? DAY_TEMPLATES.Full!;
+    const patterns = priorityEmphasis(base, preferences.priorityMuscles ?? []).slice(0, perDay);
     const slots: GeneratedSlot[] = [];
     let dayCompoundCount = 0; // GZCLP: first compound -> T1, rest -> T2
 
@@ -397,6 +521,7 @@ export function generatePlan(
     goal === 'Get stronger' ? 'Strength'
     : goal === 'Lose fat' ? 'Cut'
     : goal === 'Recomposition' ? 'Recomp'
+    : goal === 'General fitness' ? 'Fitness'
     : 'Hypertrophy';
 
   // Block mesocycle (§2.2) — sized to the goal timeframe (default 6 wk). GZCLP is

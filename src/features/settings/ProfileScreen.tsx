@@ -26,7 +26,7 @@ import type {
    Fields persist on change (toggles/selects) or blur (number/date inputs). The editable
    form is a keyed child seeded from the persisted row via props — no setState-in-effect. */
 
-const GOALS = ['Build muscle', 'Lose fat', 'Recomposition', 'Get stronger'] as const;
+const GOALS = ['Build muscle', 'Lose fat', 'Recomposition', 'Get stronger', 'General fitness'] as const;
 const EXPERIENCE_OPTS: Experience[] = ['Novice', 'Intermediate', 'Advanced'];
 const EQUIPMENT_OPTS: EquipmentProfile[] = ['Full gym', 'Home rack', 'Minimal'];
 const DAY_OPTS = [3, 4, 5, 6];

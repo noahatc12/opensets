@@ -32,7 +32,7 @@ import { SPLITS, PRIORITY_MUSCLES } from './preferenceOptions';
 /* Ported from the Tempo prototype onboarding wizard (6 steps). On finish it
    generates a simple starter routine from the chosen goal/experience. */
 
-const GOALS = ['Build muscle', 'Lose fat', 'Recomposition', 'Get stronger'] as const;
+const GOALS = ['Build muscle', 'Lose fat', 'Recomposition', 'Get stronger', 'General fitness'] as const;
 const EQUIPMENT = ['Full gym', 'Home rack', 'Minimal'] as const;
 const EXPERIENCE = [
   { id: 'Novice', sub: 'New to structured training' },
@@ -92,10 +92,12 @@ export function OnboardingScreen() {
               equipment: equipment as EquipmentProfile,
               experience: experience as Experience,
               rest: { compoundSec: restCompoundSec, isolationSec: restIsolationSec },
+              splitChoice,
+              priorityMuscles: priority,
             },
           )
         : null,
-    [catalog, goal, sex, bodyweightLb, days, equipment, experience, restCompoundSec, restIsolationSec],
+    [catalog, goal, sex, bodyweightLb, days, equipment, experience, splitChoice, priority, restCompoundSec, restIsolationSec],
   );
 
   async function finish() {
