@@ -12,9 +12,10 @@ import { newId } from './ids';
 import {
   nextPrescription,
   detectPRs,
-  applyPeriodization,
   buildMesocyclePlan,
   phaseForWeek,
+  targetRpeForWeek,
+  intensifierForPhase,
   type PRResult,
 } from '../engine';
 import type {
@@ -40,10 +41,46 @@ const localDate = (iso: string) => iso.slice(0, 10);
 
 /** Apply the program's current mesocycle phase/week to a prescription. No-op for
  *  programs without a mesocycle (GZCLP, legacy) — the schedule is reconstructed
- *  deterministically from totalWeeks, so only weekIndex needs storing. */
+ *  deterministically from totalWeeks, so only weekIndex needs storing.
+ *
+ *  R3 / OPTION 1 — the within-block volume RAMP is retired here: the R3 generator now
+ *  owns per-muscle volume (static allocation), and a uniform set-count multiplier cannot
+ *  express per-muscle MEV→MRV ramps (each muscle has a different ratio) — scaling the
+ *  allocated counts would also push every muscle BELOW its MEV at week-1 (×0.8),
+ *  contradicting R3's must-fix. So we keep the phase RPE stamp + the intensification
+ *  intensifier but DO NOT scale set count. The per-muscle temporal ramp returns in R3.5
+ *  (via the already-present `weeklyVolumeTarget`). `mesocycle.ts` is untouched; this is a
+ *  known PAUSED state between R3 and R3.5, not a silent regression (phases / RPE /
+ *  load-progression all still work). */
 function periodize(prescription: Prescription, meso: Mesocycle | undefined): Prescription {
   if (!meso) return prescription;
-  return applyPeriodization(prescription, buildMesocyclePlan(meso.totalWeeks), meso.weekIndex);
+  const plan = buildMesocyclePlan(meso.totalWeeks);
+  const week = Math.max(0, Math.min(plan.totalWeeks - 1, Math.round(meso.weekIndex)));
+  const phase = phaseForWeek(plan, week);
+  const rpe = targetRpeForWeek(plan, week);
+
+  const warmups = prescription.sets.filter((s) => s.type === 'warmup');
+  const working = prescription.sets.filter((s) => s.type !== 'warmup');
+  if (working.length === 0) return prescription;
+
+  const scaled = working.map((s) => ({ ...s, targetRpe: rpe })); // RPE stamp, set count preserved
+  const intensifier = intensifierForPhase(phase);
+  if (intensifier) {
+    const last = scaled[scaled.length - 1]!;
+    scaled.push({
+      type: intensifier,
+      targetReps: Math.max(1, Math.round(last.targetReps * 0.6)),
+      targetWeightLb: last.targetWeightLb,
+      targetRpe: 10,
+    });
+  }
+
+  const phaseLabel = phase[0]!.toUpperCase() + phase.slice(1);
+  return {
+    sets: [...warmups, ...scaled],
+    reason: `${prescription.reason} · Wk ${week + 1} ${phaseLabel} (RPE ${rpe})`,
+    flags: phase === 'deload' ? [...prescription.flags, 'deload'] : prescription.flags,
+  };
 }
 
 function engineSettings(s: UserSettings): EngineSettings {

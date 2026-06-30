@@ -146,6 +146,10 @@ export interface GeneratorResult {
   goals: GeneratedGoal[];
   calibrationWeek: CalibrationWeek;
   mesocycle: GeneratedMesocycle | null;
+  /** R3 — per-muscle weekly *effective* sets the allocator distributed (fractional for
+   *  hypertrophy, direct for strength). The static block-start allocation; the per-muscle
+   *  temporal ramp is R3.5. Empty for GZCLP (tier-structured, not volume-allocated). */
+  weeklyVolumeByMuscle: Partial<Record<Muscle, number>>;
 }
 
 const DEFAULT_REST = { compoundSec: 180, isolationSec: 90 } as const;
@@ -411,6 +415,213 @@ function seedWeight(ex: GenExercise, compound: boolean, profile: GenProfile, exp
 
 const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
 
+/* ── R3 · VOLUME ALLOCATOR ─────────────────────────────────────────────────────
+   Per-muscle weekly set targets from the `mesocycle.ts` landmark data (previously
+   decorative), distributed across the days that train each muscle — replaces the old
+   `.slice(0, perDay)` tail-drop + flat `sets:3`. Two passes: compounds first (the
+   structural movers + their synergist credit), then a top-up to each muscle's target.
+
+   The MEV floor is HARD — every trained muscle gets ≥ its MEV, so core/abs (and any
+   tail accessory) can never be sliced to zero again (the R2 must-fix). The per-session
+   quality cap is SOFT — it yields to the MEV floor when a muscle's frequency is too low
+   to fit MEV under the cap (e.g. chest on a 3-day PPL, freq 1). Consequence: priority
+   bias is frequency-limited (it never crams surplus into one session).
+
+   Counting method switches by goal (research §1/C2): hypertrophy counts fractionally
+   (synergist set = 0.5) against a 12–20 priority band; strength counts direct-only
+   (indirect = 0) against a much lower per-movement floor.
+
+   NOTE (Option 1 / R3.5): this is the STATIC per-muscle allocation. The within-block
+   volume RAMP is paused between R3 and R3.5 — `periodize()` no longer scales set count
+   uniformly (see repositories.ts). R3.5 restores it per-muscle via the already-present
+   `weeklyVolumeTarget(m, plan, week)`. Phases / RPE / load-progression are unaffected. */
+
+/** Synergist credit for fractional counting. A pattern's primary (`muscles[0]`) always
+ *  counts 1.0; its secondary movers (`muscles[1..]`) count 0.5; these are the *indirect*
+ *  synergists a set also trains that the flat `muscles` list omits (bench → triceps +
+ *  front delt). Strength (direct) counting drops all of it. */
+const SYNERGIST: Partial<Record<string, Partial<Record<Muscle, number>>>> = {
+  horizPress: { triceps: 0.5, shoulders: 0.5 },
+  inclPress: { triceps: 0.5, shoulders: 0.5 },
+  vertPress: { triceps: 0.5 },
+  vertPull: { biceps: 0.5 },
+  horizRow: { biceps: 0.5 },
+  squat: { glutes: 0.5 },
+  legPress: { glutes: 0.5 },
+  hinge: { lowerBack: 0.5 },
+};
+
+/** Muscles a single set of `pat` credits, with fractions. Direct (strength) → primary
+ *  only. Fractional (hypertrophy) → primary 1.0 + secondary movers 0.5 + synergists. */
+function patternCredit(pat: Pattern, direct: boolean): Array<[Muscle, number]> {
+  const out: Array<[Muscle, number]> = [[pat.muscles[0]!, 1]];
+  if (!direct) {
+    for (const m of pat.muscles.slice(1)) out.push([m, 0.5]);
+    const syn = SYNERGIST[pat.key];
+    if (syn) for (const k of Object.keys(syn) as Muscle[]) out.push([k, syn[k]!]);
+  }
+  return out;
+}
+
+/** Isolation-dominant muscles — the female between-SET volume tolerance applies here
+ *  only (research C4: more submax/accessory volume, shorter rest; NOT a blanket weekly
+ *  increase, and between-session recovery stays sex-neutral). [Mixed] evidence. */
+const ACCESSORY = new Set<Muscle>(['biceps', 'triceps', 'shoulders', 'calves', 'abdominals', 'forearms']);
+
+interface AllocOpts {
+  priority: ReadonlySet<Muscle>;
+  goal: TrainingGoal;
+  /** strength → direct counting + the lower per-movement floor. */
+  strength: boolean;
+  ageYears?: number;
+  female: boolean;
+}
+
+/** Per-muscle weekly *effective*-set target. Non-priority sits at MEV (the hard floor —
+ *  the must-fix: every trained muscle ≥ MEV, abs ≈ 6 never 0); priority biases up toward
+ *  MAV (this is where priority finally protects VOLUME, not just structure). Goal / age /
+ *  sex modifiers per the research (Part 1 / 1C). */
+function weeklyTarget(m: Muscle, o: AllocOpts): number {
+  const { mev, mav, mrv } = landmarksFor(m);
+  if (o.strength) {
+    // Strength: direct counting, a low per-movement FLOOR (~3–6 hard sets/movement,
+    // research C2) — far below hypertrophy's 12–20, heaviness lives in the rule. Heavy
+    // compounds will push the big movers above this via overshoot; that's expected.
+    return o.priority.has(m) ? 8 : 6;
+  }
+  let base = o.priority.has(m) ? mav : mev;
+  if (o.goal === 'Lose fat') base = mev; // maintenance volume in a deficit (cardio carries the deficit, S7)
+  else if (o.goal === 'General fitness') base = Math.round(mev + 0.25 * (mav - mev)); // balanced moderate
+  if (o.female && ACCESSORY.has(m)) base = Math.min(base + 2, mrv); // C4 between-set tolerance (accessory only)
+  if (o.ageYears !== undefined && o.ageYears >= 50) base = Math.min(base, 12); // C3 older cap (intensity untouched)
+  return clamp(base, mev, mrv);
+}
+
+interface AllocSlot {
+  pat: Pattern;
+  sets: number;
+}
+
+const BASE_COMPOUND_SETS = 3;
+const MAX_SETS_PER_SLOT = 5;
+
+/**
+ * Allocate per-muscle weekly volume across the week's days. Returns, per day, an ordered
+ * list of (pattern, sets) the exercise-selection loop then fills — and the resulting
+ * per-muscle weekly *effective*-set map (for the bands proof). Deterministic.
+ */
+function allocateVolume(
+  dayPatterns: Pattern[][],
+  slotBudget: number,
+  o: AllocOpts,
+): { perDay: AllocSlot[][]; weeklyByMuscle: Map<Muscle, number> } {
+  const direct = o.strength;
+  const softCap = o.strength ? 6 : 8; // quality sets/muscle/session (research §4)
+  const weekly = new Map<Muscle, number>();
+  const add = (m: Muscle, n: number) => weekly.set(m, (weekly.get(m) ?? 0) + n);
+  const perDay: AllocSlot[][] = dayPatterns.map(() => []);
+
+  // freq(M) = days whose archetype has M as a *primary* (muscles[0]) — its home days.
+  const homeDays = new Map<Muscle, number[]>();
+  dayPatterns.forEach((pats, di) => {
+    const seen = new Set<Muscle>();
+    for (const p of pats) {
+      const m = p.muscles[0]!;
+      if (!seen.has(m)) { seen.add(m); (homeDays.get(m) ?? homeDays.set(m, []).get(m)!).push(di); }
+    }
+  });
+
+  // ── PASS 1 — compounds: the structural movers, archetype order, capped to a compound
+  // budget per day (~60% of the slot budget). Tally direct + synergist credit.
+  const compoundBudget = Math.max(2, Math.round(slotBudget * 0.6));
+  dayPatterns.forEach((pats, di) => {
+    let placed = 0;
+    for (const pat of pats) {
+      if (placed >= compoundBudget) break;
+      if (!pat.compound) continue;
+      perDay[di]!.push({ pat, sets: BASE_COMPOUND_SETS });
+      for (const [m, c] of patternCredit(pat, direct)) add(m, c * BASE_COMPOUND_SETS);
+      placed++;
+    }
+  });
+
+  // ── PASS 2 — top-up: bring each muscle to its weekly target, distributing the deficit
+  // EVENLY across that muscle's home days (round-robin), so volume isn't piled onto one
+  // session. Processed priority-first, then big compound muscles before small accessories
+  // (so arms/delts benefit from the compounds' synergist credit and need less direct work).
+  // The MEV floor overrides the soft cap AND the slot budget (the abs / tail-accessory
+  // fix); the soft cap caps surplus once MEV is met (priority is frequency-limited).
+  const ORDER: Muscle[] = [
+    'chest', 'lats', 'middleBack', 'quadriceps', 'hamstrings', 'glutes', 'shoulders',
+    'traps', 'biceps', 'triceps', 'forearms', 'calves', 'abdominals', 'lowerBack',
+  ];
+  const rank = (m: Muscle) => { const i = ORDER.indexOf(m); return i < 0 ? 99 : i; };
+  const muscles = [...homeDays.keys()].sort((a, b) =>
+    (o.priority.has(a) ? 0 : 1) - (o.priority.has(b) ? 0 : 1) || rank(a) - rank(b) || a.localeCompare(b),
+  );
+
+  for (const m of muscles) {
+    const tgt = weeklyTarget(m, o);
+    const { mev } = landmarksFor(m);
+    const days = homeDays.get(m)!;
+    let deficit = tgt - (weekly.get(m) ?? 0);
+    // Chunk the deficit into the FEWEST full slots (≤ MAX_SETS_PER_SLOT each) rather than a
+    // thin smear across every home day — avoids 1-set fragments and lets frequency derive
+    // from volume (a muscle needing > a slot's worth doubles up; a small one trains fewer days).
+    const slotsNeeded = Math.max(1, Math.ceil(deficit / MAX_SETS_PER_SLOT));
+    const perSession = Math.ceil(deficit / slotsNeeded);
+    const sessionSets = (di: number) =>
+      perDay[di]!.filter((s) => s.pat.muscles[0] === m).reduce((a, s) => a + s.sets, 0);
+    while (deficit > 0.5) {
+      const belowMev = (weekly.get(m) ?? 0) < mev;
+      // Place on the LEAST-LOADED eligible home day (balances total slots across the week
+      // instead of piling onto day 0). MEV-forced placement ignores the cap + budget; once
+      // MEV is met the cap/budget gate surplus (priority bias is frequency-limited).
+      let day = -1;
+      let bestLoad = Infinity;
+      for (const d of days) {
+        const eligible = belowMev || (perDay[d]!.length < slotBudget && sessionSets(d) < softCap);
+        if (eligible && perDay[d]!.length < bestLoad) { bestLoad = perDay[d]!.length; day = d; }
+      }
+      if (day < 0) break; // no room left → surplus is frequency-limited
+      // 2nd+ slot for a muscle in a session → prefer an isolation pattern (doubling with
+      // variety); the selection loop picks a distinct exercise. A small trailing remainder
+      // folds into an existing slot rather than spawning a 1-set fragment.
+      const existing = perDay[day]!.find((s) => s.pat.muscles[0] === m && s.sets < MAX_SETS_PER_SLOT);
+      const want = Math.min(perSession, Math.round(deficit), MAX_SETS_PER_SLOT);
+      if (existing && want <= 2) {
+        const bump = Math.min(want, MAX_SETS_PER_SLOT - existing.sets);
+        existing.sets += bump;
+        for (const [mm, c] of patternCredit(existing.pat, direct)) add(mm, c * bump);
+      } else {
+        const pats = dayPatterns[day]!.filter((p) => p.muscles[0] === m);
+        const pat = (sessionSets(day) > 0 ? pats.find((p) => !p.compound) : undefined) ?? pats[0]!;
+        const sets = Math.max(1, want);
+        perDay[day]!.push({ pat, sets });
+        for (const [mm, c] of patternCredit(pat, direct)) add(mm, c * sets);
+      }
+      deficit = tgt - (weekly.get(m) ?? 0);
+    }
+  }
+
+  // Report only the ALLOCATED (primary-home) muscles — those R3 directly targets + floors
+  // ≥ MEV. Synergist-only ride-alongs (a muscle with no primary pattern in this split, e.g.
+  // arms on a minimalist novice full-body, or muscles never anyone's primary like glutes /
+  // lower-back) accrue fractional credit but aren't allocated here; they ride on the
+  // compounds, and giving them a direct home is an R2-archetype / R4-selection concern.
+  const out = new Map<Muscle, number>();
+  for (const m of homeDays.keys()) out.set(m, weekly.get(m) ?? 0);
+  return { perDay, weeklyByMuscle: out };
+}
+
+/** The muscles (with fractions) a single set of pattern `patternKey` credits under the
+ *  goal's counting mode — `direct` (strength) counts the primary only; fractional
+ *  (hypertrophy) adds synergists at 0.5. Exported for the counting-switch proof. */
+export function creditFor(patternKey: string, direct: boolean): Array<[Muscle, number]> {
+  const p = P[patternKey];
+  return p ? patternCredit(p, direct) : [];
+}
+
 export function generatePlan(
   catalog: GenExercise[],
   profile: GenProfile,
@@ -457,17 +668,43 @@ export function generatePlan(
     preferences.priorityMuscles ?? [],
   );
   const types = labelDays(baseTypes);
+
+  // Each day's candidate patterns (priorityEmphasis, UNSLICED) — the R3 allocator, not a
+  // flat `.slice(0, perDay)`, now decides which patterns become slots and with how many
+  // sets, so the day's tail (abs / calves / rear-delt) can't be positionally dropped.
+  const dayPatterns: Pattern[][] = baseTypes.map((t) =>
+    priorityEmphasis(DAY_TEMPLATES[t] ?? DAY_TEMPLATES.Full!, preferences.priorityMuscles ?? []),
+  );
+
+  let alloc: AllocSlot[][];
+  let weeklyByMuscle: Map<Muscle, number>;
+  if (useGzclp) {
+    // GZCLP carries its own tier-based set/rep structure (the volume model IS the stage
+    // machine), so it keeps the legacy per-day-budget fill; per-muscle MEV-set targeting
+    // is a hypertrophy concept and doesn't apply. (GZCLP = get-stronger + novice only.)
+    alloc = dayPatterns.map((pats) => pats.slice(0, perDay).map((pat) => ({ pat, sets: 0 })));
+    weeklyByMuscle = new Map();
+  } else {
+    const a = allocateVolume(dayPatterns, perDay, {
+      priority: new Set(preferences.priorityMuscles ?? []),
+      goal,
+      strength,
+      ageYears: profile.ageYears,
+      female: profile.sex === 'female',
+    });
+    alloc = a.perDay;
+    weeklyByMuscle = a.weeklyByMuscle;
+  }
+
   const used = new Set<string>();
   const trainedMuscles = new Set<Muscle>();
   const planDays: GeneratedDay[] = [];
 
   for (let di = 0; di < types.length; di++) {
-    const base = DAY_TEMPLATES[baseTypes[di]!] ?? DAY_TEMPLATES.Full!;
-    const patterns = priorityEmphasis(base, preferences.priorityMuscles ?? []).slice(0, perDay);
     const slots: GeneratedSlot[] = [];
     let dayCompoundCount = 0; // GZCLP: first compound -> T1, rest -> T2
 
-    for (const pat of patterns) {
+    for (const { pat, sets: allocSets } of alloc[di]!) {
       let best: GenExercise | null = null;
       let bestScore = 0;
       let bestUsedFallback: GenExercise | null = null;
@@ -495,7 +732,8 @@ export function generatePlan(
         scheme = gzScheme(tier);
       } else {
         rule = pat.compound ? compoundRule : isoRule;
-        scheme = pat.compound ? compoundScheme : isoScheme;
+        // R3: the per-slot set count is the allocated volume, not flat 3.
+        scheme = { ...(pat.compound ? compoundScheme : isoScheme), sets: allocSets };
       }
 
       const coaching = COACHING[pat.key] ?? DEFAULT_COACHING;
@@ -539,9 +777,13 @@ export function generatePlan(
     };
   }
 
+  const weeklyVolumeByMuscle: Partial<Record<Muscle, number>> = {};
+  for (const [m, n] of weeklyByMuscle) weeklyVolumeByMuscle[m] = Math.round(n * 10) / 10;
+
   return {
     program: { name: `${goalShort} · ${days}d`, days: planDays },
     mesocycle,
+    weeklyVolumeByMuscle,
     // Scaffolds — shape only this session (filled by later waves).
     cardioProtocol: { weeklyMinutesTarget: 0, dailyStepTarget: 0, sessions: [] },
     goals: [],
