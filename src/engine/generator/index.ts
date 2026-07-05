@@ -94,6 +94,9 @@ export interface GeneratedSlot {
   coachingCue: string;
   /** §3.7 — rest-tier classification driving the rest shown pre-set. */
   restTier: RestTier;
+  /** R3.5 — the muscle this slot's volume was allocated to (the pattern's `muscles[0]`).
+   *  Keys the per-muscle temporal ramp once persisted onto the slot. */
+  primaryMuscle: Muscle;
 }
 export interface GeneratedDay {
   name: string;
@@ -138,6 +141,9 @@ export interface GeneratedMesocycle {
   weekIndex: number;
   totalWeeks: number;
   volumeTargets: Partial<Record<Muscle, VolumeLandmarks>>;
+  /** R3.5 — true only for volume-model goals (hypertrophy/recomp): gates the per-muscle
+   *  temporal set-count ramp. Strength/fat-loss keep the R3 static base. */
+  rampsVolume: boolean;
 }
 
 export interface GeneratorResult {
@@ -750,6 +756,7 @@ export function generatePlan(
         tempo: coaching.tempo,
         coachingCue: coaching.cue,
         restTier: coaching.tier,
+        primaryMuscle: pat.muscles[0]!,
       });
     }
     planDays.push({ name: types[di]!, slots });
@@ -774,6 +781,9 @@ export function generatePlan(
       weekIndex: 0,
       totalWeeks: plan.totalWeeks,
       volumeTargets,
+      // R3.5: only volume-model goals ramp set count toward MRV. Strength peaks via load
+      // (R5b); fat-loss holds maintenance volume in a deficit (cardio carries the deficit).
+      rampsVolume: goal === 'Build muscle' || goal === 'Recomposition',
     };
   }
 

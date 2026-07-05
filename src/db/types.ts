@@ -68,6 +68,11 @@ export interface Mesocycle {
   /** Per-muscle weekly working-set landmarks (MEV/MAV/MRV) — the generator writes
    *  these from the engine's volume table; analytics (S12) charts logged volume vs them. */
   volumeTargets?: Partial<Record<Muscle, { mev: number; mav: number; mrv: number }>>;
+  /** R3.5 — gates the per-muscle temporal set-count ramp. True only for volume-model
+   *  goals (hypertrophy/recomp), where set count ramps toward MRV across the block. For
+   *  strength (peaks via load — R5b) and fat-loss (maintenance in a deficit) it stays
+   *  false, so those programs keep their R3 static base. */
+  rampsVolume?: boolean;
 }
 
 export interface Program {
@@ -86,6 +91,10 @@ export interface ExerciseSlot {
   slotId: string;
   exerciseId: string;
   order: number;
+  /** R3.5 — the muscle this slot's volume is allocated to (the pattern's primary,
+   *  `muscles[0]`). Keys the per-muscle temporal ramp in `periodize`. Optional: slots
+   *  from pre-R3.5 programs and ad-hoc mid-workout slots lack it and simply don't ramp. */
+  primaryMuscle?: Muscle;
   scheme: {
     sets: number;
     repTarget?: number;

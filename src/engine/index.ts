@@ -29,6 +29,8 @@ export {
   phaseForWeek,
   volumeFraction,
   weeklyVolumeTarget,
+  rampProgress,
+  weeklyRampFactor,
   targetRpeForWeek,
   setMultiplier,
   intensifierForPhase,

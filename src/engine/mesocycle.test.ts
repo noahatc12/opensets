@@ -3,6 +3,8 @@ import {
   buildMesocyclePlan,
   targetRpeForWeek,
   weeklyVolumeTarget,
+  rampProgress,
+  weeklyRampFactor,
   intensifierForPhase,
   applyPeriodization,
   landmarksFor,
@@ -116,5 +118,66 @@ describe('LOAD-BEARING: two different weeks → two different prescriptions for 
   it('phase is reflected in the human-readable reason (week + phase + RPE)', () => {
     expect(applyPeriodization(base, plan6, 0).reason).toMatch(/Wk 1 Accumulation \(RPE 7\)/);
     expect(applyPeriodization(base, plan6, deloadWeek).reason).toMatch(/Deload/);
+  });
+});
+
+// ── R3.5 per-muscle temporal ramp (rampProgress + weeklyRampFactor) ─────────────
+describe('rampProgress — 0 at week-1 and deload, 1 at the intensification peak', () => {
+  it('is 0 at week-1 (the ramp floor = R3 static base)', () => {
+    expect(rampProgress(plan6, 0)).toBe(0);
+  });
+  it('is 0 at deload (resets to base)', () => {
+    expect(rampProgress(plan6, deloadWeek)).toBe(0);
+  });
+  it('reaches 1 at the final intensification week (the peak)', () => {
+    const lastInt = plan6.weeks.lastIndexOf('intensification');
+    expect(rampProgress(plan6, lastInt)).toBeCloseTo(1, 5);
+  });
+  it('climbs monotonically across the work weeks', () => {
+    const work = [0, 1, 2, intWeek]; // acc,acc,acc,int
+    for (let i = 1; i < work.length; i++) {
+      expect(rampProgress(plan6, work[i]!)).toBeGreaterThan(rampProgress(plan6, work[i - 1]!));
+    }
+  });
+});
+
+describe('weeklyRampFactor — ≥1 always, per-muscle ratio, resets at deload', () => {
+  const chest = landmarksFor('chest'); // mev 10, mrv 22
+  const glutes = landmarksFor('glutes'); // mev 4, mrv 16
+
+  it('is exactly 1 at week-1 and deload (base preserved, MEV floor holds)', () => {
+    expect(weeklyRampFactor(chest.mev, chest.mrv, plan6, 0)).toBe(1);
+    expect(weeklyRampFactor(chest.mev, chest.mrv, plan6, deloadWeek)).toBe(1);
+  });
+
+  it('never drops below 1 on any week (⇒ never below the R3 base ⇒ never below MEV)', () => {
+    for (let w = 0; w < plan6.totalWeeks; w++) {
+      expect(weeklyRampFactor(chest.mev, chest.mrv, plan6, w)).toBeGreaterThanOrEqual(1);
+    }
+  });
+
+  it('peaks at mrv/base — different per muscle, NOT a shared multiplier', () => {
+    const lastInt = plan6.weeks.lastIndexOf('intensification');
+    const chestPeak = weeklyRampFactor(chest.mev, chest.mrv, plan6, lastInt);
+    const glutesPeak = weeklyRampFactor(glutes.mev, glutes.mrv, plan6, lastInt);
+    expect(chestPeak).toBeCloseTo(chest.mrv / chest.mev, 5); // 2.2×
+    expect(glutesPeak).toBeCloseTo(glutes.mrv / glutes.mev, 5); // 4.0×
+    expect(glutesPeak).toBeGreaterThan(chestPeak + 1); // the load-bearing differential
+  });
+
+  it('a higher base (priority) ramps LESS steeply than the same muscle at MEV', () => {
+    const lastInt = plan6.weeks.lastIndexOf('intensification');
+    const atMev = weeklyRampFactor(chest.mev, chest.mrv, plan6, lastInt); // 22/10
+    const atMav = weeklyRampFactor(chest.mav, chest.mrv, plan6, lastInt); // 22/16
+    expect(atMav).toBeLessThan(atMev);
+    expect(atMav).toBeCloseTo(chest.mrv / chest.mav, 5);
+  });
+
+  it('is flat (1) when there is no headroom or no base', () => {
+    for (let w = 0; w < plan6.totalWeeks; w++) {
+      expect(weeklyRampFactor(0, chest.mrv, plan6, w)).toBe(1); // no base
+      expect(weeklyRampFactor(chest.mrv, chest.mrv, plan6, w)).toBe(1); // base == mrv
+      expect(weeklyRampFactor(chest.mrv + 5, chest.mrv, plan6, w)).toBe(1); // base > mrv
+    }
   });
 });

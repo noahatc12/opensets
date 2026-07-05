@@ -16,6 +16,8 @@ import {
   phaseForWeek,
   targetRpeForWeek,
   intensifierForPhase,
+  weeklyRampFactor,
+  landmarksFor,
   type PRResult,
 } from '../engine';
 import type {
@@ -31,6 +33,7 @@ import type {
   ExerciseStateRow,
   LoggedSet,
   Mesocycle,
+  Muscle,
   Program,
   UserSettings,
   WorkoutSession,
@@ -39,20 +42,57 @@ import type {
 
 const localDate = (iso: string) => iso.slice(0, 10);
 
+/** The muscle a slot's volume rides on + its MRV headroom — the R3.5 ramp context passed
+ *  into `periodize`. `baseTotal` is the muscle's WHOLE-program week-1 set count (Σ over
+ *  its slots); scaling this slot by the same per-muscle factor makes the muscle's weekly
+ *  total ramp `baseTotal → mrv` and reset at deload. */
+interface RampCtx {
+  baseTotal: number;
+  mrv: number;
+}
+
+/** Per-muscle week-1 base set counts (Σ `scheme.sets` over each muscle's slots) across the
+ *  whole program — the R3 static allocation the temporal ramp scales up from. */
+async function baseSetsByMuscle(programId: string): Promise<Map<Muscle, number>> {
+  const tpls = await db.templates.where('programId').equals(programId).toArray();
+  const base = new Map<Muscle, number>();
+  for (const t of tpls) {
+    for (const s of t.slots) {
+      if (s.primaryMuscle) base.set(s.primaryMuscle, (base.get(s.primaryMuscle) ?? 0) + s.scheme.sets);
+    }
+  }
+  return base;
+}
+
+/** Build the ramp context for one slot, or undefined when it can't/shouldn't ramp
+ *  (no mesocycle, non-volume goal, pre-R3.5 slot without `primaryMuscle`, or no base). */
+function rampCtxForSlot(
+  slot: ExerciseSlot,
+  meso: Mesocycle | undefined,
+  baseByMuscle: Map<Muscle, number>,
+): RampCtx | undefined {
+  if (!meso?.rampsVolume || !slot.primaryMuscle) return undefined;
+  const baseTotal = baseByMuscle.get(slot.primaryMuscle) ?? 0;
+  if (baseTotal <= 0) return undefined;
+  return { baseTotal, mrv: landmarksFor(slot.primaryMuscle).mrv };
+}
+
 /** Apply the program's current mesocycle phase/week to a prescription. No-op for
  *  programs without a mesocycle (GZCLP, legacy) — the schedule is reconstructed
  *  deterministically from totalWeeks, so only weekIndex needs storing.
  *
- *  R3 / OPTION 1 — the within-block volume RAMP is retired here: the R3 generator now
- *  owns per-muscle volume (static allocation), and a uniform set-count multiplier cannot
- *  express per-muscle MEV→MRV ramps (each muscle has a different ratio) — scaling the
- *  allocated counts would also push every muscle BELOW its MEV at week-1 (×0.8),
- *  contradicting R3's must-fix. So we keep the phase RPE stamp + the intensification
- *  intensifier but DO NOT scale set count. The per-muscle temporal ramp returns in R3.5
- *  (via the already-present `weeklyVolumeTarget`). `mesocycle.ts` is untouched; this is a
- *  known PAUSED state between R3 and R3.5, not a silent regression (phases / RPE /
- *  load-progression all still work). */
-function periodize(prescription: Prescription, meso: Mesocycle | undefined): Prescription {
+ *  Stamps the phase RPE on every working set and appends the intensification intensifier.
+ *  R3.5 — when the program ramps volume (hypertrophy/recomp) and a per-muscle `ramp`
+ *  context is supplied, the working-set COUNT ramps too: each muscle grows from its R3
+ *  static base toward its MRV across the block and resets at deload. The factor is ≥ 1
+ *  every week (= 1 at week-1 and deload), so no muscle ever drops below its R3 base
+ *  (≥ MEV) — the floor holds by construction. Without a ramp context (strength, fat-loss,
+ *  or pre-R3.5 slots) only the RPE stamp applies and set count is preserved. */
+function periodize(
+  prescription: Prescription,
+  meso: Mesocycle | undefined,
+  ramp?: RampCtx,
+): Prescription {
   if (!meso) return prescription;
   const plan = buildMesocyclePlan(meso.totalWeeks);
   const week = Math.max(0, Math.min(plan.totalWeeks - 1, Math.round(meso.weekIndex)));
@@ -63,7 +103,17 @@ function periodize(prescription: Prescription, meso: Mesocycle | undefined): Pre
   const working = prescription.sets.filter((s) => s.type !== 'warmup');
   if (working.length === 0) return prescription;
 
-  const scaled = working.map((s) => ({ ...s, targetRpe: rpe })); // RPE stamp, set count preserved
+  // R3.5 per-muscle temporal ramp — grow the working-set count toward this muscle's MRV.
+  let ramped = working;
+  if (ramp) {
+    const factor = weeklyRampFactor(ramp.baseTotal, ramp.mrv, plan, week);
+    const targetCount = Math.max(1, Math.round(working.length * factor));
+    ramped = Array.from({ length: targetCount }, (_, i) => ({
+      ...working[Math.min(i, working.length - 1)]!,
+    }));
+  }
+
+  const scaled = ramped.map((s) => ({ ...s, targetRpe: rpe })); // RPE stamp
   const intensifier = intensifierForPhase(phase);
   if (intensifier) {
     const last = scaled[scaled.length - 1]!;
@@ -184,7 +234,12 @@ export function makeSlot(
   rule: ProgressionRule,
   scheme: ExerciseSlot['scheme'],
   rest: { warmupSec: number; workSec: number },
-  coaching?: { tempo?: string; coachingCue?: string; restTier?: ExerciseSlot['restTier'] },
+  coaching?: {
+    tempo?: string;
+    coachingCue?: string;
+    restTier?: ExerciseSlot['restTier'];
+    primaryMuscle?: Muscle;
+  },
 ): ExerciseSlot {
   return {
     slotId: newId(),
@@ -199,6 +254,7 @@ export function makeSlot(
     ...(coaching?.tempo ? { tempo: coaching.tempo } : {}),
     ...(coaching?.coachingCue ? { coachingCue: coaching.coachingCue } : {}),
     ...(coaching?.restTier ? { restTier: coaching.restTier } : {}),
+    ...(coaching?.primaryMuscle ? { primaryMuscle: coaching.primaryMuscle } : {}),
   };
 }
 
@@ -223,6 +279,7 @@ export async function seedExerciseState(
 ): Promise<ExerciseStateRow> {
   const settings = engineSettings(await getSettings());
   const meso = (await db.programs.get(programId))?.mesocycle;
+  const ramp = rampCtxForSlot(slot, meso, await baseSetsByMuscle(programId));
   const base: ExerciseState = {
     workingWeightLb: startingWeightLb,
     consecutiveFails: 0,
@@ -241,7 +298,7 @@ export async function seedExerciseState(
     programId,
     exerciseId: slot.exerciseId,
     updatedAt: now,
-    pending: periodize(prescription, meso),
+    pending: periodize(prescription, meso, ramp),
   };
   await db.exerciseState.put(row);
   return row;
@@ -342,6 +399,11 @@ export async function completeSessionAndAdvance(
     nextMeso = { ...meso, weekIndex, phase: phaseForWeek(buildMesocyclePlan(meso.totalWeeks), weekIndex) };
   }
 
+  // R3.5: the muscle→week-1-base map for the per-muscle temporal ramp (computed once).
+  const baseByMuscle = session.programId
+    ? await baseSetsByMuscle(session.programId)
+    : new Map<Muscle, number>();
+
   await db.transaction(
     'rw',
     db.sessions,
@@ -366,7 +428,7 @@ export async function completeSessionAndAdvance(
           programId: session.programId!,
           exerciseId: slot.exerciseId,
           updatedAt: now,
-          pending: periodize(prescription, nextMeso),
+          pending: periodize(prescription, nextMeso, rampCtxForSlot(slot, nextMeso, baseByMuscle)),
         };
         await db.exerciseState.put(row);
       }

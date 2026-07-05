@@ -127,6 +127,7 @@ export function OnboardingScreen() {
           tempo: sp.tempo,
           coachingCue: sp.coachingCue,
           restTier: sp.restTier,
+          primaryMuscle: sp.primaryMuscle,
         }),
       );
       tpl.slots = slots;

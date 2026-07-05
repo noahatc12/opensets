@@ -12,6 +12,7 @@ import {
   completeSessionAndAdvance,
 } from './repositories';
 import type { ProgressionRule } from '../engine/types';
+import { buildMesocyclePlan, phaseForWeek } from '../engine';
 
 /* Runtime proof that periodization is REAL, not rendered: a program with a mesocycle
    advances its week as sessions complete, and the cached prescription changes with it
@@ -90,5 +91,73 @@ describe('runtime periodization (§2.2 wired into the pipeline)', () => {
     const prog = (await db.programs.get(program.id))!;
     expect(prog.mesocycle!.weekIndex).toBe(5); // totalWeeks 6 → max index 5
     expect(prog.mesocycle!.phase).toBe('deload');
+  });
+});
+
+/* R3.5 — the per-muscle temporal set-count ramp is wired into periodize: a hypertrophy
+   (rampsVolume) program grows a muscle's working sets from its R3 base toward MRV across
+   the block and resets at deload; a non-volume program (rampsVolume false) does not. */
+
+const workingCount = (row: Awaited<ReturnType<typeof getExerciseState>>) =>
+  row!.pending!.sets.filter((s) => s.type === 'working' || s.type === 'amrap').length;
+
+const PLAN6 = buildMesocyclePlan(6);
+const PEAK = PLAN6.weeks.lastIndexOf('intensification'); // 4
+const DELOAD = PLAN6.weeks.indexOf('deload'); // 5
+
+/** Two chest slots (5 + 5 = base 10 = chest MEV, headroom to MRV 22), seeded at `weekIndex`. */
+async function rampSetup(now: string, rampsVolume: boolean, weekIndex: number) {
+  const program = await createProgram('Chest · 1d', now);
+  await db.programs.update(program.id, {
+    mesocycle: {
+      phase: phaseForWeek(PLAN6, weekIndex),
+      weekIndex,
+      totalWeeks: 6,
+      volumeTargets: { chest: { mev: 10, mav: 16, mrv: 22 } },
+      rampsVolume,
+    },
+  });
+  const tpl = await createTemplate(program.id, 'Chest', 0);
+  tpl.slots = [
+    makeSlot('bench', 0, DOUBLE, { sets: 5, repRange: [6, 10] }, { warmupSec: 60, workSec: 120 }, { primaryMuscle: 'chest' }),
+    makeSlot('incline', 1, DOUBLE, { sets: 5, repRange: [6, 10] }, { warmupSec: 60, workSec: 120 }, { primaryMuscle: 'chest' }),
+  ];
+  await saveTemplate(tpl);
+  for (const s of tpl.slots) await seedExerciseState(program.id, s, 135, now);
+  return { program, tpl };
+}
+
+const chestWeeklySets = async (programId: string) =>
+  workingCount(await getExerciseState(programId, 'bench')) + workingCount(await getExerciseState(programId, 'incline'));
+
+describe('R3.5 per-muscle ramp wired into periodize', () => {
+  const now = '2026-07-05T18:00:00.000Z';
+
+  it('week-1 prescribes the R3 static base (factor 1, no change vs paused state)', async () => {
+    const { program } = await rampSetup(now, true, 0);
+    expect(await chestWeeklySets(program.id)).toBe(10); // 5 + 5 = MEV base
+  });
+
+  it('the intensification peak ramps chest up toward MRV', async () => {
+    const { program } = await rampSetup(now, true, PEAK);
+    // base 10 · (22/10) = 22 → each 5-set slot → round(5·2.2)=11, sum 22
+    expect(await chestWeeklySets(program.id)).toBe(22);
+  });
+
+  it('deload resets chest volume back to its base', async () => {
+    const { program } = await rampSetup(now, true, DELOAD);
+    expect(await chestWeeklySets(program.id)).toBe(10);
+  });
+
+  it('a non-volume goal (rampsVolume false) does NOT ramp — set count stays flat at the peak', async () => {
+    const { program } = await rampSetup(now, false, PEAK);
+    expect(await chestWeeklySets(program.id)).toBe(10); // strength/fat-loss hold the R3 base
+  });
+
+  it('never prescribes below the base (MEV) on any week', async () => {
+    for (let w = 0; w < 6; w++) {
+      const { program } = await rampSetup(now, true, w);
+      expect(await chestWeeklySets(program.id)).toBeGreaterThanOrEqual(10);
+    }
   });
 });

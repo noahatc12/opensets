@@ -106,6 +106,38 @@ export function weeklyVolumeTarget(m: Muscle, plan: MesocyclePlan, week: number)
   return Math.round(mev + f * (mrv - mev));
 }
 
+/**
+ * R3.5 ramp position, 0..1: 0 at week-1 (the block start) AND at deload, climbing to 1
+ * at the intensification peak. This is the temporal driver for the per-muscle set-count
+ * ramp — normalized off `volumeFraction` so week-1 sits at the ramp floor (the R3 static
+ * allocation is preserved there) and deload resets to it. Distinct from `volumeFraction`,
+ * whose 0.3 week-1 value would otherwise imply volume above the R3 base at the start.
+ */
+export function rampProgress(plan: MesocyclePlan, week: number): number {
+  if (phaseForWeek(plan, week) === 'deload') return 0;
+  const base = volumeFraction(plan, 0); // week-1 accumulation floor (0.3)
+  const f = volumeFraction(plan, week);
+  return Math.max(0, Math.min(1, (f - base) / (1 - base)));
+}
+
+/**
+ * R3.5 per-muscle temporal set-count multiplier. A muscle's weekly working sets ramp
+ * from its R3 static base (`baseTotal`, ≥ MEV) UP toward its `mrv` across the block, then
+ * reset at deload. The factor is ≥ 1 on every week (= 1 at week-1 and deload), so a
+ * muscle can never fall BELOW its R3 base — the MEV floor holds by construction, not by
+ * clamping. Ratio is per-muscle (mrv/baseTotal differs by muscle) → NOT a shared
+ * multiplier. Returns 1 (flat) when there's no headroom or no base.
+ */
+export function weeklyRampFactor(
+  baseTotal: number,
+  mrv: number,
+  plan: MesocyclePlan,
+  week: number,
+): number {
+  if (baseTotal <= 0 || mrv <= baseTotal) return 1;
+  return 1 + rampProgress(plan, week) * (mrv / baseTotal - 1);
+}
+
 /** Target RPE this week: accumulation 7→8, intensification 8→9, deload 6. (§3.5 setup.) */
 export function targetRpeForWeek(plan: MesocyclePlan, week: number): number {
   const phase = phaseForWeek(plan, week);
