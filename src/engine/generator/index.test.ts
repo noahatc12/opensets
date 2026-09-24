@@ -166,6 +166,19 @@ describe('profile-scaled seeds (§2.6)', () => {
     expect(bigSquat.startWeightLb).toBeGreaterThan(smallSquat.startWeightLb);
   });
 
+  it('seeds by movement, not one flat number: press < bench < squat < hinge', () => {
+    // Was: every barbell compound seeded at the same weight (43 lb for this profile).
+    const slots = allSlots(gen({ goal: 'Build muscle', sex: 'female', bodyweightLb: 140 }, { experience: 'Novice', days: 3 }));
+    const seed = (id: string) => {
+      const s = slots.find((x) => x.exerciseId === id);
+      expect(s, `${id} in plan`).toBeDefined();
+      return s!.startWeightLb;
+    };
+    expect(seed('ohp')).toBeLessThan(seed('bb-bench'));
+    expect(seed('bb-bench')).toBeLessThan(seed('squat'));
+    expect(seed('squat')).toBeLessThan(seed('rdl'));
+  });
+
   it('bodyweight lifts seed at 0', () => {
     const r = gen();
     const pullup = allSlots(r).find((s) => s.exerciseId === 'pullup');

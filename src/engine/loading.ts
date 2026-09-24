@@ -45,24 +45,6 @@ export function loadTypeFor(
   }
 }
 
-/**
- * A cautious starting weight when nothing better is known (an exercise swapped or
- * added mid-workout with no history): the empty bar, a light dumbbell, a light stack
- * setting, or bodyweight only. The lifter's first log replaces it.
- */
-export function defaultStartLb(loadType: LoadType, barLb: number): number {
-  switch (loadType) {
-    case 'barbell':
-      return barLb;
-    case 'dumbbell':
-      return 10;
-    case 'stack':
-      return 20;
-    case 'bodyweight':
-      return 0;
-  }
-}
-
 function pick(t: number, down: number, up: number, mode: RoundingMode): number {
   if (mode === 'down') return down;
   if (mode === 'up') return up;

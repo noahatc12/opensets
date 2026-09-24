@@ -16,6 +16,7 @@
  */
 import type { LoadType, Muscle, ProgressionRule } from '../types';
 import { loadTypeFor } from '../loading';
+import { startingWeightLb } from '../body';
 import {
   buildMesocyclePlan,
   landmarksFor,
@@ -402,25 +403,8 @@ function score(ex: GenExercise, pat: Pattern, pool: ReadonlySet<string>, strengt
   return s;
 }
 
-/**
- * Profile-scaled starting weight (lb). A light seed (spec §6.6) — the flat
- * equipment baseline scaled by bodyweight × sex × experience, so a heavier advanced
- * lifter seeds higher than a lighter novice. Week-1 calibration is the real source of
- * truth; this only prefills plausible numbers. (A bodyweight-relative strength-standards
- * TABLE is a later refinement.) Engine rounds to loadable plates at prescription time.
- */
-function seedWeight(ex: GenExercise, compound: boolean, profile: GenProfile, exp: Experience): number {
-  if (ex.isBodyweight || ex.equipment === 'bodyweight') return 0;
-  let base: number;
-  if (ex.equipment === 'barbell') base = compound ? 95 : 45;
-  else if (ex.equipment === 'dumbbell' || ex.equipment === 'kettlebell') base = compound ? 30 : 15;
-  else base = compound ? 50 : 25;
-
-  const bwFactor = profile.bodyweightLb ? clamp(profile.bodyweightLb / 170, 0.6, 1.6) : 1;
-  const sexFactor = profile.sex === 'female' ? 0.65 : 1;
-  const expFactor = exp === 'Novice' ? 0.85 : exp === 'Advanced' ? 1.2 : 1;
-  return Math.round(base * bwFactor * sexFactor * expFactor);
-}
+/* Starting weights: see ../body.ts (movement- and body-aware, replaces the old flat
+   equipment constants that seeded squat, bench, press and deadlift identically). */
 
 const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
 
@@ -760,7 +744,15 @@ export function generatePlan(
         rest: pat.compound
           ? { warmupSec: 60, workSec: rest.compoundSec }
           : { warmupSec: 45, workSec: rest.isolationSec },
-        startWeightLb: seedWeight(chosen, pat.compound, profile, experience),
+        startWeightLb: startingWeightLb({
+          loadType,
+          pattern: pat.key,
+          compound: pat.compound,
+          bodyweightLb: profile.bodyweightLb,
+          sex: profile.sex,
+          ageYears: profile.ageYears,
+          experience,
+        }),
         tempo: coaching.tempo,
         coachingCue: coaching.cue,
         restTier: coaching.tier,

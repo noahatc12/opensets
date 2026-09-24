@@ -10,6 +10,7 @@
 import { db, getSettings } from './db';
 import { newId } from './ids';
 import { getCatalogExercise, loadCatalog } from './catalog';
+import { ageFromBirthDate } from '../lib/age';
 import {
   nextPrescription,
   detectPRs,
@@ -20,13 +21,14 @@ import {
   weeklyRampFactor,
   landmarksFor,
   loadTypeFor,
-  defaultStartLb,
+  startingWeightLb,
   DEFAULT_LOAD_STEPS,
   type PRResult,
 } from '../engine';
 import type {
   EngineSettings,
   ExerciseState,
+  LoadSteps,
   LoadType,
   Prescription,
   ProgressionRule,
@@ -138,6 +140,16 @@ function periodize(
   };
 }
 
+/** The lifter's dumbbell and stack increments, defaulted for older settings rows. */
+export function loadStepsOf(s: UserSettings): LoadSteps {
+  return {
+    dumbbellStepLb: s.dumbbellStepLb ?? DEFAULT_LOAD_STEPS.dumbbellStepLb,
+    dumbbellSmallStepLb: s.dumbbellSmallStepLb ?? DEFAULT_LOAD_STEPS.dumbbellSmallStepLb,
+    dumbbellSmallBelowLb: s.dumbbellSmallBelowLb ?? DEFAULT_LOAD_STEPS.dumbbellSmallBelowLb,
+    stackStepLb: s.stackStepLb ?? DEFAULT_LOAD_STEPS.stackStepLb,
+  };
+}
+
 function engineSettings(s: UserSettings, loadType: LoadType): EngineSettings {
   return {
     barLb: s.barLb,
@@ -145,12 +157,7 @@ function engineSettings(s: UserSettings, loadType: LoadType): EngineSettings {
     rounding: 'nearest',
     units: s.units,
     loadType,
-    steps: {
-      dumbbellStepLb: s.dumbbellStepLb ?? DEFAULT_LOAD_STEPS.dumbbellStepLb,
-      dumbbellSmallStepLb: s.dumbbellSmallStepLb ?? DEFAULT_LOAD_STEPS.dumbbellSmallStepLb,
-      dumbbellSmallBelowLb: s.dumbbellSmallBelowLb ?? DEFAULT_LOAD_STEPS.dumbbellSmallBelowLb,
-      stackStepLb: s.stackStepLb ?? DEFAULT_LOAD_STEPS.stackStepLb,
-    },
+    steps: loadStepsOf(s),
   };
 }
 
@@ -347,10 +354,38 @@ export async function seedExerciseState(
     programId,
     exerciseId: slot.exerciseId,
     updatedAt: now,
-    pending: periodize(prescription, meso, ramp),
+    // Nobody has lifted this weight yet: flag it so the logger labels it as a
+    // suggested start and asks the lifter to calibrate it. The first completion
+    // computes a fresh prescription without the flag.
+    pending: withFlag(periodize(prescription, meso, ramp), 'suggested'),
   };
   await db.exerciseState.put(row);
   return row;
+}
+
+function withFlag(p: Prescription, flag: Prescription['flags'][number]): Prescription {
+  return p.flags.includes(flag) ? p : { ...p, flags: [...p.flags, flag] };
+}
+
+/** The most recent bodyweight entry, in lb (the measurements log is the source of truth). */
+export async function latestBodyweightLb(): Promise<number | undefined> {
+  const rows = await db.measurements.where('type').equals('bodyweight').toArray();
+  rows.sort((a, b) => b.date.localeCompare(a.date));
+  return rows.find((r) => r.valueLb !== undefined && r.valueLb > 0)?.valueLb;
+}
+
+/** A body-aware starting weight for a slot with no history (a swap or an add), from
+ *  the on-device profile and the latest bodyweight. Nothing leaves the device. */
+async function bodyAwareStartLb(slot: ExerciseSlot, loadType: LoadType, now: string): Promise<number> {
+  const profile = await db.profile.get('user');
+  return startingWeightLb({
+    loadType,
+    compound: getCatalogExercise(slot.exerciseId)?.mechanic === 'compound',
+    bodyweightLb: await latestBodyweightLb(),
+    sex: profile?.sex,
+    ageYears: ageFromBirthDate(profile?.birthDate, now),
+    experience: profile?.experience,
+  });
 }
 
 /** The prescription to show today for a slot (the cached `pending`, or a seed). */
@@ -361,9 +396,9 @@ export async function prescriptionForSlot(
 ): Promise<Prescription> {
   const existing = await getExerciseState(programId, slot.exerciseId);
   if (existing?.pending) return existing.pending;
-  // Unseeded (a mid-workout swap or add): start from a plausible weight for how the
-  // exercise is loaded, not the empty bar for everything.
-  const start = defaultStartLb(await loadTypeOf(slot), (await getSettings()).barLb);
+  // Unseeded (a mid-workout swap or add): a cautious start from the lifter's own body
+  // data and how the exercise is loaded, not the empty bar for everything.
+  const start = await bodyAwareStartLb(slot, await loadTypeOf(slot), now);
   const seeded = await seedExerciseState(programId, slot, start, now);
   return seeded.pending!;
 }

@@ -1,19 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import {
-  loadTypeFor,
-  roundForLoad,
-  defaultStartLb,
-  DEFAULT_LOAD_STEPS,
-} from './loading';
-
-describe('defaultStartLb (no history, no profile)', () => {
-  it('is cautious per load type: bar, light dumbbell, light stack, bodyweight only', () => {
-    expect(defaultStartLb('barbell', 45)).toBe(45);
-    expect(defaultStartLb('dumbbell', 45)).toBe(10);
-    expect(defaultStartLb('stack', 45)).toBe(20);
-    expect(defaultStartLb('bodyweight', 45)).toBe(0);
-  });
-});
+import { loadTypeFor, roundForLoad, DEFAULT_LOAD_STEPS } from './loading';
 
 const PLATES = [1.25, 2.5, 5, 10, 25, 35, 45];
 const S = DEFAULT_LOAD_STEPS;

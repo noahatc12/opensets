@@ -122,7 +122,10 @@ export type PrescriptionFlag =
   | 'deload'
   | 'stageChange'
   | 'tmIncrease'
-  | 'plateauSuspected';
+  | 'plateauSuspected'
+  /** A starting weight nobody has lifted yet: the UI labels it and asks the lifter
+   *  to calibrate it (their first log replaces it). */
+  | 'suggested';
 
 /** A single prescribed set within a prescription. */
 export interface PrescribedSet {
