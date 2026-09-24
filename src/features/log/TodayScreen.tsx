@@ -15,6 +15,7 @@ import { toUnit, roundDisplay } from '../../lib/units';
 import {
   getActiveProgram,
   listTemplates,
+  nextTemplateForProgram,
   startSessionFromTemplate,
   getActiveWorkoutSession,
 } from '../../db/repositories';
@@ -52,6 +53,11 @@ export function TodayScreen() {
     () => (activeProgram ? listTemplates(activeProgram.id) : Promise.resolve([])),
     [activeProgram?.id],
   );
+  // The next day in the rotation (not always Day 1).
+  const nextTpl = useLiveQuery(
+    () => (activeProgram ? nextTemplateForProgram(activeProgram.id) : Promise.resolve(undefined)),
+    [activeProgram?.id],
+  );
   const completed = useLiveQuery(() =>
     db.sessions.where('status').equals('completed').toArray(),
   );
@@ -66,8 +72,10 @@ export function TodayScreen() {
 
   if (activeSessionId) return <ActiveSession />;
 
-  const tpl = templates?.[0];
+  const tpl = nextTpl ?? templates?.[0];
   const ready = tpl && tpl.slots.length > 0;
+  const meso = activeProgram?.mesocycle;
+  const newBlock = meso && (meso.blockIndex ?? 0) > 0 && meso.weekIndex === 0;
   const dateLabel = new Date().toLocaleDateString(undefined, {
     weekday: 'long',
     month: 'short',
@@ -183,6 +191,12 @@ export function TodayScreen() {
     <div className="h-full overflow-auto px-[22px] pb-24 pt-[max(1rem,env(safe-area-inset-top))]">
       {Header}
       {resumeBanner}
+      {newBlock && (
+        <p role="status" className="mt-3 text-[13px] leading-snug text-muted">
+          Block {(meso.blockIndex ?? 0) + 1} started. Same exercises, with volume back at the
+          start of the ramp.
+        </p>
+      )}
 
       {/* today's workout card */}
       <div
@@ -194,7 +208,7 @@ export function TodayScreen() {
             className="text-[11px] font-bold uppercase text-accent"
             style={{ letterSpacing: 'var(--tracking-caps)', fontFamily: 'var(--font-label)' }}
           >
-            Scheduled
+            {(templates?.length ?? 0) > 1 ? `Scheduled · ${tpl.name}` : 'Scheduled'}
           </span>
           <span className="text-[12px] text-muted" style={numFont}>
             ~{estMin} min · {slots.length} exercises

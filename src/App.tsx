@@ -9,6 +9,7 @@ import {
 } from 'react-router-dom';
 import { TabBar } from './components/TabBar';
 import { ReloadPrompt } from './components/ReloadPrompt';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { useSessionStore } from './state/session';
 import { TodayScreen } from './features/log/TodayScreen';
 import { RoutineBuilder } from './features/programs/RoutineBuilder';
@@ -45,7 +46,10 @@ function AppShell() {
   return (
     <div className="mx-auto flex h-dvh max-w-md flex-col overflow-hidden bg-bg">
       <main className="flex-1 overflow-y-auto overscroll-contain">
-        <Outlet />
+        {/* Keyed by route: a crash is contained to one screen and cleared on navigation. */}
+        <ErrorBoundary key={pathname}>
+          <Outlet />
+        </ErrorBoundary>
       </main>
       {showTabs && <TabBar />}
       <ReloadPrompt />

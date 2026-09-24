@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { useSettings, updateSettings } from '../../db/hooks';
 import { kgToLb } from '../../lib/units';
+import { DEFAULT_LOAD_STEPS } from '../../engine/loading';
 import { ChevronLeftIcon, CheckIcon, PlusIcon } from '../../components/icons';
 
 /* Ported from the Tempo prototype "showPlates" screen (OpenSets.dc.html
@@ -155,6 +156,91 @@ export function PlatesScreen() {
         <p className="mx-1 mt-2 text-[11px] leading-snug text-faint">
           The bar counts toward total load. Most Olympic barbells are {lb ? '45 lb' : '20 kg'}.
         </p>
+
+        <div
+          className="mx-1 mb-2.5 mt-[26px] text-[11px] font-bold uppercase text-faint"
+          style={{ letterSpacing: 'var(--tracking-caps)', fontFamily: 'var(--font-label)' }}
+        >
+          Dumbbells and machines
+        </div>
+        <div
+          className="overflow-hidden rounded-[var(--r-md)] border"
+          style={{ background: 'var(--surface)', borderColor: 'var(--border-card)' }}
+        >
+          <StepRow
+            label="Dumbbell jumps"
+            options={lb ? [2.5, 5, 10] : [1, 2, 2.5]}
+            valueLb={settings.dumbbellStepLb ?? DEFAULT_LOAD_STEPS.dumbbellStepLb}
+            toLb={toLb}
+            onPick={(v) => void updateSettings({ dumbbellStepLb: v })}
+          />
+          <StepRow
+            label={`Under ${lb ? '20 lb' : '9 kg'}`}
+            options={lb ? [1, 2.5, 5] : [0.5, 1, 2]}
+            valueLb={settings.dumbbellSmallStepLb ?? DEFAULT_LOAD_STEPS.dumbbellSmallStepLb}
+            toLb={toLb}
+            onPick={(v) => void updateSettings({ dumbbellSmallStepLb: v })}
+          />
+          <StepRow
+            label="Cable and machine stack"
+            options={lb ? [2.5, 5, 10] : [1, 2.5, 5]}
+            valueLb={settings.stackStepLb ?? DEFAULT_LOAD_STEPS.stackStepLb}
+            toLb={toLb}
+            onPick={(v) => void updateSettings({ stackStepLb: v })}
+            last
+          />
+        </div>
+        <p className="mx-1 mt-2 text-[11px] leading-snug text-faint">
+          Dumbbell weights are per hand. Suggestions round to these jumps, so they match
+          the racks and stacks at your gym.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function StepRow({
+  label,
+  options,
+  valueLb,
+  toLb,
+  onPick,
+  last = false,
+}: {
+  label: string;
+  options: number[];
+  valueLb: number;
+  toLb: (v: number) => number;
+  onPick: (lb: number) => void;
+  last?: boolean;
+}) {
+  return (
+    <div
+      className="flex items-center justify-between gap-3 px-4 py-3"
+      style={last ? undefined : { borderBottom: '1px solid var(--border)' }}
+    >
+      <span className="text-[14px] font-semibold text-text">{label}</span>
+      <div className="flex flex-none gap-1 rounded-[var(--r-sm)] p-1" style={{ background: 'var(--bg)' }}>
+        {options.map((o) => {
+          const active = Math.abs(valueLb - toLb(o)) < EPS;
+          return (
+            <button
+              key={o}
+              onClick={() => onPick(toLb(o))}
+              aria-pressed={active}
+              aria-label={`${label}: ${o}`}
+              className="min-w-11 rounded-[7px] px-2.5 py-1.5 text-[13px]"
+              style={{
+                ...numFont,
+                fontWeight: active ? 700 : 600,
+                background: active ? 'var(--accent)' : 'transparent',
+                color: active ? 'var(--accent-ink)' : 'var(--muted)',
+              }}
+            >
+              {o}
+            </button>
+          );
+        })}
       </div>
     </div>
   );

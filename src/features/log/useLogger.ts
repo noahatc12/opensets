@@ -28,6 +28,7 @@ import {
   clearActiveSnapshot,
 } from '../../db/recovery';
 import { guardActiveSession } from '../../db/multiTab';
+import { loadTypeFor } from '../../engine/loading';
 import type {
   Exercise,
   ExerciseSlot,
@@ -157,6 +158,10 @@ export function useLogger(): LoggerVM | null {
   const [multiTabConflict, setMultiTabConflict] = useState(false);
   const [readyToSave, setReadyToSave] = useState(false);
   const restoredForRef = useRef<string | null>(null);
+  // In-flight guards. State updates land after a re-render, so a fast double tap would
+  // read the same activeIndex twice and log a duplicate set; refs flip synchronously.
+  const loggingRef = useRef(false);
+  const finishingRef = useRef(false);
 
   // Multi-tab guard: if another tab already holds the active session, warn + go
   // read-only here. Browser-only (no-op in node/tests).
@@ -277,28 +282,35 @@ export function useLogger(): LoggerVM | null {
   const wStepLabel = weightStepLabel(units);
 
   async function log() {
-    if (!activePrescribed) return;
-    const loggedRow = await logSet({
-      sessionId: session!.id,
-      exerciseId: exId,
-      date: session!.date,
-      order: activeIndex,
-      type: (isAmrap ? 'amrap' : 'working') as SetType,
-      weightLb: weight,
-      reps,
-      completed: true,
-      ...(rpe !== undefined ? { rpe } : {}),
-    });
-    const pr = await detectAndMarkPRs(loggedRow);
-    if (pr.kinds.length > 0) {
-      setCelebrate({ kinds: pr.kinds, e1rm: pr.e1rm });
+    if (!activePrescribed || loggingRef.current) return;
+    loggingRef.current = true;
+    try {
+      const loggedRow = await logSet({
+        sessionId: session!.id,
+        exerciseId: exId,
+        date: session!.date,
+        order: activeIndex,
+        type: (isAmrap ? 'amrap' : 'working') as SetType,
+        weightLb: weight,
+        reps,
+        completed: true,
+        ...(rpe !== undefined ? { rpe } : {}),
+      });
+      const pr = await detectAndMarkPRs(loggedRow);
+      if (pr.kinds.length > 0) {
+        setCelebrate({ kinds: pr.kinds, e1rm: pr.e1rm });
+      }
+      setToast({ setId: loggedRow.id });
+      setWhyOpen(false);
+      if (restAutoStart ?? true) startRest(slot!.restWorkSec);
+    } finally {
+      loggingRef.current = false;
     }
-    setToast({ setId: loggedRow.id });
-    setWhyOpen(false);
-    if (restAutoStart ?? true) startRest(slot!.restWorkSec);
   }
 
   async function finish() {
+    if (finishingRef.current) return;
+    finishingRef.current = true;
     setFinishing(true);
     stopRest();
     await completeSessionAndAdvance(session!.id, nowIso());
@@ -339,16 +351,34 @@ export function useLogger(): LoggerVM | null {
   async function onPickExercise(exercise: Exercise) {
     const mode = pickerMode;
     setPickerMode(null);
+    const loadType = loadTypeFor(exercise.equipment, exercise.isBodyweight);
     if (mode === 'swap') {
-      const next = slots.map((s, i) =>
-        i === current ? { ...s, exerciseId: exercise.id } : s,
-      );
+      // The swapped-in exercise brings its own load type. The old exercise's cue and
+      // tempo do not transfer (a hip-thrust must not inherit a deadlift cue), and a
+      // bodyweight swap progresses by reps rather than by added plates.
+      const next = slots.map((s, i) => {
+        if (i !== current) return s;
+        const { coachingCue: _cue, tempo: _tempo, ...rest } = s;
+        void _cue;
+        void _tempo;
+        const rule: ProgressionRule =
+          loadType === 'bodyweight'
+            ? { kind: 'repsOnly', repIncrement: 1 }
+            : s.progressionRule.kind === 'repsOnly'
+              ? ADD_RULE
+              : s.progressionRule;
+        return { ...rest, exerciseId: exercise.id, loadType, progressionRule: rule };
+      });
       await setSessionSlots(session!.id, next);
     } else if (mode === 'add') {
-      const slot = makeSlot(exercise.id, slots.length, ADD_RULE, ADD_SCHEME, {
-        warmupSec: defaultRestWarmupSec,
-        workSec: defaultRestWorkSec,
-      });
+      const slot = makeSlot(
+        exercise.id,
+        slots.length,
+        loadType === 'bodyweight' ? { kind: 'repsOnly', repIncrement: 1 } : ADD_RULE,
+        ADD_SCHEME,
+        { warmupSec: defaultRestWarmupSec, workSec: defaultRestWorkSec },
+        { loadType },
+      );
       await setSessionSlots(session!.id, [...slots, slot]);
       setCurrent(slots.length);
     }

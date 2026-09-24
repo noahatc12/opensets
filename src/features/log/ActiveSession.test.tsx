@@ -7,7 +7,7 @@
  * the safety net for the logger UI the gate never covered.
  */
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { render, screen, waitFor, cleanup } from '@testing-library/react';
+import { render, screen, waitFor, cleanup, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { db, DEFAULT_SETTINGS } from '../../db/db';
@@ -143,6 +143,19 @@ describe('Readout logger — core flow (pinned pre-extraction)', () => {
     renderLogger();
     await user.click(await logButton());
     expect(await screen.findByText('Rest')).toBeTruthy();
+  });
+
+  it('a double tap on Log Set logs one set, not two', async () => {
+    const { session } = await seedActiveSession();
+    renderLogger();
+    const btn = await logButton();
+    fireEvent.click(btn);
+    fireEvent.click(btn);
+    await waitFor(async () => {
+      expect((await getSessionSets(session.id)).length).toBeGreaterThan(0);
+    });
+    await new Promise((r) => setTimeout(r, 150));
+    expect(await getSessionSets(session.id)).toHaveLength(1);
   });
 
   it('finish completes the session', async () => {

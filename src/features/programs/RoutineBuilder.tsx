@@ -6,6 +6,7 @@ import { Segmented } from '../../components/Segmented';
 import { ExercisePicker } from '../library/ExercisePicker';
 import type { Exercise, ExerciseSlot } from '../../db/types';
 import type { ProgressionRule } from '../../engine/types';
+import { loadTypeFor } from '../../engine/loading';
 import {
   createProgram,
   setActiveProgram,
@@ -87,10 +88,14 @@ export function RoutineBuilder() {
         d.ruleKind === 'double'
           ? { sets: d.sets, repRange: [d.repMin, d.repMax] }
           : { sets: d.sets, repTarget: d.repTarget };
-      return makeSlot(d.exercise.id, order, rule, scheme, {
-        warmupSec: 60,
-        workSec: d.restWorkSec,
-      });
+      return makeSlot(
+        d.exercise.id,
+        order,
+        rule,
+        scheme,
+        { warmupSec: 60, workSec: d.restWorkSec },
+        { loadType: loadTypeFor(d.exercise.equipment, d.exercise.isBodyweight) },
+      );
     });
     tpl.slots = slots;
     await saveTemplate(tpl);

@@ -1,33 +1,18 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCatalog } from '../library/useCatalog';
-import {
-  createProgram,
-  setActiveProgram,
-  createTemplate,
-  saveTemplate,
-  makeSlot,
-  seedExerciseState,
-} from '../../db/repositories';
-import {
-  generatePlan,
-  type TrainingGoal,
-  type EquipmentProfile,
-  type Experience,
-} from '../../engine';
+import { generatePlan } from '../../engine';
 import { ChevronLeftIcon } from '../../components/icons';
-import { db } from '../../db/db';
-import { newId } from '../../db/ids';
-import { useSettings, updateProfile } from '../../db/hooks';
+import { useSettings } from '../../db/hooks';
 import { kgToLb, ftInToIn } from '../../lib/units';
-import type {
-  BiologicalSex,
-  Muscle,
-  MuscleVolumeState,
-  Profile,
-  SplitChoice,
-} from '../../db/types';
+import type { BiologicalSex, Muscle, SplitChoice } from '../../db/types';
 import { SPLITS, PRIORITY_MUSCLES } from './preferenceOptions';
+import {
+  createProgramFromPlan,
+  genPreferencesFrom,
+  genProfileFrom,
+  type OnboardingInputs,
+} from './buildProgram';
 
 /* Ported from the Tempo prototype onboarding wizard (6 steps). On finish it
    generates a simple starter routine from the chosen goal/experience. */
@@ -78,101 +63,64 @@ export function OnboardingScreen() {
     return units === 'kg' ? kgToLb(bw) : bw;
   }, [bodyweight, units]);
 
-  // The generated plan — recomputed as the answers change, used for both the
-  // step-5 preview and the actual build so they always agree. Now via the pure
-  // engine generator (the S2 contract): profile + preferences in, full plan out.
-  const plan = useMemo(
-    () =>
-      catalog
-        ? generatePlan(
-            catalog,
-            { goal: goal as TrainingGoal, sex: sex ?? undefined, bodyweightLb },
-            {
-              days,
-              equipment: equipment as EquipmentProfile,
-              experience: experience as Experience,
-              rest: { compoundSec: restCompoundSec, isolationSec: restIsolationSec },
-              splitChoice,
-              priorityMuscles: priority,
-            },
-          )
-        : null,
-    [catalog, goal, sex, bodyweightLb, days, equipment, experience, splitChoice, priority, restCompoundSec, restIsolationSec],
-  );
-
-  async function finish() {
-    if (!plan) return;
-    setBusy(true);
-    const now = nowIso();
-    const program = await createProgram(plan.program.name, now);
-    await setActiveProgram(program.id);
-    // Persist the block mesocycle (null for self-periodizing GZCLP programs) and
-    // seed the per-muscle volume STATE from its landmarks — current starts at MEV
-    // (the block begins at minimum effective volume; R3/R5 ramp it toward MRV).
-    if (plan.mesocycle) {
-      const targets = plan.mesocycle.volumeTargets ?? {};
-      const volumeState: Partial<Record<Muscle, MuscleVolumeState>> = {};
-      for (const m of Object.keys(targets) as Muscle[]) {
-        const lm = targets[m];
-        if (lm) volumeState[m] = { current: lm.mev, mev: lm.mev, mav: lm.mav, mrv: lm.mrv };
-      }
-      await db.programs.update(program.id, { mesocycle: plan.mesocycle, volumeState });
-    }
-
-    for (let di = 0; di < plan.program.days.length; di++) {
-      const day = plan.program.days[di]!;
-      const tpl = await createTemplate(program.id, day.name, di);
-      const slots = day.slots.map((sp, i) =>
-        makeSlot(sp.exerciseId, i, sp.rule, sp.scheme, sp.rest, {
-          tempo: sp.tempo,
-          coachingCue: sp.coachingCue,
-          restTier: sp.restTier,
-          primaryMuscle: sp.primaryMuscle,
-        }),
-      );
-      tpl.slots = slots;
-      await saveTemplate(tpl);
-      await Promise.all(
-        slots.map((slot, i) =>
-          seedExerciseState(program.id, slot, day.slots[i]!.startWeightLb, now),
-        ),
-      );
-    }
-
-    const bw = parseFloat(bodyweight);
-    if (!Number.isNaN(bw) && bw > 0) {
-      await db.measurements.add({
-        id: newId(),
-        type: 'bodyweight',
-        date: now,
-        valueLb: units === 'kg' ? kgToLb(bw) : bw,
-      });
-    }
-
-    // Persist the captured profile (always carries the chosen goal; numbers are
-    // optional). Height stored canonical in inches. Bodyweight stays a measurement.
-    const profile: Partial<Profile> = { goal };
-    // Persist the generation inputs (experience/days/equipment were transient pre-R1)
-    // + the new preference inputs, so the generator + evolution engine read them later.
-    profile.experience = experience as Profile['experience'];
-    profile.days = days;
-    profile.equipment = equipment as Profile['equipment'];
-    profile.splitChoice = splitChoice;
-    if (priority.length) profile.priorityMuscles = priority;
-    if (sex) profile.sex = sex;
-    if (dob) profile.birthDate = dob;
+  // Everything the wizard collected, in canonical units (lb, inches).
+  const inputs: OnboardingInputs = useMemo(() => {
+    const num = (s: string, parse: (v: string) => number) => {
+      const v = parse(s);
+      return Number.isNaN(v) || v <= 0 ? undefined : v;
+    };
     const ft = parseInt(heightFt, 10);
     const inch = parseInt(heightInch, 10);
     const hIn = ftInToIn(Number.isNaN(ft) ? 0 : ft, Number.isNaN(inch) ? 0 : inch);
-    if (hIn > 0) profile.heightIn = hIn;
-    const bf = parseFloat(bodyFat);
-    if (!Number.isNaN(bf) && bf > 0) profile.bodyFatPct = bf;
-    const tbf = parseFloat(targetBodyFat);
-    if (!Number.isNaN(tbf) && tbf > 0) profile.targetBodyFatPct = tbf;
-    const wk = parseInt(timeframeWeeks, 10);
-    if (!Number.isNaN(wk) && wk > 0) profile.goalTimeframeWeeks = wk;
-    await updateProfile(profile);
+    return {
+      goal,
+      experience,
+      days,
+      equipment,
+      splitChoice,
+      priorityMuscles: priority,
+      ...(sex ? { sex } : {}),
+      ...(dob ? { birthDate: dob } : {}),
+      ...(bodyweightLb ? { bodyweightLb } : {}),
+      ...(hIn > 0 ? { heightIn: hIn } : {}),
+      ...(num(bodyFat, parseFloat) ? { bodyFatPct: num(bodyFat, parseFloat) } : {}),
+      ...(num(targetBodyFat, parseFloat) ? { targetBodyFatPct: num(targetBodyFat, parseFloat) } : {}),
+      ...(num(timeframeWeeks, (v) => parseInt(v, 10))
+        ? { goalTimeframeWeeks: num(timeframeWeeks, (v) => parseInt(v, 10)) }
+        : {}),
+    };
+  }, [goal, experience, days, equipment, splitChoice, priority, sex, dob, bodyweightLb, heightFt, heightInch, bodyFat, targetBodyFat, timeframeWeeks]);
 
+  // The generated plan — recomputed as the answers change, used for both the
+  // step-5 preview and the actual build so they always agree. Now via the pure
+  // engine generator (the S2 contract): profile + preferences in, full plan out.
+  // The profile now carries age (from DOB) and the goal timeframe too.
+  const plan = useMemo(
+    () =>
+      catalog
+        ? generatePlan(catalog, genProfileFrom(inputs, nowIso()), {
+            ...genPreferencesFrom(inputs),
+            rest: { compoundSec: restCompoundSec, isolationSec: restIsolationSec },
+          })
+        : null,
+    [catalog, inputs, restCompoundSec, restIsolationSec],
+  );
+
+  const [buildError, setBuildError] = useState<string | null>(null);
+
+  async function finish() {
+    if (!plan || busy) return;
+    setBusy(true);
+    setBuildError(null);
+    try {
+      // One transaction: the program, its days, the profile and the starting
+      // bodyweight all land together or not at all.
+      await createProgramFromPlan(plan, inputs, nowIso());
+    } catch {
+      setBusy(false);
+      setBuildError('Could not save your plan. Nothing was changed. Try again.');
+      return;
+    }
     try {
       localStorage.setItem('opensets-onboarded', '1');
     } catch {
@@ -490,6 +438,11 @@ export function OnboardingScreen() {
       </div>
 
       <div className="flex-none px-[22px] pb-[max(1.75rem,env(safe-area-inset-bottom))] pt-3">
+        {buildError && (
+          <p role="alert" className="mb-2.5 text-center text-[13px] text-danger">
+            {buildError}
+          </p>
+        )}
         <button
           onClick={next}
           disabled={busy}

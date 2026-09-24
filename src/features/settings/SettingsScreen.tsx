@@ -98,6 +98,9 @@ export function SettingsScreen() {
   const fileRef = useRef<HTMLInputElement>(null);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [confirmReset, setConfirmReset] = useState(false);
+  // Import replaces everything, so a picked file waits here for an explicit confirm
+  // (audit 2026-09-24: it used to replace all data the moment a file was chosen).
+  const [pendingImport, setPendingImport] = useState<File | null>(null);
 
   /** Wipe the local database + stored preferences, then reload as a fresh install. */
   async function resetAll() {
@@ -115,9 +118,10 @@ export function SettingsScreen() {
   }
 
   async function handleImport(file: File) {
+    setPendingImport(null);
     try {
       await importFromJson(await file.text());
-      setFeedback('Backup restored.');
+      setFeedback('Data replaced. Your previous data was saved as a snapshot on this device.');
     } catch (err) {
       setFeedback(err instanceof ImportError ? err.message : 'Could not read file.');
     } finally {
@@ -246,9 +250,49 @@ export function SettingsScreen() {
           className="hidden"
           onChange={(e) => {
             const f = e.target.files?.[0];
-            if (f) void handleImport(f);
+            if (f) {
+              setFeedback(null);
+              setPendingImport(f);
+            }
           }}
         />
+
+        {pendingImport && (
+          <div
+            role="alertdialog"
+            aria-label="Replace all data"
+            className="mt-3 rounded-[var(--r-md)] border px-4 py-3.5"
+            style={{
+              background: 'var(--surface)',
+              borderColor: 'color-mix(in oklab, var(--danger) 45%, var(--border-card))',
+            }}
+          >
+            <p className="text-[13px] leading-snug text-text">
+              Replace all workouts, programs and settings on this device with{' '}
+              <span className="font-semibold">{pendingImport.name}</span>? Your current data is
+              saved as a snapshot first.
+            </p>
+            <div className="mt-3.5 flex gap-2">
+              <button
+                onClick={() => {
+                  setPendingImport(null);
+                  if (fileRef.current) fileRef.current.value = '';
+                }}
+                className="h-11 flex-1 rounded-[var(--r-sm)] text-[13px] font-semibold text-text"
+                style={{ background: 'var(--surface-2)' }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => void handleImport(pendingImport)}
+                className="h-11 flex-1 rounded-[var(--r-sm)] text-[13px] font-bold"
+                style={{ background: 'var(--danger)', color: '#fff' }}
+              >
+                Replace data
+              </button>
+            </div>
+          </div>
+        )}
 
         {feedback && (
           <p role="status" className="mt-3 text-center text-[12px] text-muted">
