@@ -1,12 +1,17 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useLiveQuery } from 'dexie-react-hooks';
+import { useProfile, useSettings } from '../../db/hooks';
+import { startingWeightLb } from '../../engine/body';
+import { ageFromBirthDate } from '../../lib/age';
+import { kgToLb, roundDisplay, toUnit } from '../../lib/units';
 import { Card } from '../../components/Card';
 import { Stepper } from '../../components/Stepper';
 import { Segmented } from '../../components/Segmented';
 import { ExercisePicker } from '../library/ExercisePicker';
 import type { Exercise, ExerciseSlot } from '../../db/types';
 import type { ProgressionRule } from '../../engine/types';
-import { loadTypeFor } from '../../engine/loading';
+import { loadTypeFor, roundForLoad } from '../../engine/loading';
 import {
   createProgram,
   setActiveProgram,
@@ -14,6 +19,8 @@ import {
   saveTemplate,
   makeSlot,
   seedExerciseState,
+  latestBodyweightLb,
+  loadStepsOf,
 } from '../../db/repositories';
 import { ChevronLeftIcon, CloseIcon, PlusIcon } from '../../components/icons';
 
@@ -31,7 +38,7 @@ interface SlotDraft {
   restWorkSec: number;
 }
 
-function draftFor(exercise: Exercise): SlotDraft {
+function draftFor(exercise: Exercise, startingWeightLb: number): SlotDraft {
   return {
     exercise,
     ruleKind: exercise.isBodyweight ? 'manual' : 'linear',
@@ -40,7 +47,7 @@ function draftFor(exercise: Exercise): SlotDraft {
     repMin: 8,
     repMax: 12,
     incrementLb: 2.5,
-    startingWeightLb: exercise.isBodyweight ? 0 : 20,
+    startingWeightLb,
     restWorkSec: 180,
   };
 }
@@ -53,6 +60,26 @@ export function RoutineBuilder() {
   const [drafts, setDrafts] = useState<SlotDraft[]>([]);
   const [picking, setPicking] = useState(false);
   const [saving, setSaving] = useState(false);
+  const settings = useSettings();
+  const profile = useProfile();
+  const bodyweightLb = useLiveQuery(() => latestBodyweightLb());
+
+  /** A cautious body-aware start for a newly added exercise, rounded to what this
+   *  gym can load (the lifter can still edit it before saving). */
+  function suggestedStartLb(exercise: Exercise): number {
+    const loadType = loadTypeFor(exercise.equipment, exercise.isBodyweight);
+    const raw = startingWeightLb({
+      loadType,
+      compound: exercise.mechanic === 'compound',
+      bodyweightLb,
+      sex: profile?.sex,
+      ageYears: ageFromBirthDate(profile?.birthDate, nowIso()),
+      experience: profile?.experience,
+    });
+    return roundForLoad(raw, loadType, settings.barLb, settings.plateInventoryLb, loadStepsOf(settings));
+  }
+  const shown = (lb: number) => roundDisplay(toUnit(lb, settings.units), settings.units);
+  const fromShown = (v: number) => (settings.units === 'kg' ? kgToLb(v) : v);
 
   const update = (i: number, patch: Partial<SlotDraft>) =>
     setDrafts((ds) => ds.map((d, j) => (j === i ? { ...d, ...patch } : d)));
@@ -207,25 +234,25 @@ export function RoutineBuilder() {
                     />
                   </Labeled>
                 )}
-                <Labeled label="Start (kg)">
+                {/* Values are canonical lb; shown and edited in the lifter's unit.
+                    (Was labelled kg while holding lb.) */}
+                <Labeled label={`Start (${settings.units})`}>
                   <Stepper
                     ariaLabel="starting weight"
-                    value={d.startingWeightLb}
+                    value={shown(d.startingWeightLb)}
                     min={0}
-                    step={2.5}
-                    onChange={(startingWeightLb) =>
-                      update(i, { startingWeightLb })
-                    }
+                    step={settings.units === 'kg' ? 1 : 2.5}
+                    onChange={(v) => update(i, { startingWeightLb: fromShown(v) })}
                   />
                 </Labeled>
                 {d.ruleKind !== 'manual' && (
-                  <Labeled label="+kg / step">
+                  <Labeled label={`+${settings.units} / step`}>
                     <Stepper
                       ariaLabel="increment"
-                      value={d.incrementLb}
-                      min={1.25}
-                      step={1.25}
-                      onChange={(incrementLb) => update(i, { incrementLb })}
+                      value={shown(d.incrementLb)}
+                      min={settings.units === 'kg' ? 0.5 : 1.25}
+                      step={settings.units === 'kg' ? 0.5 : 1.25}
+                      onChange={(v) => update(i, { incrementLb: fromShown(v) })}
                     />
                   </Labeled>
                 )}
@@ -247,7 +274,7 @@ export function RoutineBuilder() {
         <ExercisePicker
           onClose={() => setPicking(false)}
           onPick={(ex) => {
-            setDrafts((ds) => [...ds, draftFor(ex)]);
+            setDrafts((ds) => [...ds, draftFor(ex, suggestedStartLb(ex))]);
             setPicking(false);
           }}
         />

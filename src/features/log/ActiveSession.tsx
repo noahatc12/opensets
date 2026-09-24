@@ -43,6 +43,9 @@ const numFont = {
 export function ActiveSession() {
   const vm = useLogger();
   if (!vm) return null;
+  const loadType = vm.activeSlot.loadType;
+  const pureBodyweight = loadType === 'bodyweight' && vm.weight === 0;
+  const suggested = vm.pres?.flags.includes('suggested') ?? false;
   const {
     sessionTitle,
     elapsed,
@@ -313,16 +316,21 @@ export function ActiveSession() {
                         className="text-[10px] uppercase text-muted"
                         style={{ fontFamily: 'var(--font-label)', letterSpacing: '.16em' }}
                       >
-                        Weight
+                        {loadType === 'bodyweight' ? 'Added weight' : 'Weight'}
                       </span>
                       <div className="flex items-baseline gap-[3px]">
                         <span
                           className="text-[52px] leading-none text-text"
                           style={{ letterSpacing: 'var(--tracking-snug)', ...numFont }}
                         >
-                          {fmtWeight(weight, units)}
+                          {pureBodyweight ? 'BW' : fmtWeight(weight, units)}
                         </span>
-                        <span className="text-[14px] font-semibold text-muted">{units}</span>
+                        {!pureBodyweight && (
+                          <span className="text-[14px] font-semibold text-muted">
+                            {units}
+                            {loadType === 'dumbbell' ? ' each' : ''}
+                          </span>
+                        )}
                       </div>
                       <div className="flex gap-2">
                         <button
@@ -380,6 +388,13 @@ export function ActiveSession() {
                       </div>
                     </div>
                   </div>
+                  {/* A weight nobody has lifted yet: say so, and say how to calibrate it. */}
+                  {suggested && (
+                    <p className="mt-3 text-center text-[12px] leading-snug text-muted">
+                      <span className="font-semibold text-text">Suggested start.</span> Pick a
+                      weight you could lift 2 to 3 more times. Your log sets the next one.
+                    </p>
+                  )}
                   {/* RPE */}
                   <div className="mt-3.5 flex items-center gap-[7px]">
                     <span

@@ -21,6 +21,7 @@ import {
 } from '../../db/repositories';
 import { seedSampleData } from '../../db/sampleData';
 import { ActiveSession } from './ActiveSession';
+import { ProteinCard } from './ProteinCard';
 
 const nowIso = () => new Date().toISOString();
 const nameOf = (id: string) => getCatalogExercise(id)?.name ?? id;
@@ -279,6 +280,9 @@ export function TodayScreen() {
           </div>
         </div>
       </div>
+
+      {/* daily protein estimate (display only) */}
+      <ProteinCard />
 
       {/* recent */}
       {recent.length > 0 && (

@@ -145,6 +145,14 @@ describe('Readout logger — core flow (pinned pre-extraction)', () => {
     expect(await screen.findByText('Rest')).toBeTruthy();
   });
 
+  it('a seeded weight is labelled as a suggested start with the calibration instruction', async () => {
+    await seedActiveSession();
+    renderLogger();
+    await logButton();
+    expect(await screen.findByText(/Suggested start/)).toBeTruthy();
+    expect(screen.getByText(/2 to 3 more/)).toBeTruthy();
+  });
+
   it('a double tap on Log Set logs one set, not two', async () => {
     const { session } = await seedActiveSession();
     renderLogger();
