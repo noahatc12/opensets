@@ -13,6 +13,7 @@ export {
   platesForWeight,
   type WarmupSet,
 } from './rounding';
+export { loadTypeFor, roundForLoad, defaultStartLb, DEFAULT_LOAD_STEPS } from './loading';
 export { detectPRs, type PRResult } from './prs';
 export {
   e1rm,
@@ -75,7 +76,7 @@ import { rpeTargetNext } from './rules/rpeTarget';
 import { apreNext } from './rules/apre';
 import { repsOnlyNext } from './rules/repsOnly';
 import { durationLinearNext } from './rules/durationLinear';
-import { buildSets, fmt, workingSets } from './rules/shared';
+import { buildSets, fmt, performedWeight, workingSets } from './rules/shared';
 
 /**
  * Compute the next session's prescription and advanced state for one exercise.
@@ -112,23 +113,26 @@ export function nextPrescription(
   }
 }
 
-/** Manual: no auto-progression. Re-prescribe the current weight; the lifter decides. */
+/** Manual: no auto-progression. Re-prescribe the weight last used (the logged weight
+ *  when there is one, else the current weight); the lifter decides. */
 function manualNext(
   state: ExerciseState,
   lastSession: SetResult[],
   scheme: SetScheme,
 ): NextPrescriptionResult {
   const targetReps = scheme.repTarget ?? scheme.repRange?.[0] ?? 1;
-  const repeated = workingSets(lastSession).length > 0;
-  const reason = repeated
-    ? `Manual — adjust ${fmt(state.workingWeightLb)} lb as you see fit.`
-    : `Manual — set your weight.`;
+  const logged = performedWeight(workingSets(lastSession));
+  const weight = logged ?? state.workingWeightLb;
+  const reason =
+    logged !== undefined
+      ? `Manual — adjust ${fmt(weight)} lb as you see fit.`
+      : `Manual — set your weight.`;
   return {
     prescription: {
-      sets: buildSets(scheme, targetReps, state.workingWeightLb),
+      sets: buildSets(scheme, targetReps, weight),
       reason,
       flags: [],
     },
-    nextState: { ...state },
+    nextState: { ...state, workingWeightLb: weight },
   };
 }

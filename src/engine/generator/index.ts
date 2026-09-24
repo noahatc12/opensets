@@ -14,7 +14,8 @@
  * and any time are passed in. Inputs are engine-local structural types so this module
  * imports nothing from /src/db (the catalog passes db.Exercise[], which conforms).
  */
-import type { Muscle, ProgressionRule } from '../types';
+import type { LoadType, Muscle, ProgressionRule } from '../types';
+import { loadTypeFor } from '../loading';
 import {
   buildMesocyclePlan,
   landmarksFor,
@@ -97,6 +98,8 @@ export interface GeneratedSlot {
   /** R3.5 — the muscle this slot's volume was allocated to (the pattern's `muscles[0]`).
    *  Keys the per-muscle temporal ramp once persisted onto the slot. */
   primaryMuscle: Muscle;
+  /** How the chosen exercise is loaded; decides reachable weights (audit 2026-09-24). */
+  loadType: LoadType;
 }
 export interface GeneratedDay {
   name: string;
@@ -729,9 +732,14 @@ export function generatePlan(
       used.add(chosen.id);
       for (const m of chosen.primaryMuscles) trainedMuscles.add(m);
 
+      const loadType = loadTypeFor(chosen.equipment, chosen.isBodyweight);
       let rule: ProgressionRule;
       let scheme: GeneratedSlot['scheme'];
-      if (useGzclp) {
+      if (loadType === 'bodyweight' && !useGzclp) {
+        // Bodyweight lifts progress by reps, not by adding plates to a push-up.
+        rule = { kind: 'repsOnly', repIncrement: 1 };
+        scheme = { ...(pat.compound ? compoundScheme : isoScheme), sets: allocSets };
+      } else if (useGzclp) {
         const tier: 1 | 2 | 3 = !pat.compound ? 3 : dayCompoundCount === 0 ? 1 : 2;
         if (pat.compound) dayCompoundCount += 1;
         rule = { kind: 'gzclp', tier };
@@ -757,6 +765,7 @@ export function generatePlan(
         coachingCue: coaching.cue,
         restTier: coaching.tier,
         primaryMuscle: pat.muscles[0]!,
+        loadType,
       });
     }
     planDays.push({ name: types[di]!, slots });

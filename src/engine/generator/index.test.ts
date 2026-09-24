@@ -119,9 +119,20 @@ describe('goal-override rule selection (§2.4)', () => {
     expect(kinds.has('linear')).toBe(true); // compounds are linear for strength
   });
 
-  it('uses double progression for hypertrophy', () => {
-    const compoundRules = allSlots(gen({ goal: 'Build muscle' })).filter((s) => s.compound).map((s) => s.rule.kind);
+  it('uses double progression for hypertrophy (loaded compounds)', () => {
+    const compoundRules = allSlots(gen({ goal: 'Build muscle' }))
+      .filter((s) => s.compound && s.loadType !== 'bodyweight')
+      .map((s) => s.rule.kind);
+    expect(compoundRules.length).toBeGreaterThan(0);
     expect(compoundRules.every((k) => k === 'double')).toBe(true);
+  });
+
+  it('bodyweight lifts progress by reps and carry their load type (audit 2026-09-24)', () => {
+    const slots = allSlots(gen({ goal: 'Build muscle' }));
+    const bw = slots.filter((s) => s.loadType === 'bodyweight');
+    expect(bw.length).toBeGreaterThan(0);
+    expect(bw.every((s) => s.rule.kind === 'repsOnly' && s.startWeightLb === 0)).toBe(true);
+    expect(slots.every((s) => ['barbell', 'dumbbell', 'stack', 'bodyweight'].includes(s.loadType))).toBe(true);
   });
 });
 
