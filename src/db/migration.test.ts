@@ -75,10 +75,13 @@ describe('schema v1 → v4 migration (profile store + prescription fields + pref
     expect(await migrated.measurements.get('m1')).toMatchObject({ valueLb: 150 });
     expect(await migrated.profile.count()).toBe(0); // v2 store exists, empty
 
-    // THREE pre-migration snapshots, each labelled with ITS source version (1, 2, 3) —
-    // proves the fromVersion fix: not every step stamped SCHEMA_VERSION-1.
-    const versions = (await migrated.backups.toArray()).map((b) => b.schemaVersion).sort();
-    expect(versions).toEqual([1, 2, 3]);
+    // A snapshot per step, each labelled with ITS source version, pruned to the spec's
+    // keep-2 (the two newest: 2 and 3). Migrations are additive, so the v2 snapshot
+    // still holds every v1 row; the fromVersion labelling is still proven.
+    const all = await migrated.backups.toArray();
+    const versions = all.map((b) => b.schemaVersion).sort();
+    expect(versions).toEqual([2, 3]);
+    expect(all.find((b) => b.schemaVersion === 2)!.envelope.data.sets).toHaveLength(1);
 
     migrated.close();
     await Dexie.delete(NAME);

@@ -74,6 +74,10 @@ export async function preMigrationSnapshot(
     'measurements',
     'goals',
     'settings',
+    // The profile holds the body data and goals; it was missing from these snapshots
+    // (audit 2026-09-24). From the v1 -> v2 step on, the store exists in the upgrade
+    // transaction (empty before v2), so reading it is always safe.
+    'profile',
   ] as const;
 
   const entries = await Promise.all(
@@ -95,4 +99,13 @@ export async function preMigrationSnapshot(
     },
   };
   await tx.table('backups').add(row);
+
+  // Keep the newest KEEP snapshots (spec §8). A multi-version upgrade in one open
+  // stamps near-identical times, so ties break on the source version: the newer
+  // snapshot holds everything the older one did (migrations are additive).
+  const all = (await tx.table('backups').toArray()) as BackupRow[];
+  if (all.length > KEEP) {
+    all.sort((a, b) => a.createdAt.localeCompare(b.createdAt) || a.schemaVersion - b.schemaVersion);
+    await tx.table('backups').bulkDelete(all.slice(0, all.length - KEEP).map((b) => b.id));
+  }
 }

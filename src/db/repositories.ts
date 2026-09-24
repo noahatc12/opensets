@@ -9,6 +9,7 @@
  */
 import { db, getSettings } from './db';
 import { newId } from './ids';
+import { getCatalogExercise, loadCatalog } from './catalog';
 import {
   nextPrescription,
   detectPRs,
@@ -18,11 +19,15 @@ import {
   intensifierForPhase,
   weeklyRampFactor,
   landmarksFor,
+  loadTypeFor,
+  defaultStartLb,
+  DEFAULT_LOAD_STEPS,
   type PRResult,
 } from '../engine';
 import type {
   EngineSettings,
   ExerciseState,
+  LoadType,
   Prescription,
   ProgressionRule,
   SetResult,
@@ -133,13 +138,35 @@ function periodize(
   };
 }
 
-function engineSettings(s: UserSettings): EngineSettings {
+function engineSettings(s: UserSettings, loadType: LoadType): EngineSettings {
   return {
     barLb: s.barLb,
     plateInventoryLb: s.plateInventoryLb,
     rounding: 'nearest',
     units: s.units,
+    loadType,
+    steps: {
+      dumbbellStepLb: s.dumbbellStepLb ?? DEFAULT_LOAD_STEPS.dumbbellStepLb,
+      dumbbellSmallStepLb: s.dumbbellSmallStepLb ?? DEFAULT_LOAD_STEPS.dumbbellSmallStepLb,
+      dumbbellSmallBelowLb: s.dumbbellSmallBelowLb ?? DEFAULT_LOAD_STEPS.dumbbellSmallBelowLb,
+      stackStepLb: s.stackStepLb ?? DEFAULT_LOAD_STEPS.stackStepLb,
+    },
   };
+}
+
+/**
+ * The slot's load type: its own, else derived from the catalog exercise (slots made
+ * before the field existed), else barbell (the original behaviour). May load the
+ * catalog, so call it OUTSIDE a Dexie transaction when the slot lacks the field.
+ */
+export async function loadTypeOf(slot: ExerciseSlot): Promise<LoadType> {
+  if (slot.loadType) return slot.loadType;
+  let ex = getCatalogExercise(slot.exerciseId);
+  if (!ex) {
+    await loadCatalog().catch(() => undefined);
+    ex = getCatalogExercise(slot.exerciseId);
+  }
+  return ex ? loadTypeFor(ex.equipment, ex.isBodyweight) : 'barbell';
 }
 
 function schemeOf(slot: ExerciseSlot): SetScheme {
@@ -205,6 +232,26 @@ export function listTemplates(programId: string): Promise<WorkoutTemplate[]> {
   return db.templates.where('programId').equals(programId).sortBy('dayIndex');
 }
 
+/**
+ * The program's next workout: the day after the most recently completed session's
+ * day, wrapping round; Day 1 before anything is completed. (Audit 2026-09-24: Today
+ * always started the first template, so Days 2+ of a generated plan never ran.)
+ */
+export async function nextTemplateForProgram(
+  programId: string,
+): Promise<WorkoutTemplate | undefined> {
+  const tpls = await listTemplates(programId);
+  if (tpls.length === 0) return undefined;
+  const done = (await db.sessions.where('programId').equals(programId).toArray()).filter(
+    (s) => s.status === 'completed' && s.templateId,
+  );
+  if (done.length === 0) return tpls[0];
+  const when = (s: WorkoutSession) => s.endedAt ?? s.startedAt;
+  const last = done.reduce((a, b) => (when(b) > when(a) ? b : a));
+  const i = tpls.findIndex((t) => t.id === last.templateId);
+  return tpls[(i + 1) % tpls.length]; // a deleted day (i = -1) restarts at Day 1
+}
+
 export async function createTemplate(
   programId: string,
   name: string,
@@ -239,6 +286,7 @@ export function makeSlot(
     coachingCue?: string;
     restTier?: ExerciseSlot['restTier'];
     primaryMuscle?: Muscle;
+    loadType?: LoadType;
   },
 ): ExerciseSlot {
   return {
@@ -255,6 +303,7 @@ export function makeSlot(
     ...(coaching?.coachingCue ? { coachingCue: coaching.coachingCue } : {}),
     ...(coaching?.restTier ? { restTier: coaching.restTier } : {}),
     ...(coaching?.primaryMuscle ? { primaryMuscle: coaching.primaryMuscle } : {}),
+    ...(coaching?.loadType ? { loadType: coaching.loadType } : {}),
   };
 }
 
@@ -277,7 +326,7 @@ export async function seedExerciseState(
   startingWeightLb: number,
   now: string,
 ): Promise<ExerciseStateRow> {
-  const settings = engineSettings(await getSettings());
+  const settings = engineSettings(await getSettings(), await loadTypeOf(slot));
   const meso = (await db.programs.get(programId))?.mesocycle;
   const ramp = rampCtxForSlot(slot, meso, await baseSetsByMuscle(programId));
   const base: ExerciseState = {
@@ -312,12 +361,10 @@ export async function prescriptionForSlot(
 ): Promise<Prescription> {
   const existing = await getExerciseState(programId, slot.exerciseId);
   if (existing?.pending) return existing.pending;
-  const seeded = await seedExerciseState(
-    programId,
-    slot,
-    (await getSettings()).barLb,
-    now,
-  );
+  // Unseeded (a mid-workout swap or add): start from a plausible weight for how the
+  // exercise is loaded, not the empty bar for everything.
+  const start = defaultStartLb(await loadTypeOf(slot), (await getSettings()).barLb);
+  const seeded = await seedExerciseState(programId, slot, start, now);
   return seeded.pending!;
 }
 
@@ -372,46 +419,71 @@ export async function completeSessionAndAdvance(
   sessionId: string,
   now: string,
 ): Promise<void> {
-  const session = await db.sessions.get(sessionId);
-  if (!session) return;
-  const settings = engineSettings(await getSettings());
-  const slots = session.executedSlots ?? [];
-
-  // Advance the mesocycle week (§2.2): a "training week" is one full pass through the
-  // program's day-templates, so weekIndex = completed sessions ÷ day-count (capped at
-  // the deload week). The next prescriptions are then periodized at the NEW week, so
-  // RPE/volume actually move forward as the user trains — not just a counter ticking.
-  let nextMeso: Mesocycle | undefined;
-  const meso = session.programId
-    ? (await db.programs.get(session.programId))?.mesocycle
-    : undefined;
-  if (meso && session.programId) {
-    const dayCount = Math.max(
-      1,
-      await db.templates.where('programId').equals(session.programId).count(),
-    );
-    const priorCompleted = (await db.sessions.where('programId').equals(session.programId).toArray())
-      .filter((s) => s.status === 'completed').length;
-    const weekIndex = Math.min(
-      Math.floor((priorCompleted + 1) / dayCount),
-      meso.totalWeeks - 1,
-    );
-    nextMeso = { ...meso, weekIndex, phase: phaseForWeek(buildMesocyclePlan(meso.totalWeeks), weekIndex) };
-  }
-
-  // R3.5: the muscle→week-1-base map for the per-muscle temporal ramp (computed once).
-  const baseByMuscle = session.programId
-    ? await baseSetsByMuscle(session.programId)
-    : new Map<Muscle, number>();
+  // Anything that may leave IndexedDB (the catalog lookup behind loadTypeOf) happens
+  // BEFORE the transaction; a non-Dexie await inside one would let it auto-commit.
+  const pre = await db.sessions.get(sessionId);
+  if (!pre || pre.status !== 'active') return;
+  const userSettings = await getSettings();
+  const loadTypes = new Map<string, LoadType>();
+  for (const slot of pre.executedSlots ?? []) loadTypes.set(slot.slotId, await loadTypeOf(slot));
 
   await db.transaction(
     'rw',
-    db.sessions,
-    db.exerciseState,
-    db.sets,
-    db.programs,
+    [db.sessions, db.exerciseState, db.sets, db.programs, db.templates],
     async () => {
+      // Re-read inside the transaction. A second Finish (a double tap, a second tab)
+      // finds the session already completed and does nothing, so progression and the
+      // week counter advance exactly once. (Audit 2026-09-24.)
+      const session = await db.sessions.get(sessionId);
+      if (!session || session.status !== 'active') return;
+      const slots = session.executedSlots ?? [];
+
+      // Advance the mesocycle week (§2.2): a "training week" is one full pass through
+      // the program's day-templates. After the deload week the program starts the NEXT
+      // block at week 0 (same exercises, volume ramp restarts) instead of parking in
+      // deload forever. A program already parked there restarts at week 0 too, rather
+      // than jumping mid-block from its lifetime session count.
+      let nextMeso: Mesocycle | undefined;
+      const meso = session.programId
+        ? (await db.programs.get(session.programId))?.mesocycle
+        : undefined;
+      if (meso && session.programId) {
+        const plan = buildMesocyclePlan(meso.totalWeeks);
+        const dayCount = Math.max(
+          1,
+          await db.templates.where('programId').equals(session.programId).count(),
+        );
+        const done =
+          (await db.sessions.where('programId').equals(session.programId).toArray()).filter(
+            (s) => s.status === 'completed',
+          ).length + 1;
+        let blockStart = meso.blockStartSessions ?? 0;
+        let blockIndex = meso.blockIndex ?? 0;
+        let weekIndex = Math.floor((done - blockStart) / dayCount);
+        if (weekIndex >= plan.totalWeeks) {
+          blockIndex += 1;
+          blockStart = done - ((done - blockStart) % dayCount);
+          weekIndex = 0;
+        }
+        nextMeso = {
+          ...meso,
+          weekIndex,
+          blockIndex,
+          blockStartSessions: blockStart,
+          phase: phaseForWeek(plan, weekIndex),
+        };
+      }
+
+      // R3.5: the muscle→week-1-base map for the per-muscle temporal ramp (computed once).
+      const baseByMuscle = session.programId
+        ? await baseSetsByMuscle(session.programId)
+        : new Map<Muscle, number>();
+
       for (const slot of slots) {
+        const settings = engineSettings(
+          userSettings,
+          loadTypes.get(slot.slotId) ?? slot.loadType ?? 'barbell',
+        );
         const logged = await sessionSetsForExercise(sessionId, slot.exerciseId);
         const state =
           (await getExerciseState(session.programId!, slot.exerciseId)) ??

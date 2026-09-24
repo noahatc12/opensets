@@ -84,13 +84,17 @@ describe('runtime periodization (§2.2 wired into the pipeline)', () => {
     expect(state!.pending!.sets.find((s) => s.type === 'working')!.targetWeightLb).toBe(135);
   });
 
-  it('caps the week at the deload and never runs off the end', async () => {
+  // Was "caps the week at the deload and never runs off the end": that pinned the bug
+  // where a program parked in deload forever after one block (audit 2026-09-24).
+  it('rolls into the next block after the deload instead of parking there', async () => {
     const now = '2026-06-26T18:00:00.000Z';
     const { program, tpl } = await setup(now);
     for (let i = 0; i < 10; i++) await completeOneSession(tpl.slots[0]!, tpl.id, program.id, now);
     const prog = (await db.programs.get(program.id))!;
-    expect(prog.mesocycle!.weekIndex).toBe(5); // totalWeeks 6 → max index 5
-    expect(prog.mesocycle!.phase).toBe('deload');
+    // 10 weeks on a 6-week block = block 2 (index 1), week 5 (index 4).
+    expect(prog.mesocycle!.blockIndex).toBe(1);
+    expect(prog.mesocycle!.weekIndex).toBe(4);
+    expect(prog.mesocycle!.phase).toBe('intensification');
   });
 });
 
