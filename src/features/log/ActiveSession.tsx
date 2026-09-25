@@ -43,9 +43,12 @@ const numFont = {
 export function ActiveSession() {
   const vm = useLogger();
   if (!vm) return null;
-  const loadType = vm.activeSlot.loadType;
+  const loadType = vm.loadType;
   const pureBodyweight = loadType === 'bodyweight' && vm.weight === 0;
   const suggested = vm.pres?.flags.includes('suggested') ?? false;
+  // A pure bodyweight load reads "BW" everywhere it is shown, never "0".
+  const isBw = (lb: number) => loadType === 'bodyweight' && lb === 0;
+  const w = (lb: number, u: 'kg' | 'lb') => (isBw(lb) ? 'BW' : fmtWeight(lb, u));
   const {
     sessionTitle,
     elapsed,
@@ -67,10 +70,8 @@ export function ActiveSession() {
     weight,
     reps,
     rpe,
-    setWeight,
     setReps,
     setRpe,
-    wStep,
     rest,
     restRemain,
     adjustRest,
@@ -239,8 +240,8 @@ export function ActiveSession() {
                     {done.order + 1}
                   </span>
                   <span className="text-[17px] font-semibold text-muted" style={numFont}>
-                    {fmtWeight(done.weightLb, units)}
-                    <span className="text-[11px] text-faint">{units}</span> × {done.reps}
+                    {w(done.weightLb, units)}
+                    {!isBw(done.weightLb) && <span className="text-[11px] text-faint">{units}</span>} × {done.reps}
                   </span>
                   {isPr ? (
                     <span
@@ -316,7 +317,7 @@ export function ActiveSession() {
                         className="text-[10px] uppercase text-muted"
                         style={{ fontFamily: 'var(--font-label)', letterSpacing: '.16em' }}
                       >
-                        {loadType === 'bodyweight' ? 'Added weight' : 'Weight'}
+                        {loadType === 'bodyweight' ? 'Added weight' : loadType === 'dumbbell' ? 'Per hand' : 'Weight'}
                       </span>
                       <div className="flex items-baseline gap-[3px]">
                         <span
@@ -326,15 +327,12 @@ export function ActiveSession() {
                           {pureBodyweight ? 'BW' : fmtWeight(weight, units)}
                         </span>
                         {!pureBodyweight && (
-                          <span className="text-[14px] font-semibold text-muted">
-                            {units}
-                            {loadType === 'dumbbell' ? ' each' : ''}
-                          </span>
+                          <span className="text-[14px] font-semibold text-muted">{units}</span>
                         )}
                       </div>
                       <div className="flex gap-2">
                         <button
-                          onClick={() => setWeight((w) => Math.max(0, Math.round((w - wStep) * 100) / 100))}
+                          onClick={() => vm.stepWeight(-1)}
                           className="grid size-[46px] place-items-center rounded-[var(--r-sm)] border bg-surface-2 text-text"
                           style={{ borderColor: 'var(--border-strong)' }}
                           aria-label="decrease weight"
@@ -342,7 +340,7 @@ export function ActiveSession() {
                           <MinusIcon className="size-6" />
                         </button>
                         <button
-                          onClick={() => setWeight((w) => Math.round((w + wStep) * 100) / 100)}
+                          onClick={() => vm.stepWeight(1)}
                           className="grid size-[46px] place-items-center rounded-[var(--r-sm)] border bg-surface-2 text-text"
                           style={{ borderColor: 'var(--border-strong)' }}
                           aria-label="increase weight"
@@ -473,8 +471,11 @@ export function ActiveSession() {
                   {i + 1}
                 </span>
                 <span className="text-[17px] font-semibold text-text" style={numFont}>
-                  {prescribed ? fmtWeight(prescribed.targetWeightLb, units) : '—'}
-                  <span className="text-[11px] text-faint">{units}</span> ×{' '}
+                  {prescribed ? w(prescribed.targetWeightLb, units) : '—'}
+                  {!(prescribed && isBw(prescribed.targetWeightLb)) && (
+                    <span className="text-[11px] text-faint">{units}</span>
+                  )}{' '}
+                  ×{' '}
                   {prescribed ? `${prescribed.targetReps}${isAmrapSet ? '+' : ''}` : '—'}
                 </span>
                 {isAmrapSet ? (
@@ -594,7 +595,7 @@ export function ActiveSession() {
             </svg>
             Log Set {activeIndex + 1} ·{' '}
             <span style={{ fontFamily: 'var(--font-num)', fontVariantNumeric: 'tabular-nums' }}>
-              {fmtWeight(weight, units)} × {fmt(reps)}
+              {w(weight, units)} × {fmt(reps)}
             </span>
           </button>
         ) : (

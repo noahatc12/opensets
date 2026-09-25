@@ -209,18 +209,23 @@ export function TodayScreen() {
             className="text-[11px] font-bold uppercase text-accent"
             style={{ letterSpacing: 'var(--tracking-caps)', fontFamily: 'var(--font-label)' }}
           >
-            {(templates?.length ?? 0) > 1 ? `Scheduled · ${tpl.name}` : 'Scheduled'}
+            Scheduled
           </span>
           <span className="text-[12px] text-muted" style={numFont}>
             ~{estMin} min · {slots.length} exercises
           </span>
         </div>
-        <div
+        {/* Multi-day programs: the day is the title (which workout is next), the
+            program is the subline. */}
+        <h2
           className="mt-2.5 text-[24px] font-bold text-text"
           style={{ letterSpacing: 'var(--tracking-snug)' }}
         >
-          {activeProgram?.name ?? tpl.name}
-        </div>
+          {(templates?.length ?? 0) > 1 ? tpl.name : (activeProgram?.name ?? tpl.name)}
+        </h2>
+        {(templates?.length ?? 0) > 1 && activeProgram && (
+          <div className="mt-0.5 text-[13px] text-muted">{activeProgram.name}</div>
+        )}
         <div className="mt-3 flex flex-wrap gap-1.5">
           {chips.map((c, i) => (
             <span

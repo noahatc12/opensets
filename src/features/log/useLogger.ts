@@ -28,7 +28,9 @@ import {
   clearActiveSnapshot,
 } from '../../db/recovery';
 import { guardActiveSession } from '../../db/multiTab';
-import { loadTypeFor } from '../../engine/loading';
+import { loadTypeFor, roundForLoad } from '../../engine/loading';
+import { loadStepsOf } from '../../db/repositories';
+import type { LoadType } from '../../engine/types';
 import type {
   Exercise,
   ExerciseSlot,
@@ -100,6 +102,8 @@ export interface LoggerVM {
   setRpe: React.Dispatch<React.SetStateAction<number | undefined>>;
   wStep: number;
   wStepLabel: string;
+  loadType: LoadType | undefined;
+  stepWeight: (dir: 1 | -1) => void;
   // rest timer
   rest: ReturnType<typeof useSessionStore.getState>['rest'];
   restRemain: number;
@@ -132,8 +136,8 @@ export interface LoggerVM {
 
 export function useLogger(): LoggerVM | null {
   useCatalog();
-  const { units, restAutoStart, defaultRestWarmupSec, defaultRestWorkSec } =
-    useSettings();
+  const settings = useSettings();
+  const { units, restAutoStart, defaultRestWarmupSec, defaultRestWorkSec } = settings;
   const { session, prescriptions, lastByExercise, logged } = useActiveWorkout();
   const current = useSessionStore((s) => s.currentExercise);
   const setCurrent = useSessionStore((s) => s.setCurrentExercise);
@@ -280,6 +284,21 @@ export function useLogger(): LoggerVM | null {
     : '';
   const wStep = weightStepLb(units);
   const wStepLabel = weightStepLabel(units);
+  // How this exercise is loaded (older slots lack the field: derive it from the catalog).
+  const loadType: LoadType | undefined =
+    activeSlot.loadType ?? (ex ? loadTypeFor(ex.equipment, ex.isBodyweight) : undefined);
+
+  /** The +/- weight buttons. Dumbbells and stacks step along what the gym actually has
+   *  (15 -> 17.5 -> 20 -> 25 on a dumbbell rack); barbell and bodyweight keep the flat
+   *  step. */
+  function stepWeight(dir: 1 | -1) {
+    if (loadType === 'dumbbell' || loadType === 'stack') {
+      const args = [loadType, settings.barLb, settings.plateInventoryLb, loadStepsOf(settings)] as const;
+      setWeight((w) => (dir > 0 ? roundForLoad(w + 0.01, ...args, 'up') : Math.max(0, roundForLoad(w - 0.01, ...args, 'down'))));
+      return;
+    }
+    setWeight((w) => Math.max(0, Math.round((w + dir * wStep) * 100) / 100));
+  }
 
   async function log() {
     if (!activePrescribed || loggingRef.current) return;
@@ -410,6 +429,8 @@ export function useLogger(): LoggerVM | null {
     setRpe,
     wStep,
     wStepLabel,
+    loadType,
+    stepWeight,
     rest,
     restRemain,
     adjustRest,

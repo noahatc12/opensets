@@ -119,9 +119,9 @@ function ActiveProgramView({
           boxShadow: 'var(--hairline-top)',
         }}
       >
-        <div className="flex items-center justify-between">
+        <div className="flex items-start justify-between gap-3">
           <span
-            className="text-[10px] font-bold uppercase text-accent"
+            className="flex-none pt-px text-[10px] font-bold uppercase text-accent"
             style={{
               letterSpacing: 'var(--tracking-caps)',
               fontFamily: 'var(--font-label)',
@@ -130,7 +130,7 @@ function ActiveProgramView({
             Active
           </span>
           <span
-            className="text-[11px] text-muted"
+            className="text-right text-[11px] text-muted"
             style={{
               fontFamily: 'var(--font-num)',
               fontVariantNumeric: 'tabular-nums',

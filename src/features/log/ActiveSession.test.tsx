@@ -153,6 +153,52 @@ describe('Readout logger — core flow (pinned pre-extraction)', () => {
     expect(screen.getByText(/2 to 3 more/)).toBeTruthy();
   });
 
+  it('the weight stepper follows the dumbbell rack: 15 -> 17.5 -> 20 -> 25, shown exactly', async () => {
+    await db.settings.put({ key: 'user', ...DEFAULT_SETTINGS });
+    const program = await createProgram('DB', now);
+    await setActiveProgram(program.id);
+    const tpl = await createTemplate(program.id, 'Day 1', 0);
+    tpl.slots = [
+      makeSlot('db_curl', 0, { kind: 'double', repMin: 10, repMax: 14, incrementLb: 1.25, perSet: false }, { sets: 3, repRange: [10, 14] }, { warmupSec: 45, workSec: 90 }, { loadType: 'dumbbell' }),
+    ];
+    await saveTemplate(tpl);
+    await seedExerciseState(program.id, tpl.slots[0]!, 15, now);
+    const session = await startSessionFromTemplate(tpl, now);
+    useSessionStore.getState().beginSession(session.id);
+    const user = userEvent.setup();
+    renderLogger();
+    await logButton();
+    const up = screen.getByRole('button', { name: 'increase weight' });
+    await user.click(up);
+    expect(await screen.findByText('17.5')).toBeTruthy();
+    await user.click(up);
+    await user.click(up);
+    expect(await screen.findByText('25')).toBeTruthy();
+    expect(screen.getByText('Per hand')).toBeTruthy();
+  });
+
+  it('a pure bodyweight lift reads BW everywhere, not 0, and dumbbells say per hand', async () => {
+    await db.settings.put({ key: 'user', ...DEFAULT_SETTINGS });
+    const program = await createProgram('BW', now);
+    await setActiveProgram(program.id);
+    const tpl = await createTemplate(program.id, 'Day 1', 0);
+    tpl.slots = [
+      makeSlot('pushup', 0, { kind: 'repsOnly', repIncrement: 1 }, { sets: 3, repTarget: 10 }, { warmupSec: 45, workSec: 90 }, { loadType: 'bodyweight' }),
+      makeSlot('db_curl', 1, { kind: 'double', repMin: 10, repMax: 14, incrementLb: 1.25, perSet: false }, { sets: 3, repRange: [10, 14] }, { warmupSec: 45, workSec: 90 }, { loadType: 'dumbbell' }),
+    ];
+    await saveTemplate(tpl);
+    await seedExerciseState(program.id, tpl.slots[0]!, 0, now);
+    await seedExerciseState(program.id, tpl.slots[1]!, 15, now);
+    const session = await startSessionFromTemplate(tpl, now);
+    useSessionStore.getState().beginSession(session.id);
+    const user = userEvent.setup();
+    renderLogger();
+    expect(await screen.findByRole('button', { name: /Log Set 1 · BW × 10/ })).toBeTruthy();
+    expect(screen.queryByText(/^0$/)).toBeNull();
+    await user.click(screen.getByRole('button', { name: 'Next exercise' }));
+    expect(await screen.findByText('Per hand')).toBeTruthy();
+  });
+
   it('a double tap on Log Set logs one set, not two', async () => {
     const { session } = await seedActiveSession();
     renderLogger();

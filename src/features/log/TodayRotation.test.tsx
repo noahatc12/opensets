@@ -59,6 +59,38 @@ describe('Today rotation', () => {
         <TodayScreen />
       </MemoryRouter>,
     );
-    expect(await screen.findByText(/Scheduled · Lower/)).toBeTruthy();
+    // The day is the card title (the label stays short so it cannot wrap at 360 px).
+    expect(await screen.findByRole('heading', { name: 'Lower' })).toBeTruthy();
+    expect(screen.getAllByText('Upper Lower').length).toBeGreaterThan(0);
+  });
+
+  it('announces a new block for its first week, once the deload has rolled over', async () => {
+    const p = await createProgram('Hypertrophy', '2026-09-20T10:00:00.000Z');
+    await setActiveProgram(p.id);
+    await db.programs.update(p.id, {
+      mesocycle: {
+        phase: 'accumulation',
+        weekIndex: 0,
+        totalWeeks: 6,
+        blockIndex: 1,
+      },
+    });
+    const t = await createTemplate(p.id, 'Full A', 0);
+    t.slots = [
+      makeSlot(
+        'ex0',
+        0,
+        { kind: 'manual' },
+        { sets: 3, repTarget: 8 },
+        { warmupSec: 60, workSec: 90 },
+      ),
+    ];
+    await saveTemplate(t);
+    render(
+      <MemoryRouter>
+        <TodayScreen />
+      </MemoryRouter>,
+    );
+    expect(await screen.findByText(/Block 2 started/)).toBeTruthy();
   });
 });

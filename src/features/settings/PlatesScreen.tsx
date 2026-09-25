@@ -214,6 +214,11 @@ function StepRow({
   onPick: (lb: number) => void;
   last?: boolean;
 }) {
+  // Highlight the option nearest the stored step, so a kg user whose step is stored as
+  // lb (5 lb = 2.27 kg) still sees which jump is in use.
+  const nearest = options.reduce((a, b) =>
+    Math.abs(toLb(b) - valueLb) < Math.abs(toLb(a) - valueLb) ? b : a,
+  );
   return (
     <div
       className="flex items-center justify-between gap-3 px-4 py-3"
@@ -222,7 +227,7 @@ function StepRow({
       <span className="text-[14px] font-semibold text-text">{label}</span>
       <div className="flex flex-none gap-1 rounded-[var(--r-sm)] p-1" style={{ background: 'var(--bg)' }}>
         {options.map((o) => {
-          const active = Math.abs(valueLb - toLb(o)) < EPS;
+          const active = o === nearest;
           return (
             <button
               key={o}

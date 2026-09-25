@@ -247,8 +247,8 @@ export function OnboardingScreen() {
         {step === 4 && (
           <Step n="Step 4 · optional" title="A few numbers">
             <p className="mt-1.5 text-[13px] leading-relaxed text-muted">
-              These let OpenSets personalize your plan and (later) calorie/protein
-              targets. All optional — skip anything.
+              These let OpenSets suggest starting weights and a daily protein target.
+              All optional: skip anything, and your first workouts fill in the rest.
             </p>
 
             <OnbLabel>Sex</OnbLabel>

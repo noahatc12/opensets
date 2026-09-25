@@ -43,4 +43,20 @@ describe('Plates screen increments', () => {
       expect((await db.settings.get('user'))!.stackStepLb).toBe(10),
     );
   });
+
+  it('in kg, the option nearest the stored (lb) step is highlighted, never none', async () => {
+    await db.settings.put({ key: 'user', ...DEFAULT_SETTINGS, units: 'kg' });
+    render(
+      <MemoryRouter>
+        <PlatesScreen />
+      </MemoryRouter>,
+    );
+    const pressed = (name: string) =>
+      screen.getByRole('button', { name }).getAttribute('aria-pressed');
+    // Wait for the kg-only label: the lb options also contain a 2.5.
+    await screen.findByRole('button', { name: 'Under 9 kg: 1' });
+    expect(pressed('Dumbbell jumps: 2.5')).toBe('true'); // 5 lb = 2.27 kg
+    expect(pressed('Under 9 kg: 1')).toBe('true'); // 2.5 lb = 1.13 kg
+    expect(pressed('Cable and machine stack: 2.5')).toBe('true');
+  });
 });

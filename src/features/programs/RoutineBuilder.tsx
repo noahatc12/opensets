@@ -4,7 +4,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { useProfile, useSettings } from '../../db/hooks';
 import { startingWeightLb } from '../../engine/body';
 import { ageFromBirthDate } from '../../lib/age';
-import { kgToLb, roundDisplay, toUnit } from '../../lib/units';
+import { displayWeight, kgToLb } from '../../lib/units';
 import { Card } from '../../components/Card';
 import { Stepper } from '../../components/Stepper';
 import { Segmented } from '../../components/Segmented';
@@ -78,7 +78,7 @@ export function RoutineBuilder() {
     });
     return roundForLoad(raw, loadType, settings.barLb, settings.plateInventoryLb, loadStepsOf(settings));
   }
-  const shown = (lb: number) => roundDisplay(toUnit(lb, settings.units), settings.units);
+  const shown = (lb: number) => displayWeight(lb, settings.units);
   const fromShown = (v: number) => (settings.units === 'kg' ? kgToLb(v) : v);
 
   const update = (i: number, patch: Partial<SlotDraft>) =>
