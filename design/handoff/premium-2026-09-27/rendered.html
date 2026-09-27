@@ -1,0 +1,455 @@
+<meta charset="utf-8"><title>OpenSets Premium</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&display=swap">
+<style>/* Style lab shell. The phones inside are self-contained: every visual value they use comes
+   from their own [data-ds] block, never from here. */
+:root{--bg:#f4f4f2;--surface:#ffffff;--ink:#17191c;--muted:#5f6670;--line:#dcdfe3;--accent:#0f5f8f;--chip:#e9ebee}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#121416;--surface:#1a1d21;--ink:#e9ebee;--muted:#9aa3ad;--line:#2b3037;--accent:#6fb3e0;--chip:#242930;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#121416;--surface:#1a1d21;--ink:#e9ebee;--muted:#9aa3ad;--line:#2b3037;--accent:#6fb3e0;--chip:#242930;color-scheme:dark}
+body{background:var(--bg);color:var(--ink);font:15px/1.5 ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;padding-inline:16px;padding-block:22px 60px;margin:0 auto}
+h1{font-size:24px;line-height:1.2;margin:0 0 4px}
+.lede{color:var(--muted);max-width:76ch;margin:0 0 14px}
+.controls{position:sticky;top:0;z-index:5;background:var(--bg);padding:8px 0 10px;display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center;border-bottom:1px solid var(--line);margin-bottom:18px}
+.group{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.group b{font-size:12px;color:var(--muted);margin-right:2px}
+.chip{background:var(--chip);color:var(--ink);border:1px solid transparent;border-radius:999px;padding:4px 11px;font:inherit;font-size:13px;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.chip:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+section{margin:0 0 30px}
+section h2{font-size:17px;margin:0 0 4px}
+section .about{color:var(--muted);font-size:13.5px;margin:0 0 12px;max-width:80ch}
+.rail{display:flex;gap:16px;overflow-x:auto;padding:4px 2px 12px;scroll-snap-type:x proximity}
+.cell{flex:none;scroll-snap-align:start}
+.cell figcaption{font-size:12.5px;color:var(--muted);margin-top:6px;display:flex;justify-content:space-between;gap:8px}
+.cell figcaption b{color:var(--ink);font-weight:600}
+.cell figure{margin:0}
+.frame{width:390px;height:844px;zoom:var(--zoom,.56);border-radius:44px;overflow:hidden;box-shadow:0 0 0 1px rgba(0,0,0,.25),0 18px 40px -20px rgba(0,0,0,.5);position:relative;background:#000}
+[hidden]{display:none!important}
+.fb{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:8px;max-width:calc(390px * var(--zoom,.56))}
+.fb .v{background:var(--chip);color:var(--ink);border:1px solid transparent;border-radius:999px;padding:4px 10px;font:inherit;font-size:12.5px;cursor:pointer}
+.fb .v[aria-pressed="true"]{background:var(--accent);color:#fff}
+.fb .v:disabled{opacity:.5;cursor:default}
+.fb .v:focus-visible,.note:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.note{width:100%;box-sizing:border-box;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font:inherit;font-size:13.5px;resize:vertical;margin-top:4px}
+.note.big{max-width:70ch;margin-top:0}
+.saved{font-size:12px;color:var(--muted);min-height:1em}
+.hint{font-size:12.5px;color:var(--muted)}
+/* Phone internals shared by every direction: only geometry, no colour. */
+.ph{position:absolute;inset:0;display:flex;flex-direction:column;overflow:hidden;-webkit-font-smoothing:antialiased}
+.ph .sb{flex:none;height:50px;display:flex;align-items:center;justify-content:space-between;padding:8px 26px 0 30px;font-size:15px;font-weight:600}
+.ph .sb i{width:110px;height:32px;border-radius:18px;background:#000;position:absolute;left:50%;top:10px;transform:translateX(-50%)}
+.ph .home{position:absolute;left:50%;bottom:8px;transform:translateX(-50%);width:134px;height:5px;border-radius:3px;opacity:.85;pointer-events:none;z-index:9}
+.ph .body{flex:1;overflow-y:auto;overflow-x:hidden;min-height:0;scrollbar-width:none}
+.ph .body::-webkit-scrollbar{display:none}
+.ph .tabs{flex:none;display:grid;grid-template-columns:repeat(5,1fr);padding:8px 0 22px}
+.ph .tabs div{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:9.5px}
+.ph .tabs svg{width:22px;height:22px}
+.ph svg{display:block}
+
+/* OpenSets, the premium direction ("Iron"). One look. Every value here is a decision:
+   ground: cool near-black, never pure black; surfaces: three tone steps, each finished with a
+   1px specular top edge (the detail that makes a panel read as material instead of a rectangle);
+   depth: tone steps for content, real shadow only on floating layers (tab bar, sheets, toast);
+   type: Manrope, one family, 800 tabular numerals with tight tracking at display sizes;
+   accent: ember, used for the one action and the live state, never as decoration;
+   plates: the real IWF/bumper colours, as data. */
+.ph[data-ds="iron"]{--bg:#0d0f13;--s1:#171a21;--s2:#1f232c;--s3:#282d38;--hl:rgba(255,255,255,.07);--hl2:rgba(255,255,255,.12);--line:rgba(255,255,255,.065);--ink:#f3f4f6;--ink2:#c3c8d1;--mute:#8b93a1;--faint:#5b6371;--acc:#ff6a45;--acc2:#ff8a5c;--acc-deep:#e4522f;--acc-ink:#1a0803;--acc-soft:rgba(255,106,69,.14);--pos:#4fd18b;--pr:#ffc857;--danger:#ff5c5c;--p45:#2f63d6;--p35:#f2c230;--p25:#3f9e5a;--p10:#e9e9e4;--p5:#d64b3a;--p2:#8a8f99;background:var(--bg);color:var(--ink);font-family:Manrope,system-ui,-apple-system,sans-serif;font-weight:500;letter-spacing:-.01em}
+.ph[data-ds="iron"] .home{background:var(--ink);opacity:.7}
+.ph[data-ds="iron"] .pad{padding:8px 18px 110px}
+.ph[data-ds="iron"] .t{font-size:12.5px;color:var(--mute);font-weight:600}
+.ph[data-ds="iron"] h1{font-size:32px;font-weight:800;letter-spacing:-.035em;margin:0;line-height:1.05}
+.ph[data-ds="iron"] h2{font-size:15px;font-weight:700;margin:22px 0 10px;letter-spacing:-.01em;display:flex;justify-content:space-between;align-items:baseline}
+.ph[data-ds="iron"] h2 span{font-size:12.5px;color:var(--acc2);font-weight:600}
+.ph[data-ds="iron"] .num{font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:-.04em;line-height:1}
+/* surfaces */
+.ph[data-ds="iron"] .card{background:var(--s1);border-radius:22px;padding:16px;box-shadow:inset 0 1px 0 var(--hl);position:relative}
+.ph[data-ds="iron"] .card.lift{background:var(--s2);box-shadow:inset 0 1px 0 var(--hl2)}
+.ph[data-ds="iron"] .card.hero{background:linear-gradient(160deg,#ff7b57 0%,var(--acc) 45%,var(--acc-deep) 100%);color:var(--acc-ink);box-shadow:inset 0 1px 0 rgba(255,255,255,.45),0 18px 40px -18px rgba(255,106,69,.55)}
+.ph[data-ds="iron"] .card.hero .t{color:rgba(26,8,3,.7)}
+.ph[data-ds="iron"] .row{display:flex;align-items:center;gap:12px;padding:12px 0;border-top:1px solid var(--line)}
+.ph[data-ds="iron"] .row:first-of-type{border-top:0}
+.ph[data-ds="iron"] .row .n{flex:1;min-width:0;font-size:15px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ph[data-ds="iron"] .row .sub{font-size:12px;color:var(--mute);font-weight:500;margin-top:2px}
+.ph[data-ds="iron"] .row .v{font-size:17px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:-.02em;text-align:right}
+.ph[data-ds="iron"] .row .v small{font-size:11.5px;color:var(--mute);font-weight:600;letter-spacing:0}
+.ph[data-ds="iron"] .row .s{font-size:12.5px;color:var(--mute);font-weight:600;min-width:38px;text-align:right;font-variant-numeric:tabular-nums}
+.ph[data-ds="iron"] .chev{color:var(--faint);width:8px;height:8px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(-45deg);margin-right:4px;flex:none}
+/* controls */
+.ph[data-ds="iron"] .btn{height:54px;border-radius:16px;display:flex;align-items:center;justify-content:center;gap:8px;font-weight:800;font-size:16px;letter-spacing:-.01em;background:var(--s2);color:var(--ink);box-shadow:inset 0 1px 0 var(--hl2)}
+.ph[data-ds="iron"] .btn.pri{background:linear-gradient(180deg,var(--acc2),var(--acc) 40%,var(--acc-deep));color:var(--acc-ink);box-shadow:inset 0 1px 0 rgba(255,255,255,.45),0 10px 24px -12px rgba(255,106,69,.7)}
+.ph[data-ds="iron"] .btn.ink{background:var(--ink);color:var(--bg);box-shadow:none}
+.ph[data-ds="iron"] .btn.sm{height:42px;font-size:14px;border-radius:13px}
+.ph[data-ds="iron"] .btn.danger{background:transparent;color:var(--danger);box-shadow:inset 0 0 0 1.5px rgba(255,92,92,.35)}
+.ph[data-ds="iron"] .chip{display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 12px;border-radius:999px;background:var(--s2);font-size:13px;font-weight:700;color:var(--ink2);box-shadow:inset 0 1px 0 var(--hl);white-space:nowrap}
+.ph[data-ds="iron"] .chip.on{background:var(--ink);color:var(--bg);box-shadow:none}
+.ph[data-ds="iron"] .chip.acc{background:var(--acc-soft);color:var(--acc2);box-shadow:inset 0 0 0 1px rgba(255,106,69,.25)}
+.ph[data-ds="iron"] .seg{display:flex;background:var(--s1);border-radius:14px;padding:3px;box-shadow:inset 0 1px 0 var(--hl)}
+.ph[data-ds="iron"] .seg div{flex:1;height:36px;display:grid;place-items:center;font-size:13.5px;font-weight:700;color:var(--mute);border-radius:11px}
+.ph[data-ds="iron"] .seg .on{background:var(--s3);color:var(--ink);box-shadow:inset 0 1px 0 var(--hl2),0 4px 10px -4px rgba(0,0,0,.6)}
+.ph[data-ds="iron"] .step{width:60px;height:54px;border-radius:15px;background:var(--s2);box-shadow:inset 0 1px 0 var(--hl2);display:grid;place-items:center;font-size:24px;font-weight:600;color:var(--ink2)}
+.ph[data-ds="iron"] .kbd{height:56px;border-radius:14px;background:var(--s2);box-shadow:inset 0 1px 0 var(--hl2);display:grid;place-items:center;font-size:24px;font-weight:700;font-variant-numeric:tabular-nums}
+/* tiles */
+.ph[data-ds="iron"] .tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.ph[data-ds="iron"] .tile{background:var(--s1);border-radius:18px;padding:14px 14px 12px;box-shadow:inset 0 1px 0 var(--hl);min-width:0}
+.ph[data-ds="iron"] .tile .num{font-size:28px;margin-top:8px}
+.ph[data-ds="iron"] .tile .num small{font-size:12px;color:var(--mute);font-weight:600;letter-spacing:0;margin-left:3px}
+/* plates */
+.ph[data-ds="iron"] .plates{display:flex;align-items:center;gap:2px}
+.ph[data-ds="iron"] .plates i{display:block;border-radius:2px;width:6px;height:18px}
+/* tab bar: floating glass capsule with a specular edge; the one real shadow on the screen */
+.ph[data-ds="iron"] .tabs{position:absolute;left:14px;right:14px;bottom:22px;height:66px;padding:0;border-radius:33px;grid-template-columns:repeat(5,1fr);align-items:center;background:rgba(31,35,44,.72);backdrop-filter:blur(18px) saturate(160%);-webkit-backdrop-filter:blur(18px) saturate(160%);box-shadow:inset 0 1.5px 0 rgba(255,255,255,.14),inset 0 -1px 0 rgba(255,255,255,.04),0 14px 34px -10px rgba(0,0,0,.7);color:var(--mute);font-size:10px;font-weight:700}
+.ph[data-ds="iron"] .tabs div{gap:3px}
+.ph[data-ds="iron"] .tabs .on{color:var(--ink);position:relative}
+.ph[data-ds="iron"] .tabs .on::before{content:"";position:absolute;inset:-9px 4px;border-radius:24px;background:rgba(255,255,255,.08);box-shadow:inset 0 1px 0 rgba(255,255,255,.12);z-index:-1}
+/* sheets */
+.ph[data-ds="iron"] .scrim{position:absolute;inset:0;background:rgba(6,7,10,.55);backdrop-filter:blur(4px)}
+.ph[data-ds="iron"] .sheet{position:absolute;left:0;right:0;bottom:0;background:var(--s1);border-radius:28px 28px 0 0;padding:10px 18px 30px;box-shadow:inset 0 1.5px 0 var(--hl2),0 -20px 60px -20px rgba(0,0,0,.8)}
+.ph[data-ds="iron"] .grab{width:36px;height:5px;border-radius:3px;background:var(--faint);margin:0 auto 12px;opacity:.7}
+.ph[data-ds="iron"] .ring{position:relative;display:grid;place-items:center}
+.ph[data-ds="iron"] .toast{position:absolute;left:16px;right:16px;bottom:104px;height:52px;border-radius:16px;background:var(--s3);box-shadow:inset 0 1px 0 var(--hl2),0 14px 34px -10px rgba(0,0,0,.7);display:flex;align-items:center;gap:10px;padding:0 8px 0 16px;font-size:14px;font-weight:600}
+
+.rail{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:18px 16px;overflow:visible}
+.cell{width:100%}
+.frame{margin:0 auto}
+</style>
+<h1>OpenSets Premium</h1>
+<p class="lede">One look, every screen and sheet. Built from your notes: depth and finished components over flat text, one accent used for the one action, no appearance picker, the sheets kept. Tap a phone for full size, then react on each. Motion is described under each render because a still cannot show it; the build will.</p>
+<div class="controls"><div class="group"><b>Size</b><button class="chip" type="button" id="zoom" aria-pressed="false">Large</button></div><span class="hint">Your reactions and notes save as you go.</span></div>
+<div class="rail">
+<div class="cell" data-style="iron"><figure><div class="frame" tabindex="0" role="button" aria-label="Today, open full size"><div class="ph" data-ds="iron">
+<div class="sb"><span>9:41</span><i></i><span style="font-size:12px;letter-spacing:-1px">▂▄▆ ◔ ▮</span></div>
+<div class="body pad">
+  <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-top:6px"><div><div class="t">Sunday, September 27</div><h1 style="margin-top:2px">Today</h1></div><div style="width:44px;height:44px;border-radius:50%;background:var(--s2);box-shadow:inset 0 1px 0 var(--hl2);display:grid;place-items:center;font-weight:800;font-size:15px">N</div></div>
+  <div class="card hero" style="margin-top:18px;padding:18px 18px 16px">
+    <div style="display:flex;justify-content:space-between;align-items:center"><span class="t">Up next · Day 1 of 4</span><span class="t">45 min</span></div>
+    <div style="font-size:30px;font-weight:800;letter-spacing:-.035em;margin-top:6px">Upper A</div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px">
+      <span class="chip" style="background:rgba(26,8,3,.16);color:var(--acc-ink);box-shadow:none;height:30px">Bench 175</span><span class="chip" style="background:rgba(26,8,3,.16);color:var(--acc-ink);box-shadow:none;height:30px">Row 155 <b style="font-weight:800">↑5</b></span><span class="chip" style="background:rgba(26,8,3,.16);color:var(--acc-ink);box-shadow:none;height:30px">OHP 105</span><span class="chip" style="background:rgba(26,8,3,.16);color:var(--acc-ink);box-shadow:none;height:30px">+2</span>
+    </div>
+    <div class="btn" style="margin-top:16px;background:var(--acc-ink);color:#fff;box-shadow:inset 0 1px 0 rgba(255,255,255,.12)">Start workout <span style="font-size:18px">→</span></div>
+  </div>
+  <div class="card" style="margin-top:12px;display:flex;align-items:center;gap:16px;padding:14px 16px">
+    <div class="ring"><svg width="66" height="66" viewBox="0 0 66 66"><circle cx="33" cy="33" r="27" fill="none" stroke="var(--s3)" stroke-width="8"/><circle cx="33" cy="33" r="27" fill="none" stroke="var(--pos)" stroke-width="8" stroke-linecap="round" stroke-dasharray="169.6" stroke-dashoffset="0" transform="rotate(-90 33 33)"/></svg><span class="num" style="position:absolute;font-size:16px">4<span style="color:var(--mute);font-weight:700;font-size:12px">/4</span></span></div>
+    <div style="flex:1;min-width:0"><div style="font-size:16px;font-weight:800;letter-spacing:-.02em">Week complete</div><div class="t" style="margin-top:2px">Every session done · 9 weeks running</div><div style="display:flex;gap:5px;margin-top:10px"><i style="flex:1;height:6px;border-radius:3px;background:var(--pos)"></i><i style="flex:1;height:6px;border-radius:3px;background:var(--pos)"></i><i style="flex:1;height:6px;border-radius:3px;background:var(--s3)"></i><i style="flex:1;height:6px;border-radius:3px;background:var(--pos)"></i><i style="flex:1;height:6px;border-radius:3px;background:var(--pos)"></i><i style="flex:1;height:6px;border-radius:3px;background:var(--s3)"></i><i style="flex:1;height:6px;border-radius:3px;background:var(--s3);box-shadow:inset 0 0 0 1.5px var(--mute)"></i></div></div>
+  </div>
+  <div class="tiles" style="margin-top:12px">
+    <div class="tile"><div class="t">Lifted, 7 days</div><div class="num">86.7k<small>lb</small></div></div>
+    <div class="tile"><div class="t">Last record</div><div class="num" style="color:var(--pr)">315<small>lb</small></div><div class="t" style="margin-top:4px;font-size:11.5px">Deadlift · 5 days ago</div></div>
+  </div>
+  <h2>Recent <span>All</span></h2>
+  <div class="card" style="padding:4px 16px">
+    <div class="row"><div style="width:40px;height:40px;border-radius:12px;background:var(--s2);box-shadow:inset 0 1px 0 var(--hl);display:grid;place-items:center" class="num"><span style="font-size:15px">26</span></div><div style="flex:1;min-width:0"><div class="n">Lower B</div><div class="sub">Fri · 52 min · 24 sets</div></div><span class="chev"></span></div>
+    <div class="row"><div style="width:40px;height:40px;border-radius:12px;background:var(--s2);box-shadow:inset 0 1px 0 var(--hl);display:grid;place-items:center" class="num"><span style="font-size:15px">25</span></div><div style="flex:1;min-width:0"><div class="n">Upper B</div><div class="sub">Thu · 47 min · 22 sets</div></div><span class="chip" style="height:24px;padding:0 8px;font-size:11px;background:rgba(255,200,87,.14);color:var(--pr);box-shadow:none">PR</span><span class="chev"></span></div>
+    <div class="row"><div style="width:40px;height:40px;border-radius:12px;background:var(--s2);box-shadow:inset 0 1px 0 var(--hl);display:grid;place-items:center" class="num"><span style="font-size:15px">23</span></div><div style="flex:1;min-width:0"><div class="n">Lower A</div><div class="sub">Tue · 50 min · 23 sets</div></div><span class="chev"></span></div>
+  </div>
+</div>
+<div class="tabs"><div class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11l8-7 8 7v8a1 1 0 01-1 1h-4v-6h-6v6H5a1 1 0 01-1-1z"/></svg>Today</div><div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="4" y="5" width="16" height="15" rx="4"/><path d="M4 10h16M8 3v4M16 3v4"/></svg>Plan</div><div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>Library</div><div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 19V9M9.5 19V4M15 19v-7M20.5 19v-11"/></svg>Trends</div><div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8.5" r="3.8"/><path d="M4.5 20c1.2-3.6 4-5.5 7.5-5.5s6.3 1.9 7.5 5.5"/></svg>You</div></div>
+<span class="home"></span>
+</div></div><figcaption><b>Today</b></figcaption></figure><p class="about" style="margin:6px 0 0">The hub. Up next as the one tinted surface, the week as a ring, two numbers, recent sessions.</p><div class="fb" data-key="iron-today"><button type="button" class="v" data-v="love" aria-pressed="false">Love it</button><button type="button" class="v" data-v="no" aria-pressed="false">Not this</button><button type="button" class="v note-btn" aria-expanded="false">Note</button><textarea id="note-iron-today" class="note" rows="3" placeholder="What works, what does not" aria-label="Note on Today" hidden></textarea><span class="saved" aria-live="polite"></span></div></div>
+<div class="cell" data-style="iron"><figure><div class="frame" tabindex="0" role="button" aria-label="Log a set, open full size"><div class="ph" data-ds="iron">
+<div class="sb"><span>9:41</span><i></i><span style="font-size:12px;letter-spacing:-1px">▂▄▆ ◔ ▮</span></div>
+<div class="body" style="display:flex;flex-direction:column">
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 18px 0"><div style="width:40px;height:40px;border-radius:12px;background:var(--s2);box-shadow:inset 0 1px 0 var(--hl2);display:grid;place-items:center;color:var(--ink2)"><span style="width:9px;height:9px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(45deg);margin-top:-4px"></span></div><div style="text-align:center"><div style="font-weight:800;font-size:14px">Upper A</div><div class="t" style="font-variant-numeric:tabular-nums">12:48 · 4 sets</div></div><div class="chip" style="height:40px;border-radius:13px;font-size:14px">Finish</div></div>
+  <div style="display:flex;gap:6px;padding:12px 18px 0;overflow:hidden"><span class="chip" style="color:var(--pos)">✓ Bench</span><span class="chip on">2 Row</span><span class="chip">3 Overhead</span><span class="chip">4 Pulldown</span></div>
+  <div style="flex:1;padding:14px 18px 0;overflow:hidden">
+    <div class="t">2 of 5 · Back · 4 × 6–8</div>
+    <h1 style="font-size:28px;margin-top:2px">Barbell Row</h1>
+    <div style="display:flex;gap:10px;align-items:flex-start;margin-top:10px;padding:10px 12px;border-radius:14px;background:var(--acc-soft)"><span style="font-size:12px;font-weight:800;color:var(--acc2);margin-top:1px">WHY</span><span style="font-size:13px;line-height:1.4;color:var(--ink2)">Last time 8, 8, 8, 7 at 150. Every set reached 8, so today is 155.</span></div>
+    <div class="card lift" style="margin-top:12px;padding:14px 16px 16px">
+      <div style="display:flex;justify-content:space-between"><span class="t" style="color:var(--acc2)">Set 1 of 4</span><span class="t">Target 6 reps</span></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:8px;text-align:center">
+        <div><div class="t">Weight · lb</div><div class="num" style="font-size:72px;margin-top:4px">155</div><div style="display:flex;gap:8px;justify-content:center;margin-top:10px"><div class="step">−</div><div class="step">+</div></div></div>
+        <div><div class="t">Reps</div><div class="num" style="font-size:72px;margin-top:4px">6</div><div style="display:flex;gap:8px;justify-content:center;margin-top:10px"><div class="step">−</div><div class="step">+</div></div></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;margin-top:14px;height:44px;padding:0 12px;border-radius:13px;background:var(--s1);box-shadow:inset 0 1px 0 var(--hl)"><span class="t">Per side</span><span class="plates"><i style="background:var(--p2);width:10px;height:5px"></i><i style="background:var(--p45);height:26px;width:8px"></i><i style="background:var(--p10);height:16px"></i></span><span style="font-weight:800;font-size:14px;font-variant-numeric:tabular-nums">45 + 10</span><span class="chev" style="margin-left:auto"></span></div>
+      <div style="display:flex;align-items:center;gap:10px;margin-top:10px"><span class="t" style="width:34px">RPE</span><div class="seg" style="flex:1;background:var(--s1)"><div>6</div><div>7</div><div class="on">8</div><div>9</div><div>10</div></div></div>
+    </div>
+    <div class="row" style="margin-top:10px;border-top:0;padding:10px 4px"><span class="t" style="width:16px">2</span><span class="num" style="font-size:18px;color:var(--faint)">155 × 6</span><span class="t" style="margin-left:auto">Up next</span></div>
+  </div>
+  <div style="padding:10px 18px 24px"><div class="btn pri" style="height:60px;font-size:18px">Log set · 155 × 6</div></div>
+</div>
+<span class="home"></span>
+</div></div><figcaption><b>Log a set</b></figcaption></figure><p class="about" style="margin:6px 0 0">The whole screen is the active set. Steppers under the numerals, plates as colour, RPE as a segmented control, rest as a ring.</p><div class="fb" data-key="iron-log"><button type="button" class="v" data-v="love" aria-pressed="false">Love it</button><button type="button" class="v" data-v="no" aria-pressed="false">Not this</button><button type="button" class="v note-btn" aria-expanded="false">Note</button><textarea id="note-iron-log" class="note" rows="3" placeholder="What works, what does not" aria-label="Note on Log a set" hidden></textarea><span class="saved" aria-live="polite"></span></div></div>
+<div class="cell" data-style="iron"><figure><div class="frame" tabindex="0" role="button" aria-label="Rest, mid-set, open full size"><div class="ph" data-ds="iron">
+<div class="sb"><span>9:41</span><i></i><span style="font-size:12px;letter-spacing:-1px">▂▄▆ ◔ ▮</span></div>
+<div class="body" style="display:flex;flex-direction:column">
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 18px 0"><div style="width:40px;height:40px;border-radius:12px;background:var(--s2);box-shadow:inset 0 1px 0 var(--hl2);display:grid;place-items:center;color:var(--ink2)"><span style="width:9px;height:9px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(45deg);margin-top:-4px"></span></div><div style="text-align:center"><div style="font-weight:800;font-size:14px">Upper A</div><div class="t" style="font-variant-numeric:tabular-nums">13:22 · 5 sets</div></div><div class="chip" style="height:40px;border-radius:13px;font-size:14px">Finish</div></div>
+  <div style="flex:1;padding:14px 18px 0;overflow:hidden">
+    <div class="t">2 of 5 · Back · 4 × 6–8</div>
+    <h1 style="font-size:28px;margin-top:2px">Barbell Row</h1>
+    <div class="card" style="margin-top:12px;padding:6px 16px">
+      <div class="row"><span class="t" style="width:16px">1</span><span class="num" style="font-size:18px">155 × 6</span><span class="t" style="margin-left:6px">@8</span><span class="chip" style="margin-left:auto;height:24px;padding:0 8px;font-size:11px;background:rgba(79,209,139,.14);color:var(--pos);box-shadow:none">Done</span></div>
+      <div class="row" style="background:var(--acc-soft);margin:0 -16px;padding:12px 16px;border-top:0;border-radius:14px"><span class="t" style="width:16px;color:var(--acc2)">2</span><span class="num" style="font-size:18px">155 × 6</span><span class="t" style="margin-left:auto;color:var(--acc2)">Next</span></div>
+      <div class="row"><span class="t" style="width:16px">3</span><span class="num" style="font-size:18px;color:var(--faint)">155 × 6</span></div>
+      <div class="row"><span class="t" style="width:16px">4</span><span class="num" style="font-size:18px;color:var(--faint)">155 × 6</span></div>
+    </div>
+  </div>
+  <div class="sheet" style="position:relative;padding-bottom:28px">
+    <div class="grab"></div>
+    <div style="display:flex;align-items:center;gap:18px">
+      <div class="ring"><svg width="112" height="112" viewBox="0 0 112 112"><circle cx="56" cy="56" r="48" fill="none" stroke="var(--s3)" stroke-width="9"/><circle cx="56" cy="56" r="48" fill="none" stroke="var(--acc)" stroke-width="9" stroke-linecap="round" stroke-dasharray="301.6" stroke-dashoffset="115" transform="rotate(-90 56 56)"/></svg><div style="position:absolute;text-align:center"><div class="num" style="font-size:30px">1:34</div><div class="t" style="font-size:11px">of 2:30</div></div></div>
+      <div style="flex:1"><div style="font-size:18px;font-weight:800;letter-spacing:-.02em">Rest</div><div class="t" style="margin-top:2px;line-height:1.4">Set 2 is staged at 155 × 6. The phone buzzes at zero.</div><div style="display:flex;gap:8px;margin-top:12px"><div class="chip" style="height:40px;border-radius:13px;flex:1;justify-content:center">−15</div><div class="chip" style="height:40px;border-radius:13px;flex:1;justify-content:center">+15</div><div class="chip on" style="height:40px;border-radius:13px;flex:1.3;justify-content:center">Skip</div></div></div>
+    </div>
+  </div>
+</div>
+<span class="home"></span>
+</div></div><figcaption><b>Rest, mid-set</b></figcaption></figure><p class="about" style="margin:6px 0 0">The rest timer takes over the bottom sheet and counts down; the next set is already staged.</p><div class="fb" data-key="iron-rest"><button type="button" class="v" data-v="love" aria-pressed="false">Love it</button><button type="button" class="v" data-v="no" aria-pressed="false">Not this</button><button type="button" class="v note-btn" aria-expanded="false">Note</button><textarea id="note-iron-rest" class="note" rows="3" placeholder="What works, what does not" aria-label="Note on Rest, mid-set" hidden></textarea><span class="saved" aria-live="polite"></span></div></div>
+<div class="cell" data-style="iron"><figure><div class="frame" tabindex="0" role="button" aria-label="New record, open full size"><div class="ph" data-ds="iron">
+<div class="sb" style="color:#1a1204"><span>9:41</span><i></i><span style="font-size:12px;letter-spacing:-1px">▂▄▆ ◔ ▮</span></div>
+<div class="body" style="background:radial-gradient(120% 90% at 50% 100%,#ffd875 0%,var(--pr) 55%,#f0b73a 100%);color:#1a1204;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px">
+  <div style="font-size:13px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;opacity:.75">New record</div>
+  <div class="num" style="font-size:150px;margin-top:6px;letter-spacing:-.06em;text-shadow:0 12px 30px rgba(120,80,0,.25)">231</div>
+  <div style="font-size:22px;font-weight:800;letter-spacing:-.03em;margin-top:2px">Bench Press · e1RM lb</div>
+  <div style="font-size:14px;font-weight:600;margin-top:12px;opacity:.75">185 × 6 · previous best 221</div>
+  <div style="margin-top:40px;height:54px;padding:0 26px;border-radius:18px;background:rgba(26,18,4,.92);color:#ffe7a8;display:flex;align-items:center;font-weight:800;font-size:15px;box-shadow:0 12px 30px -10px rgba(60,40,0,.6)">Keep going</div>
+</div>
+<span class="home" style="background:#1a1204"></span>
+</div></div><figcaption><b>New record</b></figcaption></figure><p class="about" style="margin:6px 0 0">The moment: full-bleed gold, the number springs in, one tap to continue.</p><div class="fb" data-key="iron-pr"><button type="button" class="v" data-v="love" aria-pressed="false">Love it</button><button type="button" class="v" data-v="no" aria-pressed="false">Not this</button><button type="button" class="v note-btn" aria-expanded="false">Note</button><textarea id="note-iron-pr" class="note" rows="3" placeholder="What works, what does not" aria-label="Note on New record" hidden></textarea><span class="saved" aria-live="polite"></span></div></div>
+<div class="cell" data-style="iron"><figure><div class="frame" tabindex="0" role="button" aria-label="Summary, open full size"><div class="ph" data-ds="iron">
+<div class="sb"><span>9:41</span><i></i><span style="font-size:12px;letter-spacing:-1px">▂▄▆ ◔ ▮</span></div>
+<div class="body pad" style="padding-bottom:140px">
+  <div style="width:40px;height:40px;border-radius:12px;background:var(--s2);box-shadow:inset 0 1px 0 var(--hl2);display:grid;place-items:center;color:var(--ink2)"><span style="width:9px;height:9px;border-left:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(45deg);margin-left:3px"></span></div>
+  <div class="t" style="margin-top:14px;color:var(--acc2)">Upper A · Sunday</div>
+  <h1 style="font-size:36px;margin-top:2px">Nice work.</h1>
+  <div class="tiles" style="margin-top:16px">
+    <div class="tile"><div class="t">Time</div><div class="num">51<small>min</small></div></div>
+    <div class="tile"><div class="t">Sets</div><div class="num">18</div></div>
+    <div class="tile"><div class="t">Volume</div><div class="num">14.2k<small>lb</small></div></div>
+    <div class="tile" style="background:linear-gradient(160deg,rgba(255,200,87,.22),rgba(255,200,87,.06));box-shadow:inset 0 1px 0 rgba(255,220,130,.3)"><div class="t" style="color:var(--pr)">Records</div><div class="num" style="color:var(--pr)">1</div></div>
+  </div>
+  <div class="card" style="margin-top:12px;padding:4px 16px">
+    <div class="row"><div style="flex:1;min-width:0"><div class="n">Bench Press</div><div class="sub">175×6 · 175×6 · 175×6 · 185×6</div></div><span class="chip" style="height:24px;padding:0 8px;font-size:11px;background:rgba(255,200,87,.14);color:var(--pr);box-shadow:none">PR</span></div>
+    <div class="row"><div style="flex:1;min-width:0"><div class="n">Barbell Row</div><div class="sub">155×6 · 155×6 · 155×6 · 155×5</div></div><span class="t">↑ next</span></div>
+    <div class="row"><div style="flex:1;min-width:0"><div class="n">Overhead Press</div><div class="sub">105×10 · 105×9 · 105×8</div></div></div>
+    <div class="row"><div style="flex:1;min-width:0"><div class="n">Lat Pulldown</div><div class="sub">130×11 · 130×11 · 130×10</div></div></div>
+    <div class="row"><div style="flex:1;min-width:0"><div class="n">Triceps Pushdown</div><div class="sub">55×12 · 55×12 · 55×12</div></div><span class="t">↑ next</span></div>
+  </div>
+</div>
+<div style="position:absolute;left:0;right:0;bottom:0;padding:14px 18px 26px;background:linear-gradient(180deg,rgba(13,15,19,0),var(--bg) 30%)"><div class="btn pri" style="height:58px;font-size:17px">Save workout</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px"><div class="btn sm">Keep training</div><div class="btn sm danger">Discard</div></div></div>
+<span class="home"></span>
+</div></div><figcaption><b>Summary</b></figcaption></figure><p class="about" style="margin:6px 0 0">&quot;Nice work.&quot; Four tiles, then each exercise with its sets and a PR mark, save or discard.</p><div class="fb" data-key="iron-summary"><button type="button" class="v" data-v="love" aria-pressed="false">Love it</button><button type="button" class="v" data-v="no" aria-pressed="false">Not this</button><button type="button" class="v note-btn" aria-expanded="false">Note</button><textarea id="note-iron-summary" class="note" rows="3" placeholder="What works, what does not" aria-label="Note on Summary" hidden></textarea><span class="saved" aria-live="polite"></span></div></div>
+<div class="cell" data-style="iron"><figure><div class="frame" tabindex="0" role="button" aria-label="Plan, open full size"><div class="ph" data-ds="iron">
+<div class="sb"><span>9:41</span><i></i><span style="font-size:12px;letter-spacing:-1px">▂▄▆ ◔ ▮</span></div>
+<div class="body pad">
+  <div class="t" style="margin-top:6px">Upper / Lower · Hypertrophy</div>
+  <h1 style="margin-top:2px">Plan</h1>
+  <div class="card" style="margin-top:16px;padding:14px 16px;display:flex;align-items:center;gap:14px"><div style="flex:1"><div style="font-size:16px;font-weight:800;letter-spacing:-.02em">Week 3 of 6</div><div class="t" style="margin-top:2px">Building up · deload in week 6</div></div><div style="display:flex;gap:4px"><i style="width:12px;height:22px;border-radius:4px;background:var(--acc)"></i><i style="width:12px;height:22px;border-radius:4px;background:var(--acc)"></i><i style="width:12px;height:22px;border-radius:4px;background:var(--acc);opacity:.45"></i><i style="width:12px;height:22px;border-radius:4px;background:var(--s3)"></i><i style="width:12px;height:22px;border-radius:4px;background:var(--s3)"></i><i style="width:12px;height:22px;border-radius:4px;background:var(--s3);box-shadow:inset 0 0 0 1.5px var(--mute)"></i></div></div>
+  <div class="card lift" style="margin-top:12px;box-shadow:inset 0 1px 0 var(--hl2),inset 0 0 0 1.5px rgba(255,106,69,.45)"><div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:20px;font-weight:800;letter-spacing:-.025em">Upper A</span><span class="chip acc" style="height:26px;font-size:12px">Next</span></div><div class="t" style="margin-top:2px">5 exercises · 45 min</div><div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px"><span class="chip" style="background:var(--s1)">Bench</span><span class="chip" style="background:var(--s1)">Row</span><span class="chip" style="background:var(--s1)">OHP</span><span class="chip" style="background:var(--s1)">Pulldown</span><span class="chip" style="background:var(--s1)">Pushdown</span></div><div style="display:grid;grid-template-columns:1fr 1.4fr;gap:8px;margin-top:14px"><div class="btn sm" style="background:var(--s1)">Edit</div><div class="btn sm pri">Start</div></div></div>
+  <div class="card" style="margin-top:10px"><div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:18px;font-weight:800;letter-spacing:-.02em">Lower A</span><span class="t">52 min</span></div><div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px"><span class="chip">Squat</span><span class="chip">RDL</span><span class="chip">Leg Press</span><span class="chip">+3</span></div></div>
+  <div class="card" style="margin-top:10px"><div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:18px;font-weight:800;letter-spacing:-.02em">Upper B</span><span class="t">48 min</span></div><div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px"><span class="chip">OHP</span><span class="chip">Incline DB</span><span class="chip">Pull-up</span><span class="chip">+3</span></div></div>
+  <div class="card" style="margin-top:10px"><div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:18px;font-weight:800;letter-spacing:-.02em">Lower B</span><span class="t">55 min</span></div><div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px"><span class="chip">Deadlift</span><span class="chip">Front Squat</span><span class="chip">Hip Thrust</span><span class="chip">+3</span></div></div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px"><div class="btn sm">+ New day</div><div class="btn sm">Regenerate</div></div>
+</div>
+<div class="tabs"><div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11l8-7 8 7v8a1 1 0 01-1 1h-4v-6h-6v6H5a1 1 0 01-1-1z"/></svg>Today</div><div class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="4" y="5" width="16" height="15" rx="4"/><path d="M4 10h16M8 3v4M16 3v4"/></svg>Plan</div><div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>Library</div><div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 19V9M9.5 19V4M15 19v-7M20.5 19v-11"/></svg>Trends</div><div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8.5" r="3.8"/><path d="M4.5 20c1.2-3.6 4-5.5 7.5-5.5s6.3 1.9 7.5 5.5"/></svg>You</div></div>
+<span class="home"></span>
+</div></div><figcaption><b>Plan</b></figcaption></figure><p class="about" style="margin:6px 0 0">The block and week, then each day as a card with the next one lifted and tinted.</p><div class="fb" data-key="iron-plan"><button type="button" class="v" data-v="love" aria-pressed="false">Love it</button><button type="button" class="v" data-v="no" aria-pressed="false">Not this</button><button type="button" class="v note-btn" aria-expanded="false">Note</button><textarea id="note-iron-plan" class="note" rows="3" placeholder="What works, what does not" aria-label="Note on Plan" hidden></textarea><span class="saved" aria-live="polite"></span></div></div>
+<div class="cell" data-style="iron"><figure><div class="frame" tabindex="0" role="button" aria-label="Routine builder, open full size"><div class="ph" data-ds="iron">
+<div class="sb"><span>9:41</span><i></i><span style="font-size:12px;letter-spacing:-1px">▂▄▆ ◔ ▮</span></div>
+<div class="body pad" style="padding-bottom:120px">
+  <div style="display:flex;justify-content:space-between;align-items:center"><div style="width:40px;height:40px;border-radius:12px;background:var(--s2);box-shadow:inset 0 1px 0 var(--hl2);display:grid;place-items:center;color:var(--ink2)"><span style="width:9px;height:9px;border-left:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(45deg);margin-left:3px"></span></div><span class="t" style="color:var(--pos)">● Saved</span></div>
+  <div class="t" style="margin-top:14px">Day 1 · 5 exercises · 45 min</div>
+  <h1 style="margin-top:2px;padding-bottom:8px;border-bottom:2px solid var(--s3)">Upper A</h1>
+  <div class="card" style="margin-top:14px;padding:12px 12px 12px 14px"><div style="display:flex;align-items:center;gap:10px"><span class="num" style="font-size:20px;color:var(--faint);width:22px">1</span><div style="flex:1;min-width:0"><div style="font-weight:800;font-size:15px">Bench Press</div><div class="t" style="font-size:12px">Chest · Barbell · rest 2:30</div></div><span style="color:var(--mute);font-size:18px;letter-spacing:2px">⋮⋮</span></div><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:10px"><div style="background:var(--s2);border-radius:14px;padding:8px 6px;text-align:center;box-shadow:inset 0 1px 0 var(--hl)"><div class="t" style="font-size:11px">Sets</div><div class="num" style="font-size:22px;margin:4px 0 6px">4</div><div style="display:flex;gap:4px;justify-content:center"><div class="step" style="width:38px;height:32px;font-size:18px;border-radius:10px;background:var(--s3)">−</div><div class="step" style="width:38px;height:32px;font-size:18px;border-radius:10px;background:var(--s3)">+</div></div></div><div style="background:var(--s2);border-radius:14px;padding:8px 6px;text-align:center;box-shadow:inset 0 1px 0 var(--hl)"><div class="t" style="font-size:11px">Reps from</div><div class="num" style="font-size:22px;margin:4px 0 6px">6</div><div style="display:flex;gap:4px;justify-content:center"><div class="step" style="width:38px;height:32px;font-size:18px;border-radius:10px;background:var(--s3)">−</div><div class="step" style="width:38px;height:32px;font-size:18px;border-radius:10px;background:var(--s3)">+</div></div></div><div style="background:var(--s2);border-radius:14px;padding:8px 6px;text-align:center;box-shadow:inset 0 1px 0 var(--hl)"><div class="t" style="font-size:11px">Reps to</div><div class="num" style="font-size:22px;margin:4px 0 6px">8</div><div style="display:flex;gap:4px;justify-content:center"><div class="step" style="width:38px;height:32px;font-size:18px;border-radius:10px;background:var(--s3)">−</div><div class="step" style="width:38px;height:32px;font-size:18px;border-radius:10px;background:var(--s3)">+</div></div></div></div></div>
+  <div class="card" style="margin-top:8px;padding:12px 12px 12px 14px;display:flex;align-items:center;gap:10px"><span class="num" style="font-size:20px;color:var(--faint);width:22px">2</span><div style="flex:1;min-width:0"><div style="font-weight:800;font-size:15px">Barbell Row</div><div class="t" style="font-size:12px">4 × 6–8 · rest 2:00</div></div><span style="color:var(--mute);font-size:18px;letter-spacing:2px">⋮⋮</span></div>
+  <div class="card" style="margin-top:8px;padding:12px 12px 12px 14px;display:flex;align-items:center;gap:10px"><span class="num" style="font-size:20px;color:var(--faint);width:22px">3</span><div style="flex:1;min-width:0"><div style="font-weight:800;font-size:15px">Overhead Press</div><div class="t" style="font-size:12px">3 × 8–10 · rest 2:00</div></div><span style="color:var(--mute);font-size:18px;letter-spacing:2px">⋮⋮</span></div>
+  <div class="card" style="margin-top:8px;padding:12px 12px 12px 14px;display:flex;align-items:center;gap:10px"><span class="num" style="font-size:20px;color:var(--faint);width:22px">4</span><div style="flex:1;min-width:0"><div style="font-weight:800;font-size:15px">Lat Pulldown</div><div class="t" style="font-size:12px">3 × 10–12 · rest 1:30</div></div><span style="color:var(--mute);font-size:18px;letter-spacing:2px">⋮⋮</span></div>
+  <div class="btn" style="margin-top:10px;background:transparent;box-shadow:inset 0 0 0 1.5px var(--s3);color:var(--ink2)">+ Add exercise</div>
+</div>
+<div style="position:absolute;left:0;right:0;bottom:0;padding:14px 18px 26px;background:linear-gradient(180deg,rgba(13,15,19,0),var(--bg) 30%)"><div class="btn pri">Start this day</div></div>
+<span class="home"></span>
+</div></div><figcaption><b>Routine builder</b></figcaption></figure><p class="about" style="margin:6px 0 0">Edit a day: reorder, sets and rep range as steppers, add or remove.</p><div class="fb" data-key="iron-builder"><button type="button" class="v" data-v="love" aria-pressed="false">Love it</button><button type="button" class="v" data-v="no" aria-pressed="false">Not this</button><button type="button" class="v note-btn" aria-expanded="false">Note</button><textarea id="note-iron-builder" class="note" rows="3" placeholder="What works, what does not" aria-label="Note on Routine builder" hidden></textarea><span class="saved" aria-live="polite"></span></div></div>
+<div class="cell" data-style="iron"><figure><div class="frame" tabindex="0" role="button" aria-label="Add exercise, open full size"><div class="ph" data-ds="iron">
+<div class="sb"><span>9:41</span><i></i><span style="font-size:12px;letter-spacing:-1px">▂▄▆ ◔ ▮</span></div>
+<div class="body pad" style="opacity:.5"><div class="t" style="margin-top:14px">Day 1 · 5 exercises</div><h1>Upper A</h1><div class="card" style="margin-top:14px;height:120px"></div><div class="card" style="margin-top:8px;height:64px"></div></div>
+<div class="scrim"></div>
+<div class="sheet" style="height:78%;display:flex;flex-direction:column">
+  <div class="grab"></div>
+  <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:22px;font-weight:800;letter-spacing:-.03em">Add exercise</span><span class="t" style="color:var(--acc2)">Cancel</span></div>
+  <div style="margin-top:12px;height:46px;border-radius:14px;background:var(--bg);display:flex;align-items:center;gap:10px;padding:0 14px;box-shadow:inset 0 1px 0 rgba(0,0,0,.4)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--mute)" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg><span class="t" style="font-size:15px;font-weight:500">Search 873 exercises</span></div>
+  <div style="display:flex;gap:6px;margin-top:10px;overflow:hidden"><span class="chip on">All</span><span class="chip">Chest</span><span class="chip">Back</span><span class="chip">Shoulders</span><span class="chip">Legs</span><span class="chip">Arms</span></div>
+  <div style="flex:1;margin-top:6px;overflow:hidden">
+    <div class="row"><div style="width:44px;height:44px;border-radius:12px;background:var(--s2);box-shadow:inset 0 1px 0 var(--hl)"></div><div style="flex:1;min-width:0"><div class="n">Incline Dumbbell Press</div><div class="sub">Chest · Dumbbell · best 65</div></div><span class="chip acc" style="width:34px;height:34px;padding:0;justify-content:center;font-size:18px">+</span></div>
+    <div class="row"><div style="width:44px;height:44px;border-radius:12px;background:var(--s2);box-shadow:inset 0 1px 0 var(--hl)"></div><div style="flex:1;min-width:0"><div class="n">Dip</div><div class="sub">Chest · Bodyweight · best BW+25</div></div><span class="chip acc" style="width:34px;height:34px;padding:0;justify-content:center;font-size:18px">+</span></div>
+    <div class="row"><div style="width:44px;height:44px;border-radius:12px;background:var(--s2);box-shadow:inset 0 1px 0 var(--hl)"></div><div style="flex:1;min-width:0"><div class="n">Cable Fly</div><div class="sub">Chest · Cable · not logged</div></div><span class="chip acc" style="width:34px;height:34px;padding:0;justify-content:center;font-size:18px">+</span></div>
+    <div class="row"><div style="width:44px;height:44px;border-radius:12px;background:var(--s2);box-shadow:inset 0 1px 0 var(--hl)"></div><div style="flex:1;min-width:0"><div class="n">Face Pull</div><div class="sub">Shoulders · Cable · best 45</div></div><span class="chip acc" style="width:34px;height:34px;padding:0;justify-content:center;font-size:18px">+</span></div>
+    <div class="row"><div style="width:44px;height:44px;border-radius:12px;background:var(--s2);box-shadow:inset 0 1px 0 var(--hl)"></div><div style="flex:1;min-width:0"><div class="n">Hammer Curl</div><div class="sub">Biceps · Dumbbell · best 35</div></div><span class="chip acc" style="width:34px;height:34px;padding:0;justify-content:center;font-size:18px">+</span></div>
+    <div class="row"><div style="width:44px;height:44px;border-radius:12px;background:var(--s2);box-shadow:inset 0 1px 0 var(--hl)"></div><div style="flex:1;min-width:0"><div class="n">Seated Cable Row</div><div class="sub">Back · Cable · best 140</div></div><span class="chip acc" style="width:34px;height:34px;padding:0;justify-content:center;font-size:18px">+</span></div>
+  </div>
+</div>
+<span class="home"></span>
+</div></div><figcaption><b>Add exercise</b></figcaption></figure><p class="about" style="margin:6px 0 0">The exercise picker sheet: search, muscle chips, rows with a best and a plus.</p><div class="fb" data-key="iron-picker"><button type="button" class="v" data-v="love" aria-pressed="false">Love it</button><button type="button" class="v" data-v="no" aria-pressed="false">Not this</button><button type="button" class="v note-btn" aria-expanded="false">Note</button><textarea id="note-iron-picker" class="note" rows="3" placeholder="What works, what does not" aria-label="Note on Add exercise" hidden></textarea><span class="saved" aria-live="polite"></span></div></div>
+<div class="cell" data-style="iron"><figure><div class="frame" tabindex="0" role="button" aria-label="Plate math, open full size"><div class="ph" data-ds="iron">
+<div class="sb"><span>9:41</span><i></i><span style="font-size:12px;letter-spacing:-1px">▂▄▆ ◔ ▮</span></div>
+<div class="body pad" style="opacity:.5"><div class="t" style="margin-top:60px">2 of 5 · Back</div><h1 style="font-size:28px">Barbell Row</h1><div class="card lift" style="margin-top:12px;height:220px"></div></div>
+<div class="scrim"></div>
+<div class="sheet">
+  <div class="grab"></div>
+  <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:22px;font-weight:800;letter-spacing:-.03em">Plate math</span><span class="t" style="color:var(--acc2)">Done</span></div>
+  <div style="display:flex;align-items:baseline;gap:8px;margin-top:6px"><span class="num" style="font-size:64px">155</span><span class="t" style="font-size:14px">lb on the bar</span></div>
+  <div style="margin-top:14px;height:150px;border-radius:18px;background:var(--bg);box-shadow:inset 0 1px 0 rgba(0,0,0,.5),inset 0 -1px 0 var(--hl);display:flex;align-items:center;padding:0 18px;gap:3px">
+    <span style="width:56px;height:12px;border-radius:3px;background:linear-gradient(180deg,#9ca3af,#6b7280)"></span>
+    <span style="width:12px;height:34px;border-radius:3px;background:linear-gradient(180deg,#b0b7c3,#7d8593)"></span>
+    <span style="width:26px;height:118px;border-radius:5px;background:linear-gradient(180deg,#4f7fe6,var(--p45));display:grid;place-items:center;font-size:11px;font-weight:800;color:#fff;writing-mode:vertical-rl;box-shadow:inset 0 1px 0 rgba(255,255,255,.35)">45</span>
+    <span style="width:16px;height:70px;border-radius:4px;background:linear-gradient(180deg,#f6f6f2,var(--p10));display:grid;place-items:center;font-size:10px;font-weight:800;color:#333;writing-mode:vertical-rl;box-shadow:inset 0 1px 0 rgba(255,255,255,.6)">10</span>
+    <span style="flex:1;height:12px;border-radius:0 3px 3px 0;background:linear-gradient(180deg,#9ca3af,#6b7280);opacity:.7"></span>
+  </div>
+  <div class="card" style="margin-top:12px;padding:4px 16px;background:var(--s2)">
+    <div class="row"><span class="n" style="color:var(--mute);font-weight:600">Each side</span><span class="v">45 + 10</span></div>
+    <div class="row"><span class="n" style="color:var(--mute);font-weight:600">Bar</span><span class="v">45<small> lb</small></span></div>
+    <div class="row"><span class="n" style="color:var(--mute);font-weight:600">Your plates</span><span class="plates"><i style="background:var(--p45)"></i><i style="background:var(--p35)"></i><i style="background:var(--p25)"></i><i style="background:var(--p10)"></i><i style="background:var(--p5)"></i><i style="background:var(--p2);height:12px"></i></span></div>
+  </div>
+  <div class="t" style="margin-top:12px;text-align:center">Change bar and plates in You → Training</div>
+</div>
+<span class="home"></span>
+</div></div><figcaption><b>Plate math</b></figcaption></figure><p class="about" style="margin:6px 0 0">The plate sheet: the bar drawn with real plate colours, total, per side, and what is missing.</p><div class="fb" data-key="iron-plates"><button type="button" class="v" data-v="love" aria-pressed="false">Love it</button><button type="button" class="v" data-v="no" aria-pressed="false">Not this</button><button type="button" class="v note-btn" aria-expanded="false">Note</button><textarea id="note-iron-plates" class="note" rows="3" placeholder="What works, what does not" aria-label="Note on Plate math" hidden></textarea><span class="saved" aria-live="polite"></span></div></div>
+<div class="cell" data-style="iron"><figure><div class="frame" tabindex="0" role="button" aria-label="Library, open full size"><div class="ph" data-ds="iron">
+<div class="sb"><span>9:41</span><i></i><span style="font-size:12px;letter-spacing:-1px">▂▄▆ ◔ ▮</span></div>
+<div class="body pad">
+  <div class="t" style="margin-top:6px">873 exercises</div>
+  <h1 style="margin-top:2px">Library</h1>
+  <div style="margin-top:14px;height:48px;border-radius:15px;background:var(--s1);display:flex;align-items:center;gap:10px;padding:0 14px;box-shadow:inset 0 1px 0 var(--hl)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--mute)" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg><span class="t" style="font-size:15px;font-weight:500">Search</span></div>
+  <div style="display:flex;gap:6px;margin-top:10px;overflow:hidden"><span class="chip on">All</span><span class="chip">Chest</span><span class="chip">Back</span><span class="chip">Shoulders</span><span class="chip">Quads</span><span class="chip">Hams</span></div>
+  <h2>Your lifts <span>12</span></h2>
+  <div class="card" style="padding:4px 16px">
+    <div class="row"><div style="width:44px;height:44px;border-radius:12px;background:linear-gradient(160deg,var(--s3),var(--s2));box-shadow:inset 0 1px 0 var(--hl2)"></div><div style="flex:1;min-width:0"><div class="n">Bench Press</div><div class="sub">Chest · Barbell · 14 sessions</div></div><div style="text-align:right"><div class="v">231</div><div class="t" style="font-size:10.5px">e1RM lb</div></div><span class="chev"></span></div>
+    <div class="row"><div style="width:44px;height:44px;border-radius:12px;background:linear-gradient(160deg,var(--s3),var(--s2));box-shadow:inset 0 1px 0 var(--hl2)"></div><div style="flex:1;min-width:0"><div class="n">Back Squat</div><div class="sub">Quads · Barbell · 12 sessions</div></div><div style="text-align:right"><div class="v">298</div><div class="t" style="font-size:10.5px">e1RM lb</div></div><span class="chev"></span></div>
+    <div class="row"><div style="width:44px;height:44px;border-radius:12px;background:linear-gradient(160deg,var(--s3),var(--s2));box-shadow:inset 0 1px 0 var(--hl2)"></div><div style="flex:1;min-width:0"><div class="n">Deadlift</div><div class="sub">Back · Barbell · 9 sessions</div></div><div style="text-align:right"><div class="v" style="color:var(--pr)">315</div><div class="t" style="font-size:10.5px">e1RM lb</div></div><span class="chev"></span></div>
+    <div class="row"><div style="width:44px;height:44px;border-radius:12px;background:linear-gradient(160deg,var(--s3),var(--s2));box-shadow:inset 0 1px 0 var(--hl2)"></div><div style="flex:1;min-width:0"><div class="n">Overhead Press</div><div class="sub">Shoulders · Barbell · 13 sessions</div></div><div style="text-align:right"><div class="v">140</div><div class="t" style="font-size:10.5px">e1RM lb</div></div><span class="chev"></span></div>
+  </div>
+  <h2>All exercises</h2>
+  <div class="card" style="padding:4px 16px">
+    <div class="row"><div style="flex:1;min-width:0"><div class="n">Ab Roller</div><div class="sub">Abdominals · Other</div></div><span class="chev"></span></div>
+    <div class="row"><div style="flex:1;min-width:0"><div class="n">Alternate Hammer Curl</div><div class="sub">Biceps · Dumbbell</div></div><span class="chev"></span></div>
+    <div class="row"><div style="flex:1;min-width:0"><div class="n">Arnold Press</div><div class="sub">Shoulders · Dumbbell</div></div><span class="chev"></span></div>
+  </div>
+</div>
+<div class="tabs"><div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11l8-7 8 7v8a1 1 0 01-1 1h-4v-6h-6v6H5a1 1 0 01-1-1z"/></svg>Today</div><div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="4" y="5" width="16" height="15" rx="4"/><path d="M4 10h16M8 3v4M16 3v4"/></svg>Plan</div><div class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>Library</div><div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 19V9M9.5 19V4M15 19v-7M20.5 19v-11"/></svg>Trends</div><div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8.5" r="3.8"/><path d="M4.5 20c1.2-3.6 4-5.5 7.5-5.5s6.3 1.9 7.5 5.5"/></svg>You</div></div>
+<span class="home"></span>
+</div></div><figcaption><b>Library</b></figcaption></figure><p class="about" style="margin:6px 0 0">873 exercises: search, muscle chips, rows with your best.</p><div class="fb" data-key="iron-library"><button type="button" class="v" data-v="love" aria-pressed="false">Love it</button><button type="button" class="v" data-v="no" aria-pressed="false">Not this</button><button type="button" class="v note-btn" aria-expanded="false">Note</button><textarea id="note-iron-library" class="note" rows="3" placeholder="What works, what does not" aria-label="Note on Library" hidden></textarea><span class="saved" aria-live="polite"></span></div></div>
+<div class="cell" data-style="iron"><figure><div class="frame" tabindex="0" role="button" aria-label="Exercise detail, open full size"><div class="ph" data-ds="iron">
+<div class="sb"><span>9:41</span><i></i><span style="font-size:12px;letter-spacing:-1px">▂▄▆ ◔ ▮</span></div>
+<div class="body pad" style="padding-bottom:120px">
+  <div style="width:40px;height:40px;border-radius:12px;background:var(--s2);box-shadow:inset 0 1px 0 var(--hl2);display:grid;place-items:center;color:var(--ink2)"><span style="width:9px;height:9px;border-left:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(45deg);margin-left:3px"></span></div>
+  <div class="t" style="margin-top:14px;color:var(--acc2)">Chest · Barbell · compound</div>
+  <h1 style="margin-top:2px">Bench Press</h1>
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px">
+    <div class="tile" style="padding:12px"><div class="t" style="font-size:11px">Best e1RM</div><div class="num" style="font-size:24px;margin-top:6px;color:var(--pr)">231</div></div>
+    <div class="tile" style="padding:12px"><div class="t" style="font-size:11px">Last top set</div><div class="num" style="font-size:24px;margin-top:6px">185×6</div></div>
+    <div class="tile" style="padding:12px"><div class="t" style="font-size:11px">Sessions</div><div class="num" style="font-size:24px;margin-top:6px">14</div></div>
+  </div>
+  <div class="card" style="margin-top:12px">
+    <div style="display:flex;justify-content:space-between"><span class="t">e1RM trend</span><span class="t" style="color:var(--pos)">+18 in 12 wk</span></div>
+    <svg viewBox="0 0 320 120" style="width:100%;height:auto;margin-top:8px;overflow:visible"><defs><linearGradient id="g1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff6a45" stop-opacity=".35"/><stop offset="1" stop-color="#ff6a45" stop-opacity="0"/></linearGradient></defs><path d="M6 100 L36 94 L66 96 L96 82 L126 78 L156 70 L186 72 L216 52 L246 48 L276 30 L310 22 L310 120 L6 120Z" fill="url(#g1)"/><path d="M6 100 L36 94 L66 96 L96 82 L126 78 L156 70 L186 72 L216 52 L246 48 L276 30 L310 22" fill="none" stroke="var(--acc)" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/><circle cx="216" cy="52" r="5" fill="var(--pr)" stroke="var(--s1)" stroke-width="2"/><circle cx="276" cy="30" r="5" fill="var(--pr)" stroke="var(--s1)" stroke-width="2"/><circle cx="310" cy="22" r="6" fill="var(--ink)" stroke="var(--acc)" stroke-width="3"/></svg>
+  </div>
+  <h2>How to</h2>
+  <div class="card"><p style="margin:0;font-size:14.5px;line-height:1.5;color:var(--ink2)">Shoulder blades pinned, bar to the lower chest, feet driving into the floor. Elbows at about 45 degrees, not flared.</p></div>
+  <h2>History <span>14</span></h2>
+  <div class="card" style="padding:4px 16px">
+    <div class="row"><div style="flex:1;min-width:0"><div class="n">Sun, Sep 27 · Upper A</div><div class="sub">175×6 · 175×6 · 175×6 · 185×6</div></div><span class="v" style="color:var(--pr)">231</span></div>
+    <div class="row"><div style="flex:1;min-width:0"><div class="n">Wed, Sep 23 · Upper A</div><div class="sub">175×6 · 175×6 · 175×5 · 175×5</div></div><span class="v">210</span></div>
+  </div>
+</div>
+<div style="position:absolute;left:0;right:0;bottom:0;padding:14px 18px 26px;background:linear-gradient(180deg,rgba(13,15,19,0),var(--bg) 30%)"><div class="btn ink">Add to a day</div></div>
+<span class="home"></span>
+</div></div><figcaption><b>Exercise detail</b></figcaption></figure><p class="about" style="margin:6px 0 0">One lift: best, last top set, the e1RM curve, how to, history.</p><div class="fb" data-key="iron-detail"><button type="button" class="v" data-v="love" aria-pressed="false">Love it</button><button type="button" class="v" data-v="no" aria-pressed="false">Not this</button><button type="button" class="v note-btn" aria-expanded="false">Note</button><textarea id="note-iron-detail" class="note" rows="3" placeholder="What works, what does not" aria-label="Note on Exercise detail" hidden></textarea><span class="saved" aria-live="polite"></span></div></div>
+<div class="cell" data-style="iron"><figure><div class="frame" tabindex="0" role="button" aria-label="Trends, open full size"><div class="ph" data-ds="iron">
+<div class="sb"><span>9:41</span><i></i><span style="font-size:12px;letter-spacing:-1px">▂▄▆ ◔ ▮</span></div>
+<div class="body pad">
+  <div class="t" style="margin-top:6px">36 workouts</div>
+  <h1 style="margin-top:2px">Trends</h1>
+  <div class="seg" style="margin-top:14px"><div>4W</div><div class="on">12W</div><div>All</div></div>
+  <div style="display:flex;gap:6px;margin-top:10px;overflow:hidden"><span class="chip acc">Bench Press</span><span class="chip">Back Squat</span><span class="chip">Deadlift</span><span class="chip">OHP</span></div>
+  <div class="card" style="margin-top:12px">
+    <div style="display:flex;justify-content:space-between"><span class="t">Estimated one-rep max</span><span class="t" style="color:var(--pos)">▲ 18 lb</span></div>
+    <div style="display:flex;align-items:baseline;gap:6px"><span class="num" style="font-size:52px">231</span><span class="t">lb</span></div>
+    <svg viewBox="0 0 320 120" style="width:100%;height:auto;margin-top:6px;overflow:visible"><defs><linearGradient id="g2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff6a45" stop-opacity=".35"/><stop offset="1" stop-color="#ff6a45" stop-opacity="0"/></linearGradient></defs><path d="M6 100 L36 94 L66 96 L96 82 L126 78 L156 70 L186 72 L216 52 L246 48 L276 30 L310 22 L310 120 L6 120Z" fill="url(#g2)"/><path d="M6 100 L36 94 L66 96 L96 82 L126 78 L156 70 L186 72 L216 52 L246 48 L276 30 L310 22" fill="none" stroke="var(--acc)" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/><circle cx="216" cy="52" r="5" fill="var(--pr)" stroke="var(--s1)" stroke-width="2"/><circle cx="276" cy="30" r="5" fill="var(--pr)" stroke="var(--s1)" stroke-width="2"/><circle cx="310" cy="22" r="6" fill="var(--ink)" stroke="var(--acc)" stroke-width="3"/></svg>
+    <div class="t" style="display:flex;justify-content:space-between;margin-top:4px;font-size:11px"><span>Jul 6</span><span style="color:var(--pr)">● record</span><span>Sep 27</span></div>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px"><div class="tile" style="padding:12px"><div class="t" style="font-size:11px">Sessions</div><div class="num" style="font-size:24px;margin-top:6px">36</div></div><div class="tile" style="padding:12px"><div class="t" style="font-size:11px">Sets</div><div class="num" style="font-size:24px;margin-top:6px">612</div></div><div class="tile" style="padding:12px"><div class="t" style="font-size:11px">Volume</div><div class="num" style="font-size:24px;margin-top:6px">716k</div></div></div>
+  <h2>Weekly volume <span>lb × reps</span></h2>
+  <div class="card"><div style="height:64px;display:flex;align-items:flex-end;gap:5px"><div style="flex:1;height:52%;background:var(--s3);border-radius:5px"></div><div style="flex:1;height:60%;background:var(--s3);border-radius:5px"></div><div style="flex:1;height:48%;background:var(--s3);border-radius:5px"></div><div style="flex:1;height:66%;background:var(--s3);border-radius:5px"></div><div style="flex:1;height:70%;background:var(--s3);border-radius:5px"></div><div style="flex:1;height:58%;background:var(--s3);border-radius:5px"></div><div style="flex:1;height:74%;background:var(--s3);border-radius:5px"></div><div style="flex:1;height:80%;background:var(--s3);border-radius:5px"></div><div style="flex:1;height:62%;background:var(--s3);border-radius:5px"></div><div style="flex:1;height:84%;background:var(--s3);border-radius:5px"></div><div style="flex:1;height:90%;background:var(--s3);border-radius:5px"></div><div style="flex:1;height:100%;background:linear-gradient(180deg,var(--acc2),var(--acc));border-radius:5px"></div></div></div>
+  <h2>Records <span>12 weeks</span></h2>
+  <div class="card" style="padding:4px 16px"><div class="row"><div style="flex:1;min-width:0"><div class="n">Deadlift</div><div class="sub">Sep 22 · 275 × 5</div></div><span class="v" style="color:var(--pr)">315</span></div><div class="row"><div style="flex:1;min-width:0"><div class="n">Bench Press</div><div class="sub">Sep 27 · 185 × 6</div></div><span class="v" style="color:var(--pr)">231</span></div></div>
+</div>
+<div class="tabs"><div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11l8-7 8 7v8a1 1 0 01-1 1h-4v-6h-6v6H5a1 1 0 01-1-1z"/></svg>Today</div><div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="4" y="5" width="16" height="15" rx="4"/><path d="M4 10h16M8 3v4M16 3v4"/></svg>Plan</div><div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>Library</div><div class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 19V9M9.5 19V4M15 19v-7M20.5 19v-11"/></svg>Trends</div><div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8.5" r="3.8"/><path d="M4.5 20c1.2-3.6 4-5.5 7.5-5.5s6.3 1.9 7.5 5.5"/></svg>You</div></div>
+<span class="home"></span>
+</div></div><figcaption><b>Trends</b></figcaption></figure><p class="about" style="margin:6px 0 0">One lift, a range, the curve with records marked, weekly volume, records list.</p><div class="fb" data-key="iron-trends"><button type="button" class="v" data-v="love" aria-pressed="false">Love it</button><button type="button" class="v" data-v="no" aria-pressed="false">Not this</button><button type="button" class="v note-btn" aria-expanded="false">Note</button><textarea id="note-iron-trends" class="note" rows="3" placeholder="What works, what does not" aria-label="Note on Trends" hidden></textarea><span class="saved" aria-live="polite"></span></div></div>
+<div class="cell" data-style="iron"><figure><div class="frame" tabindex="0" role="button" aria-label="You, open full size"><div class="ph" data-ds="iron">
+<div class="sb"><span>9:41</span><i></i><span style="font-size:12px;letter-spacing:-1px">▂▄▆ ◔ ▮</span></div>
+<div class="body pad">
+  <div class="t" style="margin-top:6px">Settings and data</div>
+  <h1 style="margin-top:2px">You</h1>
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px"><div class="tile" style="padding:12px"><div class="t" style="font-size:11px">Workouts</div><div class="num" style="font-size:24px;margin-top:6px">36</div></div><div class="tile" style="padding:12px"><div class="t" style="font-size:11px">Lifted</div><div class="num" style="font-size:24px;margin-top:6px">716k</div></div><div class="tile" style="padding:12px"><div class="t" style="font-size:11px">Records</div><div class="num" style="font-size:24px;margin-top:6px;color:var(--pr)">117</div></div></div>
+  <h2>Units</h2>
+  <div class="seg"><div class="on">Pounds</div><div>Kilograms</div></div>
+  <h2>Appearance</h2>
+  <div class="seg"><div class="on">Dark</div><div>Light</div><div>Auto</div></div>
+  <h2>Training</h2>
+  <div class="card" style="padding:4px 16px">
+    <div class="row"><div style="flex:1"><div class="n">Default rest</div><div class="sub">For new exercises</div></div><span class="v">2:00</span><span class="chev"></span></div>
+    <div class="row"><div style="flex:1"><div class="n">Bar and plates</div><div class="sub">45 lb bar · 6 plate sizes</div></div><span class="plates"><i style="background:var(--p45)"></i><i style="background:var(--p35)"></i><i style="background:var(--p25)"></i><i style="background:var(--p10)"></i><i style="background:var(--p5)"></i></span><span class="chev"></span></div>
+    <div class="row"><div style="flex:1"><div class="n">Rest by lift type</div><div class="sub">Heavy 3:00 · compound 2:00 · isolation 1:00</div></div><span class="chev"></span></div>
+  </div>
+  <h2>Body</h2>
+  <div class="card" style="padding:4px 16px">
+    <div class="row"><div style="flex:1"><div class="n">Profile</div><div class="sub">Male · 19 · 5′11″</div></div><span class="chev"></span></div>
+    <div class="row"><div style="flex:1"><div class="n">Bodyweight</div><div class="sub">Logged Sep 26</div></div><span class="v">172<small> lb</small></span><span class="chev"></span></div>
+    <div class="row"><div style="flex:1"><div class="n">Goals</div><div class="sub">3 active</div></div><span class="chev"></span></div>
+  </div>
+  <h2>Your data</h2>
+  <div class="card" style="padding:4px 16px">
+    <div class="row"><div style="flex:1"><div class="n">Export backup</div><div class="sub">Everything, as one JSON file</div></div><span class="chev"></span></div>
+    <div class="row"><div style="flex:1"><div class="n">Import backup</div><div class="sub">Asks before replacing anything</div></div><span class="chev"></span></div>
+    <div class="row"><div style="flex:1"><div class="n" style="color:var(--danger)">Erase all data</div></div></div>
+  </div>
+  <div class="card" style="margin-top:12px;display:flex;gap:12px;align-items:flex-start"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--pos)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none"><path d="M12 3l7 3v5c0 4.5-3 7.7-7 9-4-1.3-7-4.5-7-9V6l7-3z"/><path d="M9 12l2 2 4-4"/></svg><div><div style="font-weight:800;font-size:14px">Private by default</div><div class="t" style="margin-top:2px;line-height:1.4;font-weight:500">Your data never leaves this phone. No account, no sync, no tracking.</div></div></div>
+</div>
+<div class="tabs"><div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11l8-7 8 7v8a1 1 0 01-1 1h-4v-6h-6v6H5a1 1 0 01-1-1z"/></svg>Today</div><div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="4" y="5" width="16" height="15" rx="4"/><path d="M4 10h16M8 3v4M16 3v4"/></svg>Plan</div><div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>Library</div><div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 19V9M9.5 19V4M15 19v-7M20.5 19v-11"/></svg>Trends</div><div class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8.5" r="3.8"/><path d="M4.5 20c1.2-3.6 4-5.5 7.5-5.5s6.3 1.9 7.5 5.5"/></svg>You</div></div>
+<span class="home"></span>
+</div></div><figcaption><b>You</b></figcaption></figure><p class="about" style="margin:6px 0 0">Stats, units, one appearance toggle, training defaults, body, data. No theme picker.</p><div class="fb" data-key="iron-you"><button type="button" class="v" data-v="love" aria-pressed="false">Love it</button><button type="button" class="v" data-v="no" aria-pressed="false">Not this</button><button type="button" class="v note-btn" aria-expanded="false">Note</button><textarea id="note-iron-you" class="note" rows="3" placeholder="What works, what does not" aria-label="Note on You" hidden></textarea><span class="saved" aria-live="polite"></span></div></div>
+<div class="cell" data-style="iron"><figure><div class="frame" tabindex="0" role="button" aria-label="Onboarding, open full size"><div class="ph" data-ds="iron">
+<div class="sb"><span>9:41</span><i></i><span style="font-size:12px;letter-spacing:-1px">▂▄▆ ◔ ▮</span></div>
+<div class="body pad" style="padding-bottom:120px">
+  <div style="display:flex;align-items:center;gap:12px"><div style="width:40px;height:40px;border-radius:12px;background:var(--s2);box-shadow:inset 0 1px 0 var(--hl2);display:grid;place-items:center;color:var(--ink2)"><span style="width:9px;height:9px;border-left:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(45deg);margin-left:3px"></span></div><div style="flex:1;height:6px;border-radius:3px;background:var(--s2);overflow:hidden"><div style="width:20%;height:100%;background:linear-gradient(90deg,var(--acc2),var(--acc));border-radius:3px"></div></div><span class="t">1 of 5</span></div>
+  <h1 style="margin-top:26px;font-size:30px;line-height:1.1">What are you training for?</h1>
+  <div class="t" style="margin-top:8px;line-height:1.4;font-weight:500">This sets your rep ranges, rest and how fast weight goes up. You can change it any time.</div>
+  <div class="card lift" style="margin-top:22px;box-shadow:inset 0 1px 0 var(--hl2),inset 0 0 0 2px var(--acc);display:flex;align-items:center;gap:14px"><div style="width:48px;height:48px;border-radius:14px;background:var(--acc-soft);display:grid;place-items:center"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--acc2)" stroke-width="2.2" stroke-linecap="round"><path d="M6 12h12M3 9v6M21 9v6M6 8v8M18 8v8"/></svg></div><div style="flex:1"><div style="font-size:17px;font-weight:800;letter-spacing:-.02em">Build muscle</div><div class="t" style="margin-top:2px;font-weight:500">Moderate reps, more volume per muscle</div></div><div style="width:22px;height:22px;border-radius:50%;background:var(--acc);display:grid;place-items:center"><svg width="12" height="12" viewBox="0 0 20 20" fill="none"><path d="M4 10.5L8 14.5L16 5.5" stroke="var(--acc-ink)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div></div>
+  <div class="card" style="margin-top:10px;display:flex;align-items:center;gap:14px"><div style="width:48px;height:48px;border-radius:14px;background:var(--s2);display:grid;place-items:center"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--ink2)" stroke-width="2.2" stroke-linecap="round"><path d="M4 20L12 4l8 16"/></svg></div><div style="flex:1"><div style="font-size:17px;font-weight:800;letter-spacing:-.02em">Get stronger</div><div class="t" style="margin-top:2px;font-weight:500">Heavy compounds, low reps, long rest</div></div><div style="width:22px;height:22px;border-radius:50%;box-shadow:inset 0 0 0 2px var(--s3)"></div></div>
+  <div class="card" style="margin-top:10px;display:flex;align-items:center;gap:14px"><div style="width:48px;height:48px;border-radius:14px;background:var(--s2);display:grid;place-items:center"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--ink2)" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg></div><div style="flex:1"><div style="font-size:17px;font-weight:800;letter-spacing:-.02em">Stay fit</div><div class="t" style="margin-top:2px;font-weight:500">Balanced reps, shorter sessions</div></div><div style="width:22px;height:22px;border-radius:50%;box-shadow:inset 0 0 0 2px var(--s3)"></div></div>
+  <div class="card" style="margin-top:10px;display:flex;align-items:center;gap:14px"><div style="width:48px;height:48px;border-radius:14px;background:var(--s2);display:grid;place-items:center"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--ink2)" stroke-width="2.2" stroke-linecap="round"><path d="M4 18c4-8 12-8 16-16"/></svg></div><div style="flex:1"><div style="font-size:17px;font-weight:800;letter-spacing:-.02em">Lean out</div><div class="t" style="margin-top:2px;font-weight:500">Keep strength while losing fat</div></div><div style="width:22px;height:22px;border-radius:50%;box-shadow:inset 0 0 0 2px var(--s3)"></div></div>
+</div>
+<div style="position:absolute;left:0;right:0;bottom:0;padding:14px 18px 26px;background:linear-gradient(180deg,rgba(13,15,19,0),var(--bg) 30%)"><div class="btn pri">Continue</div></div>
+<span class="home"></span>
+</div></div><figcaption><b>Onboarding</b></figcaption></figure><p class="about" style="margin:6px 0 0">Five questions as a card stack with a progress bar, then a plan preview.</p><div class="fb" data-key="iron-onboarding"><button type="button" class="v" data-v="love" aria-pressed="false">Love it</button><button type="button" class="v" data-v="no" aria-pressed="false">Not this</button><button type="button" class="v note-btn" aria-expanded="false">Note</button><textarea id="note-iron-onboarding" class="note" rows="3" placeholder="What works, what does not" aria-label="Note on Onboarding" hidden></textarea><span class="saved" aria-live="polite"></span></div></div>
+</div>
+<section id="motion"><h2>How it moves (not visible in stills)</h2><ul><li><b>Press.</b> Every button scales to 0.97 on touch with a 120 ms spring and returns on release; no colour flash.</li><li><b>Log a set.</b> The CTA depresses, the set row slides up into the done list, the next row unfolds into the active card, and the rest ring starts from full. One orchestrated 400 ms sequence with a light haptic.</li><li><b>Numbers.</b> Weight and rep changes roll like an odometer (each digit slides), 180 ms, so the eye reads what changed.</li><li><b>Rest.</b> The ring drains continuously; at zero it pulses once, a medium haptic fires, and the label flips to Go.</li><li><b>Record.</b> Gold fills from the CTA outward (a radial reveal, 320 ms), the number springs from 0.6 to 1 with overshoot, confetti is not used.</li><li><b>Sheets.</b> Rise with a spring (damping 0.86), the scrim fades; drag the grabber to dismiss. The tab bar sinks under the scrim.</li><li><b>Tab bar.</b> Floats as a glass capsule; shrinks to a pill on scroll down and returns on scroll up.</li><li><b>Reduced motion.</b> Every sequence collapses to a crossfade; haptics stay.</li></ul></section>
+<section id="overall"><h2>Overall notes</h2><textarea id="overall-note" class="note big" rows="4" placeholder="Start typing. Saved when you pause." aria-label="Overall notes"></textarea><div class="saved" id="overall-saved" aria-live="polite"></div></section>
+<dialog id="big" style="border:0;padding:0;background:transparent;max-width:100vw;max-height:100vh"><div id="bigwrap" style="position:relative"></div><button type="button" id="bigclose" style="position:fixed;top:calc(12px + env(safe-area-inset-top,0px));right:16px;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:999px;padding:8px 14px;font:inherit;cursor:pointer">Close</button></dialog>
+<script>
+const z=document.getElementById('zoom');
+z.addEventListener('click',()=>{const big=z.getAttribute('aria-pressed')!=='true';z.setAttribute('aria-pressed',String(big));document.documentElement.style.setProperty('--zoom',big?'1':'.56');});
+const dlg=document.getElementById('big'),wrap=document.getElementById('bigwrap');
+function open(frame){const c=frame.cloneNode(true);c.style.zoom='1';c.style.height='min(844px,92vh)';c.style.width='calc(min(844px,92vh) * 390 / 844)';c.removeAttribute('tabindex');wrap.replaceChildren(c);dlg.showModal();}
+document.querySelectorAll('.frame').forEach(f=>{f.addEventListener('click',()=>open(f));f.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();open(f);}});});
+document.getElementById('bigclose').addEventListener('click',()=>dlg.close());
+dlg.addEventListener('click',e=>{if(e.target===dlg)dlg.close();});
+(async()=>{
+  const fbs=[...document.querySelectorAll('.fb')];
+  const overall=document.getElementById('overall-note'), overallSaved=document.getElementById('overall-saved');
+  const paint=(el,d)=>{el.querySelectorAll('.v[data-v]').forEach(b=>b.setAttribute('aria-pressed',String((d&&d.verdict)===b.dataset.v)));const ta=el.querySelector('.note');if(d&&d.note&&document.activeElement!==ta){ta.value=d.note;ta.hidden=false;el.querySelector('.note-btn').setAttribute('aria-expanded','true');}};
+  fbs.forEach(el=>{el.querySelector('.note-btn').addEventListener('click',()=>{const ta=el.querySelector('.note');ta.hidden=!ta.hidden;el.querySelector('.note-btn').setAttribute('aria-expanded',String(!ta.hidden));if(!ta.hidden)ta.focus();});});
+  let db=null;
+  try{db=window.claude&&window.claude.use?await window.claude.use('db'):null;}catch(e){db=null;}
+  if(!db){document.querySelectorAll('.saved').forEach(s=>s.textContent='Saving is unavailable in this view');fbs.forEach(el=>el.querySelectorAll('button,textarea').forEach(b=>b.disabled=true));overall.disabled=true;return;}
+  const col=db.collection('feedback');const state={};
+  col.onSnapshot(snap=>{snap.docs.forEach(d=>{state[d.id]=d.data();const el=document.querySelector(`.fb[data-key="${d.id}"]`);if(el)paint(el,d.data());if(d.id==='overall'&&document.activeElement!==overall)overall.value=d.data().note||'';});},()=>{});
+  const busy={};
+  async function save(id,patch,savedEl){if(busy[id])return;busy[id]=true;const next={...(state[id]||{}),...patch,updatedAt:new Date().toISOString()};try{await col.doc(id).set(next);state[id]=next;savedEl.textContent='Saved';setTimeout(()=>{savedEl.textContent='';},1400);}catch(e){savedEl.textContent='Could not save';}busy[id]=false;}
+  fbs.forEach(el=>{const id=el.dataset.key,savedEl=el.querySelector('.saved'),ta=el.querySelector('.note');
+    el.querySelectorAll('.v[data-v]').forEach(b=>b.addEventListener('click',()=>{const cur=state[id]&&state[id].verdict;const v=cur===b.dataset.v?null:b.dataset.v;paint(el,{...(state[id]||{}),verdict:v});save(id,{verdict:v},savedEl);}));
+    let t;ta.addEventListener('input',()=>{clearTimeout(t);t=setTimeout(()=>save(id,{note:ta.value},savedEl),900);});
+    ta.addEventListener('blur',()=>{clearTimeout(t);if((state[id]&&state[id].note||'')!==ta.value)save(id,{note:ta.value},savedEl);});});
+  let ot;overall.addEventListener('input',()=>{clearTimeout(ot);ot=setTimeout(()=>save('overall',{note:overall.value},overallSaved),900);});
+  overall.addEventListener('blur',()=>{clearTimeout(ot);if((state.overall&&state.overall.note||'')!==overall.value)save('overall',{note:overall.value},overallSaved);});
+})();
+</script>

@@ -1,6 +1,14 @@
 /* Self-hosted variable fonts (woff2 vendored from @fontsource into ./fonts).
-   Family names match theme.css (Hanken Grotesk / Inter / JetBrains Mono). */
+   Manrope is the premium skin's single family (OFL, see Manrope-LICENSE). The
+   earlier skins' faces stay until their screens are removed. */
 
+@font-face {
+  font-family: 'Manrope';
+  src: url('./fonts/Manrope-Variable.woff2') format('woff2');
+  font-weight: 200 800;
+  font-display: swap;
+  font-style: normal;
+}
 @font-face {
   font-family: 'Hanken Grotesk';
   src: url('./fonts/HankenGrotesk-Variable.woff2') format('woff2');
@@ -23,7 +31,7 @@
   font-style: normal;
 }
 
-/* Global keyframes referenced by primitives (Sheet / Toast) + PR celebration. */
+/* Global keyframes referenced by the earlier skins' primitives. */
 @keyframes os-toast-in {
   from {
     opacity: 0;

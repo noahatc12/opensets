@@ -18,7 +18,6 @@ import { LibraryScreen } from './features/library/LibraryScreen';
 import { ExerciseDetailScreen } from './features/library/ExerciseDetailScreen';
 import { HistoryScreen } from './features/analytics/HistoryScreen';
 import { SettingsScreen } from './features/settings/SettingsScreen';
-import { AppearanceScreen } from './features/settings/AppearanceScreen';
 import { PlatesScreen } from './features/settings/PlatesScreen';
 import { RestDefaultsScreen } from './features/settings/RestDefaultsScreen';
 import { GoalsScreen } from './features/settings/GoalsScreen';
@@ -26,17 +25,16 @@ import { MeasurementsScreen } from './features/settings/MeasurementsScreen';
 import { ProfileScreen } from './features/settings/ProfileScreen';
 import { OnboardingScreen } from './features/onboarding/OnboardingScreen';
 
-const TAB_ROUTES = ['/today', '/plan', '/library', '/history'];
+const TAB_ROUTES = ['/today', '/plan', '/library', '/history', '/settings'];
 
 function AppShell() {
   const inSession = useSessionStore((s) => s.activeSessionId !== null);
   const { pathname } = useLocation();
-  // The tab bar shows only on the 4 main tabs; pushed sub-screens (builder,
-  // settings, detail, onboarding) and the active session are full-screen.
+  // The floating tab bar shows on the five tabs; pushed screens and the active
+  // session are full-screen.
   const showTabs = TAB_ROUTES.includes(pathname) && !inSession;
 
-  // Storage durability ladder (spec §9): request persistence post-load. Browsers
-  // grant silently for installed / engaged PWAs; Settings exposes the status.
+  // Storage durability ladder (spec §9): request persistence post-load.
   useEffect(() => {
     if (typeof navigator !== 'undefined' && navigator.storage?.persist) {
       void navigator.storage.persist();
@@ -44,9 +42,8 @@ function AppShell() {
   }, []);
 
   return (
-    <div className="mx-auto flex h-dvh max-w-md flex-col overflow-hidden bg-bg">
+    <div className="relative mx-auto flex h-dvh max-w-md flex-col overflow-hidden bg-bg" data-tabs={showTabs ? 'on' : 'off'}>
       <main className="flex-1 overflow-y-auto overscroll-contain">
-        {/* Keyed by route: a crash is contained to one screen and cleared on navigation. */}
         <ErrorBoundary key={pathname}>
           <Outlet />
         </ErrorBoundary>
@@ -70,7 +67,7 @@ export default function App() {
           <Route path="/library/:id" element={<ExerciseDetailScreen />} />
           <Route path="/history" element={<HistoryScreen />} />
           <Route path="/settings" element={<SettingsScreen />} />
-          <Route path="/appearance" element={<AppearanceScreen />} />
+          <Route path="/appearance" element={<Navigate to="/settings" replace />} />
           <Route path="/plates" element={<PlatesScreen />} />
           <Route path="/rest-defaults" element={<RestDefaultsScreen />} />
           <Route path="/goals" element={<GoalsScreen />} />

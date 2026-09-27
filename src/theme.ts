@@ -17,10 +17,18 @@
    ========================================================================== */
 
 export type Mode = 'dark' | 'light';
-export type DesignTemplate = 'tempo' | 'readout';
+/** 'editorial' is the premium skin (src/styles/editorial.css, 2026-09-27): one look, one
+ *  accent, dark and light. 'tempo' and 'readout' are the earlier skins, kept only until
+ *  every screen is ported. */
+export type DesignTemplate = 'tempo' | 'readout' | 'editorial';
 export type ColorTheme =
   | 'tempo' | 'teal' | 'graphite' | 'steel' | 'volt'
-  | 'ember' | 'clinic' | 'midnight' | 'rose' | 'pine' | 'custom';
+  | 'ember' | 'clinic' | 'midnight' | 'rose' | 'pine' | 'custom'
+  | 'signal';
+
+/** The premium skin has exactly one accent; the value exists so a stored selection can be
+ *  validated, not so a picker can offer alternatives. */
+export const PREMIUM_THEME: ColorTheme = 'signal';
 
 /* ----------------------------------------------------------------------------
    CURATED THEMES — the shipped presets. `swatch` is what a theme picker renders
