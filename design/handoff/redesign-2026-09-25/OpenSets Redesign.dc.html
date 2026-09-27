@@ -1,0 +1,1244 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&amp;display=swap">
+<style>
+@font-face{font-family:'JetBrains Mono';src:url('src/styles/fonts/JetBrainsMono-Variable.woff2') format('woff2');font-weight:100 800;font-display:swap}
+:root,[data-mode="dark"]{--bg:#0C0C0B;--s1:#161614;--s2:#23221F;--line:rgba(239,237,230,.09);--line2:rgba(239,237,230,.2);--ink:#EFEDE6;--mute:#9C988E;--faint:#6A665E;--danger:#EE6A4F;--ok:#7CC796;--pr:#FFD24A;--scrim:rgba(0,0,0,.6)}
+[data-mode="light"]{--bg:#EEEBE3;--s1:#F9F7F2;--s2:#E0DCD1;--line:rgba(12,12,11,.1);--line2:rgba(12,12,11,.22);--ink:#0C0C0B;--mute:#57534B;--faint:#8F8A7F;--danger:#C0391F;--ok:#2F8F55;--pr:#A86B12;--scrim:rgba(20,18,12,.45)}
+:root,[data-accent="orange"]{--acc:#FF5A1F;--acc-ink:#140600;--acc-tx:#FF6A33}
+[data-accent="volt"]{--acc:#C6F03A;--acc-ink:#111406;--acc-tx:#C6F03A}
+[data-accent="teal"]{--acc:#1FE0C4;--acc-ink:#04130F;--acc-tx:#1FE0C4}
+[data-accent="brass"]{--acc:#CDA35F;--acc-ink:#1A1407;--acc-tx:#D9B677}
+[data-mode="light"][data-accent="orange"]{--acc-tx:#C23A08}
+[data-mode="light"][data-accent="volt"]{--acc-tx:#4A6400}
+[data-mode="light"][data-accent="teal"]{--acc-tx:#08786A}
+[data-mode="light"][data-accent="brass"]{--acc-tx:#825C1C}
+:root,[data-num="condensed"]{--ns:62%;--nz:1}
+[data-num="standard"]{--ns:100%;--nz:.66}
+html,body{margin:0;background:#1B1A18;-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent}
+*{box-sizing:border-box;scrollbar-width:none}
+*::-webkit-scrollbar{display:none}
+button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;padding:0;margin:0}
+input{font:inherit;color:inherit}
+a{color:var(--acc-tx)}
+a:hover{color:var(--ink)}
+@keyframes os-up{from{transform:translateY(100%)}to{transform:none}}
+@keyframes os-fade{from{opacity:0}to{opacity:1}}
+@keyframes os-pr{0%{transform:scale(.55);opacity:0}55%{transform:scale(1.06);opacity:1}100%{transform:scale(1)}}
+@keyframes os-toast{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+@keyframes os-pulse{0%,100%{opacity:1}50%{opacity:.35}}
+</style>
+</helmet>
+<div style="min-height:100dvh;display:flex;align-items:center;justify-content:center;background:#1B1A18;padding:32px 16px">
+<div style="flex:none;width:402px;height:874px;padding:11px;border-radius:62px;background:#050505;box-shadow:inset 0 0 0 1.5px #3A3934,inset 0 0 0 4px #121210,0 40px 90px -24px rgba(0,0,0,.75)">
+<div data-mode="{{ mode }}" data-accent="{{ accent }}" data-num="{{ numerals }}" style="position:relative;width:100%;height:100%;background:var(--bg);color:var(--ink);font-family:Archivo,system-ui,sans-serif;overflow:hidden;display:flex;flex-direction:column;border-radius:51px;user-select:none">
+<div style="flex:none;height:54px;display:flex;align-items:center;justify-content:space-between;padding:6px 30px 0 40px;position:relative;z-index:60">
+  <span style="font-size:16px;font-weight:700;letter-spacing:-.01em">9:41</span>
+  <span style="position:absolute;left:50%;top:11px;transform:translateX(-50%);width:124px;height:36px;border-radius:20px;background:#000"></span>
+  <span style="display:flex;align-items:center;gap:6px">
+    <svg width="18" height="12" viewBox="0 0 18 12" fill="currentColor"><rect x="0" y="8" width="3" height="4" rx="1"></rect><rect x="5" y="5.5" width="3" height="6.5" rx="1"></rect><rect x="10" y="3" width="3" height="9" rx="1"></rect><rect x="15" y="0" width="3" height="12" rx="1"></rect></svg>
+    <svg width="16" height="12" viewBox="0 0 16 12" fill="currentColor"><path d="M8 2.2c2.3 0 4.4.9 6 2.4l1.2-1.3A10.4 10.4 0 008 .4 10.4 10.4 0 00.8 3.3L2 4.6a8.6 8.6 0 016-2.4zm0 3.6c1.3 0 2.5.5 3.5 1.3l1.2-1.3A7 7 0 008 4a7 7 0 00-4.7 1.8l1.2 1.3c1-.8 2.2-1.3 3.5-1.3zm0 3.6c.5 0 1 .2 1.3.5L8 11.6 6.7 9.9c.3-.3.8-.5 1.3-.5z"></path></svg>
+    <span style="width:25px;height:12px;border-radius:3.5px;border:1.2px solid currentColor;opacity:.9;padding:1.5px;display:flex"><span style="flex:1;border-radius:1.5px;background:currentColor"></span></span>
+  </span>
+</div>
+<span style="position:absolute;left:50%;bottom:8px;transform:translateX(-50%);width:136px;height:5px;border-radius:3px;background:var(--ink);opacity:.85;z-index:60;pointer-events:none"></span>
+
+<!-- TODAY -->
+<sc-if value="{{ scr.today }}" hint-placeholder-val="{{ true }}">
+<div data-screen-label="Today" style="flex:1;overflow-y:auto;padding:22px 20px 28px">
+  <span style="font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--mute)">{{ today.date }}</span>
+  <h1 style="margin:6px 0 0;font-stretch:var(--ns);font-weight:800;font-size:84px;line-height:.84;text-transform:uppercase;letter-spacing:-.01em">Today</h1>
+
+  <sc-if value="{{ today.resume }}" hint-placeholder-val="{{ false }}">
+    <button onClick="{{ openSession }}" style="margin-top:22px;width:100%;display:flex;align-items:center;gap:14px;padding:16px 18px;background:var(--acc);color:var(--acc-ink);border-radius:4px;text-align:left" style-active="transform:scale(.985)">
+      <div style="flex:1;min-width:0">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;display:flex;align-items:center;gap:6px"><span style="width:6px;height:6px;border-radius:50%;background:currentColor;animation:os-pulse 1.6s infinite"></span>In progress · {{ sessBar.elapsed }}</div>
+        <div style="font-stretch:var(--ns);font-weight:800;font-size:30px;line-height:1;text-transform:uppercase;margin-top:6px">{{ sessBar.name }}</div>
+      </div>
+      <span style="font-stretch:var(--ns);font-weight:800;font-size:18px;text-transform:uppercase;letter-spacing:.03em">Resume</span>
+    </button>
+  </sc-if>
+
+  <sc-if value="{{ today.empty }}" hint-placeholder-val="{{ false }}">
+    <div style="margin-top:30px;border-top:2px solid var(--ink);padding-top:16px">
+      <div style="font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--mute)">No plan yet</div>
+      <p style="font-size:18px;line-height:1.4;margin:12px 0 24px;text-wrap:pretty">Answer five questions. OpenSets builds a program that tells you exactly what to lift — and when to add weight.</p>
+      <button onClick="{{ startOnboarding }}" style="width:100%;height:60px;border-radius:4px;background:var(--acc);color:var(--acc-ink);font-stretch:var(--ns);font-weight:800;font-size:22px;text-transform:uppercase;letter-spacing:.02em" style-active="transform:scale(.985)">Build my plan</button>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
+        <button onClick="{{ addRoutine }}" style="height:48px;border-radius:4px;background:var(--s1);font-weight:600;font-size:14px">Build manually</button>
+        <button onClick="{{ loadSample }}" style="height:48px;border-radius:4px;background:var(--s1);font-weight:600;font-size:14px">Load sample data</button>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ today.hasNext }}" hint-placeholder-val="{{ true }}">
+    <div style="margin-top:26px;border-top:2px solid var(--ink);padding-top:12px">
+      <div style="display:flex;justify-content:space-between;gap:10px">
+        <span style="font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--acc-tx)">Up next · Day {{ today.next.day }}/{{ today.next.of }}</span>
+        <span style="font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--mute)">~{{ today.next.min }} min</span>
+      </div>
+      <div style="font-stretch:var(--ns);font-weight:800;font-size:50px;line-height:.9;text-transform:uppercase;margin:10px 0 14px">{{ today.next.name }}</div>
+      <div style="display:flex;flex-direction:column">
+        <sc-for list="{{ today.next.items }}" as="it" hint-placeholder-count="5">
+          <div style="display:flex;align-items:baseline;gap:10px;padding:11px 0;border-top:1px solid var(--line)">
+            <span style="flex:1;min-width:0;font-size:15px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ it.name }}</span>
+            <sc-if value="{{ it.up }}" hint-placeholder-val="{{ false }}"><span style="font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.06em;color:var(--acc-tx)">{{ it.delta }}</span></sc-if>
+            <span style="font-stretch:var(--ns);font-weight:800;font-size:24px;font-variant-numeric:tabular-nums;line-height:1">{{ it.w }}<span style="font-stretch:100%;font-weight:500;font-size:11px;color:var(--mute)"> {{ it.unit }}</span></span>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--mute);min-width:40px;text-align:right">{{ it.scheme }}</span>
+          </div>
+        </sc-for>
+      </div>
+      <sc-if value="{{ today.canStart }}" hint-placeholder-val="{{ true }}">
+        <button onClick="{{ startNext }}" style="margin-top:14px;width:100%;height:60px;border-radius:4px;background:var(--acc);color:var(--acc-ink);font-stretch:var(--ns);font-weight:800;font-size:22px;text-transform:uppercase;letter-spacing:.02em;display:flex;align-items:center;justify-content:center;gap:10px" style-active="transform:scale(.985)">Start workout
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"></path></svg>
+        </button>
+      </sc-if>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ today.hasHistory }}" hint-placeholder-val="{{ true }}">
+    <div style="margin-top:32px;display:flex;justify-content:space-between;align-items:baseline">
+      <span style="font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--mute)">This week</span>
+      <span style="font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.1em;color:var(--mute)">{{ today.weekDone }} / {{ today.weekTarget }} sessions</span>
+    </div>
+    <div style="margin-top:10px;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px">
+      <sc-for list="{{ today.week }}" as="d" hint-placeholder-count="7">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:6px">
+          <span style="width:100%;height:34px;border-radius:3px;background:{{ d.bg }};border:1.5px solid {{ d.bd }}"></span>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:{{ d.fg }}">{{ d.l }}</span>
+        </div>
+      </sc-for>
+    </div>
+    <div style="margin-top:18px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line)">
+      <div style="background:var(--bg);padding:14px 12px">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--mute)">Volume 7d</div>
+        <div style="font-stretch:var(--ns);font-weight:800;font-size:38px;line-height:1;margin-top:8px;font-variant-numeric:tabular-nums">{{ today.vol7 }}</div>
+        <div style="font-size:11px;color:var(--mute);margin-top:2px">{{ today.volUnit }}</div>
+      </div>
+      <div style="background:var(--bg);padding:14px 12px">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--mute)">Streak</div>
+        <div style="font-stretch:var(--ns);font-weight:800;font-size:38px;line-height:1;margin-top:8px;font-variant-numeric:tabular-nums">{{ today.streak }}</div>
+        <div style="font-size:11px;color:var(--mute);margin-top:2px">weeks</div>
+      </div>
+      <button onClick="{{ goTrends }}" style="background:var(--bg);padding:14px 12px;text-align:left">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--mute)">Last PR</div>
+        <div style="font-stretch:var(--ns);font-weight:800;font-size:38px;line-height:1;margin-top:8px;font-variant-numeric:tabular-nums;color:var(--pr)">{{ today.pr.val }}</div>
+        <div style="font-size:11px;color:var(--mute);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ today.pr.sub }}</div>
+      </button>
+    </div>
+    <div style="margin-top:30px;font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--mute)">Recent</div>
+    <div style="margin-top:8px;display:flex;flex-direction:column">
+      <sc-for list="{{ today.recent }}" as="r" hint-placeholder-count="3">
+        <button onClick="{{ r.go }}" style="display:flex;align-items:center;gap:14px;padding:13px 0;border-top:1px solid var(--line);text-align:left" style-hover="opacity:.8">
+          <span style="font-stretch:var(--ns);font-weight:800;font-size:30px;line-height:1;width:40px;font-variant-numeric:tabular-nums">{{ r.day }}</span>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:15px;font-weight:700">{{ r.name }}</div>
+            <div style="font-size:12.5px;color:var(--mute);margin-top:2px">{{ r.meta }}</div>
+          </div>
+          <sc-if value="{{ r.hasPr }}" hint-placeholder-val="{{ false }}"><span style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.1em;color:var(--pr);border:1px solid var(--pr);padding:2px 6px;border-radius:2px">{{ r.prs }} PR</span></sc-if>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--faint)" stroke-width="2" stroke-linecap="round"><path d="M9 6l6 6-6 6"></path></svg>
+        </button>
+      </sc-for>
+    </div>
+  </sc-if>
+  <p style="margin:28px 0 0;text-align:center;font-size:11.5px;color:var(--faint)">Educational tool — not medical advice.</p>
+</div>
+</sc-if>
+
+<!-- PLAN -->
+<sc-if value="{{ scr.plan }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="Plan" style="flex:1;overflow-y:auto;padding:22px 20px 28px">
+  <span style="font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--mute)">{{ plan.meta }}</span>
+  <h1 style="margin:6px 0 0;font-stretch:var(--ns);font-weight:800;font-size:84px;line-height:.84;text-transform:uppercase">Plan</h1>
+  <div style="font-size:17px;font-weight:600;margin-top:10px">{{ plan.name }}</div>
+  <div style="margin-top:22px;display:flex;flex-direction:column;gap:10px">
+    <sc-for list="{{ plan.routines }}" as="r" hint-placeholder-count="4">
+      <div style="background:var(--s1);border-radius:4px;padding:16px;border:1.5px solid {{ r.bd }}">
+        <div style="display:flex;align-items:flex-start;gap:14px">
+          <span style="font-stretch:var(--ns);font-weight:800;font-size:44px;line-height:.85;color:{{ r.numCol }};font-variant-numeric:tabular-nums">{{ r.num }}</span>
+          <div style="flex:1;min-width:0">
+            <div style="display:flex;align-items:center;gap:8px">
+              <span style="font-stretch:var(--ns);font-weight:800;font-size:26px;line-height:1;text-transform:uppercase">{{ r.name }}</span>
+              <sc-if value="{{ r.isNext }}" hint-placeholder-val="{{ false }}"><span style="font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;background:var(--acc);color:var(--acc-ink);padding:3px 6px;border-radius:2px">Next</span></sc-if>
+            </div>
+            <div style="font-size:12.5px;color:var(--mute);margin-top:4px">{{ r.meta }}</div>
+            <div style="font-size:13px;line-height:1.45;margin-top:8px;text-wrap:pretty">{{ r.list }}</div>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px">
+          <button onClick="{{ r.edit }}" style="height:44px;border-radius:4px;background:var(--s2);font-weight:700;font-size:14px">Edit</button>
+          <button onClick="{{ r.start }}" style="height:44px;border-radius:4px;background:var(--ink);color:var(--bg);font-weight:700;font-size:14px">{{ r.startLabel }}</button>
+        </div>
+      </div>
+    </sc-for>
+  </div>
+  <sc-if value="{{ plan.none }}" hint-placeholder-val="{{ false }}">
+    <p style="font-size:15px;color:var(--mute);line-height:1.45;margin:0 0 16px">No routines yet. Generate a plan or build one from scratch.</p>
+  </sc-if>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px">
+    <button onClick="{{ addRoutine }}" style="height:52px;border-radius:4px;border:1.5px dashed var(--line2);font-weight:700;font-size:14px;display:flex;align-items:center;justify-content:center;gap:6px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg>New routine</button>
+    <button onClick="{{ startOnboarding }}" style="height:52px;border-radius:4px;background:var(--s1);font-weight:700;font-size:14px">Regenerate plan</button>
+  </div>
+  <p style="font-size:12.5px;line-height:1.5;color:var(--mute);margin:20px 0 0;text-wrap:pretty">Progression: double progression. When every set reaches the top of its rep range, the next session adds weight automatically.</p>
+</div>
+</sc-if>
+
+<!-- LIBRARY -->
+<sc-if value="{{ scr.library }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="Library" style="flex:1;display:flex;flex-direction:column;min-height:0">
+  <div style="padding:22px 20px 0">
+    <span style="font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--mute)">{{ lib.count }} exercises</span>
+    <h1 style="margin:6px 0 0;font-stretch:var(--ns);font-weight:800;font-size:84px;line-height:.84;text-transform:uppercase">Library</h1>
+    <div style="margin-top:18px;display:flex;align-items:center;gap:10px;height:50px;padding:0 14px;background:var(--s1);border-radius:4px;border:1px solid var(--line)">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--mute)" stroke-width="1.9" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><path d="M21 21l-4.3-4.3"></path></svg>
+      <input value="{{ q }}" onInput="{{ onQ }}" placeholder="Search exercises" style="flex:1;min-width:0;height:100%;background:transparent;border:0;outline:none;font-size:16px">
+      <sc-if value="{{ lib.hasQ }}" hint-placeholder-val="{{ false }}"><button onClick="{{ clearQ }}" aria-label="Clear" style="width:32px;height:32px;display:grid;place-items:center;color:var(--mute)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"></path></svg></button></sc-if>
+    </div>
+    <div style="display:flex;gap:6px;overflow-x:auto;margin:12px -20px 0;padding:0 20px 12px">
+      <sc-for list="{{ lib.chips }}" as="c" hint-placeholder-count="6">
+        <button onClick="{{ c.go }}" style="flex:none;height:34px;padding:0 13px;border-radius:2px;font-size:13px;font-weight:600;background:{{ c.bg }};color:{{ c.fg }}">{{ c.l }}</button>
+      </sc-for>
+    </div>
+  </div>
+  <div style="flex:1;overflow-y:auto;padding:0 20px 24px">
+    <sc-for list="{{ lib.items }}" as="it" hint-placeholder-count="8">
+      <button onClick="{{ it.go }}" style="width:100%;display:flex;align-items:center;gap:12px;padding:14px 0;border-top:1px solid var(--line);text-align:left" style-hover="opacity:.8">
+        <div style="flex:1;min-width:0">
+          <div style="font-size:16px;font-weight:700">{{ it.name }}</div>
+          <div style="font-size:12.5px;color:var(--mute);margin-top:2px">{{ it.sub }}</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-stretch:var(--ns);font-weight:800;font-size:24px;line-height:1;font-variant-numeric:tabular-nums">{{ it.best }}</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.1em;color:var(--faint);margin-top:3px">{{ it.bestLbl }}</div>
+        </div>
+      </button>
+    </sc-for>
+    <sc-if value="{{ lib.none }}" hint-placeholder-val="{{ false }}"><p style="color:var(--mute);font-size:15px;padding:24px 0;text-align:center">Nothing matches “{{ q }}”.</p></sc-if>
+  </div>
+</div>
+</sc-if>
+
+<!-- TRENDS -->
+<sc-if value="{{ scr.trends }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="Trends" style="flex:1;overflow-y:auto;padding:22px 20px 28px">
+  <span style="font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--mute)">{{ tr.meta }}</span>
+  <h1 style="margin:6px 0 0;font-stretch:var(--ns);font-weight:800;font-size:84px;line-height:.84;text-transform:uppercase">Trends</h1>
+  <sc-if value="{{ tr.empty }}" hint-placeholder-val="{{ false }}">
+    <p style="font-size:16px;line-height:1.45;color:var(--mute);margin-top:22px">Log a few workouts and your strength curve shows up here.</p>
+  </sc-if>
+  <sc-if value="{{ tr.has }}" hint-placeholder-val="{{ true }}">
+    <div style="display:flex;margin-top:18px;background:var(--s1);border-radius:4px;padding:3px">
+      <sc-for list="{{ tr.ranges }}" as="r" hint-placeholder-count="3">
+        <button onClick="{{ r.go }}" style="flex:1;height:38px;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.08em;background:{{ r.bg }};color:{{ r.fg }}">{{ r.l }}</button>
+      </sc-for>
+    </div>
+    <div style="display:flex;gap:6px;overflow-x:auto;margin:10px -20px 0;padding:0 20px">
+      <sc-for list="{{ tr.lifts }}" as="c" hint-placeholder-count="5">
+        <button onClick="{{ c.go }}" style="flex:none;height:34px;padding:0 12px;border-radius:2px;font-size:13px;font-weight:600;background:{{ c.bg }};color:{{ c.fg }}">{{ c.l }}</button>
+      </sc-for>
+    </div>
+    <div style="margin-top:22px;border-top:2px solid var(--ink);padding-top:12px">
+      <div style="display:flex;justify-content:space-between"><span style="font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--mute)">Est. 1-rep max · {{ tr.exName }}</span><span style="font-family:'JetBrains Mono',monospace;font-size:10.5px;color:{{ tr.deltaCol }}">{{ tr.delta }}</span></div>
+      <div style="display:flex;align-items:baseline;gap:6px;margin-top:6px">
+        <span style="font-stretch:var(--ns);font-weight:800;font-size:calc(104px * var(--nz));line-height:.85;font-variant-numeric:tabular-nums">{{ tr.cur }}</span>
+        <span style="font-size:15px;color:var(--mute);font-weight:600">{{ unit }}</span>
+      </div>
+      <sc-if value="{{ tr.chart.ok }}" hint-placeholder-val="{{ true }}">
+        <div style="position:relative;margin-top:14px">
+          <svg viewBox="0 0 350 170" style="width:100%;height:auto;display:block;overflow:visible">
+            <path d="{{ tr.chart.grid }}" style="stroke:var(--line);stroke-width:1;fill:none"></path>
+            <path d="{{ tr.chart.area }}" style="fill:var(--acc);fill-opacity:.12;stroke:none"></path>
+            <path d="{{ tr.chart.line }}" style="fill:none;stroke:var(--acc);stroke-width:2.5;stroke-linejoin:round;stroke-linecap:round"></path>
+            <path d="{{ tr.chart.pr }}" style="fill:var(--pr);stroke:var(--bg);stroke-width:2"></path>
+            <path d="{{ tr.chart.last }}" style="fill:var(--ink);stroke:var(--acc);stroke-width:3"></path>
+          </svg>
+          <sc-for list="{{ tr.chart.ticks }}" as="t" hint-placeholder-count="3">
+            <span style="position:absolute;right:0;top:{{ t.top }};transform:translateY(-120%);font-family:'JetBrains Mono',monospace;font-size:9.5px;color:var(--faint)">{{ t.l }}</span>
+          </sc-for>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-top:6px;font-family:'JetBrains Mono',monospace;font-size:9.5px;color:var(--faint)"><span>{{ tr.chart.from }}</span><span style="display:flex;align-items:center;gap:5px"><span style="width:7px;height:7px;border-radius:50%;background:var(--pr)"></span>PR</span><span>{{ tr.chart.to }}</span></div>
+      </sc-if>
+      <sc-if value="{{ tr.chart.no }}" hint-placeholder-val="{{ false }}"><p style="color:var(--mute);font-size:14px">Need two sessions in this range to draw a trend.</p></sc-if>
+    </div>
+    <div style="margin-top:28px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line)">
+      <sc-for list="{{ tr.totals }}" as="t" hint-placeholder-count="3">
+        <div style="background:var(--bg);padding:14px 12px">
+          <div style="font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--mute)">{{ t.l }}</div>
+          <div style="font-stretch:var(--ns);font-weight:800;font-size:34px;line-height:1;margin-top:8px;font-variant-numeric:tabular-nums">{{ t.v }}</div>
+        </div>
+      </sc-for>
+    </div>
+    <div style="margin-top:28px;display:flex;justify-content:space-between"><span style="font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--mute)">Weekly volume</span><span style="font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--mute)">{{ tr.volUnit }}</span></div>
+    <div style="margin-top:12px;height:110px;display:flex;align-items:flex-end;gap:4px">
+      <sc-for list="{{ tr.vol }}" as="b" hint-placeholder-count="12">
+        <div style="flex:1;min-width:0;height:{{ b.h }};background:{{ b.bg }};border-radius:2px 2px 0 0"></div>
+      </sc-for>
+    </div>
+    <div style="display:flex;justify-content:space-between;margin-top:6px;font-family:'JetBrains Mono',monospace;font-size:9.5px;color:var(--faint)"><span>{{ tr.volFrom }}</span><span>This week · {{ tr.volNow }}</span></div>
+    <div style="margin-top:28px;font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--mute)">Personal records</div>
+    <div style="margin-top:8px">
+      <sc-for list="{{ tr.prs }}" as="p" hint-placeholder-count="4">
+        <button onClick="{{ p.go }}" style="width:100%;display:flex;align-items:center;gap:12px;padding:12px 0;border-top:1px solid var(--line);text-align:left">
+          <span style="width:8px;height:8px;border-radius:50%;background:var(--pr);flex:none"></span>
+          <div style="flex:1;min-width:0"><div style="font-size:15px;font-weight:700">{{ p.name }}</div><div style="font-size:12.5px;color:var(--mute);margin-top:2px">{{ p.sub }}</div></div>
+          <span style="font-stretch:var(--ns);font-weight:800;font-size:26px;color:var(--pr);font-variant-numeric:tabular-nums">{{ p.val }}</span>
+        </button>
+      </sc-for>
+      <sc-if value="{{ tr.noPrs }}" hint-placeholder-val="{{ false }}"><p style="color:var(--mute);font-size:14px">No records in this range yet.</p></sc-if>
+    </div>
+  </sc-if>
+</div>
+</sc-if>
+
+<!-- YOU -->
+<sc-if value="{{ scr.you }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="You" style="flex:1;overflow-y:auto;padding:22px 20px 28px">
+  <span style="font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--mute)">Settings &amp; data</span>
+  <h1 style="margin:6px 0 0;font-stretch:var(--ns);font-weight:800;font-size:84px;line-height:.84;text-transform:uppercase">You</h1>
+  <div style="margin-top:18px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line)">
+    <sc-for list="{{ you.stats }}" as="t" hint-placeholder-count="3">
+      <div style="background:var(--bg);padding:14px 12px">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--mute)">{{ t.l }}</div>
+        <div style="font-stretch:var(--ns);font-weight:800;font-size:34px;line-height:1;margin-top:8px;font-variant-numeric:tabular-nums">{{ t.v }}</div>
+      </div>
+    </sc-for>
+  </div>
+
+  <div style="margin-top:28px;font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--mute)">Units</div>
+  <div style="display:flex;margin-top:10px;background:var(--s1);border-radius:4px;padding:3px">
+    <sc-for list="{{ you.units }}" as="o" hint-placeholder-count="2"><button onClick="{{ o.go }}" style="flex:1;height:42px;border-radius:3px;font-weight:700;font-size:14px;background:{{ o.bg }};color:{{ o.fg }}">{{ o.l }}</button></sc-for>
+  </div>
+  <p style="font-size:12px;color:var(--mute);margin:8px 0 0">Stored in pounds; kilograms are converted for display.</p>
+
+  <div style="margin-top:26px;font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--mute)">Appearance</div>
+  <div style="display:flex;margin-top:10px;background:var(--s1);border-radius:4px;padding:3px">
+    <sc-for list="{{ you.modes }}" as="o" hint-placeholder-count="2"><button onClick="{{ o.go }}" style="flex:1;height:42px;border-radius:3px;font-weight:700;font-size:14px;background:{{ o.bg }};color:{{ o.fg }}">{{ o.l }}</button></sc-for>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:8px">
+    <sc-for list="{{ you.accents }}" as="a" hint-placeholder-count="4">
+      <button onClick="{{ a.go }}" style="display:flex;flex-direction:column;align-items:flex-start;gap:8px;padding:10px;border-radius:4px;background:var(--s1);border:1.5px solid {{ a.bd }}">
+        <span style="width:100%;height:28px;border-radius:2px;background:{{ a.hex }}"></span>
+        <span style="font-size:12.5px;font-weight:700">{{ a.l }}</span>
+      </button>
+    </sc-for>
+  </div>
+
+  <div style="margin-top:26px;font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--mute)">Training</div>
+  <div style="margin-top:10px;background:var(--s1);border-radius:4px">
+    <div style="display:flex;align-items:center;gap:12px;padding:12px 14px;border-bottom:1px solid var(--line)">
+      <div style="flex:1"><div style="font-size:15px;font-weight:700">Default rest</div><div style="font-size:12px;color:var(--mute);margin-top:2px">For new exercises</div></div>
+      <button onClick="{{ restDown }}" aria-label="Less rest" style="width:44px;height:44px;border-radius:4px;background:var(--s2);display:grid;place-items:center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M5 12h14"></path></svg></button>
+      <span style="font-stretch:var(--ns);font-weight:800;font-size:26px;min-width:56px;text-align:center;font-variant-numeric:tabular-nums">{{ you.rest }}</span>
+      <button onClick="{{ restUp }}" aria-label="More rest" style="width:44px;height:44px;border-radius:4px;background:var(--s2);display:grid;place-items:center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg></button>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px;padding:12px 14px;border-bottom:1px solid var(--line)">
+      <div style="flex:1"><div style="font-size:15px;font-weight:700">Barbell</div><div style="font-size:12px;color:var(--mute);margin-top:2px">Used by the plate calculator</div></div>
+      <div style="display:flex;gap:6px">
+        <sc-for list="{{ you.bars }}" as="o" hint-placeholder-count="2"><button onClick="{{ o.go }}" style="height:40px;padding:0 12px;border-radius:3px;font-weight:700;font-size:13px;background:{{ o.bg }};color:{{ o.fg }}">{{ o.l }}</button></sc-for>
+      </div>
+    </div>
+    <div style="padding:12px 14px">
+      <div style="font-size:15px;font-weight:700">Plates you own</div>
+      <div style="font-size:12px;color:var(--mute);margin-top:2px">Tap to toggle · per pair</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px">
+        <sc-for list="{{ you.plates }}" as="p" hint-placeholder-count="6"><button onClick="{{ p.go }}" style="height:40px;min-width:52px;padding:0 10px;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:13px;background:{{ p.bg }};color:{{ p.fg }};border:1px solid var(--line2)">{{ p.l }}</button></sc-for>
+      </div>
+    </div>
+  </div>
+
+  <div style="margin-top:26px;font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--mute)">Your data</div>
+  <div style="margin-top:10px;background:var(--s1);border-radius:4px">
+    <button onClick="{{ exportData }}" style="width:100%;display:flex;align-items:center;gap:12px;padding:14px;border-bottom:1px solid var(--line);text-align:left">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"></path><path d="M7 11l5 5 5-5"></path><path d="M4 20h16"></path></svg>
+      <div style="flex:1"><div style="font-size:15px;font-weight:700">Export backup</div><div style="font-size:12px;color:var(--mute);margin-top:2px">Downloads a JSON file of everything</div></div>
+    </button>
+    <label style="width:100%;display:flex;align-items:center;gap:12px;padding:14px;border-bottom:1px solid var(--line);cursor:pointer">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21V9"></path><path d="M7 13l5-5 5 5"></path><path d="M4 4h16"></path></svg>
+      <div style="flex:1"><div style="font-size:15px;font-weight:700">Import backup</div><div style="font-size:12px;color:var(--mute);margin-top:2px">Restore from an OpenSets JSON file</div></div>
+      <input type="file" accept="application/json,.json" onChange="{{ importData }}" style="display:none">
+    </label>
+    <button onClick="{{ loadSample }}" style="width:100%;display:flex;align-items:center;gap:12px;padding:14px;border-bottom:1px solid var(--line);text-align:left">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6"></path><path d="M7.5 7v10"></path><path d="M16.5 7v10"></path><path d="M20 9v6"></path><path d="M7.5 12h9"></path></svg>
+      <div style="flex:1"><div style="font-size:15px;font-weight:700">Load sample data</div><div style="font-size:12px;color:var(--mute);margin-top:2px">8 weeks of example training</div></div>
+    </button>
+    <button onClick="{{ askReset }}" style="width:100%;display:flex;align-items:center;gap:12px;padding:14px;text-align:left;color:var(--danger)">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"></path></svg>
+      <div style="flex:1;font-size:15px;font-weight:700">Erase all data</div>
+    </button>
+  </div>
+  <div style="margin-top:18px;display:flex;gap:12px;padding:16px;border:1px solid var(--line2);border-radius:4px">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--ok)" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="flex:none"><path d="M12 3l7 3v5c0 4.5-3 7.7-7 9-4-1.3-7-4.5-7-9V6l7-3z"></path><path d="M9 12l2 2 4-4"></path></svg>
+    <div><div style="font-size:14px;font-weight:700">Private by default</div><div style="font-size:12.5px;line-height:1.45;color:var(--mute);margin-top:3px">Your data never leaves this device. No account, no sync, no tracking.</div></div>
+  </div>
+  <p style="margin:22px 0 0;text-align:center;font-size:11.5px;color:var(--faint)">OpenSets · Educational tool — not medical advice.</p>
+</div>
+</sc-if>
+
+<!-- EXERCISE DETAIL -->
+<sc-if value="{{ scr.detail }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="Exercise detail" style="flex:1;display:flex;flex-direction:column;min-height:0">
+  <div style="display:flex;align-items:center;padding:12px 12px 0">
+    <button onClick="{{ back }}" aria-label="Back" style="width:44px;height:44px;display:grid;place-items:center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 6l-6 6 6 6"></path></svg></button>
+  </div>
+  <div style="flex:1;overflow-y:auto;padding:4px 20px 24px">
+    <span style="font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--acc-tx)">{{ det.sub }}</span>
+    <h1 style="margin:6px 0 0;font-stretch:var(--ns);font-weight:800;font-size:58px;line-height:.86;text-transform:uppercase;text-wrap:balance">{{ det.name }}</h1>
+    <div style="margin-top:20px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line)">
+      <sc-for list="{{ det.stats }}" as="t" hint-placeholder-count="3">
+        <div style="background:var(--bg);padding:14px 12px">
+          <div style="font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--mute)">{{ t.l }}</div>
+          <div style="font-stretch:var(--ns);font-weight:800;font-size:30px;line-height:1;margin-top:8px;font-variant-numeric:tabular-nums;white-space:nowrap">{{ t.v }}</div>
+        </div>
+      </sc-for>
+    </div>
+    <sc-if value="{{ det.chart.ok }}" hint-placeholder-val="{{ false }}">
+      <div style="margin-top:22px;font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--mute)">e1RM trend</div>
+      <svg viewBox="0 0 350 170" style="width:100%;height:auto;display:block;overflow:visible;margin-top:10px">
+        <path d="{{ det.chart.grid }}" style="stroke:var(--line);fill:none"></path>
+        <path d="{{ det.chart.area }}" style="fill:var(--acc);fill-opacity:.12"></path>
+        <path d="{{ det.chart.line }}" style="fill:none;stroke:var(--acc);stroke-width:2.5;stroke-linejoin:round"></path>
+        <path d="{{ det.chart.pr }}" style="fill:var(--pr);stroke:var(--bg);stroke-width:2"></path>
+        <path d="{{ det.chart.last }}" style="fill:var(--ink);stroke:var(--acc);stroke-width:3"></path>
+      </svg>
+    </sc-if>
+    <div style="margin-top:24px;border-top:2px solid var(--ink);padding-top:12px">
+      <div style="font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--mute)">How to</div>
+      <p style="font-size:16px;line-height:1.5;margin:8px 0 0;text-wrap:pretty">{{ det.cue }}</p>
+    </div>
+    <div style="margin-top:24px;font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--mute)">History</div>
+    <div style="margin-top:8px">
+      <sc-for list="{{ det.hist }}" as="h" hint-placeholder-count="4">
+        <div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-top:1px solid var(--line)">
+          <div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:700">{{ h.when }}</div><div style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--mute);margin-top:3px">{{ h.line }}</div></div>
+          <sc-if value="{{ h.pr }}" hint-placeholder-val="{{ false }}"><span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--pr);border:1px solid var(--pr);padding:2px 6px;border-radius:2px">PR</span></sc-if>
+          <span style="font-stretch:var(--ns);font-weight:800;font-size:22px;font-variant-numeric:tabular-nums">{{ h.e }}</span>
+        </div>
+      </sc-for>
+      <sc-if value="{{ det.noHist }}" hint-placeholder-val="{{ false }}"><p style="color:var(--mute);font-size:14px">Not logged yet.</p></sc-if>
+    </div>
+  </div>
+  <div style="padding:10px 20px 20px;border-top:1px solid var(--line)">
+    <button onClick="{{ det.add }}" style="width:100%;height:56px;border-radius:4px;background:var(--ink);color:var(--bg);font-stretch:var(--ns);font-weight:800;font-size:20px;text-transform:uppercase;letter-spacing:.02em" style-active="transform:scale(.985)">{{ det.addLabel }}</button>
+  </div>
+</div>
+</sc-if>
+
+<!-- ROUTINE BUILDER -->
+<sc-if value="{{ scr.builder }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="Routine builder" style="flex:1;display:flex;flex-direction:column;min-height:0">
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 12px 0">
+    <button onClick="{{ back }}" aria-label="Back" style="width:44px;height:44px;display:grid;place-items:center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 6l-6 6 6 6"></path></svg></button>
+    <span style="font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ok);padding-right:8px">● Auto-saved</span>
+  </div>
+  <div style="flex:1;overflow-y:auto;padding:4px 20px 24px">
+    <span style="font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--mute)">{{ bld.meta }}</span>
+    <input value="{{ bld.name }}" onInput="{{ bld.rename }}" aria-label="Routine name" style="display:block;width:100%;margin-top:6px;background:transparent;border:0;border-bottom:2px solid var(--ink);outline:none;font-stretch:var(--ns);font-weight:800;font-size:52px;line-height:1;text-transform:uppercase;padding:0 0 8px">
+    <div style="margin-top:16px;display:flex;flex-direction:column;gap:10px">
+      <sc-for list="{{ bld.slots }}" as="s" hint-placeholder-count="4">
+        <div style="background:var(--s1);border-radius:4px;padding:12px 12px 14px">
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="font-stretch:var(--ns);font-weight:800;font-size:28px;line-height:1;width:30px;color:var(--faint)">{{ s.num }}</span>
+            <div style="flex:1;min-width:0"><div style="font-size:15px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ s.name }}</div><div style="font-size:12px;color:var(--mute)">{{ s.sub }}</div></div>
+            <button onClick="{{ s.up }}" aria-label="Move up" style="width:36px;height:36px;display:grid;place-items:center;color:{{ s.upCol }}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 15l6-6 6 6"></path></svg></button>
+            <button onClick="{{ s.down }}" aria-label="Move down" style="width:36px;height:36px;display:grid;place-items:center;color:{{ s.downCol }}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 9l6 6 6-6"></path></svg></button>
+            <button onClick="{{ s.remove }}" aria-label="Remove" style="width:36px;height:36px;display:grid;place-items:center;color:var(--danger)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"></path></svg></button>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-top:10px">
+            <sc-for list="{{ s.fields }}" as="f" hint-placeholder-count="3">
+              <div style="background:var(--bg);border-radius:3px;padding:8px 4px 6px;display:flex;flex-direction:column;align-items:center">
+                <span style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--mute)">{{ f.l }}</span>
+                <span style="font-stretch:var(--ns);font-weight:800;font-size:26px;line-height:1.1;font-variant-numeric:tabular-nums">{{ f.v }}</span>
+                <div style="display:flex;gap:4px;margin-top:4px">
+                  <button onClick="{{ f.dec }}" aria-label="Decrease" style="width:44px;height:36px;border-radius:3px;background:var(--s2);display:grid;place-items:center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 12h14"></path></svg></button>
+                  <button onClick="{{ f.inc }}" aria-label="Increase" style="width:44px;height:36px;border-radius:3px;background:var(--s2);display:grid;place-items:center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg></button>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+    <button onClick="{{ bld.addEx }}" style="margin-top:10px;width:100%;height:56px;border-radius:4px;border:1.5px dashed var(--line2);font-weight:700;font-size:15px;display:flex;align-items:center;justify-content:center;gap:8px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg>Add exercise</button>
+    <button onClick="{{ bld.del }}" style="margin-top:28px;width:100%;height:48px;border-radius:4px;color:var(--danger);font-weight:700;font-size:14px;border:1px solid var(--line2)">Delete routine</button>
+  </div>
+  <div style="padding:10px 20px 20px;border-top:1px solid var(--line)">
+    <button onClick="{{ bld.start }}" style="width:100%;height:56px;border-radius:4px;background:var(--acc);color:var(--acc-ink);font-stretch:var(--ns);font-weight:800;font-size:20px;text-transform:uppercase;letter-spacing:.02em" style-active="transform:scale(.985)">{{ bld.startLabel }}</button>
+  </div>
+</div>
+</sc-if>
+
+<!-- ACTIVE SESSION -->
+<sc-if value="{{ scr.session }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="Active session" style="flex:1;display:flex;flex-direction:column;min-height:0">
+  <div style="display:flex;align-items:center;gap:8px;padding:10px 12px 8px">
+    <button onClick="{{ minimize }}" aria-label="Minimize workout" style="width:44px;height:44px;display:grid;place-items:center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 9l6 6 6-6"></path></svg></button>
+    <div style="flex:1;text-align:center;min-width:0">
+      <div style="font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ ses.name }}</div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--acc-tx);margin-top:2px;font-variant-numeric:tabular-nums">{{ ses.elapsed }}</div>
+    </div>
+    <button onClick="{{ finish }}" style="height:40px;padding:0 14px;border-radius:3px;background:var(--s1);font-weight:700;font-size:13px">Finish</button>
+  </div>
+  <div style="display:flex;gap:4px;overflow-x:auto;padding:0 20px 10px">
+    <sc-for list="{{ ses.strip }}" as="e" hint-placeholder-count="5">
+      <button onClick="{{ e.go }}" style="flex:none;display:flex;align-items:center;gap:6px;height:32px;padding:0 10px;border-radius:2px;font-size:12px;font-weight:700;background:{{ e.bg }};color:{{ e.fg }};max-width:150px">
+        <span style="font-family:'JetBrains Mono',monospace;font-size:10.5px">{{ e.n }}</span><span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ e.name }}</span>
+      </button>
+    </sc-for>
+  </div>
+  <div style="flex:1;overflow-y:auto;padding:6px 20px 12px">
+    <div style="display:flex;justify-content:space-between;gap:8px">
+      <span style="font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--mute)">{{ ses.exMeta }}</span>
+      <span style="font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--mute)">{{ ses.range }}</span>
+    </div>
+    <div style="font-stretch:var(--ns);font-weight:800;font-size:48px;line-height:.88;text-transform:uppercase;margin-top:6px;text-wrap:balance">{{ ses.exName }}</div>
+    <div style="display:flex;gap:8px;margin-top:10px;align-items:flex-start">
+      <span style="flex:none;font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.12em;background:var(--s2);color:var(--acc-tx);padding:3px 5px;border-radius:2px;margin-top:1px">WHY</span>
+      <span style="font-size:13px;line-height:1.45;color:var(--mute);text-wrap:pretty">{{ ses.reason }}</span>
+    </div>
+    <div style="margin-top:14px;display:flex;flex-direction:column;gap:6px">
+      <sc-for list="{{ ses.rows }}" as="row" hint-placeholder-count="4">
+        <sc-if value="{{ row.done }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;align-items:center;gap:14px;height:50px;padding:0 14px;background:var(--s1);border-radius:4px;border:1px solid {{ row.bd }}">
+            <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--faint);width:14px">{{ row.k }}</span>
+            <span style="font-stretch:var(--ns);font-weight:800;font-size:26px;font-variant-numeric:tabular-nums;color:var(--mute)">{{ row.w }}<span style="font-size:14px;color:var(--faint)"> × </span>{{ row.r }}</span>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--faint)">{{ row.rpe }}</span>
+            <span style="margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:{{ row.tagCol }}">{{ row.tag }}</span>
+          </div>
+        </sc-if>
+        <sc-if value="{{ row.up }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;align-items:center;gap:14px;height:50px;padding:0 14px;border-radius:4px;border:1px dashed var(--line2)">
+            <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--faint);width:14px">{{ row.k }}</span>
+            <span style="font-stretch:var(--ns);font-weight:800;font-size:26px;font-variant-numeric:tabular-nums;color:var(--faint)">{{ row.w }}<span style="font-size:14px"> × </span>{{ row.r }}</span>
+            <span style="margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint)">Up next</span>
+          </div>
+        </sc-if>
+        <sc-if value="{{ row.active }}" hint-placeholder-val="{{ true }}">
+          <div style="background:var(--s1);border-radius:4px;border:2px solid var(--acc);padding:14px 14px 16px">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <span style="font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--acc-tx)">Set {{ row.k }} of {{ act.sets }} · Now</span>
+              <span style="font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.1em;color:var(--mute)">Target {{ act.target }}</span>
+            </div>
+            <div style="display:grid;grid-template-columns:minmax(0,1fr) 1px minmax(0,1fr);gap:12px;margin-top:10px">
+              <div style="display:flex;flex-direction:column;align-items:center">
+                <span style="font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--mute)">Weight · {{ unit }}</span>
+                <button onClick="{{ act.editW }}" aria-label="Type weight" style="font-stretch:var(--ns);font-weight:800;font-size:calc(92px * var(--nz));line-height:1;font-variant-numeric:tabular-nums;letter-spacing:-.01em;padding:4px 0;border-bottom:1.5px dotted var(--line2)">{{ act.w }}</button>
+                <div style="display:flex;gap:8px;margin-top:10px">
+                  <button onClick="{{ act.wDown }}" aria-label="Decrease weight" style="width:56px;height:52px;border-radius:4px;background:var(--s2);display:grid;place-items:center" style-active="background:var(--line2)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 12h14"></path></svg></button>
+                  <button onClick="{{ act.wUp }}" aria-label="Increase weight" style="width:56px;height:52px;border-radius:4px;background:var(--s2);display:grid;place-items:center" style-active="background:var(--line2)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg></button>
+                </div>
+              </div>
+              <div style="background:var(--line)"></div>
+              <div style="display:flex;flex-direction:column;align-items:center">
+                <span style="font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--mute)">Reps</span>
+                <button onClick="{{ act.editR }}" aria-label="Type reps" style="font-stretch:var(--ns);font-weight:800;font-size:calc(92px * var(--nz));line-height:1;font-variant-numeric:tabular-nums;padding:4px 0;border-bottom:1.5px dotted var(--line2)">{{ act.r }}</button>
+                <div style="display:flex;gap:8px;margin-top:10px">
+                  <button onClick="{{ act.rDown }}" aria-label="Decrease reps" style="width:56px;height:52px;border-radius:4px;background:var(--s2);display:grid;place-items:center" style-active="background:var(--line2)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 12h14"></path></svg></button>
+                  <button onClick="{{ act.rUp }}" aria-label="Increase reps" style="width:56px;height:52px;border-radius:4px;background:var(--s2);display:grid;place-items:center" style-active="background:var(--line2)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg></button>
+                </div>
+              </div>
+            </div>
+            <sc-if value="{{ act.barbell }}" hint-placeholder-val="{{ false }}">
+              <button onClick="{{ openPlates }}" style="margin-top:14px;width:100%;display:flex;align-items:center;gap:10px;height:44px;padding:0 10px;border-radius:3px;background:var(--bg);text-align:left">
+                <span style="font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.12em;color:var(--mute)">PER SIDE</span>
+                <div style="display:flex;align-items:center;gap:2px;height:30px">
+                  <span style="width:10px;height:6px;background:var(--faint);border-radius:1px"></span>
+                  <sc-for list="{{ act.plates.vis }}" as="p" hint-placeholder-count="3"><span style="width:{{ p.w }};height:{{ p.h }};background:{{ p.bg }};border-radius:1.5px"></span></sc-for>
+                </div>
+                <span style="flex:1;font-family:'JetBrains Mono',monospace;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ act.plates.txt }}</span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--faint)" stroke-width="2" stroke-linecap="round"><path d="M9 6l6 6-6 6"></path></svg>
+              </button>
+            </sc-if>
+            <div style="display:flex;align-items:center;gap:6px;margin-top:12px">
+              <span style="font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.12em;color:var(--mute);width:34px">RPE</span>
+              <sc-for list="{{ act.rpe }}" as="p" hint-placeholder-count="5"><button onClick="{{ p.go }}" style="flex:1;height:40px;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;background:{{ p.bg }};color:{{ p.fg }}">{{ p.l }}</button></sc-for>
+            </div>
+          </div>
+        </sc-if>
+      </sc-for>
+    </div>
+    <sc-if value="{{ ses.exDone }}" hint-placeholder-val="{{ false }}">
+      <button onClick="{{ addSet }}" style="margin-top:8px;width:100%;height:46px;border-radius:4px;border:1.5px dashed var(--line2);font-weight:700;font-size:14px">+ Add a set</button>
+    </sc-if>
+    <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-top:16px">
+      <button onClick="{{ swapEx }}" style="height:44px;border-radius:3px;background:var(--s1);font-weight:700;font-size:13px">Swap</button>
+      <button onClick="{{ skipEx }}" style="height:44px;border-radius:3px;background:var(--s1);font-weight:700;font-size:13px">Skip</button>
+      <button onClick="{{ addEx }}" style="height:44px;border-radius:3px;background:var(--s1);font-weight:700;font-size:13px">Add exercise</button>
+    </div>
+  </div>
+  <div style="padding:10px 20px 20px;border-top:1px solid var(--line);background:var(--bg)">
+    <sc-if value="{{ rest.on }}" hint-placeholder-val="{{ false }}">
+      <div style="position:relative;overflow:hidden;display:flex;align-items:center;gap:10px;height:56px;padding:0 6px 0 14px;border-radius:4px;background:{{ rest.bg }};color:{{ rest.fg }};margin-bottom:8px">
+        <div style="position:absolute;left:0;top:0;bottom:0;width:{{ rest.pct }};background:var(--acc);opacity:.18;transition:width 1s linear"></div>
+        <span style="position:relative;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.14em">{{ rest.lbl }}</span>
+        <span style="position:relative;font-stretch:var(--ns);font-weight:800;font-size:34px;font-variant-numeric:tabular-nums;line-height:1">{{ rest.left }}</span>
+        <div style="position:relative;margin-left:auto;display:flex;gap:4px">
+          <button onClick="{{ restMinus }}" style="width:48px;height:44px;border-radius:3px;background:var(--bg);color:var(--ink);font-family:'JetBrains Mono',monospace;font-size:12px">−15</button>
+          <button onClick="{{ restPlus }}" style="width:48px;height:44px;border-radius:3px;background:var(--bg);color:var(--ink);font-family:'JetBrains Mono',monospace;font-size:12px">+15</button>
+          <button onClick="{{ stopRest }}" style="height:44px;padding:0 12px;border-radius:3px;background:var(--bg);color:var(--ink);font-weight:700;font-size:13px">{{ rest.cta }}</button>
+        </div>
+      </div>
+    </sc-if>
+    <button onClick="{{ cta.go }}" style="width:100%;height:62px;border-radius:4px;background:var(--acc);color:var(--acc-ink);font-stretch:var(--ns);font-weight:800;font-size:23px;text-transform:uppercase;letter-spacing:.02em;display:flex;align-items:center;justify-content:center;gap:10px" style-active="transform:scale(.985)">
+      <svg width="22" height="22" viewBox="0 0 20 20" fill="none"><path d="M4 10.5L8 14.5L16 5.5" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"></path></svg>{{ cta.label }}
+    </button>
+  </div>
+</div>
+</sc-if>
+
+<!-- SUMMARY -->
+<sc-if value="{{ scr.summary }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="Workout summary" style="flex:1;display:flex;flex-direction:column;min-height:0">
+  <div style="display:flex;align-items:center;padding:12px 12px 0">
+    <button onClick="{{ back }}" aria-label="Back" style="width:44px;height:44px;display:grid;place-items:center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 6l-6 6 6 6"></path></svg></button>
+  </div>
+  <div style="flex:1;overflow-y:auto;padding:4px 20px 24px">
+    <span style="font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--acc-tx)">{{ sum.when }}</span>
+    <h1 style="margin:6px 0 0;font-stretch:var(--ns);font-weight:800;font-size:64px;line-height:.86;text-transform:uppercase">{{ sum.title }}</h1>
+    <div style="margin-top:20px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line)">
+      <sc-for list="{{ sum.stats }}" as="t" hint-placeholder-count="4">
+        <div style="background:var(--bg);padding:14px">
+          <div style="font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--mute)">{{ t.l }}</div>
+          <div style="font-stretch:var(--ns);font-weight:800;font-size:44px;line-height:1;margin-top:6px;font-variant-numeric:tabular-nums;color:{{ t.col }}">{{ t.v }}</div>
+        </div>
+      </sc-for>
+    </div>
+    <div style="margin-top:24px">
+      <sc-for list="{{ sum.exs }}" as="e" hint-placeholder-count="4">
+        <div style="padding:12px 0;border-top:1px solid var(--line)">
+          <div style="display:flex;align-items:center;gap:8px"><span style="flex:1;font-size:15px;font-weight:700">{{ e.name }}</span>
+            <sc-if value="{{ e.pr }}" hint-placeholder-val="{{ false }}"><span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--pr);border:1px solid var(--pr);padding:2px 6px;border-radius:2px">PR</span></sc-if>
+          </div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--mute);margin-top:4px;line-height:1.5">{{ e.line }}</div>
+        </div>
+      </sc-for>
+      <sc-if value="{{ sum.empty }}" hint-placeholder-val="{{ false }}"><p style="color:var(--mute);font-size:15px">No sets logged yet.</p></sc-if>
+    </div>
+  </div>
+  <sc-if value="{{ sum.live }}" hint-placeholder-val="{{ false }}">
+    <div style="padding:10px 20px 20px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:8px">
+      <button onClick="{{ saveWorkout }}" style="width:100%;height:60px;border-radius:4px;background:var(--acc);color:var(--acc-ink);font-stretch:var(--ns);font-weight:800;font-size:22px;text-transform:uppercase;letter-spacing:.02em" style-active="transform:scale(.985)">{{ sum.saveLabel }}</button>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <button onClick="{{ back }}" style="height:46px;border-radius:4px;background:var(--s1);font-weight:700;font-size:14px">Keep training</button>
+        <button onClick="{{ askDiscard }}" style="height:46px;border-radius:4px;border:1px solid var(--line2);color:var(--danger);font-weight:700;font-size:14px">Discard</button>
+      </div>
+    </div>
+  </sc-if>
+</div>
+</sc-if>
+
+<!-- ONBOARDING -->
+<sc-if value="{{ scr.onboard }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="Onboarding" style="flex:1;display:flex;flex-direction:column;min-height:0">
+  <div style="display:flex;align-items:center;gap:10px;padding:12px 16px 0 12px">
+    <button onClick="{{ ob.back }}" aria-label="Back" style="width:44px;height:44px;display:grid;place-items:center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 6l-6 6 6 6"></path></svg></button>
+    <div style="flex:1;display:flex;gap:4px">
+      <sc-for list="{{ ob.bars }}" as="b" hint-placeholder-count="6"><span style="flex:1;height:4px;border-radius:1px;background:{{ b.bg }}"></span></sc-for>
+    </div>
+  </div>
+  <div style="flex:1;overflow-y:auto;padding:18px 20px 24px">
+    <span style="font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--acc-tx)">{{ ob.lbl }}</span>
+    <h1 style="margin:8px 0 0;font-stretch:var(--ns);font-weight:800;font-size:54px;line-height:.88;text-transform:uppercase;text-wrap:balance">{{ ob.q }}</h1>
+    <sc-if value="{{ ob.asking }}" hint-placeholder-val="{{ true }}">
+      <div style="margin-top:22px;display:flex;flex-direction:column;gap:8px">
+        <sc-for list="{{ ob.opts }}" as="o" hint-placeholder-count="3">
+          <button onClick="{{ o.go }}" style="display:flex;align-items:center;gap:14px;padding:16px;border-radius:4px;background:var(--s1);border:2px solid {{ o.bd }};text-align:left">
+            <div style="flex:1"><div style="font-size:18px;font-weight:700">{{ o.l }}</div><div style="font-size:13px;color:var(--mute);margin-top:3px;line-height:1.4">{{ o.s }}</div></div>
+            <span style="width:22px;height:22px;border-radius:50%;border:2px solid {{ o.bd }};background:{{ o.dot }};flex:none"></span>
+          </button>
+        </sc-for>
+      </div>
+    </sc-if>
+    <sc-if value="{{ ob.preview }}" hint-placeholder-val="{{ false }}">
+      <p style="font-size:14px;color:var(--mute);margin:12px 0 0;line-height:1.45">{{ ob.summary }}</p>
+      <div style="margin-top:18px;display:flex;flex-direction:column;gap:8px">
+        <sc-for list="{{ ob.plan }}" as="r" hint-placeholder-count="4">
+          <div style="background:var(--s1);border-radius:4px;padding:14px">
+            <div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font-stretch:var(--ns);font-weight:800;font-size:24px;text-transform:uppercase">{{ r.name }}</span><span style="font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--mute)">{{ r.meta }}</span></div>
+            <div style="font-size:13px;line-height:1.5;margin-top:6px;color:var(--mute)">{{ r.list }}</div>
+          </div>
+        </sc-for>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:16px;align-items:flex-start;color:var(--mute);font-size:12.5px;line-height:1.45">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--ok)" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="flex:none"><path d="M12 3l7 3v5c0 4.5-3 7.7-7 9-4-1.3-7-4.5-7-9V6l7-3z"></path><path d="M9 12l2 2 4-4"></path></svg>
+        Generated on this device. Your answers never leave it.
+      </div>
+    </sc-if>
+  </div>
+  <div style="padding:10px 20px 20px;border-top:1px solid var(--line)">
+    <button onClick="{{ ob.next }}" style="width:100%;height:60px;border-radius:4px;background:var(--acc);color:var(--acc-ink);font-stretch:var(--ns);font-weight:800;font-size:22px;text-transform:uppercase;letter-spacing:.02em" style-active="transform:scale(.985)">{{ ob.cta }}</button>
+  </div>
+</div>
+</sc-if>
+
+<!-- MINI SESSION BAR + TABS -->
+<sc-if value="{{ showMini }}" hint-placeholder-val="{{ false }}">
+  <button onClick="{{ openSession }}" style="margin:0 12px 6px;display:flex;align-items:center;gap:10px;height:52px;padding:0 14px;border-radius:4px;background:var(--acc);color:var(--acc-ink);text-align:left">
+    <span style="width:7px;height:7px;border-radius:50%;background:currentColor;animation:os-pulse 1.6s infinite"></span>
+    <div style="flex:1;min-width:0;font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ sessBar.name }} · {{ sessBar.ex }}</div>
+    <span style="font-family:'JetBrains Mono',monospace;font-size:12px;font-variant-numeric:tabular-nums">{{ sessBar.elapsed }}</span>
+  </button>
+</sc-if>
+<sc-if value="{{ showTabs }}" hint-placeholder-val="{{ true }}">
+  <nav style="flex:none;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));border-top:1px solid var(--line);background:var(--bg);padding-bottom:max(10px,env(safe-area-inset-bottom))">
+    <button onClick="{{ tb.today.go }}" style="position:relative;display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 0 4px;color:{{ tb.today.col }}"><span style="position:absolute;top:-1px;left:30%;right:30%;height:2px;background:{{ tb.today.bar }}"></span><svg width="23" height="23" viewBox="0 0 24 24" fill="none"><path d="M4 11l8-7 8 7v8a1 1 0 01-1 1h-4v-6h-6v6H5a1 1 0 01-1-1z" stroke="currentColor" stroke-width="1.6"></path></svg><span style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase">Today</span></button>
+    <button onClick="{{ tb.plan.go }}" style="position:relative;display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 0 4px;color:{{ tb.plan.col }}"><span style="position:absolute;top:-1px;left:30%;right:30%;height:2px;background:{{ tb.plan.bar }}"></span><svg width="23" height="23" viewBox="0 0 24 24" fill="none"><rect x="4" y="5" width="16" height="15" rx="2" stroke="currentColor" stroke-width="1.6"></rect><path d="M4 9h16M8 3v4M16 3v4" stroke="currentColor" stroke-width="1.6"></path></svg><span style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase">Plan</span></button>
+    <button onClick="{{ tb.library.go }}" style="position:relative;display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 0 4px;color:{{ tb.library.col }}"><span style="position:absolute;top:-1px;left:30%;right:30%;height:2px;background:{{ tb.library.bar }}"></span><svg width="23" height="23" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="1.6"></circle><path d="M20 20l-4-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"></path></svg><span style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase">Library</span></button>
+    <button onClick="{{ tb.trends.go }}" style="position:relative;display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 0 4px;color:{{ tb.trends.col }}"><span style="position:absolute;top:-1px;left:30%;right:30%;height:2px;background:{{ tb.trends.bar }}"></span><svg width="23" height="23" viewBox="0 0 24 24" fill="none"><path d="M4 19V9M9.5 19V4M15 19v-7M20.5 19v-11" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path></svg><span style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase">Trends</span></button>
+    <button onClick="{{ tb.you.go }}" style="position:relative;display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 0 4px;color:{{ tb.you.col }}"><span style="position:absolute;top:-1px;left:30%;right:30%;height:2px;background:{{ tb.you.bar }}"></span><svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="12" cy="8.5" r="3.8"></circle><path d="M4.5 20c1.2-3.6 4-5.5 7.5-5.5s6.3 1.9 7.5 5.5"></path></svg><span style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase">You</span></button>
+  </nav>
+</sc-if>
+
+<!-- TOAST -->
+<sc-if value="{{ toast.on }}" hint-placeholder-val="{{ false }}">
+  <div style="position:absolute;left:14px;right:14px;bottom:{{ toast.bottom }};z-index:30;display:flex;align-items:center;gap:12px;height:50px;padding:0 8px 0 16px;border-radius:4px;background:var(--ink);color:var(--bg);animation:os-toast .22s cubic-bezier(.2,.8,.2,1);box-shadow:0 12px 30px -10px rgba(0,0,0,.5)">
+    <span style="flex:1;font-size:14px;font-weight:600">{{ toast.msg }}</span>
+    <sc-if value="{{ toast.undo }}" hint-placeholder-val="{{ false }}"><button onClick="{{ undo }}" style="height:38px;padding:0 12px;font-weight:800;font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--acc-tx);background:var(--bg);border-radius:3px">Undo</button></sc-if>
+  </div>
+</sc-if>
+
+<!-- SHEETS -->
+<sc-if value="{{ sheet.open }}" hint-placeholder-val="{{ false }}">
+  <div style="position:absolute;inset:0;z-index:40;display:flex;flex-direction:column;justify-content:flex-end">
+    <div onClick="{{ closeSheet }}" style="position:absolute;inset:0;background:var(--scrim);animation:os-fade .2s"></div>
+    <div style="position:relative;background:var(--s1);border-radius:12px 12px 0 0;max-height:88%;display:flex;flex-direction:column;animation:os-up .28s cubic-bezier(.2,.8,.2,1);padding-bottom:max(16px,env(safe-area-inset-bottom))">
+      <div style="display:flex;justify-content:center;padding:8px 0 4px"><span style="width:36px;height:4px;border-radius:2px;background:var(--line2)"></span></div>
+
+      <sc-if value="{{ sheet.picker }}" hint-placeholder-val="{{ false }}">
+        <div style="padding:6px 16px 0">
+          <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-stretch:var(--ns);font-weight:800;font-size:30px;text-transform:uppercase">{{ pk.title }}</span><button onClick="{{ closeSheet }}" style="height:40px;padding:0 10px;font-weight:700;font-size:14px;color:var(--mute)">Cancel</button></div>
+          <div style="margin-top:8px;display:flex;align-items:center;gap:10px;height:46px;padding:0 12px;background:var(--bg);border-radius:4px">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--mute)" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><path d="M21 21l-4.3-4.3"></path></svg>
+            <input value="{{ pk.q }}" onInput="{{ pk.onQ }}" placeholder="Search" style="flex:1;min-width:0;height:100%;background:transparent;border:0;outline:none;font-size:16px">
+          </div>
+          <div style="display:flex;gap:6px;overflow-x:auto;margin:10px -16px 0;padding:0 16px 10px">
+            <sc-for list="{{ pk.chips }}" as="c" hint-placeholder-count="6"><button onClick="{{ c.go }}" style="flex:none;height:32px;padding:0 12px;border-radius:2px;font-size:12.5px;font-weight:600;background:{{ c.bg }};color:{{ c.fg }}">{{ c.l }}</button></sc-for>
+          </div>
+        </div>
+        <div style="overflow-y:auto;padding:0 16px;min-height:200px">
+          <sc-for list="{{ pk.items }}" as="it" hint-placeholder-count="6">
+            <button onClick="{{ it.go }}" style="width:100%;display:flex;align-items:center;gap:10px;padding:13px 0;border-top:1px solid var(--line);text-align:left">
+              <div style="flex:1;min-width:0"><div style="font-size:15px;font-weight:700">{{ it.name }}</div><div style="font-size:12px;color:var(--mute);margin-top:2px">{{ it.sub }}</div></div>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--acc-tx)" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg>
+            </button>
+          </sc-for>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ sheet.keypad }}" hint-placeholder-val="{{ false }}">
+        <div style="padding:6px 16px 0">
+          <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--mute)">{{ kp.label }}</span><button onClick="{{ closeSheet }}" style="height:40px;padding:0 10px;font-weight:700;font-size:14px;color:var(--mute)">Cancel</button></div>
+          <div style="text-align:center;font-stretch:var(--ns);font-weight:800;font-size:calc(110px * var(--nz));line-height:1;font-variant-numeric:tabular-nums;padding:6px 0 14px;color:{{ kp.col }}">{{ kp.display }}</div>
+          <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px">
+            <sc-for list="{{ kp.keys }}" as="k" hint-placeholder-count="12"><button onClick="{{ k.go }}" style="height:58px;border-radius:4px;background:var(--bg);font-family:'JetBrains Mono',monospace;font-size:22px;font-weight:600;opacity:{{ k.op }}" style-active="background:var(--s2)">{{ k.l }}</button></sc-for>
+          </div>
+          <button onClick="{{ kp.done }}" style="margin-top:8px;width:100%;height:58px;border-radius:4px;background:var(--acc);color:var(--acc-ink);font-stretch:var(--ns);font-weight:800;font-size:22px;text-transform:uppercase">Set</button>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ sheet.plates }}" hint-placeholder-val="{{ false }}">
+        <div style="padding:6px 16px 4px">
+          <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-stretch:var(--ns);font-weight:800;font-size:30px;text-transform:uppercase">Plate math</span><button onClick="{{ closeSheet }}" style="height:40px;padding:0 10px;font-weight:700;font-size:14px;color:var(--mute)">Done</button></div>
+          <div style="display:flex;align-items:baseline;gap:8px;margin-top:4px"><span style="font-stretch:var(--ns);font-weight:800;font-size:72px;line-height:1;font-variant-numeric:tabular-nums">{{ pl.total }}</span><span style="font-size:15px;color:var(--mute);font-weight:600">{{ unit }} total</span></div>
+          <div style="margin-top:18px;height:140px;display:flex;align-items:center;background:var(--bg);border-radius:4px;padding:0 16px;gap:3px">
+            <span style="width:60px;height:12px;background:var(--faint);border-radius:2px"></span>
+            <span style="width:10px;height:36px;background:var(--mute);border-radius:2px"></span>
+            <sc-for list="{{ pl.vis }}" as="p" hint-placeholder-count="3"><span style="width:{{ p.W }};height:{{ p.H }};background:{{ p.bg }};border-radius:3px;display:grid;place-items:center;font-family:'JetBrains Mono',monospace;font-size:9px;color:{{ p.fg }};writing-mode:vertical-rl">{{ p.l }}</span></sc-for>
+            <span style="flex:1;height:12px;background:var(--faint);border-radius:0 2px 2px 0;opacity:.6"></span>
+          </div>
+          <div style="margin-top:12px;display:flex;justify-content:space-between;font-size:14px"><span style="color:var(--mute)">Each side</span><span style="font-family:'JetBrains Mono',monospace;font-weight:700">{{ pl.txt }}</span></div>
+          <div style="margin-top:8px;display:flex;justify-content:space-between;font-size:14px"><span style="color:var(--mute)">Bar</span><span style="font-family:'JetBrains Mono',monospace">{{ pl.bar }}</span></div>
+          <sc-if value="{{ pl.warn }}" hint-placeholder-val="{{ false }}"><p style="margin:10px 0 0;font-size:13px;color:var(--danger)">{{ pl.warnTxt }}</p></sc-if>
+          <p style="margin:12px 0 0;font-size:12px;color:var(--faint)">Change your bar and plates in You → Training.</p>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ sheet.confirm }}" hint-placeholder-val="{{ false }}">
+        <div style="padding:10px 16px 4px">
+          <div style="font-stretch:var(--ns);font-weight:800;font-size:34px;line-height:.95;text-transform:uppercase">{{ cf.title }}</div>
+          <p style="font-size:15px;line-height:1.45;color:var(--mute);margin:10px 0 18px">{{ cf.body }}</p>
+          <button onClick="{{ cf.yes }}" style="width:100%;height:56px;border-radius:4px;background:var(--danger);color:#fff;font-weight:800;font-size:16px;text-transform:uppercase;letter-spacing:.04em">{{ cf.cta }}</button>
+          <button onClick="{{ closeSheet }}" style="margin-top:8px;width:100%;height:50px;border-radius:4px;background:var(--bg);font-weight:700;font-size:15px">Cancel</button>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ sheet.toRoutine }}" hint-placeholder-val="{{ false }}">
+        <div style="padding:6px 16px 4px">
+          <div style="font-stretch:var(--ns);font-weight:800;font-size:30px;text-transform:uppercase">Add to routine</div>
+          <div style="margin-top:10px">
+            <sc-for list="{{ tor.items }}" as="r" hint-placeholder-count="4">
+              <button onClick="{{ r.go }}" style="width:100%;display:flex;align-items:center;gap:10px;padding:14px 0;border-top:1px solid var(--line);text-align:left">
+                <div style="flex:1"><div style="font-size:16px;font-weight:700">{{ r.name }}</div><div style="font-size:12px;color:var(--mute);margin-top:2px">{{ r.meta }}</div></div>
+                <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:{{ r.col }}">{{ r.tag }}</span>
+              </button>
+            </sc-for>
+            <sc-if value="{{ tor.none }}" hint-placeholder-val="{{ false }}"><p style="color:var(--mute);font-size:14px">Create a routine in Plan first.</p></sc-if>
+          </div>
+        </div>
+      </sc-if>
+    </div>
+  </div>
+</sc-if>
+
+<!-- PR CELEBRATION -->
+<sc-if value="{{ cel.on }}" hint-placeholder-val="{{ false }}">
+  <button onClick="{{ closeCel }}" style="position:absolute;inset:0;z-index:50;background:var(--pr);color:#111;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;animation:os-fade .18s;text-align:center;padding:24px">
+    <span style="font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.2em;text-transform:uppercase">New personal record</span>
+    <span style="font-stretch:var(--ns);font-weight:800;font-size:calc(170px * var(--nz));line-height:.85;font-variant-numeric:tabular-nums;animation:os-pr .6s cubic-bezier(.34,1.4,.5,1)">{{ cel.e }}</span>
+    <span style="font-stretch:var(--ns);font-weight:800;font-size:26px;text-transform:uppercase">{{ cel.name }} · e1RM {{ unit }}</span>
+    <span style="font-size:14px;margin-top:12px;opacity:.75">{{ cel.sub }}</span>
+    <span style="font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.14em;margin-top:28px;opacity:.6">TAP TO CONTINUE</span>
+  </button>
+</sc-if>
+
+</div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;freshUser&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Demo&quot;},&quot;startTab&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;today&quot;,&quot;plan&quot;,&quot;library&quot;,&quot;trends&quot;,&quot;you&quot;],&quot;default&quot;:&quot;today&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Demo&quot;},&quot;numerals&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;condensed&quot;,&quot;standard&quot;],&quot;default&quot;:&quot;condensed&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Style&quot;}}">
+const LB = 0.45359237, DAY = 864e5, KEY = 'opensets.v2';
+const CAT = [
+  ['bench','Bench Press','Chest','Barbell',175,5,'Shoulder blades pinned, bar to the lower chest, feet driving into the floor.'],
+  ['squat','Back Squat','Quads','Barbell',245,10,'Brace before you descend. Knees track over toes, hit depth, drive up through mid-foot.'],
+  ['dead','Deadlift','Back','Barbell',315,10,'Bar over mid-foot, lats tight, push the floor away. Lock out with the glutes, not the lower back.'],
+  ['ohp','Overhead Press','Shoulders','Barbell',105,5,'Squeeze the glutes, press straight up, push your head through at the top.'],
+  ['row','Barbell Row','Back','Barbell',155,5,'Hinge to about 45°, pull to the lower ribs, control the way down.'],
+  ['rdl','Romanian Deadlift','Hamstrings','Barbell',205,10,'Soft knees, push the hips back until the hamstrings load, keep the bar close.'],
+  ['frontsquat','Front Squat','Quads','Barbell',185,10,'Elbows high, torso upright, sit down between your heels.'],
+  ['hipthrust','Hip Thrust','Glutes','Barbell',225,10,'Chin tucked, ribs down, full hip extension with a one-second squeeze.'],
+  ['curl','Barbell Curl','Biceps','Barbell',65,5,'Elbows pinned to your sides. No swinging.'],
+  ['skull','Skull Crusher','Triceps','Barbell',65,5,'Lower toward the forehead with elbows fixed, then extend fully.'],
+  ['incdb','Incline DB Press','Chest','Dumbbell',60,5,'Bench at 30°, dumbbells over the upper chest, deep stretch at the bottom.'],
+  ['dbbench','DB Bench Press','Chest','Dumbbell',65,5,'Dumbbells over the chest, elbows at ~45°, full range.'],
+  ['dbohp','DB Shoulder Press','Shoulders','Dumbbell',45,5,'Seated or standing, press up and slightly in, no arching.'],
+  ['dbrow','One-arm DB Row','Back','Dumbbell',70,5,'Hand on the bench, pull the elbow toward the hip.'],
+  ['gobletsquat','Goblet Squat','Quads','Dumbbell',70,5,'Dumbbell at the chest, elbows inside the knees at the bottom.'],
+  ['dbrdl','DB Romanian Deadlift','Hamstrings','Dumbbell',60,5,'Dumbbells slide down the thighs, hips back, flat back.'],
+  ['lunge','Walking Lunge','Quads','Dumbbell',40,5,'Long stride, back knee kisses the floor, drive through the front heel.'],
+  ['lateral','Lateral Raise','Shoulders','Dumbbell',20,2.5,'Lead with the elbows, stop at shoulder height, slow on the way down.'],
+  ['hammer','Hammer Curl','Biceps','Dumbbell',35,5,'Neutral grip, elbows still, squeeze at the top.'],
+  ['dbext','Overhead DB Extension','Triceps','Dumbbell',50,5,'Elbows point up, lower behind the head, extend fully.'],
+  ['pullup','Pull-up','Back','Bodyweight',0,5,'Dead hang to chin over bar. Weight is added load.'],
+  ['dip','Dip','Chest','Bodyweight',0,5,'Slight forward lean, shoulders below elbows, press to lockout.'],
+  ['latpd','Lat Pulldown','Back','Cable',130,5,'Pull the bar to the upper chest, elbows down and back.'],
+  ['cablerow','Seated Cable Row','Back','Cable',140,5,'Tall chest, pull to the belly button, pause.'],
+  ['pushdown','Triceps Pushdown','Triceps','Cable',55,5,'Elbows glued to your sides, full lockout.'],
+  ['facepull','Face Pull','Shoulders','Cable',45,5,'Rope to the eyes, elbows high, external rotation at the end.'],
+  ['crunch','Cable Crunch','Core','Cable',70,5,'Round the spine, bring the elbows to the knees.'],
+  ['legpress','Leg Press','Quads','Machine',360,10,'Feet shoulder-width, lower until the hips start to tuck, press through the heels.'],
+  ['legcurl','Leg Curl','Hamstrings','Machine',90,5,'Hips pinned, curl fully, slow negative.'],
+  ['calf','Standing Calf Raise','Calves','Machine',180,10,'Full stretch at the bottom, one-second pause at the top.']
+].map(([id,name,m,eq,base,inc,cue]) => ({ id, name, m, eq, base, inc, cue }));
+const CM = {}; CAT.forEach(c => { CM[c.id] = c; });
+const MUSCLES = ['All','Chest','Back','Shoulders','Quads','Hamstrings','Glutes','Biceps','Triceps','Calves','Core'];
+const SUB = { bench:'dbbench', squat:'gobletsquat', dead:'dbrdl', rdl:'dbrdl', row:'dbrow', ohp:'dbohp', frontsquat:'gobletsquat', hipthrust:'lunge', curl:'hammer', skull:'dbext', latpd:'pullup', cablerow:'dbrow', pushdown:'dbext', legpress:'gobletsquat', legcurl:'dbrdl', facepull:'lateral' };
+const SPLITS = {
+  full2: [['Full Body A',['squat','bench','row','rdl','lateral','curl']],['Full Body B',['dead','ohp','latpd','legpress','incdb','pushdown']]],
+  full3: [['Full Body A',['squat','bench','row','rdl','lateral','curl']],['Full Body B',['dead','ohp','latpd','legpress','incdb','pushdown']],['Full Body C',['frontsquat','incdb','cablerow','hipthrust','facepull','hammer']]],
+  ul4: [['Upper A',['bench','row','ohp','latpd','pushdown','curl']],['Lower A',['squat','rdl','legpress','legcurl','calf','crunch']],['Upper B',['ohp','incdb','pullup','cablerow','lateral','hammer']],['Lower B',['dead','frontsquat','hipthrust','lunge','legcurl','calf']]],
+  ul5: [['Upper A',['bench','row','ohp','latpd','pushdown','curl']],['Lower A',['squat','rdl','legpress','legcurl','calf','crunch']],['Upper B',['ohp','incdb','pullup','cablerow','lateral','hammer']],['Lower B',['dead','frontsquat','hipthrust','lunge','legcurl','calf']],['Arms & Delts',['dip','curl','skull','lateral','hammer','facepull']]]
+};
+const SPLIT_NAMES = { full2:'Full Body ×2', full3:'Full Body ×3', ul4:'Upper / Lower', ul5:'Upper / Lower + Arms' };
+const SCHEME = { strength:{ main:[4,3,5,180], acc:[3,6,8,120] }, muscle:{ main:[4,6,8,150], acc:[3,10,12,90] }, general:{ main:[3,8,10,120], acc:[3,10,15,75] } };
+const GOAL_L = { strength:'Strength', muscle:'Hypertrophy', general:'General fitness' };
+const PLATES = { lb:[45,35,25,10,5,2.5], kg:[25,20,15,10,5,2.5,1.25] };
+const ACCENTS = [['orange','Signal','#FF5A1F'],['volt','Volt','#C6F03A'],['teal','Teal','#1FE0C4'],['brass','Brass','#CDA35F']];
+const OBQ = [
+  { k:'goal', q:'What are you training for?', o:[['strength','Get stronger','Heavy compounds, low reps, long rest.'],['muscle','Build muscle','Moderate reps, more volume per muscle.'],['general','Stay fit','Balanced reps, shorter sessions.']] },
+  { k:'exp', q:'How long have you lifted?', o:[['new','Under 6 months','Fewer sets while you learn the lifts.'],['inter','6 months – 3 years','Standard volume and progression.'],['adv','3+ years','Full volume. Progress slows — that is normal.']] },
+  { k:'days', q:'Days per week?', o:[[2,'2 days','Full body, twice.'],[3,'3 days','Full body A / B / C.'],[4,'4 days','Upper / lower split.'],[5,'5 days','Upper / lower plus arms & delts.']] },
+  { k:'equip', q:'What equipment?', o:[['full','Full gym','Barbells, cables and machines.'],['barbell','Barbell + rack','Home gym with plates and dumbbells.'],['db','Dumbbells only','Barbell lifts swapped for dumbbell versions.']] },
+  { k:'len', q:'How long is a session?', o:[[45,'45 minutes','4 exercises.'],[60,'60 minutes','5 exercises.'],[75,'75+ minutes','6 exercises.']] }
+];
+const uid = () => Math.random().toString(36).slice(2, 10);
+const e1rm = (w, r) => (w <= 0 || r <= 0) ? 0 : r === 1 ? w : w * (1 + r / 30);
+const rt = (x, s) => Math.round(x / s) * s;
+const clock = s => { s = Math.max(0, Math.round(s)); const h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), ss = String(s % 60).padStart(2, '0'); return h ? `${h}:${String(m).padStart(2,'0')}:${ss}` : `${m}:${ss}`; };
+const sow = t => { const x = new Date(t); x.setHours(0,0,0,0); x.setDate(x.getDate() - ((x.getDay() + 6) % 7)); return x.getTime(); };
+const sod = t => { const x = new Date(t); x.setHours(0,0,0,0); return x.getTime(); };
+const fmtDate = (t, o) => new Date(t).toLocaleDateString(undefined, o);
+function rng(seed) { return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+function makeProgram(o) {
+  const key = o.days <= 2 ? 'full2' : o.days === 3 ? 'full3' : o.days === 4 ? 'ul4' : 'ul5';
+  const allowed = o.equip === 'full' ? null : o.equip === 'barbell' ? ['Barbell','Dumbbell','Bodyweight'] : ['Dumbbell','Bodyweight'];
+  const count = o.len === 45 ? 4 : o.len === 60 ? 5 : 6;
+  const sch = SCHEME[o.goal] || SCHEME.muscle;
+  const routines = SPLITS[key].map(([name, exs]) => {
+    const ids = [];
+    exs.forEach(id => { let x = id; while (x && allowed && !allowed.includes(CM[x].eq)) x = SUB[x]; if (x && !ids.includes(x)) ids.push(x); });
+    return { id: uid(), name, slots: ids.slice(0, count).map((ex, j) => { const s = j < 2 ? sch.main : sch.acc; return { ex, sets: Math.max(2, s[0] - (o.exp === 'new' ? 1 : 0)), lo: s[1], hi: s[2], rest: s[3] }; }) };
+  });
+  return { name: SPLIT_NAMES[key], goal: o.goal, days: o.days, routines };
+}
+function seedHistory(p, now) {
+  const R = rng(11), hist = [], n = p.routines.length;
+  const offs = ({ 2:[0,3], 3:[0,2,4], 4:[0,1,3,4], 5:[0,1,2,4,5] })[n] || [0,1,3,4,5,6].slice(0, n);
+  const mon = sow(now), weeks = 8, best = {};
+  for (let wk = weeks; wk >= 0; wk--) for (let i = 0; i < n; i++) {
+    const t = mon - wk * 7 * DAY + offs[i] * DAY + (17.5 + R() * 2) * 3600000;
+    if (t > now - 30 * 3600000) continue;
+    const pf = (weeks - wk) / weeks, sets = [];
+    p.routines[i].slots.forEach(sl => {
+      const c = CM[sl.ex]; const w = c.base ? rt(c.base * (0.84 + 0.16 * pf + (R() - .5) * 0.02), c.inc < 5 ? 2.5 : 5) : 0;
+      for (let k = 0; k < sl.sets; k++) {
+        let r = sl.lo + Math.floor(R() * (sl.hi - sl.lo + 1)); if (k === sl.sets - 1 && R() < .3) r = Math.max(sl.lo - 1, r - 1);
+        const e = e1rm(w, r); const pr = e > 0 && best[sl.ex] !== undefined && e > best[sl.ex]; if (e > (best[sl.ex] || 0)) best[sl.ex] = e;
+        sets.push({ ex: sl.ex, w, r, rpe: null, pr });
+      }
+    });
+    hist.push({ id: uid(), rid: p.routines[i].id, name: p.routines[i].name, date: t, dur: 46 + Math.round(R() * 24), sets });
+  }
+  return hist.sort((a, b) => b.date - a.date);
+}
+const DEF_SETTINGS = () => ({ units:'lb', mode:'dark', accent:'orange', rest:120, bar:{ lb:45, kg:20 }, platesOff:[] });
+function freshData() { return { v:2, settings: DEF_SETTINGS(), program: null, history: [], onboarded: false, session: null, created: Date.now() }; }
+function demoData(settings) { const d = freshData(); if (settings) d.settings = settings; d.program = makeProgram({ goal:'muscle', exp:'inter', days:4, equip:'full', len:60 }); d.history = seedHistory(d.program, Date.now()); d.onboarded = true; d.created = Date.now() - 60 * DAY; return d; }
+function lastFor(h, ex) { for (const s of h) { const ss = s.sets.filter(x => x.ex === ex); if (ss.length) return ss; } return null; }
+function prescribe(sl, h) {
+  const c = CM[sl.ex]; const L = lastFor(h, sl.ex);
+  if (!L) return { k:'new', w:c.base, r:sl.lo, delta:0 };
+  const w = Math.max(...L.map(x => x.w)); const reps = L.filter(x => x.w === w).map(x => x.r); const mn = Math.min(...reps);
+  if (mn >= sl.hi) return { k:'up', w: w + c.inc, r: sl.lo, delta: c.inc, lw: w, reps };
+  if (mn < sl.lo) return { k:'hold', w, r: sl.lo, delta: 0, lw: w, reps };
+  return { k:'build', w, r: Math.min(sl.hi, mn + 1), delta: 0, lw: w, reps };
+}
+function bestMap(h) { const b = {}; h.forEach(s => s.sets.forEach(x => { const e = e1rm(x.w, x.r); if (e > 0 && (!b[x.ex] || e > b[x.ex].e)) b[x.ex] = { e, w: x.w, r: x.r, t: s.date }; })); return b; }
+const dot = (x, y, r) => `M${(x - r).toFixed(1)} ${y.toFixed(1)}a${r} ${r} 0 1 0 ${2 * r} 0a${r} ${r} 0 1 0 ${-2 * r} 0`;
+
+class Component extends DCLogic {
+  constructor(...a) {
+    super(...a);
+    let d = null;
+    try { d = JSON.parse(localStorage.getItem(KEY)); } catch (e) {}
+    if (!d || !d.settings || !Array.isArray(d.history)) d = this.props.freshUser ? freshData() : demoData();
+    this.state = { data: d, tab: this.props.startTab || 'today', stack: [], sessionOpen: !!d.session, now: Date.now(), sheet: null, toast: null, cel: null, q: '', muscle: 'All', range: '12W', trEx: null, ob: { step:0, goal:'muscle', exp:'inter', days:4, equip:'full', len:60 } };
+    if (!d.onboarded && !d.program && this.props.freshUser) this.state.stack = [];
+  }
+  componentDidMount() {
+    this.iv = setInterval(() => {
+      const s = this.state.data.session;
+      if (!s) return;
+      const now = Date.now();
+      if (s.rest && !s.rest.buzzed && now >= s.rest.end) { try { navigator.vibrate && navigator.vibrate([200, 80, 200]); } catch (e) {} this.upd(d => { if (d.session && d.session.rest) d.session.rest.buzzed = true; }); }
+      this.setState({ now });
+    }, 1000);
+  }
+  componentWillUnmount() { clearInterval(this.iv); clearTimeout(this.tt); clearTimeout(this.ct); }
+  componentDidUpdate(pp, ps) {
+    if (ps.data !== this.state.data) { try { localStorage.setItem(KEY, JSON.stringify(this.state.data)); } catch (e) {} }
+    if (pp.freshUser !== this.props.freshUser) this.setState({ data: this.props.freshUser ? freshData() : demoData(this.state.data.settings), stack: [], sessionOpen: false, tab: 'today' });
+    if (pp.startTab !== this.props.startTab && this.props.startTab) this.setState({ tab: this.props.startTab, stack: [] });
+  }
+  upd(fn) { this.setState(st => { const d = JSON.parse(JSON.stringify(st.data)); fn(d, st); return { data: d }; }); }
+  toastMsg(msg, undo) { clearTimeout(this.tt); this.setState({ toast: { msg, undo: undo || null } }); this.tt = setTimeout(() => this.setState({ toast: null }), 3400); }
+  get S() { return this.state.data.settings; }
+  n(lb) { const v = this.S.units === 'kg' ? Math.round(lb * LB * 2) / 2 : Math.round(lb * 2) / 2; return String(Math.round(v * 10) / 10); }
+  wr(lb) { return lb > 0 ? this.n(lb) : 'BW'; }
+  vol(lb) { const v = this.S.units === 'kg' ? lb * LB : lb; return v >= 10000 ? (v / 1000).toFixed(v >= 100000 ? 0 : 1) + 'k' : String(Math.round(v)); }
+  push(v) { this.setState(st => ({ stack: [...st.stack, v] })); }
+  back() { this.setState(st => ({ stack: st.stack.slice(0, -1) })); }
+  sheet(s) { this.setState({ sheet: s }); }
+  // --- session
+  mkEx(sl, h) { const p = prescribe(sl, h); return { key: uid(), ex: sl.ex, sets: sl.sets, lo: sl.lo, hi: sl.hi, rest: sl.rest, p, done: [] }; }
+  draftFor(e) { return { w: e.done.length ? e.done[e.done.length - 1].w : e.p.w, r: e.p.r, rpe: null }; }
+  startRoutine(rid) {
+    const d = this.state.data;
+    if (d.session) { this.setState({ sessionOpen: true, stack: [] }); return; }
+    const r = d.program && d.program.routines.find(x => x.id === rid);
+    if (!r || !r.slots.length) { this.toastMsg('Add exercises to this routine first'); return; }
+    this.upd(dd => { const exs = r.slots.map(sl => this.mkEx(sl, dd.history)); dd.session = { id: uid(), rid, name: r.name, start: Date.now(), cur: 0, exs, draft: this.draftFor(exs[0]), rest: null }; });
+    this.setState({ sessionOpen: true, stack: [], now: Date.now() });
+  }
+  setDraft(fn) { this.upd(d => { if (d.session) fn(d.session.draft, d.session.exs[d.session.cur]); }); }
+  stepLb(e) { const small = CM[e.ex].inc < 5; return this.S.units === 'kg' ? (small ? 1.25 : 2.5) / LB : (small ? 2.5 : 5); }
+  adjW(sign) { const s = this.state.data.session; const e = s.exs[s.cur]; const kg = this.S.units === 'kg';
+    this.setDraft(dr => { if (kg) { const k = Math.max(0, rt(dr.w * LB, 0.5) + sign * (CM[e.ex].inc < 5 ? 1.25 : 2.5)); dr.w = k / LB; } else dr.w = Math.max(0, rt(dr.w, 2.5) + sign * this.stepLb(e)); }); }
+  logSet() {
+    const d = this.state.data, s = d.session; if (!s) return;
+    const i = s.cur, ex = s.exs[i]; if (ex.done.length >= ex.sets) return;
+    const { w, r, rpe } = s.draft; if (r <= 0) { this.toastMsg('Reps must be at least 1'); return; }
+    const b = bestMap(d.history)[ex.ex]; let prev = b ? b.e : 0;
+    s.exs.forEach(e => { if (e.ex === ex.ex) e.done.forEach(x => { prev = Math.max(prev, e1rm(x.w, x.r)); }); });
+    const est = e1rm(w, r); const pr = !!b && est > prev + 0.05;
+    this.upd(dd => { const ss = dd.session, e = ss.exs[i]; e.done.push({ w, r, rpe, pr, t: Date.now() });
+      ss.rest = { end: Date.now() + e.rest * 1000, total: e.rest, buzzed: false };
+      if (e.done.length >= e.sets) { const nx = ss.exs.findIndex((q, j) => j > i && q.done.length < q.sets); if (nx >= 0) { ss.cur = nx; ss.draft = this.draftFor(ss.exs[nx]); } else ss.draft = { w, r: e.p.r, rpe: null }; }
+      else ss.draft = { w, r: e.p.r, rpe: null };
+    });
+    this.setState({ now: Date.now() });
+    this.toastMsg(`Set ${ex.done.length + 1} logged · ${this.wr(w)} × ${r}`, { i });
+    if (pr) { clearTimeout(this.ct); this.setState({ cel: { name: CM[ex.ex].name, e: this.n(est), sub: `${this.wr(w)} × ${r} · previous best ${this.n(prev)}` } }); this.ct = setTimeout(() => this.setState({ cel: null }), 3600); }
+  }
+  undo() { const t = this.state.toast; if (!t || !t.undo) return; const i = t.undo.i;
+    this.upd(d => { const s = d.session; if (!s) return; const e = s.exs[i]; const last = e.done.pop(); if (last) { s.cur = i; s.draft = { w: last.w, r: last.r, rpe: last.rpe }; s.rest = null; } });
+    clearTimeout(this.tt); this.setState({ toast: null, cel: null }); }
+  goEx(i) { this.upd(d => { const s = d.session; s.cur = i; s.draft = this.draftFor(s.exs[i]); }); }
+  finishFlow() { this.push({ t: 'summary', live: true }); }
+  saveWorkout() {
+    const s = this.state.data.session; if (!s) return;
+    const sets = []; s.exs.forEach(e => e.done.forEach(x => sets.push({ ex: e.ex, w: x.w, r: x.r, rpe: x.rpe, pr: x.pr })));
+    if (!sets.length) { this.discard(); return; }
+    this.upd(d => { d.history.unshift({ id: s.id, rid: s.rid, name: s.name, date: s.start, dur: Math.max(1, Math.round((Date.now() - s.start) / 60000)), sets }); d.session = null; });
+    this.setState({ stack: [], sessionOpen: false, tab: 'today' }); this.toastMsg('Workout saved — next session updated');
+  }
+  discard() { this.upd(d => { d.session = null; }); this.setState({ stack: [], sessionOpen: false, sheet: null, tab: 'today' }); this.toastMsg('Workout discarded'); }
+  pick(id) {
+    const sh = this.state.sheet; if (!sh) return;
+    if (sh.mode === 'swap' || sh.mode === 'add') {
+      this.upd(d => { const s = d.session; const cur = s.exs[s.cur]; const sl = { ex: id, sets: cur ? cur.sets : 3, lo: cur ? cur.lo : 8, hi: cur ? cur.hi : 12, rest: cur ? cur.rest : d.settings.rest };
+        const ne = this.mkEx(sh.mode === 'add' ? { ex: id, sets: 3, lo: 8, hi: 12, rest: d.settings.rest } : sl, d.history);
+        if (sh.mode === 'swap' && cur && !cur.done.length) s.exs[s.cur] = ne; else { s.exs.splice(s.cur + 1, 0, ne); s.cur = s.cur + 1; }
+        s.draft = this.draftFor(s.exs[s.cur]); });
+      this.toastMsg(sh.mode === 'swap' ? `Swapped to ${CM[id].name}` : `Added ${CM[id].name}`);
+    } else if (sh.mode === 'builder') { this.upd(d => { const r = d.program.routines.find(x => x.id === sh.rid); r.slots.push({ ex: id, sets: 3, lo: 8, hi: 12, rest: d.settings.rest }); }); this.toastMsg(`Added ${CM[id].name}`); }
+    this.setState({ sheet: null });
+  }
+  addToRoutine(rid, ex) { this.upd(d => { const r = d.program.routines.find(x => x.id === rid); r.slots.push({ ex, sets: 3, lo: 8, hi: 12, rest: d.settings.rest }); }); this.setState({ sheet: null }); this.toastMsg(`Added to ${this.state.data.program.routines.find(x => x.id === rid).name}`); }
+  slotOp(rid, i, op) {
+    this.upd(d => { const r = d.program.routines.find(x => x.id === rid); const s = r.slots[i]; if (!s) return;
+      if (op === 'sets+') s.sets = Math.min(10, s.sets + 1); if (op === 'sets-') s.sets = Math.max(1, s.sets - 1);
+      if (op === 'hi+') s.hi = Math.min(30, s.hi + 1); if (op === 'hi-') s.hi = Math.max(s.lo, s.hi - 1);
+      if (op === 'lo+') { s.lo = Math.min(30, s.lo + 1); if (s.hi < s.lo) s.hi = s.lo; } if (op === 'lo-') s.lo = Math.max(1, s.lo - 1);
+      if (op === 'rest+') s.rest = Math.min(600, s.rest + 15); if (op === 'rest-') s.rest = Math.max(15, s.rest - 15);
+      if (op === 'up' && i > 0) { r.slots.splice(i, 1); r.slots.splice(i - 1, 0, s); }
+      if (op === 'down' && i < r.slots.length - 1) { r.slots.splice(i, 1); r.slots.splice(i + 1, 0, s); }
+      if (op === 'remove') r.slots.splice(i, 1); });
+  }
+  addRoutine() { const id = uid(); this.upd(d => { if (!d.program) d.program = { name: 'Custom plan', goal: 'general', days: 0, routines: [] }; d.program.routines.push({ id, name: 'New routine', slots: [] }); d.onboarded = true; }); this.setState(st => ({ stack: [...st.stack, { t: 'builder', rid: id }] })); }
+  deleteRoutine(rid) { this.upd(d => { d.program.routines = d.program.routines.filter(r => r.id !== rid); }); this.setState(st => ({ sheet: null, stack: st.stack.slice(0, -1) })); this.toastMsg('Routine deleted'); }
+  exportData() { const d = this.state.data; const blob = new Blob([JSON.stringify({ app: 'opensets', v: 2, exportedAt: new Date().toISOString(), settings: d.settings, program: d.program, history: d.history }, null, 1)], { type: 'application/json' });
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `opensets-backup-${new Date().toISOString().slice(0,10)}.json`; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 2000); this.toastMsg('Backup downloaded'); }
+  importData(ev) { const f = ev.target.files && ev.target.files[0]; if (!f) return; const rd = new FileReader();
+    rd.onload = () => { try { const j = JSON.parse(rd.result); if (!Array.isArray(j.history)) throw 0; this.upd(d => { d.history = j.history; d.program = j.program || d.program; d.settings = { ...d.settings, ...(j.settings || {}) }; d.onboarded = true; }); this.toastMsg(`Imported ${j.history.length} workouts`); } catch (e) { this.toastMsg('That file is not an OpenSets backup'); } };
+    rd.readAsText(f); ev.target.value = ''; }
+  obNext() { const ob = this.state.ob; if (ob.step < OBQ.length) { this.setState({ ob: { ...ob, step: ob.step + 1 } }); return; }
+    const p = makeProgram(ob); this.upd(d => { d.program = p; d.onboarded = true; }); this.setState({ stack: [], tab: 'today' }); this.toastMsg(`${p.name} plan ready`); }
+
+  renderVals() {
+    const st = this.state, d = st.data, S = d.settings, h = d.history, now = st.now, U = S.units;
+    const n = v => this.n(v), sess = d.session;
+    const top = st.stack[st.stack.length - 1] || null;
+    const inSess = !!sess && st.sessionOpen && !top;
+    const tabScr = !top && !inSess;
+    const scr = { today: tabScr && st.tab === 'today', plan: tabScr && st.tab === 'plan', library: tabScr && st.tab === 'library', trends: tabScr && st.tab === 'trends', you: tabScr && st.tab === 'you', session: inSess, summary: !!top && top.t === 'summary', detail: !!top && top.t === 'detail', builder: !!top && top.t === 'builder', onboard: !!top && top.t === 'onboard' };
+    const tb = {}; ['today','plan','library','trends','you'].forEach(id => { const on = st.tab === id; tb[id] = { col: on ? 'var(--ink)' : 'var(--faint)', bar: on ? 'var(--acc)' : 'transparent', go: () => this.setState({ tab: id, stack: [] }) }; });
+    const bests = bestMap(h);
+    const prog = d.program, routines = prog ? prog.routines : [];
+    const lastRidIdx = h.length ? routines.findIndex(r => r.id === h[0].rid) : -1;
+    const nextIdx = routines.length ? (lastRidIdx + 1) % routines.length : -1;
+    const estMin = r => Math.round(r.slots.reduce((m, s) => m + s.sets * (s.rest + 40), 0) / 60);
+    const exList = r => r.slots.map(s => CM[s.ex].name).join(' · ');
+    const reason = (p, e) => { const reps = p.reps ? p.reps.join('/') : '';
+      if (p.k === 'new') return 'First time on this lift. Start conservative — next session is calibrated from what you log today.';
+      if (p.k === 'up') return `Last time ${reps} at ${this.wr(p.lw)}. Every set hit ${e.hi} → +${n(p.delta)} ${U}.`;
+      if (p.k === 'hold') return `Last time ${reps} at ${this.wr(p.lw)}, under ${e.lo}. Hold the weight and own the reps.`;
+      return `Last time ${reps} at ${this.wr(p.lw)}. Aim for ${p.r} before adding load (${e.lo}–${e.hi} range).`; };
+    const sessBar = sess ? { name: sess.name, elapsed: clock((now - sess.start) / 1000), ex: CM[sess.exs[sess.cur].ex].name } : { name: '', elapsed: '', ex: '' };
+
+    // today
+    const weekStart = sow(now), weekSess = h.filter(s => s.date >= weekStart);
+    const trainedDays = new Set(h.filter(s => s.date >= weekStart).map(s => sod(s.date)));
+    const week = ['M','T','W','T','F','S','S'].map((l, i) => { const t = weekStart + i * DAY; const done = trainedDays.has(sod(t)); const isToday = sod(now) === t;
+      return { l, bg: done ? 'var(--acc)' : 'transparent', bd: done ? 'var(--acc)' : isToday ? 'var(--ink)' : 'var(--line2)', fg: isToday ? 'var(--ink)' : 'var(--faint)' }; });
+    let streak = 0; for (let w = 0; w < 60; w++) { const a = weekStart - w * 7 * DAY, b = a + 7 * DAY; if (h.some(s => s.date >= a && s.date < b)) streak++; else if (w > 0) break; }
+    const vol7lb = h.filter(s => s.date >= now - 7 * DAY).reduce((m, s) => m + s.sets.reduce((a, x) => a + x.w * x.r, 0), 0);
+    let lastPr = null; for (const s of h) { const x = s.sets.slice().reverse().find(x => x.pr); if (x) { lastPr = { x, s }; break; } }
+    const nr = nextIdx >= 0 ? routines[nextIdx] : null;
+    const today = {
+      date: fmtDate(now, { weekday: 'long', month: 'short', day: 'numeric' }),
+      resume: !!sess, empty: !prog || !routines.length, hasNext: !!nr && !sess, canStart: !!nr && !sess && nr.slots.length > 0,
+      next: nr ? { name: nr.name, day: nextIdx + 1, of: routines.length, min: estMin(nr), items: nr.slots.map(sl => { const p = prescribe(sl, h); return { name: CM[sl.ex].name, w: this.wr(p.w), unit: p.w > 0 ? U : '', scheme: `${sl.sets}×${p.r}`, up: p.delta > 0, delta: `+${n(p.delta)}` }; }) } : { items: [] },
+      hasHistory: h.length > 0, week, weekDone: weekSess.length, weekTarget: routines.length || 3, streak, vol7: this.vol(vol7lb), volUnit: `${U} lifted`,
+      pr: lastPr ? { val: n(e1rm(lastPr.x.w, lastPr.x.r)), sub: `${CM[lastPr.x.ex].name.split(' ').slice(-1)[0]} · ${Math.max(0, Math.floor((now - lastPr.s.date) / DAY))}d ago` } : { val: '—', sub: 'none yet' },
+      recent: h.slice(0, 4).map(s => { const prs = s.sets.filter(x => x.pr).length; return { day: fmtDate(s.date, { day: 'numeric' }), name: s.name, meta: `${fmtDate(s.date, { weekday: 'short', month: 'short' })} · ${s.dur} min · ${s.sets.length} sets · ${this.vol(s.sets.reduce((a, x) => a + x.w * x.r, 0))} ${U}`, hasPr: prs > 0, prs, go: () => this.push({ t: 'summary', id: s.id }) }; })
+    };
+
+    // plan
+    const plan = { name: prog ? prog.name : 'No plan', meta: prog ? `${GOAL_L[prog.goal] || 'Custom'} · ${routines.length} days / week` : 'Get started', none: !routines.length,
+      routines: routines.map((r, i) => ({ num: String(i + 1).padStart(2, '0'), name: r.name, isNext: i === nextIdx, bd: i === nextIdx ? 'var(--acc)' : 'transparent', numCol: i === nextIdx ? 'var(--acc-tx)' : 'var(--faint)', meta: `${r.slots.length} exercises · ~${estMin(r)} min`, list: exList(r) || 'Empty — tap Edit to add exercises', startLabel: sess && sess.rid === r.id ? 'Resume' : 'Start', edit: () => this.push({ t: 'builder', rid: r.id }), start: () => this.startRoutine(r.id) })) };
+
+    // library
+    const qq = st.q.trim().toLowerCase();
+    const libItems = CAT.filter(c => (st.muscle === 'All' || c.m === st.muscle) && (!qq || c.name.toLowerCase().includes(qq) || c.m.toLowerCase().includes(qq) || c.eq.toLowerCase().includes(qq)));
+    const chipsFor = (cur, set) => MUSCLES.map(m => ({ l: m, bg: m === cur ? 'var(--ink)' : 'var(--s1)', fg: m === cur ? 'var(--bg)' : 'var(--mute)', go: () => set(m) }));
+    const lib = { count: CAT.length, hasQ: !!st.q, none: !libItems.length, chips: chipsFor(st.muscle, m => this.setState({ muscle: m })),
+      items: libItems.map(c => ({ name: c.name, sub: `${c.m} · ${c.eq}`, best: bests[c.id] ? n(bests[c.id].e) : '—', bestLbl: bests[c.id] ? `E1RM ${U.toUpperCase()}` : 'NOT LOGGED', go: () => this.push({ t: 'detail', id: c.id }) })) };
+
+    // charts
+    const chart = (ex, from) => {
+      const pts = h.filter(s => s.date >= from).slice().reverse().map(s => { const ss = s.sets.filter(x => x.ex === ex && x.w > 0); if (!ss.length) return null; let v = 0, pr = false; ss.forEach(x => { v = Math.max(v, e1rm(x.w, x.r)); if (x.pr) pr = true; }); return { t: s.date, v, pr }; }).filter(Boolean);
+      if (pts.length < 2) return { ok: false, no: true, pts };
+      const W = 350, H = 170, t0 = pts[0].t, t1 = pts[pts.length - 1].t; let mn = Math.min(...pts.map(p => p.v)), mx = Math.max(...pts.map(p => p.v)); const pad = Math.max((mx - mn) * 0.18, 5); const lo = mn - pad, hi = mx + pad;
+      const X = t => 6 + (t - t0) / Math.max(1, t1 - t0) * (W - 12), Y = v => H - 6 - (v - lo) / (hi - lo) * (H - 18);
+      const line = pts.map((p, i) => (i ? 'L' : 'M') + X(p.t).toFixed(1) + ' ' + Y(p.v).toFixed(1)).join(' ');
+      const tv = [0.2, 0.5, 0.8].map(f => lo + (hi - lo) * f);
+      const lp = pts[pts.length - 1];
+      return { ok: true, no: false, pts, line, area: `${line} L${X(t1).toFixed(1)} ${H} L${X(t0).toFixed(1)} ${H} Z`, grid: tv.map(v => `M0 ${Y(v).toFixed(1)}H${W}`).join(''),
+        pr: pts.filter(p => p.pr).map(p => dot(X(p.t), Y(p.v), 4.5)).join('') || 'M0 0', last: dot(X(lp.t), Y(lp.v), 5.5),
+        ticks: tv.map(v => ({ top: (Y(v) / H * 100).toFixed(1) + '%', l: n(v) })), from: fmtDate(t0, { month: 'short', day: 'numeric' }), to: fmtDate(t1, { month: 'short', day: 'numeric' }) };
+    };
+
+    // trends
+    const rangeDays = { '4W': 28, '12W': 84, 'ALL': 100000 }[st.range];
+    const from = now - rangeDays * DAY;
+    const freq = {}; h.forEach(s => { const seen = new Set(); s.sets.forEach(x => { if (x.w > 0 && !seen.has(x.ex)) { seen.add(x.ex); freq[x.ex] = (freq[x.ex] || 0) + 1; } }); });
+    const lifts = Object.keys(freq).filter(k => freq[k] >= 2).sort((a, b) => freq[b] - freq[a]).slice(0, 8);
+    const trEx = lifts.includes(st.trEx) ? st.trEx : lifts[0];
+    const tc = trEx ? chart(trEx, from) : { ok: false, no: true, pts: [] };
+    const inRange = h.filter(s => s.date >= from);
+    const nWeeks = st.range === '4W' ? 4 : st.range === '12W' ? 12 : Math.min(26, Math.max(4, Math.ceil((now - (h.length ? h[h.length - 1].date : now)) / (7 * DAY)) + 1));
+    const weeksV = []; for (let w = nWeeks - 1; w >= 0; w--) { const a = weekStart - w * 7 * DAY; weeksV.push({ a, v: h.filter(s => s.date >= a && s.date < a + 7 * DAY).reduce((m, s) => m + s.sets.reduce((q, x) => q + x.w * x.r, 0), 0) }); }
+    const vmax = Math.max(1, ...weeksV.map(w => w.v));
+    const prFeed = []; inRange.forEach(s => s.sets.forEach(x => { if (x.pr) prFeed.push({ x, s }); }));
+    const cur = tc.pts.length ? tc.pts[tc.pts.length - 1].v : (trEx && bests[trEx] ? bests[trEx].e : 0);
+    const dv = tc.pts.length >= 2 ? tc.pts[tc.pts.length - 1].v - tc.pts[0].v : 0;
+    const tr = { has: lifts.length > 0, empty: !lifts.length, meta: `${h.length} workouts logged`, exName: trEx ? CM[trEx].name : '', cur: cur ? n(cur) : '—', chart: tc,
+      delta: dv ? `${dv > 0 ? '+' : '−'}${n(Math.abs(dv))} ${U} in ${st.range === 'ALL' ? 'all time' : st.range}` : '', deltaCol: dv >= 0 ? 'var(--ok)' : 'var(--danger)',
+      ranges: ['4W','12W','ALL'].map(r => ({ l: r, bg: r === st.range ? 'var(--ink)' : 'transparent', fg: r === st.range ? 'var(--bg)' : 'var(--mute)', go: () => this.setState({ range: r }) })),
+      lifts: lifts.map(id => ({ l: CM[id].name, bg: id === trEx ? 'var(--acc)' : 'var(--s1)', fg: id === trEx ? 'var(--acc-ink)' : 'var(--mute)', go: () => this.setState({ trEx: id }) })),
+      totals: [{ l: 'Sessions', v: inRange.length }, { l: 'Sets', v: inRange.reduce((m, s) => m + s.sets.length, 0) }, { l: `Volume ${U}`, v: this.vol(inRange.reduce((m, s) => m + s.sets.reduce((q, x) => q + x.w * x.r, 0), 0)) }],
+      vol: weeksV.map((w, i) => ({ h: Math.max(2, w.v / vmax * 100).toFixed(1) + '%', bg: i === weeksV.length - 1 ? 'var(--acc)' : 'var(--s2)' })), volUnit: `${U} × reps`,
+      volFrom: fmtDate(weeksV[0].a, { month: 'short', day: 'numeric' }), volNow: this.vol(weeksV[weeksV.length - 1].v),
+      prs: prFeed.slice(0, 6).map(({ x, s }) => ({ name: CM[x.ex].name, sub: `${this.wr(x.w)} × ${x.r} · ${fmtDate(s.date, { month: 'short', day: 'numeric' })}`, val: n(e1rm(x.w, x.r)), go: () => this.push({ t: 'detail', id: x.ex }) })), noPrs: !prFeed.length };
+
+    // you
+    const totalVol = h.reduce((m, s) => m + s.sets.reduce((q, x) => q + x.w * x.r, 0), 0);
+    const seg = (cur, opts, set) => opts.map(([v, l]) => ({ l, bg: cur === v ? 'var(--ink)' : 'transparent', fg: cur === v ? 'var(--bg)' : 'var(--mute)', go: () => set(v) }));
+    const setS = fn => this.upd(dd => fn(dd.settings));
+    const you = { stats: [{ l: 'Workouts', v: h.length }, { l: `Lifted ${U}`, v: this.vol(totalVol) }, { l: 'PRs', v: h.reduce((m, s) => m + s.sets.filter(x => x.pr).length, 0) }],
+      units: seg(U, [['lb','Pounds (lb)'],['kg','Kilograms (kg)']], v => setS(s => { s.units = v; })),
+      modes: seg(S.mode, [['dark','Dark'],['light','Light']], v => setS(s => { s.mode = v; })),
+      accents: ACCENTS.map(([id, l, hex]) => ({ l, hex, bd: S.accent === id ? 'var(--ink)' : 'transparent', go: () => setS(s => { s.accent = id; }) })),
+      rest: clock(S.rest),
+      bars: (U === 'kg' ? [[20,'20 kg'],[15,'15 kg']] : [[45,'45 lb'],[35,'35 lb']]).map(([v, l]) => ({ l, bg: S.bar[U] === v ? 'var(--ink)' : 'var(--s2)', fg: S.bar[U] === v ? 'var(--bg)' : 'var(--mute)', go: () => setS(s => { s.bar[U] = v; }) })),
+      plates: PLATES[U].map(v => { const k = `${U}:${v}`, off = S.platesOff.includes(k); return { l: String(v), bg: off ? 'transparent' : 'var(--ink)', fg: off ? 'var(--faint)' : 'var(--bg)', go: () => setS(s => { s.platesOff = off ? s.platesOff.filter(x => x !== k) : [...s.platesOff, k]; }) }; }) };
+
+    // plates
+    const plateCalc = lb => { const total = U === 'kg' ? Math.round(lb * LB * 2) / 2 : Math.round(lb * 2) / 2; const bar = S.bar[U]; const inv = PLATES[U].filter(v => !S.platesOff.includes(`${U}:${v}`));
+      let per = (total - bar) / 2; const list = []; if (per > 0) inv.forEach(p => { while (per >= p - 1e-6) { list.push(p); per -= p; } });
+      const maxP = PLATES[U][0];
+      return { total: String(total), list, rem: Math.max(0, per), below: total < bar, bar: `${bar} ${U}`, txt: total < bar ? 'Below bar weight' : list.length ? list.join(' + ') : 'Empty bar',
+        vis: list.map(p => { const big = p >= maxP * 0.5; return { w: (big ? 7 : 5) + 'px', h: Math.round(10 + 20 * p / maxP) + 'px', W: (big ? 22 : 15) + 'px', H: Math.round(34 + 96 * p / maxP) + 'px', bg: big ? 'var(--acc)' : 'var(--ink)', fg: big ? 'var(--acc-ink)' : 'var(--bg)', l: String(p) }; }) }; };
+
+    // session
+    let ses = { strip: [], rows: [] }, act = { rpe: [], plates: { vis: [] } }, rest = { on: false }, cta = { label: '', go: () => {} };
+    if (sess) {
+      const ex = sess.exs[sess.cur], c = CM[ex.ex], dr = sess.draft, exDone = ex.done.length >= ex.sets;
+      const rows = []; const tot = Math.max(ex.sets, ex.done.length);
+      for (let k = 0; k < tot; k++) {
+        if (k < ex.done.length) { const x = ex.done[k]; const missed = x.r < ex.lo; rows.push({ k: k + 1, done: true, w: this.wr(x.w), r: x.r, rpe: x.rpe ? '@' + x.rpe : '', tag: x.pr ? 'PR' : missed ? 'Missed' : 'Done', tagCol: x.pr ? 'var(--pr)' : missed ? 'var(--danger)' : 'var(--acc-tx)', bd: x.pr ? 'var(--pr)' : missed ? 'var(--danger)' : 'transparent' }); }
+        else if (k === ex.done.length) rows.push({ k: k + 1, active: true });
+        else rows.push({ k: k + 1, up: true, w: this.wr(dr.w), r: ex.p.r });
+      }
+      const nx = sess.exs.findIndex((q, j) => j !== sess.cur && q.done.length < q.sets);
+      const setsDone = sess.exs.reduce((m, e) => m + e.done.length, 0);
+      ses = { name: sess.name, elapsed: clock((now - sess.start) / 1000) + ` · ${setsDone} sets`, exName: c.name, exMeta: `${sess.cur + 1} / ${sess.exs.length} · ${c.m}`, range: `${ex.sets}×${ex.lo}–${ex.hi} · rest ${clock(ex.rest)}`, reason: reason(ex.p, ex), exDone, rows,
+        strip: sess.exs.map((e, i) => { const done = e.done.length >= e.sets, on = i === sess.cur; return { n: done ? '✓' : String(i + 1), name: CM[e.ex].name, bg: on ? 'var(--ink)' : done ? 'var(--s2)' : 'var(--s1)', fg: on ? 'var(--bg)' : done ? 'var(--acc-tx)' : 'var(--mute)', go: () => this.goEx(i) }; }) };
+      const pc = plateCalc(dr.w);
+      act = { sets: ex.sets, target: `${ex.p.r} reps`, w: n(dr.w), r: String(dr.r), barbell: c.eq === 'Barbell', plates: pc,
+        wUp: () => this.adjW(1), wDown: () => this.adjW(-1), rUp: () => this.setDraft(x => { x.r = Math.min(100, x.r + 1); }), rDown: () => this.setDraft(x => { x.r = Math.max(0, x.r - 1); }),
+        editW: () => this.sheet({ kind: 'keypad', field: 'w', buf: '' }), editR: () => this.sheet({ kind: 'keypad', field: 'r', buf: '' }),
+        rpe: [6, 7, 8, 9, 10].map(v => ({ l: String(v), bg: dr.rpe === v ? 'var(--acc)' : 'var(--bg)', fg: dr.rpe === v ? 'var(--acc-ink)' : 'var(--mute)', go: () => this.setDraft(x => { x.rpe = x.rpe === v ? null : v; }) })) };
+      if (sess.rest) { const left = (sess.rest.end - now) / 1000, over = left <= 0;
+        rest = { on: true, left: over ? '+' + clock(-left) : clock(left), lbl: over ? 'GO' : 'REST', pct: over ? '100%' : Math.min(100, (1 - left / sess.rest.total) * 100).toFixed(1) + '%', bg: over ? 'var(--ink)' : 'var(--s1)', fg: over ? 'var(--bg)' : 'var(--ink)', cta: over ? 'Hide' : 'Skip' }; }
+      cta = !exDone ? { label: `Log set ${ex.done.length + 1} · ${this.wr(dr.w)} × ${dr.r}`, go: () => this.logSet() } : nx >= 0 ? { label: `Next: ${CM[sess.exs[nx].ex].name}`, go: () => this.goEx(nx) } : { label: 'Finish workout', go: () => this.finishFlow() };
+    }
+
+    // summary
+    let sum = { stats: [], exs: [] };
+    if (scr.summary) {
+      const src = top.live ? (sess ? { name: sess.name, date: sess.start, dur: Math.max(1, Math.round((now - sess.start) / 60000)), groups: sess.exs.filter(e => e.done.length).map(e => ({ ex: e.ex, sets: e.done })) } : null)
+        : (() => { const s = h.find(x => x.id === top.id); if (!s) return null; const g = []; s.sets.forEach(x => { let G = g.find(q => q.ex === x.ex); if (!G) { G = { ex: x.ex, sets: [] }; g.push(G); } G.sets.push(x); }); return { name: s.name, date: s.date, dur: s.dur, groups: g }; })();
+      if (src) { const all = src.groups.flatMap(g => g.sets); const prs = all.filter(x => x.pr).length;
+        sum = { live: !!top.live, title: top.live ? 'Nice work.' : src.name, when: top.live ? `${src.name} · ${fmtDate(src.date, { weekday: 'long' })}` : fmtDate(src.date, { weekday: 'long', month: 'short', day: 'numeric' }), empty: !all.length, saveLabel: all.length ? 'Save workout' : 'Close workout',
+          stats: [{ l: 'Time', v: `${src.dur}m`, col: 'var(--ink)' }, { l: 'Sets', v: all.length, col: 'var(--ink)' }, { l: `Volume ${U}`, v: this.vol(all.reduce((m, x) => m + x.w * x.r, 0)), col: 'var(--ink)' }, { l: 'Records', v: prs, col: prs ? 'var(--pr)' : 'var(--ink)' }],
+          exs: src.groups.map(g => ({ name: CM[g.ex].name, pr: g.sets.some(x => x.pr), line: g.sets.map(x => `${this.wr(x.w)}×${x.r}`).join('  ·  ') })) }; }
+    }
+
+    // detail
+    let det = { stats: [], hist: [], chart: { ok: false } };
+    if (scr.detail) { const c = CM[top.id], b = bests[c.id]; const sessions = h.filter(s => s.sets.some(x => x.ex === c.id)); const lastS = sessions[0] && sessions[0].sets.filter(x => x.ex === c.id);
+      const topSet = lastS ? lastS.reduce((a, x) => x.w > a.w || (x.w === a.w && x.r > a.r) ? x : a, lastS[0]) : null;
+      det = { name: c.name, sub: `${c.m} · ${c.eq}`, cue: c.cue, chart: chart(c.id, 0), noHist: !sessions.length,
+        stats: [{ l: `Best e1RM`, v: b ? n(b.e) : '—' }, { l: 'Last top set', v: topSet ? `${this.wr(topSet.w)}×${topSet.r}` : '—' }, { l: 'Sessions', v: sessions.length }],
+        hist: sessions.slice(0, 6).map(s => { const ss = s.sets.filter(x => x.ex === c.id); return { when: `${fmtDate(s.date, { weekday: 'short', month: 'short', day: 'numeric' })} · ${s.name}`, line: ss.map(x => `${this.wr(x.w)}×${x.r}`).join(' · '), e: n(Math.max(...ss.map(x => e1rm(x.w, x.r)))), pr: ss.some(x => x.pr) }; }),
+        addLabel: routines.length ? 'Add to routine' : 'Build a plan first', add: () => routines.length ? this.sheet({ kind: 'toRoutine', ex: c.id }) : this.setState(st2 => ({ stack: [...st2.stack, { t: 'onboard' }], ob: { ...st2.ob, step: 0 } })) }; }
+
+    // builder
+    let bld = { slots: [] };
+    if (scr.builder) { const r = routines.find(x => x.id === top.rid);
+      if (r) { const rid = r.id, L = r.slots.length;
+        bld = { name: r.name, meta: `${L} exercises · ~${estMin(r)} min`, rename: e => { const v = e.target.value; this.upd(dd => { const rr = dd.program.routines.find(x => x.id === rid); if (rr) rr.name = v.slice(0, 28); }); },
+          addEx: () => this.sheet({ kind: 'picker', mode: 'builder', rid, q: '', m: 'All' }), del: () => this.sheet({ kind: 'confirm', title: 'Delete routine?', body: `“${r.name}” will be removed from your plan. Workout history stays.`, cta: 'Delete', yes: () => this.deleteRoutine(rid) }),
+          start: () => this.startRoutine(rid), startLabel: sess ? 'Resume current workout' : 'Start this routine',
+          slots: r.slots.map((s, i) => ({ num: i + 1, name: CM[s.ex].name, sub: `${CM[s.ex].m} · ${CM[s.ex].eq}`, upCol: i === 0 ? 'var(--line2)' : 'var(--ink)', downCol: i === L - 1 ? 'var(--line2)' : 'var(--ink)', up: () => this.slotOp(rid, i, 'up'), down: () => this.slotOp(rid, i, 'down'), remove: () => this.slotOp(rid, i, 'remove'),
+            fields: [{ l: 'Sets', v: s.sets, dec: () => this.slotOp(rid, i, 'sets-'), inc: () => this.slotOp(rid, i, 'sets+') }, { l: 'Rep floor', v: s.lo, dec: () => this.slotOp(rid, i, 'lo-'), inc: () => this.slotOp(rid, i, 'lo+') }, { l: 'Rep ceiling', v: s.hi, dec: () => this.slotOp(rid, i, 'hi-'), inc: () => this.slotOp(rid, i, 'hi+') }] })) };
+        bld.slots.forEach((s, i) => { const sl = r.slots[i]; s.sub = `${s.sub} · rest ${clock(sl.rest)}`; s.fields.push; });
+      } }
+
+    // onboarding
+    const ob = st.ob, step = ob.step, asking = step < OBQ.length, Q = OBQ[step];
+    const obPlan = !asking ? makeProgram(ob) : null;
+    const obv = { asking, preview: !asking, lbl: asking ? `Step ${step + 1} of ${OBQ.length}` : 'Your plan', q: asking ? Q.q : obPlan.name,
+      bars: Array.from({ length: OBQ.length + 1 }, (_, i) => ({ bg: i <= step ? 'var(--acc)' : 'var(--s2)' })),
+      opts: asking ? Q.o.map(([v, l, s]) => ({ l, s, bd: ob[Q.k] === v ? 'var(--acc)' : 'transparent', dot: ob[Q.k] === v ? 'var(--acc)' : 'transparent', go: () => this.setState(st2 => ({ ob: { ...st2.ob, [Q.k]: v } })) })) : [],
+      summary: obPlan ? `${GOAL_L[ob.goal]} · ${ob.days} days a week · ~${ob.len} min sessions. Weights start from your history, or conservative defaults you calibrate in session one.` : '',
+      plan: obPlan ? obPlan.routines.map(r => ({ name: r.name, meta: `${r.slots.length} ex · ~${estMin(r)} min`, list: r.slots.map(s => `${CM[s.ex].name} ${s.sets}×${s.lo}–${s.hi}`).join(' · ') })) : [],
+      cta: asking ? 'Continue' : (prog ? 'Replace my plan' : 'Use this plan'), next: () => this.obNext(), back: () => step > 0 ? this.setState({ ob: { ...ob, step: step - 1 } }) : this.back() };
+
+    // sheets
+    const sh = st.sheet;
+    let pk = { chips: [], items: [] }, kp = { keys: [] }, pl = { vis: [] }, cf = {}, tor = { items: [] };
+    if (sh && sh.kind === 'picker') { const q2 = sh.q.trim().toLowerCase(); let pool = CAT;
+      if (sh.mode === 'swap' && sess) { const m = CM[sess.exs[sess.cur].ex].m; pool = CAT.filter(c => sh.m === 'All' ? true : c.m === sh.m); if (sh.m === 'All' && !q2) pool = [...CAT.filter(c => c.m === m), ...CAT.filter(c => c.m !== m)]; }
+      else pool = CAT.filter(c => sh.m === 'All' || c.m === sh.m);
+      pool = pool.filter(c => !q2 || c.name.toLowerCase().includes(q2));
+      pk = { title: sh.mode === 'swap' ? 'Swap exercise' : 'Add exercise', q: sh.q, onQ: e => this.setState({ sheet: { ...sh, q: e.target.value } }), chips: chipsFor(sh.m, m => this.setState({ sheet: { ...this.state.sheet, m } })),
+        items: pool.map(c => ({ name: c.name, sub: `${c.m} · ${c.eq}${bests[c.id] ? ' · best ' + n(bests[c.id].e) : ''}`, go: () => this.pick(c.id) })) }; }
+    if (sh && sh.kind === 'keypad' && sess) { const isW = sh.field === 'w'; const curV = isW ? n(sess.draft.w) : String(sess.draft.r);
+      const press = k => this.setState(s2 => { const b = s2.sheet.buf; let nb = b; if (k === '⌫') nb = b.slice(0, -1); else if (k === '.') { if (!b.includes('.')) nb = (b || '0') + '.'; } else if (b.replace('.', '').length < 5) nb = b === '0' ? k : b + k; return { sheet: { ...s2.sheet, buf: nb } }; });
+      kp = { label: isW ? `Weight · ${U}` : 'Reps', display: sh.buf || curV, col: sh.buf ? 'var(--ink)' : 'var(--faint)',
+        keys: ['1','2','3','4','5','6','7','8','9', isW ? '.' : '', '0', '⌫'].map(k => ({ l: k, op: k ? 1 : 0, go: () => k && press(k) })),
+        done: () => { const v = parseFloat(this.state.sheet.buf); if (!isNaN(v)) this.setDraft(x => { if (isW) x.w = Math.max(0, U === 'kg' ? v / LB : v); else x.r = Math.max(0, Math.min(100, Math.round(v))); }); this.setState({ sheet: null }); } }; }
+    if (sh && sh.kind === 'plates' && sess) { const pc = plateCalc(sess.draft.w); pl = { ...pc, warn: pc.below || pc.rem > 0.01, warnTxt: pc.below ? `Lighter than the bar (${pc.bar}).` : `Can't load exactly with your plates — ${Math.round(pc.rem * 2 * 100) / 100} ${U} short.` }; }
+    if (sh && sh.kind === 'confirm') cf = sh;
+    if (sh && sh.kind === 'toRoutine') tor = { none: !routines.length, items: routines.map(r => { const has = r.slots.some(s => s.ex === sh.ex); return { name: r.name, meta: `${r.slots.length} exercises`, tag: has ? 'ALREADY IN' : 'ADD', col: has ? 'var(--faint)' : 'var(--acc-tx)', go: () => this.addToRoutine(r.id, sh.ex) }; }) };
+
+    const showMini = !!sess && !st.sessionOpen && tabScr;
+    return {
+      mode: S.mode, accent: S.accent, numerals: this.props.numerals || 'condensed', unit: U, scr, tb, today, plan, lib, tr, you, det, bld, ses, act, rest, cta, sum, sessBar, showMini, showTabs: tabScr, ob: obv,
+      q: st.q, onQ: e => this.setState({ q: e.target.value }), clearQ: () => this.setState({ q: '' }),
+      back: () => this.back(), goTrends: () => this.setState({ tab: 'trends' }),
+      openSession: () => this.setState({ sessionOpen: true, stack: [] }), minimize: () => this.setState({ sessionOpen: false }),
+      startNext: () => nr && this.startRoutine(nr.id), finish: () => this.finishFlow(), saveWorkout: () => this.saveWorkout(),
+      askDiscard: () => this.sheet({ kind: 'confirm', title: 'Discard workout?', body: 'Every set logged in this session will be deleted. This can’t be undone.', cta: 'Discard', yes: () => this.discard() }),
+      addSet: () => this.upd(dd => { const s = dd.session; s.exs[s.cur].sets++; s.draft = this.draftFor(s.exs[s.cur]); }),
+      swapEx: () => this.sheet({ kind: 'picker', mode: 'swap', q: '', m: 'All' }), addEx: () => this.sheet({ kind: 'picker', mode: 'add', q: '', m: 'All' }),
+      skipEx: () => { const s = d.session; const nx = s.exs.findIndex((q, j) => j > s.cur && q.done.length < q.sets); const any = nx >= 0 ? nx : s.exs.findIndex((q, j) => j !== s.cur && q.done.length < q.sets); if (any >= 0) this.goEx(any); else this.toastMsg('No other exercises left — finish when ready'); },
+      openPlates: () => this.sheet({ kind: 'plates' }), closeSheet: () => this.setState({ sheet: null }),
+      stopRest: () => this.upd(dd => { if (dd.session) dd.session.rest = null; }),
+      restPlus: () => this.upd(dd => { const r = dd.session.rest; const nw = Date.now(); r.end = Math.max(r.end, nw) + 15000; r.total = Math.max(r.total, (r.end - nw) / 1000); r.buzzed = false; }),
+      restMinus: () => this.upd(dd => { const r = dd.session.rest; r.end = Math.max(Date.now(), r.end - 15000); }),
+      undo: () => this.undo(), closeCel: () => { clearTimeout(this.ct); this.setState({ cel: null }); },
+      toast: { on: !!st.toast, msg: st.toast ? st.toast.msg : '', undo: !!(st.toast && st.toast.undo && sess), bottom: inSess ? '104px' : showMini ? '146px' : tabScr ? '84px' : '96px' },
+      cel: { on: !!st.cel, ...(st.cel || {}) },
+      sheet: { open: !!sh, picker: !!sh && sh.kind === 'picker', keypad: !!sh && sh.kind === 'keypad', plates: !!sh && sh.kind === 'plates', confirm: !!sh && sh.kind === 'confirm', toRoutine: !!sh && sh.kind === 'toRoutine' }, pk, kp, pl, cf, tor,
+      startOnboarding: () => this.setState(s2 => ({ stack: [...s2.stack, { t: 'onboard' }], ob: { ...s2.ob, step: 0 } })),
+      addRoutine: () => this.addRoutine(), loadSample: () => { this.setState({ data: demoData(this.state.data.settings), stack: [], sessionOpen: false, tab: 'today' }); this.toastMsg('Sample data loaded'); },
+      askReset: () => this.sheet({ kind: 'confirm', title: 'Erase everything?', body: 'Your plan, workouts and settings will be deleted from this device. Export a backup first if you want to keep them.', cta: 'Erase all data', yes: () => { this.setState({ data: freshData(), stack: [], sessionOpen: false, sheet: null, tab: 'today' }); this.toastMsg('All data erased'); } }),
+      restUp: () => setS(s => { s.rest = Math.min(600, s.rest + 15); }), restDown: () => setS(s => { s.rest = Math.max(15, s.rest - 15); }),
+      exportData: () => this.exportData(), importData: e => this.importData(e)
+    };
+  }
+}
+</script>
+</body>
+</html>
