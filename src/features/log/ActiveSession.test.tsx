@@ -94,6 +94,53 @@ afterEach(() => {
 });
 
 describe('Logger core flow (pinned pre-extraction)', () => {
+  it("logs the program's rest-pause set as restPause, not as a missed working set", async () => {
+    // 09-28: in an intensification week periodize() appends a rest-pause set; the logger
+    // saved it as 'working', and double progression read it as a miss every such week.
+    await db.settings.put({ key: 'user', ...DEFAULT_SETTINGS });
+    const program = await createProgram('Block', now);
+    await db.programs.update(program.id, {
+      mesocycle: { phase: 'intensification', weekIndex: 2, totalWeeks: 4 },
+    });
+    await setActiveProgram(program.id);
+    const tpl = await createTemplate(program.id, 'Day 1', 0);
+    tpl.slots = [
+      makeSlot(
+        'bench',
+        0,
+        LINEAR,
+        { sets: 2, repTarget: 5 },
+        { warmupSec: 60, workSec: 120 },
+      ),
+    ];
+    await saveTemplate(tpl);
+    await seedExerciseState(program.id, tpl.slots[0]!, 60, now);
+    const pending = (await getExerciseState(program.id, 'bench'))!.pending!;
+    expect(pending.sets.map((s) => s.type)).toEqual([
+      'working',
+      'working',
+      'restPause',
+    ]);
+    const session = await startSessionFromTemplate(tpl, now);
+    useSessionStore.getState().beginSession(session.id);
+    const user = userEvent.setup();
+    renderLogger();
+    for (let i = 0; i < 3; i++) {
+      await user.click(await logButton());
+      await waitFor(async () =>
+        expect(await getSessionSets(session.id)).toHaveLength(i + 1),
+      );
+      const keep = screen.queryByRole('button', { name: 'Keep going' });
+      if (keep) await user.click(keep);
+      const skip = screen.queryByRole('button', { name: /Skip rest/i });
+      if (skip) await user.click(skip);
+    }
+    const types = (await getSessionSets(session.id))
+      .sort((a, b) => a.order - b.order)
+      .map((s) => s.type);
+    expect(types).toEqual(['working', 'working', 'restPause']);
+  });
+
   it('logs a prescribed set to the session', async () => {
     const { session } = await seedActiveSession();
     const user = userEvent.setup();

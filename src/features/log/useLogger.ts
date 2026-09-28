@@ -341,7 +341,7 @@ export function useLogger(): LoggerVM | null {
         exerciseId: exId,
         date: session!.date,
         order: activeIndex,
-        type: (isAmrap ? 'amrap' : 'working') as SetType,
+        type: loggedSetType(activePrescribed, isAmrap),
         weightLb: weight,
         reps,
         completed: true,
@@ -535,4 +535,14 @@ export function useLogger(): LoggerVM | null {
     onPickExercise,
     session,
   };
+}
+
+/** The type a logged set is saved as. A set the program prescribes as rest-pause or drop
+ *  (the intensification week's intensifier) keeps that type, so progression, volume and
+ *  e1RM never read it as a short working set. Before 09-28 every set was saved as working
+ *  or AMRAP, and double progression could not advance in intensification weeks. */
+export function loggedSetType(p: PrescribedSet, amrap: boolean): SetType {
+  if (p.type === 'restPause' || p.type === 'drop' || p.type === 'warmup')
+    return p.type;
+  return amrap ? 'amrap' : 'working';
 }
