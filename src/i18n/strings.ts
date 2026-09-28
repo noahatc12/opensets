@@ -1,6 +1,6 @@
 /**
  * Single source of UI copy (spec refinement: route all strings through one module
- * from P1 — started here so it never needs retrofitting). Actual translations
+ * from P1, started here so it never needs retrofitting). Actual translations
  * (Spanish first) land in P4; for now this is the English string table and the
  * `t()` accessor everything reads through.
  */
@@ -19,8 +19,8 @@ export const strings = {
     title: 'Today',
     emptyTitle: 'No workout yet',
     emptyBody:
-      'OpenSets builds your plan, tracks every set, and computes when to add weight — all on your device, fully offline. Workout logging arrives in the next update.',
-    disclaimer: 'Educational tool — not medical advice.',
+      'OpenSets builds your plan, tracks every set, and computes when to add weight, all on your device, fully offline.',
+    disclaimer: 'Educational tool, not medical advice.',
   },
   library: {
     title: 'Library',
@@ -39,9 +39,9 @@ export const strings = {
     unitsHint:
       'Loads are always stored in kilograms; this changes display only.',
     storage: 'On-device storage',
-    storagePersisted: 'Persistent — the browser will not evict your data.',
+    storagePersisted: 'Persistent. The browser will not evict your data.',
     storageBestEffort:
-      'Best-effort — install to the home screen and grant persistence to protect your history.',
+      'Best effort. Install to the home screen and grant persistence to protect your history.',
     requestPersist: 'Request persistent storage',
     usage: 'Used',
     data: 'Your data',
@@ -53,7 +53,7 @@ export const strings = {
     privacy:
       'Your data never leaves your device. No accounts, no servers, no tracking.',
     disclaimer:
-      'Educational tool — not medical advice. Consult a professional.',
+      'Educational tool, not medical advice. Consult a professional.',
   },
 } as const;
 

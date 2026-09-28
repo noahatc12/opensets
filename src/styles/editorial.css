@@ -74,6 +74,9 @@
   --acc2: #ff8a5c;
   --acc-deep: #e4522f;
   --acc-ink: #1a0803;
+  --hero-ink: #1a0803;
+  --hero-btn: #1a0803;
+  --hero-btn-ink: #ffffff;
   --acc-tx: #ff8a5c;
   --acc-soft: rgba(255, 106, 69, 0.14);
   --pos: #4fd18b;
@@ -107,6 +110,9 @@
   --acc2: #ff7a55;
   --acc-deep: #d4481f;
   --acc-ink: #ffffff;
+  --hero-ink: #1a0803;
+  --hero-btn: #1a0803;
+  --hero-btn-ink: #ffffff;
   --acc-tx: #c2431d;
   --acc-soft: rgba(242, 90, 50, 0.12);
   --pos: #2b9a5f;
@@ -189,7 +195,7 @@
 }
 [data-ds="editorial"] .os-card--hero {
   background: linear-gradient(160deg, var(--acc2) 0%, var(--acc) 45%, var(--acc-deep) 100%);
-  color: var(--acc-ink);
+  color: var(--hero-ink);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45), 0 18px 40px -18px rgba(255, 106, 69, 0.55);
 }
 [data-ds="editorial"] .os-tile {
@@ -459,4 +465,177 @@
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+/* ---- Additions for the screen ports (2026-09-27) ------------------------- */
+[data-ds="editorial"] {
+  --p1: #b8bec8; /* 1.25 lb / 1.25 kg chrome */
+}
+/* Small status tags on rows: Done, Next, PR. */
+[data-ds="editorial"] .os-tag {
+  display: inline-flex;
+  align-items: center;
+  height: 24px;
+  padding: 0 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+  flex: none;
+}
+[data-ds="editorial"] .os-tag--pr {
+  background: color-mix(in oklab, var(--pr) 14%, transparent);
+  color: var(--pr);
+}
+[data-ds="editorial"] .os-tag--pos {
+  background: color-mix(in oklab, var(--pos) 14%, transparent);
+  color: var(--pos);
+}
+[data-ds="editorial"] .os-tag--acc {
+  background: var(--acc-soft);
+  color: var(--acc-tx);
+}
+/* Plate marks: a row of coloured plates read as data (largest inboard). */
+[data-ds="editorial"] .os-plates {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  flex: none;
+}
+[data-ds="editorial"] .os-plates i {
+  display: block;
+  border-radius: 2px;
+  width: 6px;
+  height: 18px;
+}
+[data-ds="editorial"] .os-plates .os-sleeve {
+  width: 10px;
+  height: 5px;
+  border-radius: 2px;
+  background: var(--p2);
+}
+/* Ring: an SVG with centred content. */
+[data-ds="editorial"] .os-ring {
+  position: relative;
+  display: grid;
+  place-items: center;
+  flex: none;
+}
+[data-ds="editorial"] .os-ring > svg {
+  display: block;
+}
+[data-ds="editorial"] .os-ring > .os-ring-in {
+  position: absolute;
+  text-align: center;
+}
+/* Text field inside a card-coloured well (search, builder title). */
+[data-ds="editorial"] .os-input {
+  width: 100%;
+  min-width: 0;
+  background: transparent;
+  border: 0;
+  outline: 0;
+  color: var(--ink);
+  font: inherit;
+}
+[data-ds="editorial"] .os-input::placeholder {
+  color: var(--mute);
+}
+/* Chip row that scrolls sideways without a scrollbar. */
+[data-ds="editorial"] .os-chips {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding-bottom: 2px;
+}
+/* Fixed bottom action zone that fades the content under it. */
+[data-ds="editorial"] .os-dock {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 14px 18px calc(18px + env(safe-area-inset-bottom, 0px));
+  background: linear-gradient(180deg, color-mix(in oklab, var(--bg) 0%, transparent), var(--bg) 30%);
+  z-index: 10;
+}
+/* Mini stepper in the builder. */
+[data-ds="editorial"] .os-step--sm {
+  width: 38px;
+  height: 32px;
+  border-radius: 10px;
+  background: var(--s3);
+  font-size: 18px;
+}
+/* Option card with a radio dot (onboarding). */
+[data-ds="editorial"] .os-radio {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 2px var(--s3);
+  display: grid;
+  place-items: center;
+  flex: none;
+}
+[data-ds="editorial"] .os-radio--on {
+  background: var(--acc);
+  box-shadow: none;
+}
+[data-ds="editorial"] .os-card--selected {
+  box-shadow: inset 0 1px 0 var(--hl2), inset 0 0 0 2px var(--acc);
+}
+[data-ds="editorial"] .os-card--next {
+  box-shadow: inset 0 1px 0 var(--hl2), inset 0 0 0 1.5px color-mix(in oklab, var(--acc) 45%, transparent);
+}
+/* The WHY strip on the logger. */
+[data-ds="editorial"] .os-why {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: var(--acc-soft);
+  width: 100%;
+  text-align: left;
+}
+/* Gold full-bleed record screen. */
+[data-ds="editorial"] .os-gold {
+  background: radial-gradient(120% 90% at 50% 100%, #ffd875 0%, var(--pr) 55%, #f0b73a 100%);
+  color: #1a1204;
+}
+[data-ds="editorial"][data-mode="light"] .os-gold {
+  background: radial-gradient(120% 90% at 50% 100%, #ffd875 0%, #f5c04a 55%, #e9ac2c 100%);
+}
+/* Rest ring drains with the timer; the transition is one second so the tick reads as motion. */
+[data-ds="editorial"] .os-ring-arc {
+  transition: stroke-dashoffset 1s linear;
+}
+/* Accordion body on Plan. */
+[data-ds="editorial"] .os-acc {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows var(--dur-base) var(--ease-out);
+}
+[data-ds="editorial"] .os-acc--open {
+  grid-template-rows: 1fr;
+}
+[data-ds="editorial"] .os-acc > div {
+  overflow: hidden;
+  min-height: 0;
+}
+
+/* Inside the hero: muted text, tinted chips and the ink button read against orange in both modes. */
+[data-ds="editorial"] .os-hero-t {
+  color: color-mix(in oklab, var(--hero-ink) 70%, transparent);
+}
+[data-ds="editorial"] .os-hero-chip {
+  background: color-mix(in oklab, var(--hero-ink) 16%, transparent);
+  color: var(--hero-ink);
+  box-shadow: none;
+  height: 30px;
+}
+[data-ds="editorial"] .os-btn--hero {
+  background: var(--hero-btn);
+  color: var(--hero-btn-ink);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
 }

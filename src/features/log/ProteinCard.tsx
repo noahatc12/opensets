@@ -33,45 +33,54 @@ export function ProteinCard() {
           ),
         });
 
-  return (
-    <div
-      className="mt-3 rounded-[var(--r-xl)] border bg-surface p-5"
-      style={{ borderColor: 'var(--border-card)' }}
-    >
-      <span
-        className="text-[11px] font-bold uppercase text-muted"
-        style={{
-          letterSpacing: 'var(--tracking-caps)',
-          fontFamily: 'var(--font-label)',
-        }}
+  if (!target) {
+    return (
+      <button
+        type="button"
+        onClick={() => navigate('/measurements')}
+        className="os-card os-press mt-3 block w-full text-left"
+        style={{ padding: '14px 16px' }}
       >
-        Protein
-      </span>
-      {target ? (
-        <>
-          <div className="mt-1.5 text-[20px] font-bold text-text">
-            {target.lowG} to {target.highG} g a day
-          </div>
-          <p className="mt-1 text-[12px] leading-snug text-muted">
-            {target.basis === 'heightAdjusted'
-              ? 'Based on a height-adjusted weight, 1.6 to 2.2 g per kg.'
-              : 'Based on your bodyweight, 1.6 to 2.2 g per kg.'}{' '}
-            An estimate to start from, not medical advice.
-          </p>
-          {target.underEighteen && (
-            <p className="mt-1 text-[12px] leading-snug text-muted">
-              Under 18: check with a doctor or registered dietitian before
-              changing how you eat.
-            </p>
-          )}
-        </>
-      ) : (
-        <button
-          onClick={() => navigate('/measurements')}
-          className="mt-1.5 block text-left text-[13px] leading-snug text-muted"
+        <span className="os-t">Protein</span>
+        <span
+          className="mt-1 block text-[14px] font-semibold leading-snug"
+          style={{ color: 'var(--ink2)' }}
         >
           Add your bodyweight in Measurements to see a daily protein target.
-        </button>
+        </span>
+      </button>
+    );
+  }
+
+  return (
+    <div className="os-card mt-3" style={{ padding: '14px 16px' }}>
+      <div className="flex items-baseline justify-between">
+        <span className="os-t">Protein, per day</span>
+        <span className="os-t">an estimate</span>
+      </div>
+      <div
+        className="mt-1.5 text-[20px] font-extrabold"
+        style={{ letterSpacing: '-.02em', fontVariantNumeric: 'tabular-nums' }}
+      >
+        {target.lowG} to {target.highG} g a day
+      </div>
+      <p
+        className="mt-1 text-[12px] font-medium leading-snug"
+        style={{ color: 'var(--mute)' }}
+      >
+        {target.basis === 'heightAdjusted'
+          ? 'From a height-adjusted weight, 1.6 to 2.2 g per kg.'
+          : 'From your bodyweight, 1.6 to 2.2 g per kg.'}{' '}
+        A starting point, not medical advice.
+      </p>
+      {target.underEighteen && (
+        <p
+          className="mt-1 text-[12px] font-medium leading-snug"
+          style={{ color: 'var(--mute)' }}
+        >
+          Under 18: check with a doctor or registered dietitian before changing
+          how you eat.
+        </p>
       )}
     </div>
   );
