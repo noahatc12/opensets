@@ -47,6 +47,23 @@ function AppShell() {
   // The Home Screen container can report a viewport shorter than the screen; the shell
   // extends by the measured gap (see ui/viewport.ts).
   useEffect(() => installViewportFix(), []);
+  // Keyboard focus rings only for keyboard use: Tab turns them on, any touch or click
+  // turns them off (editorial.css, the search well).
+  useEffect(() => {
+    const root = document.documentElement;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Tab') root.dataset.kbd = '1';
+    };
+    const onPointer = () => {
+      delete root.dataset.kbd;
+    };
+    window.addEventListener('keydown', onKey);
+    window.addEventListener('pointerdown', onPointer);
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      window.removeEventListener('pointerdown', onPointer);
+    };
+  }, []);
   // Device QA: `?tune` opens the feel tuning panel (see ui/FeelPanel.tsx).
   useEffect(() => {
     if (tuneWantedFromUrl()) setTuning(true);
@@ -78,6 +95,7 @@ export default function App() {
           <Route path="/today" element={<TodayScreen />} />
           <Route path="/plan" element={<PlanScreen />} />
           <Route path="/routine/new" element={<RoutineBuilder />} />
+          <Route path="/routine/:templateId" element={<RoutineBuilder />} />
           <Route path="/library" element={<LibraryScreen />} />
           <Route path="/library/:id" element={<ExerciseDetailScreen />} />
           <Route path="/history" element={<HistoryScreen />} />

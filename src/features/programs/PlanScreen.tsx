@@ -247,17 +247,27 @@ export function PlanScreen() {
                 </button>
                 <div className={`os-acc ${isOpen ? 'os-acc--open' : ''}`}>
                   <div>
-                    <div className="mt-3.5">
+                    <div className="mt-3.5 flex gap-2">
                       <button
                         type="button"
                         onClick={() => void start(t)}
-                        className={`os-btn os-btn--sm os-press ${isNext ? 'os-btn--pri' : ''}`}
+                        className={`os-btn os-btn--sm os-press flex-1 ${isNext ? 'os-btn--pri' : ''}`}
                         tabIndex={isOpen ? 0 : -1}
                         style={
                           !isNext ? { background: 'var(--s2)' } : undefined
                         }
                       >
                         {isNext ? 'Start' : 'Start this day instead'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => nav.push(`/routine/${t.id}`)}
+                        className="os-btn os-btn--sm os-press flex-none px-5"
+                        tabIndex={isOpen ? 0 : -1}
+                        style={{ background: 'var(--s2)', width: 'auto' }}
+                        aria-label={`Edit ${t.name}`}
+                      >
+                        Edit
                       </button>
                     </div>
                   </div>

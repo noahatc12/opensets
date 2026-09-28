@@ -59,7 +59,7 @@ export function ExercisePicker({ onPick, onClose }: Props) {
     <Sheet open onClose={onClose} label="Add exercise" height="78%">
       <SheetHeader title="Add exercise" action="Cancel" onAction={onClose} />
       <div
-        className="mt-3 flex h-[46px] flex-none items-center gap-2.5 rounded-[14px] px-3.5"
+        className="os-well mt-3 flex h-[46px] flex-none items-center gap-2.5 rounded-[14px] px-3.5"
         style={{
           background: 'var(--bg)',
           boxShadow: 'inset 0 1px 0 rgba(0,0,0,.4)',

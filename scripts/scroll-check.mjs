@@ -71,6 +71,35 @@ const libState = (sel = 'main .os-shell, main') =>
     };
   }, sel);
 
+/** Record what the Library shows in each animation frame from now on (for the no-flash
+ *  checks: Noah saw the top of the list for a frame before it jumped back, 09-28). */
+const startFrames = () =>
+  page.evaluate(() => {
+    window.__frames = [];
+    const sample = () => {
+      const s = [...document.querySelectorAll('main div.overflow-auto')].find(
+        (d) => !d.closest('.os-pushed-parent'),
+      );
+      const rows = s ? [...s.querySelectorAll('button.os-row')] : [];
+      const f = rows.find((r) => {
+        const q = r.getBoundingClientRect();
+        return q.top > 120 && q.top < innerHeight;
+      });
+      window.__frames.push({
+        hash: location.hash,
+        top: s ? Math.round(s.scrollTop) : -1,
+        first: f ? f.querySelector('span span').textContent : '',
+      });
+      if (window.__frames.length < 40) requestAnimationFrame(sample);
+    };
+    requestAnimationFrame(sample);
+  });
+/** Frames after the Library came back that do not show the saved place. */
+const flashFrames = async (want) =>
+  (await page.evaluate(() => window.__frames))
+    .filter((f) => f.hash === '#/library')
+    .filter((f) => Math.abs(f.top - want.top) > 2 || f.first !== want.first);
+
 await page.goto(BASE + '#/library', { waitUntil: 'networkidle' });
 await page.waitForTimeout(800);
 
@@ -93,8 +122,15 @@ check(
   (await hash()).startsWith('#/library/'),
   await hash(),
 );
+await startFrames();
 await page.getByRole('button', { name: /back/i }).first().click();
 await page.waitForTimeout(900);
+const flashBack = await flashFrames(before);
+check(
+  'Back button: no frame shows the top of the list (no flash)',
+  flashBack.length === 0,
+  JSON.stringify(flashBack.slice(0, 3)),
+);
 const afterBack = await libState();
 check(
   'Back button: same place in the Library',
@@ -108,6 +144,7 @@ check(
 await page.getByRole('button', { name: before.first }).first().click();
 await page.waitForTimeout(700);
 let under = null;
+await startFrames();
 await drag(6, 460, 300, 462, {
   midway: async () => {
     under = await page.evaluate(() => {
@@ -122,6 +159,12 @@ check(
   `${under} vs ${before.top}`,
 );
 await page.waitForTimeout(900);
+const flashSwipe = await flashFrames(before);
+check(
+  'edge swipe: no frame shows the top of the list (no flash)',
+  flashSwipe.length === 0,
+  JSON.stringify(flashSwipe.slice(0, 3)),
+);
 const afterSwipe = await libState();
 check(
   'edge swipe: same place in the Library',
@@ -192,7 +235,29 @@ check(
   `${pushed}: ${sBefore} -> ${Math.round(sAfter)} ${await hash()}`,
 );
 
-// 5. A relaunch starts at the top (positions are per launch).
+// 5. Switching tabs starts fresh: scroll the Library and search, go to Trends by the tab
+//    bar, come back by the tab bar: top of the list, empty search (Noah, 09-28).
+await page.getByRole('link', { name: 'Library' }).click();
+await page.waitForTimeout(700);
+await page.getByRole('textbox', { name: /search exercises/i }).fill('row');
+await page.waitForTimeout(300);
+await page.getByRole('textbox', { name: /search exercises/i }).fill('');
+await page.evaluate(() => {
+  [...document.querySelectorAll('main div.overflow-auto')][0].scrollTop = 4000;
+});
+await page.waitForTimeout(300);
+await page.getByRole('link', { name: 'Trends' }).click();
+await page.waitForTimeout(700);
+await page.getByRole('link', { name: 'Library' }).click();
+await page.waitForTimeout(800);
+const afterTabs = await libState();
+check(
+  'another tab and back: the Library starts at the top',
+  (await hash()) === '#/library' && afterTabs && afterTabs.top === 0,
+  JSON.stringify(afterTabs),
+);
+
+// 6. A relaunch starts at the top (positions are per launch).
 await page.goto(BASE + '#/library', { waitUntil: 'networkidle' });
 await page.waitForTimeout(600);
 const fresh = await libState();

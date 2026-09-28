@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useParams } from 'react-router-dom';
 import { useNav } from '../../ui/nav';
 import { Pushed } from '../../ui/Pushed';
 import { PlanScreen } from './PlanScreen';
@@ -15,6 +15,7 @@ import { useCatalog } from '../library/useCatalog';
 import { getCatalogExercise } from '../../db/catalog';
 import { BackButton } from '../../ui/StatGrid';
 import type { Exercise, ExerciseSlot } from '../../db/types';
+import { db } from '../../db/db';
 import type { ProgressionRule } from '../../engine/types';
 import { loadTypeFor, roundForLoad } from '../../engine/loading';
 import {
@@ -26,18 +27,33 @@ import {
   seedExerciseState,
   latestBodyweightLb,
   loadStepsOf,
+  getExerciseState,
+  represcribeAfterEdit,
 } from '../../db/repositories';
 
-/* The routine builder. Creates a new program with one day. The title is the 32px
-   heading itself, typed in place; each exercise is a card with mini steppers; the day is
-   saved from the button at the bottom. Reordering is by the up and down arrows on each
-   card: pointer drag on a scrolling phone page needs a gesture layer this build does not
-   have, and arrows are exact. */
+/* The routine builder. At /routine/new it creates a new program with one day; at
+   /routine/<day id> it edits a day that already exists (Noah, 09-28: "I couldn't go back
+   and change how many sets"). The title is the 32px heading itself, typed in place; each
+   exercise is a card with mini steppers; the day is saved from the button at the bottom.
+   Reordering is by the up and down arrows on each card: pointer drag on a scrolling phone
+   page needs a gesture layer this build does not have, and arrows are exact.
+
+   Editing keeps history: sessions freeze their own copy of the slots, and an exercise
+   whose sets, reps, rule or weight changed is re-prescribed from its current state
+   (represcribeAfterEdit), keeping the miss count unless the rule or weight changed.
+   Exercises whose progression the builder cannot express (5/3/1, GZCLP, APRE and the
+   like, from generated programs) keep their rule; only rest, order and removal edit. */
 
 type RuleKind = 'linear' | 'double' | 'manual';
 
 interface SlotDraft {
   exercise: Exercise;
+  /** The saved slot this card edits; absent for a newly added exercise. */
+  slot?: ExerciseSlot;
+  /** The working weight when the editor opened, to tell whether it was changed. */
+  origWeightLb?: number;
+  /** The slot's rule is one the builder cannot edit (5/3/1, GZCLP, ...). */
+  locked?: boolean;
   ruleKind: RuleKind;
   sets: number;
   repTarget: number;
@@ -62,17 +78,111 @@ function draftFor(exercise: Exercise, startingWeightLb: number): SlotDraft {
   };
 }
 
+const RULE_NAMES: Record<string, string> = {
+  percent531: '5/3/1',
+  gzclp: 'GZCLP',
+  rpeTarget: 'RPE target',
+  apre: 'APRE',
+  repsOnly: 'Reps only',
+  durationLinear: 'Timed',
+};
+
+/** A card from a saved slot and the exercise's current working weight. */
+function draftFromSlot(
+  slot: ExerciseSlot,
+  exercise: Exercise,
+  weightLb: number,
+): SlotDraft {
+  const r = slot.progressionRule;
+  const kind: RuleKind | null =
+    r.kind === 'linear' || r.kind === 'double' || r.kind === 'manual'
+      ? r.kind
+      : null;
+  return {
+    exercise,
+    slot,
+    origWeightLb: weightLb,
+    locked: kind === null,
+    ruleKind: kind ?? 'manual',
+    sets: slot.scheme.sets,
+    repTarget: slot.scheme.repTarget ?? slot.scheme.repRange?.[0] ?? 5,
+    repMin: r.kind === 'double' ? r.repMin : (slot.scheme.repRange?.[0] ?? 8),
+    repMax: r.kind === 'double' ? r.repMax : (slot.scheme.repRange?.[1] ?? 12),
+    incrementLb: 'incrementLb' in r ? r.incrementLb : 2.5,
+    startingWeightLb: weightLb,
+    restWorkSec: slot.restWorkSec,
+  };
+}
+
+/** The progression rule a card describes (a saved linear rule keeps its deload terms). */
+function ruleFor(d: SlotDraft): ProgressionRule {
+  const prev = d.slot?.progressionRule;
+  if (d.ruleKind === 'linear')
+    return {
+      kind: 'linear',
+      incrementLb: d.incrementLb,
+      failsBeforeDeload: prev?.kind === 'linear' ? prev.failsBeforeDeload : 3,
+      deloadPct: prev?.kind === 'linear' ? prev.deloadPct : 0.1,
+    };
+  if (d.ruleKind === 'double')
+    return {
+      kind: 'double',
+      repMin: d.repMin,
+      repMax: d.repMax,
+      incrementLb: d.incrementLb,
+      perSet: prev?.kind === 'double' ? prev.perSet : false,
+    };
+  return { kind: 'manual' };
+}
+
+function schemeFor(d: SlotDraft): ExerciseSlot['scheme'] {
+  return d.ruleKind === 'double'
+    ? { sets: d.sets, repRange: [d.repMin, d.repMax] }
+    : { sets: d.sets, repTarget: d.repTarget };
+}
+
 const nowIso = () => new Date().toISOString();
 
 export function RoutineBuilder() {
   const nav = useNav();
   const location = useLocation();
+  const { templateId } = useParams();
+  const editing = Boolean(templateId);
   const [name, setName] = useState('');
   const [drafts, setDrafts] = useState<SlotDraft[]>([]);
   const [seededFrom, setSeededFrom] = useState<string | null>(null);
   const [picking, setPicking] = useState(false);
   const [saving, setSaving] = useState(false);
-  useCatalog();
+  const catalog = useCatalog();
+  // Edit mode: the saved day, its program, and each exercise's working weight.
+  const editSource = useLiveQuery(async () => {
+    if (!templateId) return null;
+    const tpl = await db.templates.get(templateId);
+    if (!tpl) return null;
+    const program = await db.programs.get(tpl.programId);
+    const weights = await Promise.all(
+      tpl.slots.map(
+        async (s) =>
+          (await getExerciseState(tpl.programId, s.exerciseId))
+            ?.workingWeightLb ?? 0,
+      ),
+    );
+    return { tpl, programName: program?.name ?? '', weights };
+  }, [templateId]);
+  const [loadedFor, setLoadedFor] = useState<string | null>(null);
+  if (editing && editSource && catalog && loadedFor !== editSource.tpl.id) {
+    setLoadedFor(editSource.tpl.id);
+    setName(editSource.tpl.name);
+    setDrafts(
+      editSource.tpl.slots
+        .map((s, i) => ({ s, w: editSource.weights[i] ?? 0 }))
+        .sort((a, b) => a.s.order - b.s.order)
+        .flatMap(({ s, w }) => {
+          const ex = getCatalogExercise(s.exerciseId);
+          return ex ? [draftFromSlot(s, ex, w)] : [];
+        }),
+    );
+  }
   const settings = useSettings();
   const profile = useProfile();
   const bodyweightLb = useLiveQuery(() => latestBodyweightLb());
@@ -128,45 +238,25 @@ export function RoutineBuilder() {
 
   async function save() {
     if (!canSave) return;
+    if (editing) return saveEdit();
     setSaving(true);
     const now = nowIso();
     const program = await createProgram(name.trim(), now);
     await setActiveProgram(program.id);
     const tpl = await createTemplate(program.id, 'Day 1', 0);
 
-    const slots: ExerciseSlot[] = drafts.map((d, order) => {
-      const rule: ProgressionRule =
-        d.ruleKind === 'linear'
-          ? {
-              kind: 'linear',
-              incrementLb: d.incrementLb,
-              failsBeforeDeload: 3,
-              deloadPct: 0.1,
-            }
-          : d.ruleKind === 'double'
-            ? {
-                kind: 'double',
-                repMin: d.repMin,
-                repMax: d.repMax,
-                incrementLb: d.incrementLb,
-                perSet: false,
-              }
-            : { kind: 'manual' };
-      const scheme: ExerciseSlot['scheme'] =
-        d.ruleKind === 'double'
-          ? { sets: d.sets, repRange: [d.repMin, d.repMax] }
-          : { sets: d.sets, repTarget: d.repTarget };
-      return makeSlot(
+    const slots: ExerciseSlot[] = drafts.map((d, order) =>
+      makeSlot(
         d.exercise.id,
         order,
-        rule,
-        scheme,
+        ruleFor(d),
+        schemeFor(d),
         { warmupSec: 60, workSec: d.restWorkSec },
         {
           loadType: loadTypeFor(d.exercise.equipment, d.exercise.isBodyweight),
         },
-      );
-    });
+      ),
+    );
     tpl.slots = slots;
     await saveTemplate(tpl);
     await Promise.all(
@@ -175,6 +265,67 @@ export function RoutineBuilder() {
       ),
     );
     nav.pop('/today');
+  }
+
+  /** Save an edited day in place: same day id, same program, history untouched. */
+  async function saveEdit() {
+    const source = editSource;
+    if (!source) return;
+    setSaving(true);
+    const now = nowIso();
+    const programId = source.tpl.programId;
+    const slots: ExerciseSlot[] = drafts.map((d, order) => {
+      if (d.slot && d.locked)
+        return { ...d.slot, order, restWorkSec: d.restWorkSec };
+      if (d.slot)
+        return {
+          ...d.slot,
+          order,
+          progressionRule: ruleFor(d),
+          scheme: schemeFor(d),
+          restWorkSec: d.restWorkSec,
+        };
+      return makeSlot(
+        d.exercise.id,
+        order,
+        ruleFor(d),
+        schemeFor(d),
+        { warmupSec: 60, workSec: d.restWorkSec },
+        {
+          loadType: loadTypeFor(d.exercise.equipment, d.exercise.isBodyweight),
+        },
+      );
+    });
+    await saveTemplate({
+      ...source.tpl,
+      name: name.trim() || source.tpl.name,
+      slots,
+    });
+    for (let i = 0; i < slots.length; i++) {
+      const d = drafts[i]!;
+      const slot = slots[i]!;
+      if (d.locked) continue;
+      const weightChanged =
+        d.origWeightLb === undefined ||
+        Math.abs(d.startingWeightLb - d.origWeightLb) > 0.001;
+      const ruleChanged =
+        !d.slot || d.slot.progressionRule.kind !== slot.progressionRule.kind;
+      const changed =
+        !d.slot ||
+        weightChanged ||
+        JSON.stringify(d.slot.progressionRule) !==
+          JSON.stringify(slot.progressionRule) ||
+        JSON.stringify(d.slot.scheme) !== JSON.stringify(slot.scheme);
+      if (changed)
+        await represcribeAfterEdit(
+          programId,
+          slot,
+          d.startingWeightLb,
+          !ruleChanged && !weightChanged,
+          now,
+        );
+    }
+    nav.pop('/plan');
   }
 
   return (
@@ -191,8 +342,8 @@ export function RoutineBuilder() {
         <div className="flex-1 overflow-auto px-[18px] pb-[120px] pt-[max(0.5rem,env(safe-area-inset-top))]">
           <BackButton onClick={() => nav.pop('/plan')} />
           <div className="os-t mt-3.5">
-            Day 1 · {drafts.length}{' '}
-            {drafts.length === 1 ? 'exercise' : 'exercises'}
+            {editing ? editSource?.programName || 'Edit day' : 'Day 1'} ·{' '}
+            {drafts.length} {drafts.length === 1 ? 'exercise' : 'exercises'}
             {drafts.length > 0 && ` · ${est} min`}
           </div>
           <input
@@ -287,97 +438,121 @@ export function RoutineBuilder() {
                   </div>
                 </div>
 
-                <div
-                  className="os-seg mt-2.5"
-                  role="radiogroup"
-                  aria-label="Progression"
-                  style={{ background: 'var(--s2)' }}
-                >
-                  {(['linear', 'double', 'manual'] as const).map((k) => (
-                    <button
-                      key={k}
-                      type="button"
-                      role="radio"
-                      aria-checked={d.ruleKind === k}
-                      onClick={() => update(i, { ruleKind: k })}
+                {d.locked ? (
+                  <div className="mt-2.5 flex items-center gap-2.5">
+                    <p className="os-t min-w-0 flex-1 leading-snug">
+                      {RULE_NAMES[d.slot!.progressionRule.kind] ?? 'Program'}{' '}
+                      progression, set by your program. Rest can change here.
+                    </p>
+                    <div className="w-[120px] flex-none">
+                      <Mini
+                        label="Rest · sec"
+                        value={d.restWorkSec}
+                        onChange={(v) => update(i, { restWorkSec: v })}
+                        min={30}
+                        max={600}
+                        step={15}
+                        name="rest"
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <div
+                      className="os-seg mt-2.5"
+                      role="radiogroup"
+                      aria-label="Progression"
+                      style={{ background: 'var(--s2)' }}
                     >
-                      {k === 'linear'
-                        ? 'Linear'
-                        : k === 'double'
-                          ? 'Double'
-                          : 'Manual'}
-                    </button>
-                  ))}
-                </div>
+                      {(['linear', 'double', 'manual'] as const).map((k) => (
+                        <button
+                          key={k}
+                          type="button"
+                          role="radio"
+                          aria-checked={d.ruleKind === k}
+                          onClick={() => update(i, { ruleKind: k })}
+                        >
+                          {k === 'linear'
+                            ? 'Linear'
+                            : k === 'double'
+                              ? 'Double'
+                              : 'Manual'}
+                        </button>
+                      ))}
+                    </div>
 
-                <div className="mt-2.5 grid grid-cols-3 gap-1.5">
-                  <Mini
-                    label="Sets"
-                    value={d.sets}
-                    onChange={(v) => update(i, { sets: v })}
-                    min={1}
-                    max={10}
-                    name="sets"
-                  />
-                  {d.ruleKind === 'double' ? (
-                    <>
+                    <div className="mt-2.5 grid grid-cols-3 gap-1.5">
                       <Mini
-                        label="Reps from"
-                        value={d.repMin}
-                        onChange={(v) => update(i, { repMin: v })}
+                        label="Sets"
+                        value={d.sets}
+                        onChange={(v) => update(i, { sets: v })}
                         min={1}
-                        max={d.repMax}
-                        name="rep min"
+                        max={10}
+                        name="sets"
                       />
+                      {d.ruleKind === 'double' ? (
+                        <>
+                          <Mini
+                            label="Reps from"
+                            value={d.repMin}
+                            onChange={(v) => update(i, { repMin: v })}
+                            min={1}
+                            max={d.repMax}
+                            name="rep min"
+                          />
+                          <Mini
+                            label="Reps to"
+                            value={d.repMax}
+                            onChange={(v) => update(i, { repMax: v })}
+                            min={d.repMin}
+                            max={30}
+                            name="rep max"
+                          />
+                        </>
+                      ) : (
+                        <Mini
+                          label="Reps"
+                          value={d.repTarget}
+                          onChange={(v) => update(i, { repTarget: v })}
+                          min={1}
+                          max={30}
+                          name="reps"
+                        />
+                      )}
                       <Mini
-                        label="Reps to"
-                        value={d.repMax}
-                        onChange={(v) => update(i, { repMax: v })}
-                        min={d.repMin}
-                        max={30}
-                        name="rep max"
+                        label={`${editing && d.slot ? 'Weight' : 'Start'} · ${settings.units}`}
+                        value={shown(d.startingWeightLb)}
+                        onChange={(v) =>
+                          update(i, { startingWeightLb: fromShown(v) })
+                        }
+                        min={0}
+                        step={settings.units === 'kg' ? 1 : 2.5}
+                        name="starting weight"
                       />
-                    </>
-                  ) : (
-                    <Mini
-                      label="Reps"
-                      value={d.repTarget}
-                      onChange={(v) => update(i, { repTarget: v })}
-                      min={1}
-                      max={30}
-                      name="reps"
-                    />
-                  )}
-                  <Mini
-                    label={`Start · ${settings.units}`}
-                    value={shown(d.startingWeightLb)}
-                    onChange={(v) =>
-                      update(i, { startingWeightLb: fromShown(v) })
-                    }
-                    min={0}
-                    step={settings.units === 'kg' ? 1 : 2.5}
-                    name="starting weight"
-                  />
-                  {d.ruleKind !== 'manual' && (
-                    <Mini
-                      label={`Step · ${settings.units}`}
-                      value={shown(d.incrementLb)}
-                      onChange={(v) => update(i, { incrementLb: fromShown(v) })}
-                      min={settings.units === 'kg' ? 0.5 : 1.25}
-                      step={settings.units === 'kg' ? 0.5 : 1.25}
-                      name="increment"
-                    />
-                  )}
-                  <Mini
-                    label="Rest · sec"
-                    value={d.restWorkSec}
-                    onChange={(v) => update(i, { restWorkSec: v })}
-                    min={30}
-                    max={600}
-                    step={15}
-                    name="rest"
-                  />
-                </div>
+                      {d.ruleKind !== 'manual' && (
+                        <Mini
+                          label={`Step · ${settings.units}`}
+                          value={shown(d.incrementLb)}
+                          onChange={(v) =>
+                            update(i, { incrementLb: fromShown(v) })
+                          }
+                          min={settings.units === 'kg' ? 0.5 : 1.25}
+                          step={settings.units === 'kg' ? 0.5 : 1.25}
+                          name="increment"
+                        />
+                      )}
+                      <Mini
+                        label="Rest · sec"
+                        value={d.restWorkSec}
+                        onChange={(v) => update(i, { restWorkSec: v })}
+                        min={30}
+                        max={600}
+                        step={15}
+                        name="rest"
+                      />
+                    </div>
+                  </>
+                )}
               </div>
             ))}
 
@@ -403,7 +578,7 @@ export function RoutineBuilder() {
             disabled={!canSave}
             className="os-btn os-btn--pri os-press"
           >
-            {saving ? 'Saving…' : 'Save day'}
+            {saving ? 'Saving…' : editing ? 'Save changes' : 'Save day'}
           </button>
         </div>
 
