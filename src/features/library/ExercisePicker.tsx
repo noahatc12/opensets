@@ -98,7 +98,7 @@ export function ExercisePicker({ onPick, onClose }: Props) {
           </button>
         )}
       </div>
-      <div className="os-chips mt-2.5 flex-none">
+      <div className="os-chips mt-1 flex-none">
         {[{ key: 'all', label: 'All' }, ...MUSCLE_GROUPS].map((g) => (
           <button
             key={g.key}

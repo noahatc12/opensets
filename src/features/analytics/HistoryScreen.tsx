@@ -170,7 +170,7 @@ export function HistoryScreen() {
       </div>
 
       {lifts.length > 0 && (
-        <div className="os-chips mt-2.5">
+        <div className="os-chips mt-1">
           {lifts.slice(0, 8).map((id) => (
             <button
               key={id}

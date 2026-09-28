@@ -1148,3 +1148,49 @@ html[data-kbd][data-ds='editorial'] .os-well:focus-within {
   height: 66.5px;
   overflow: hidden;
 }
+
+/* Touch areas: every small control owns at least 44 x 44 pt to tap, Apple's minimum,
+   through an invisible ::before, so nothing changes how it looks (Noah approved it on
+   the review page, 09-28). Only on real controls: a chip used as a label must never take
+   a tap meant for the button below it. reach-check.mjs hit-tests 21 pt out from each
+   control's centre to hold this. */
+[data-ds='editorial']
+  :is(button, a):is(
+    .os-step,
+    .os-chip,
+    .os-icon-btn,
+    .os-btn--sm,
+    .os-why,
+    .os-hit
+  ),
+[data-ds='editorial'] .os-seg > button {
+  position: relative;
+}
+[data-ds='editorial']
+  :is(button, a):is(
+    .os-step,
+    .os-chip,
+    .os-icon-btn,
+    .os-btn--sm,
+    .os-why,
+    .os-hit
+  )::before,
+[data-ds='editorial'] .os-seg > button::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: max(100%, 44px);
+  height: max(100%, 44px);
+  transform: translate(-50%, -50%);
+}
+/* A chip row scrolls sideways, which clips anything outside it: 6 px of room above and
+   below for the chips' touch areas, taken back with margins so nothing moves (rows that
+   set a top margin use mt-1, the old mt-2.5 less these 6 px). */
+[data-ds='editorial'] .os-chips {
+  padding-block: 6px 8px;
+  margin-bottom: -6px;
+}
+[data-ds='editorial'] .os-chips:not([class*='mt-']) {
+  margin-top: -6px;
+}
