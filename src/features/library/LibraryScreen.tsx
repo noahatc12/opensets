@@ -234,120 +234,177 @@ export function LibraryScreen() {
       .join(' · ');
 
   return (
-    <div
-      ref={setScroller}
-      className="relative h-full overflow-auto px-[18px] pb-[120px] pt-2"
-    >
-      <ScreenTitle
-        eyebrow={
-          catalog ? `${catalog.length} exercises` : 'Loading the library'
-        }
-        title="Library"
-      />
-
-      <div className="os-search mt-3.5">
-        <svg
-          width="18"
-          height="18"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="var(--mute)"
-          strokeWidth="2.2"
-          strokeLinecap="round"
-          aria-hidden
-        >
-          <circle cx="11" cy="11" r="7" />
-          <path d="M20 20l-4-4" />
-        </svg>
-        <input
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search"
-          aria-label="Search exercises or muscles"
-          className="os-input text-[15px]"
-        />
-        {query && (
-          <button
-            type="button"
-            onClick={() => setQuery('')}
-            aria-label="Clear search"
-            className="os-t px-1"
-          >
-            Clear
-          </button>
-        )}
-      </div>
-
-      <div className="os-chips mt-2.5">
-        <button
-          type="button"
-          onClick={() => setSheetOpen(true)}
-          className={`os-chip os-press ${activeCount > 0 ? 'os-chip--acc' : ''}`}
-          aria-label={
-            activeCount > 0 ? `Filters, ${activeCount} active` : 'Filters'
+    <div className="relative flex h-full flex-col">
+      <div
+        ref={setScroller}
+        className="min-h-0 flex-1 overflow-auto px-[18px] pb-[120px] pt-2"
+      >
+        <ScreenTitle
+          eyebrow={
+            catalog ? `${catalog.length} exercises` : 'Loading the library'
           }
-        >
+          title="Library"
+        />
+
+        <div className="os-search mt-3.5">
           <svg
-            width="14"
-            height="14"
+            width="18"
+            height="18"
             viewBox="0 0 24 24"
             fill="none"
-            stroke="currentColor"
+            stroke="var(--mute)"
             strokeWidth="2.2"
             strokeLinecap="round"
             aria-hidden
           >
-            <path d="M3 5h18M6 12h12M10 19h4" />
+            <circle cx="11" cy="11" r="7" />
+            <path d="M20 20l-4-4" />
           </svg>
-          Filters{activeCount > 0 ? ` · ${activeCount}` : ''}
-        </button>
-        {MUSCLE_GROUPS.map((g) => (
-          <Chip
-            key={g.key}
-            label={g.label}
-            active={facets.muscles.has(g.key)}
-            onClick={() => toggle('muscles', g.key)}
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search"
+            aria-label="Search exercises or muscles"
+            className="os-input text-[15px]"
           />
-        ))}
-      </div>
-
-      {catalog === null ? (
-        <p className="os-t mt-8 text-center">Loading library…</p>
-      ) : results.length === 0 ? (
-        <div className="os-card mt-4 text-center">
-          <div className="text-[15px] font-extrabold">No exercise matches</div>
-          <p className="os-t mt-1">Try another word, or clear the filters.</p>
-          {(query || activeCount > 0) && (
+          {query && (
             <button
               type="button"
-              onClick={() => {
-                setQuery('');
-                setFacets(emptyFacets());
-              }}
-              className="os-btn os-btn--sm os-press mt-3"
+              onClick={() => setQuery('')}
+              aria-label="Clear search"
+              className="os-t px-1"
             >
-              Clear search and filters
+              Clear
             </button>
           )}
         </div>
-      ) : (
-        <>
-          {yours.length > 0 && (
-            <>
-              <SectionHead right={yours.length}>Your lifts</SectionHead>
-              <div className="os-card" style={{ padding: '4px 16px' }}>
-                {yours.slice(0, 8).map((ex) => {
-                  const b = best.get(ex.id);
-                  const n = sessions.get(ex.id) ?? 0;
-                  return (
+
+        <div className="os-chips mt-2.5">
+          <button
+            type="button"
+            onClick={() => setSheetOpen(true)}
+            className={`os-chip os-press ${activeCount > 0 ? 'os-chip--acc' : ''}`}
+            aria-label={
+              activeCount > 0 ? `Filters, ${activeCount} active` : 'Filters'
+            }
+          >
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.2"
+              strokeLinecap="round"
+              aria-hidden
+            >
+              <path d="M3 5h18M6 12h12M10 19h4" />
+            </svg>
+            Filters{activeCount > 0 ? ` · ${activeCount}` : ''}
+          </button>
+          {MUSCLE_GROUPS.map((g) => (
+            <Chip
+              key={g.key}
+              label={g.label}
+              active={facets.muscles.has(g.key)}
+              onClick={() => toggle('muscles', g.key)}
+            />
+          ))}
+        </div>
+
+        {catalog === null ? (
+          <p className="os-t mt-8 text-center">Loading library…</p>
+        ) : results.length === 0 ? (
+          <div className="os-card mt-4 text-center">
+            <div className="text-[15px] font-extrabold">
+              No exercise matches
+            </div>
+            <p className="os-t mt-1">Try another word, or clear the filters.</p>
+            {(query || activeCount > 0) && (
+              <button
+                type="button"
+                onClick={() => {
+                  setQuery('');
+                  setFacets(emptyFacets());
+                }}
+                className="os-btn os-btn--sm os-press mt-3"
+              >
+                Clear search and filters
+              </button>
+            )}
+          </div>
+        ) : (
+          <>
+            {yours.length > 0 && (
+              <>
+                <SectionHead right={yours.length}>Your lifts</SectionHead>
+                <div className="os-card" style={{ padding: '4px 16px' }}>
+                  {yours.slice(0, 8).map((ex) => {
+                    const b = best.get(ex.id);
+                    const n = sessions.get(ex.id) ?? 0;
+                    return (
+                      <button
+                        key={ex.id}
+                        type="button"
+                        onClick={() => open(ex)}
+                        className="os-row os-press"
+                        aria-label={`${ex.name}, e1RM ${b ? roundDisplay(toUnit(b, units), units) : 'none'}`}
+                      >
+                        <Thumb ex={ex} />
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate text-[15px] font-semibold">
+                            {ex.name}
+                          </span>
+                          <span
+                            className="mt-0.5 block truncate text-[12px] font-medium"
+                            style={{ color: 'var(--mute)' }}
+                          >
+                            {meta(ex)} · {n} {n === 1 ? 'session' : 'sessions'}
+                          </span>
+                        </span>
+                        {b ? (
+                          <span className="text-right">
+                            <span
+                              className="os-num block text-[17px]"
+                              style={{
+                                letterSpacing: '-.02em',
+                                color:
+                                  b === topE1rm ? 'var(--pr)' : 'var(--ink)',
+                              }}
+                            >
+                              {roundDisplay(toUnit(b, units), units)}
+                            </span>
+                            <span className="os-t block text-[11px]">
+                              e1RM {units}
+                            </span>
+                          </span>
+                        ) : (
+                          <span className="os-t">logged</span>
+                        )}
+                        <span className="os-chev" />
+                      </button>
+                    );
+                  })}
+                </div>
+              </>
+            )}
+            <SectionHead
+              right={query || activeCount ? results.length : undefined}
+            >
+              {query || activeCount ? 'Matches' : 'All exercises'}
+            </SectionHead>
+            {scroller && (
+              <Virtuoso
+                customScrollParent={scroller}
+                data={results}
+                components={{ List: ListCard }}
+                itemContent={(_, ex) => (
+                  <div style={{ padding: '0 16px' }}>
                     <button
-                      key={ex.id}
                       type="button"
                       onClick={() => open(ex)}
                       className="os-row os-press"
-                      aria-label={`${ex.name}, e1RM ${b ? roundDisplay(toUnit(b, units), units) : 'none'}`}
                     >
-                      <Thumb ex={ex} />
                       <span className="min-w-0 flex-1">
                         <span className="block truncate text-[15px] font-semibold">
                           {ex.name}
@@ -356,70 +413,18 @@ export function LibraryScreen() {
                           className="mt-0.5 block truncate text-[12px] font-medium"
                           style={{ color: 'var(--mute)' }}
                         >
-                          {meta(ex)} · {n} {n === 1 ? 'session' : 'sessions'}
+                          {meta(ex)}
                         </span>
                       </span>
-                      {b ? (
-                        <span className="text-right">
-                          <span
-                            className="os-num block text-[17px]"
-                            style={{
-                              letterSpacing: '-.02em',
-                              color: b === topE1rm ? 'var(--pr)' : 'var(--ink)',
-                            }}
-                          >
-                            {roundDisplay(toUnit(b, units), units)}
-                          </span>
-                          <span className="os-t block text-[10.5px]">
-                            e1RM {units}
-                          </span>
-                        </span>
-                      ) : (
-                        <span className="os-t">logged</span>
-                      )}
                       <span className="os-chev" />
                     </button>
-                  );
-                })}
-              </div>
-            </>
-          )}
-          <SectionHead
-            right={query || activeCount ? results.length : undefined}
-          >
-            {query || activeCount ? 'Matches' : 'All exercises'}
-          </SectionHead>
-          {scroller && (
-            <Virtuoso
-              customScrollParent={scroller}
-              data={results}
-              components={{ List: ListCard }}
-              itemContent={(_, ex) => (
-                <div style={{ padding: '0 16px' }}>
-                  <button
-                    type="button"
-                    onClick={() => open(ex)}
-                    className="os-row os-press"
-                  >
-                    <span className="min-w-0 flex-1">
-                      <span className="block truncate text-[15px] font-semibold">
-                        {ex.name}
-                      </span>
-                      <span
-                        className="mt-0.5 block truncate text-[12px] font-medium"
-                        style={{ color: 'var(--mute)' }}
-                      >
-                        {meta(ex)}
-                      </span>
-                    </span>
-                    <span className="os-chev" />
-                  </button>
-                </div>
-              )}
-            />
-          )}
-        </>
-      )}
+                  </div>
+                )}
+              />
+            )}
+          </>
+        )}
+      </div>
 
       <Sheet
         open={sheetOpen}

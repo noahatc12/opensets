@@ -290,7 +290,7 @@ export function ExerciseDetailScreen() {
             {ex.instructions.map((step, i) => (
               <p
                 key={i}
-                className={`text-[14.5px] leading-[1.5] ${i > 0 ? 'mt-2' : ''}`}
+                className={`text-[14px] leading-[1.5] ${i > 0 ? 'mt-2' : ''}`}
                 style={{ color: 'var(--ink2)' }}
               >
                 {step}

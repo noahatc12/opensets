@@ -54,7 +54,7 @@ export function StatTiles({
             </div>
             {s.sub !== undefined && (
               <div
-                className="mt-1 truncate text-[11.5px] font-semibold"
+                className="mt-1 truncate text-[12px] font-semibold"
                 style={{ color: 'var(--mute)' }}
               >
                 {s.sub}
@@ -163,7 +163,7 @@ export function SectionHead({
           <button
             type="button"
             onClick={onRight}
-            className="text-[12.5px] font-semibold"
+            className="-my-3 -mr-2 min-h-11 px-2 text-[12.5px] font-semibold"
             style={{ color: 'var(--acc-tx)' }}
           >
             {right}

@@ -776,7 +776,7 @@ function Logger({ vm }: { vm: LoggerVM }) {
               style={{ letterSpacing: '-.02em' }}
             >
               {fmtWeight(settings.barLb, units)}
-              <small className="os-t ml-1 text-[11.5px]">{units}</small>
+              <small className="os-t ml-1 text-[12px]">{units}</small>
             </span>
           </div>
           <div className="os-row">

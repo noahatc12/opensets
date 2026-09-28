@@ -1,12 +1,15 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCatalog } from '../library/useCatalog';
 import { generatePlan } from '../../engine';
-import { ChevronLeftIcon } from '../../components/icons';
 import { useSettings } from '../../db/hooks';
-import { kgToLb, ftInToIn } from '../../lib/units';
+import { loadStepsOf } from '../../db/repositories';
+import { roundForLoad } from '../../engine/loading';
+import type { LoadType } from '../../engine/types';
+import { kgToLb, ftInToIn, fmtWeight } from '../../lib/units';
 import type { BiologicalSex, Muscle, SplitChoice } from '../../db/types';
 import { SPLITS, PRIORITY_MUSCLES } from './preferenceOptions';
+import { BackButton } from '../../ui/StatGrid';
 import {
   createProgramFromPlan,
   genPreferencesFrom,
@@ -14,24 +17,176 @@ import {
   type OnboardingInputs,
 } from './buildProgram';
 
-/* Ported from the Tempo prototype onboarding wizard (6 steps). On finish it
-   generates a simple starter routine from the chosen goal/experience. */
+/* Onboarding: five steps, one question each, options as cards with an icon tile and a
+   radio dot. The goal ids are the engine's; only the labels and icons are ours. The
+   preview shows every exercise with the starting weight the generator seeded from the
+   lifter's body data. */
 
-const GOALS = ['Build muscle', 'Lose fat', 'Recomposition', 'Get stronger', 'General fitness'] as const;
+const GOALS: { id: string; label: string; sub: string; icon: ReactNode }[] = [
+  {
+    id: 'Build muscle',
+    label: 'Build muscle',
+    sub: 'Moderate reps, more volume per muscle',
+    // dumbbell
+    icon: <path d="M6 12h12M3 9v6M21 9v6M6 8v8M18 8v8" />,
+  },
+  {
+    id: 'Get stronger',
+    label: 'Get stronger',
+    sub: 'Heavy compounds, low reps, long rest',
+    // barbell with plates
+    icon: <path d="M2 12h3M19 12h3M5 8v8M8 6v12M16 6v12M19 8v8M8 12h8" />,
+  },
+  {
+    id: 'General fitness',
+    label: 'Stay fit',
+    sub: 'Balanced reps, shorter sessions',
+    // heart-rate line
+    icon: <path d="M2 12h4l2-5 3 10 3-8 2 3h6" />,
+  },
+  {
+    id: 'Lose fat',
+    label: 'Lean out',
+    sub: 'Keep strength while losing fat',
+    // downward trend
+    icon: <path d="M3 6l6 6 4-4 8 8M21 11v5h-5" />,
+  },
+  {
+    id: 'Recomposition',
+    label: 'Recomposition',
+    sub: 'Lose fat and build muscle at once',
+    // two arrows crossing
+    icon: <path d="M4 6l16 12M20 14v4h-4M4 18L20 6M20 10V6h-4" />,
+  },
+];
 const EQUIPMENT = ['Full gym', 'Home rack', 'Minimal'] as const;
 const EXPERIENCE = [
   { id: 'Novice', sub: 'New to structured training' },
-  { id: 'Intermediate', sub: '1–3 years, self-coached' },
+  { id: 'Intermediate', sub: '1 to 3 years, self-coached' },
   { id: 'Advanced', sub: 'Periodised, near my ceiling' },
 ] as const;
-const CTAS = ['Get started', 'Continue', 'Continue', 'Continue', 'Continue', 'Build my plan'];
-
+const TITLES = [
+  'What are you training for?',
+  'How many days a week?',
+  'How long have you trained?',
+  'A few numbers',
+  'Your plan',
+];
+const SUBS = [
+  'This sets your rep ranges, rest and how fast weight goes up. You can change it any time.',
+  'Pick what you can keep up. Consistency beats ambition here.',
+  'This sets how fast the plan progresses and how much volume it starts with.',
+  'All optional. These let OpenSets suggest starting weights and a protein target.',
+  '',
+];
+const STEPS = 5;
 const nowIso = () => new Date().toISOString();
 
-const cardSel = (active: boolean) =>
-  active
-    ? { background: 'var(--accent)', color: 'var(--accent-ink)' as const, border: '1px solid transparent' }
-    : { background: 'var(--surface)', color: 'var(--text)' as const, border: '1px solid var(--border-card)' };
+function OptionCard({
+  selected,
+  onClick,
+  icon,
+  label,
+  sub,
+  children,
+}: {
+  selected: boolean;
+  onClick: () => void;
+  icon?: ReactNode;
+  label: string;
+  sub?: string;
+  children?: ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      role="radio"
+      aria-checked={selected}
+      className={`os-card os-press flex w-full items-center gap-3.5 text-left ${selected ? 'os-card--lift os-card--selected' : ''}`}
+    >
+      {icon && (
+        <span
+          className="grid size-12 flex-none place-items-center rounded-[14px]"
+          style={{ background: selected ? 'var(--acc-soft)' : 'var(--s2)' }}
+          aria-hidden
+        >
+          <svg
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke={selected ? 'var(--acc2)' : 'var(--ink2)'}
+            strokeWidth="2.2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            {icon}
+          </svg>
+        </span>
+      )}
+      <span className="min-w-0 flex-1">
+        <span
+          className="block text-[17px] font-extrabold"
+          style={{ letterSpacing: '-.02em' }}
+        >
+          {label}
+        </span>
+        {sub && <span className="os-t mt-0.5 block font-medium">{sub}</span>}
+        {children}
+      </span>
+      <span
+        className={`os-radio ${selected ? 'os-radio--on' : ''}`}
+        aria-hidden
+      >
+        {selected && (
+          <svg width="12" height="12" viewBox="0 0 20 20" fill="none">
+            <path
+              d="M4 10.5L8 14.5L16 5.5"
+              stroke="var(--acc-ink)"
+              strokeWidth="3"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        )}
+      </span>
+    </button>
+  );
+}
+
+function Chip({
+  on,
+  onClick,
+  children,
+}: {
+  on: boolean;
+  onClick: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={on}
+      className={`os-chip os-press ${on ? 'os-chip--on' : ''}`}
+    >
+      {children}
+    </button>
+  );
+}
+
+function Field({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <label className="block">
+      <span className="os-t mb-1.5 block">{label}</span>
+      {children}
+    </label>
+  );
+}
+const fieldBox = 'os-card flex min-w-0 flex-1 items-center gap-2';
+const fieldStyle = { padding: '12px 14px' };
+const inputCls = 'os-input text-[18px] font-bold';
 
 export function OnboardingScreen() {
   const navigate = useNavigate();
@@ -44,8 +199,6 @@ export function OnboardingScreen() {
   const [splitChoice, setSplitChoice] = useState<SplitChoice>('auto');
   const [priority, setPriority] = useState<Muscle[]>([]);
   const [bodyweight, setBodyweight] = useState('');
-  // Profile capture (all optional — the wizard is skippable). Height is canonical
-  // inches; entered as ft + in. Persisted to db.profile on finish (§6.6 input).
   const [sex, setSex] = useState<BiologicalSex | null>(null);
   const [dob, setDob] = useState('');
   const [heightFt, setHeightFt] = useState('');
@@ -54,9 +207,22 @@ export function OnboardingScreen() {
   const [targetBodyFat, setTargetBodyFat] = useState('');
   const [timeframeWeeks, setTimeframeWeeks] = useState('');
   const [busy, setBusy] = useState(false);
-  const { units, restCompoundSec, restIsolationSec } = useSettings();
+  const [buildError, setBuildError] = useState<string | null>(null);
+  const settings = useSettings();
+  const { units, restCompoundSec, restIsolationSec } = settings;
+  // The preview shows the weight the logger will prescribe: the generator's body-aware
+  // start rounded to what this gym can load, the way the rules round it.
+  const shownStart = (lb: number, loadType: LoadType) =>
+    lb > 0
+      ? roundForLoad(
+          lb,
+          loadType,
+          settings.barLb,
+          settings.plateInventoryLb,
+          loadStepsOf(settings),
+        )
+      : 0;
 
-  // Bodyweight in canonical lb (for profile-scaled seeding), or undefined if unset.
   const bodyweightLb = useMemo(() => {
     const bw = parseFloat(bodyweight);
     if (Number.isNaN(bw) || bw <= 0) return undefined;
@@ -71,7 +237,10 @@ export function OnboardingScreen() {
     };
     const ft = parseInt(heightFt, 10);
     const inch = parseInt(heightInch, 10);
-    const hIn = ftInToIn(Number.isNaN(ft) ? 0 : ft, Number.isNaN(inch) ? 0 : inch);
+    const hIn = ftInToIn(
+      Number.isNaN(ft) ? 0 : ft,
+      Number.isNaN(inch) ? 0 : inch,
+    );
     return {
       goal,
       experience,
@@ -83,42 +252,60 @@ export function OnboardingScreen() {
       ...(dob ? { birthDate: dob } : {}),
       ...(bodyweightLb ? { bodyweightLb } : {}),
       ...(hIn > 0 ? { heightIn: hIn } : {}),
-      ...(num(bodyFat, parseFloat) ? { bodyFatPct: num(bodyFat, parseFloat) } : {}),
-      ...(num(targetBodyFat, parseFloat) ? { targetBodyFatPct: num(targetBodyFat, parseFloat) } : {}),
+      ...(num(bodyFat, parseFloat)
+        ? { bodyFatPct: num(bodyFat, parseFloat) }
+        : {}),
+      ...(num(targetBodyFat, parseFloat)
+        ? { targetBodyFatPct: num(targetBodyFat, parseFloat) }
+        : {}),
       ...(num(timeframeWeeks, (v) => parseInt(v, 10))
         ? { goalTimeframeWeeks: num(timeframeWeeks, (v) => parseInt(v, 10)) }
         : {}),
     };
-  }, [goal, experience, days, equipment, splitChoice, priority, sex, dob, bodyweightLb, heightFt, heightInch, bodyFat, targetBodyFat, timeframeWeeks]);
+  }, [
+    goal,
+    experience,
+    days,
+    equipment,
+    splitChoice,
+    priority,
+    sex,
+    dob,
+    bodyweightLb,
+    heightFt,
+    heightInch,
+    bodyFat,
+    targetBodyFat,
+    timeframeWeeks,
+  ]);
 
-  // The generated plan — recomputed as the answers change, used for both the
-  // step-5 preview and the actual build so they always agree. Now via the pure
-  // engine generator (the S2 contract): profile + preferences in, full plan out.
-  // The profile now carries age (from DOB) and the goal timeframe too.
+  // The generated plan, recomputed as the answers change, used for the preview and the
+  // build so they always agree.
   const plan = useMemo(
     () =>
       catalog
         ? generatePlan(catalog, genProfileFrom(inputs, nowIso()), {
             ...genPreferencesFrom(inputs),
-            rest: { compoundSec: restCompoundSec, isolationSec: restIsolationSec },
+            rest: {
+              compoundSec: restCompoundSec,
+              isolationSec: restIsolationSec,
+            },
           })
         : null,
     [catalog, inputs, restCompoundSec, restIsolationSec],
   );
-
-  const [buildError, setBuildError] = useState<string | null>(null);
 
   async function finish() {
     if (!plan || busy) return;
     setBusy(true);
     setBuildError(null);
     try {
-      // One transaction: the program, its days, the profile and the starting
-      // bodyweight all land together or not at all.
       await createProgramFromPlan(plan, inputs, nowIso());
     } catch {
       setBusy(false);
-      setBuildError('Could not save your plan. Nothing was changed. Try again.');
+      setBuildError(
+        'Could not save your plan. Nothing was changed. Try again.',
+      );
       return;
     }
     try {
@@ -129,380 +316,395 @@ export function OnboardingScreen() {
     navigate('/today');
   }
 
-  function next() {
-    if (step >= 5) {
-      void finish();
-    } else {
-      setStep((s) => s + 1);
-    }
-  }
+  const next = () =>
+    step >= STEPS - 1 ? void finish() : setStep((s) => s + 1);
+  const back = () => (step === 0 ? navigate(-1) : setStep((s) => s - 1));
+  const bodyDataGiven = Boolean(bodyweightLb || sex);
 
   return (
-    <div className="flex h-full flex-col">
-      <div className="flex items-center gap-3.5 px-[22px] pb-3 pt-[max(0.625rem,env(safe-area-inset-top))]">
-        <button
-          onClick={() => (step === 0 ? navigate('/today') : setStep((s) => s - 1))}
-          className="grid size-[38px] place-items-center bg-transparent text-muted"
-          aria-label="Back"
-        >
-          <ChevronLeftIcon className="size-[22px]" />
-        </button>
-        <div className="h-[5px] flex-1 overflow-hidden rounded-[3px]" style={{ background: 'var(--surface-2)' }}>
+    <div className="relative flex h-full flex-col">
+      <div className="flex-1 overflow-auto px-[18px] pb-[120px] pt-[max(0.5rem,env(safe-area-inset-top))]">
+        <div className="flex items-center gap-3">
+          <BackButton onClick={back} />
           <div
-            className="h-full rounded-[3px] transition-[width]"
-            style={{ background: 'var(--accent)', width: `${(step / 5) * 100}%` }}
-          />
-        </div>
-      </div>
-
-      <div className="os-scroll flex-1 overflow-auto px-[26px] pb-2 pt-2.5">
-        {step === 0 && (
-          <div className="pt-[30px]">
-            <div className="mb-6 grid size-14 place-items-center rounded-[var(--r-lg)] text-accent-ink" style={{ background: 'var(--accent)' }}>
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
-                <path d="M4 12h16M7 8v8M17 8v8" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" />
-              </svg>
-            </div>
-            <div className="text-[32px] font-bold leading-[1.1] text-text" style={{ letterSpacing: 'var(--tracking-tight)' }}>
-              Your coach is just math.
-            </div>
-            <p className="mt-3.5 text-[15px] leading-relaxed text-muted">
-              OpenSets builds your plan, tracks every set, and tells you exactly when to
-              add weight — on-device, free, fully usable with no signal.
-            </p>
+            className="h-1.5 flex-1 overflow-hidden rounded-[3px]"
+            style={{ background: 'var(--s2)' }}
+            role="progressbar"
+            aria-valuemin={1}
+            aria-valuemax={STEPS}
+            aria-valuenow={step + 1}
+            aria-label="Onboarding progress"
+          >
             <div
-              className="mt-6 rounded-[var(--r-md)] border p-4 text-[12px] leading-relaxed text-muted"
-              style={{ background: 'var(--surface)', borderColor: 'var(--border-card)' }}
-            >
-              Educational tool — <span className="font-semibold text-text">not medical advice.</span> Train within your own limits.
-            </div>
+              className="h-full rounded-[3px] transition-[width]"
+              style={{
+                width: `${((step + 1) / STEPS) * 100}%`,
+                background: 'linear-gradient(90deg, var(--acc2), var(--acc))',
+              }}
+            />
+          </div>
+          <span className="os-t" style={{ fontVariantNumeric: 'tabular-nums' }}>
+            {step + 1} of {STEPS}
+          </span>
+        </div>
+
+        <h1
+          className="os-h1 mt-[26px]"
+          style={{ fontSize: 30, lineHeight: 1.1 }}
+        >
+          {step === STEPS - 1
+            ? `${GOALS.find((g) => g.id === goal)?.label ?? goal} · ${days} days`
+            : TITLES[step]}
+        </h1>
+        {SUBS[step] && (
+          <p className="os-t mt-2 font-medium leading-[1.4]">{SUBS[step]}</p>
+        )}
+        {step === STEPS - 1 && (
+          <p className="os-t mt-2 font-medium leading-[1.4]">
+            {goal === 'Get stronger' || experience === 'Novice'
+              ? 'Linear'
+              : 'Double'}{' '}
+            progression · {equipment.toLowerCase()} · built for{' '}
+            {experience.toLowerCase()} lifters.
+          </p>
+        )}
+
+        {step === 0 && (
+          <div
+            className="mt-[22px] flex flex-col gap-2.5"
+            role="radiogroup"
+            aria-label="Goal"
+          >
+            {GOALS.map((g) => (
+              <OptionCard
+                key={g.id}
+                selected={goal === g.id}
+                onClick={() => setGoal(g.id)}
+                icon={g.icon}
+                label={g.label}
+                sub={g.sub}
+              />
+            ))}
           </div>
         )}
 
         {step === 1 && (
-          <Step n="Step 1" title="What's your goal?">
-            <div className="mt-[22px] flex flex-col gap-2.5">
-              {GOALS.map((g) => (
-                <button key={g} onClick={() => setGoal(g)} className="rounded-[var(--r-md)] px-[18px] py-4 text-left text-[15px] font-bold" style={cardSel(goal === g)}>
-                  {g}
-                </button>
-              ))}
-            </div>
-          </Step>
-        )}
-
-        {step === 2 && (
-          <Step n="Step 2" title="Days per week">
-            <div className="mt-5 flex gap-2.5">
+          <>
+            <div
+              className="mt-5 grid grid-cols-4 gap-2"
+              role="radiogroup"
+              aria-label="Days per week"
+            >
               {[3, 4, 5, 6].map((d) => (
                 <button
                   key={d}
+                  type="button"
+                  role="radio"
+                  aria-checked={days === d}
                   onClick={() => setDays(d)}
-                  className="flex aspect-square flex-1 items-center justify-center rounded-[var(--r-md)] text-[22px] font-bold"
-                  style={{ ...cardSel(days === d), fontFamily: 'var(--font-num)' }}
+                  className={`os-card os-press os-num aspect-square text-[26px] ${days === d ? 'os-card--lift os-card--selected' : ''}`}
+                  style={{ padding: 0, display: 'grid', placeItems: 'center' }}
                 >
                   {d}
                 </button>
               ))}
             </div>
-            <div className="mb-3.5 mt-[26px] text-[15px] font-semibold text-text">Equipment</div>
-            <div className="flex flex-wrap gap-2">
+            <div className="os-h2">Equipment</div>
+            <div className="flex flex-wrap gap-1.5">
               {EQUIPMENT.map((e) => (
-                <button key={e} onClick={() => setEquipment(e)} className="rounded-[var(--r-pill)] px-4 py-2.5 text-[13px] font-semibold" style={cardSel(equipment === e)}>
+                <Chip
+                  key={e}
+                  on={equipment === e}
+                  onClick={() => setEquipment(e)}
+                >
                   {e}
-                </button>
+                </Chip>
               ))}
             </div>
-            <div className="mb-3.5 mt-[26px] text-[15px] font-semibold text-text">
-              Split <span className="text-[12px] font-normal text-faint">· optional</span>
+            <div className="os-h2">
+              Split <span>optional</span>
             </div>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-1.5">
               {SPLITS.map((s) => (
-                <button
+                <Chip
                   key={s.id}
+                  on={splitChoice === s.id}
                   onClick={() => setSplitChoice(s.id)}
-                  className="rounded-[var(--r-pill)] px-4 py-2.5 text-[13px] font-semibold"
-                  style={cardSel(splitChoice === s.id)}
                 >
                   {s.label}
-                </button>
+                </Chip>
               ))}
             </div>
-          </Step>
+          </>
+        )}
+
+        {step === 2 && (
+          <div
+            className="mt-[22px] flex flex-col gap-2.5"
+            role="radiogroup"
+            aria-label="Experience"
+          >
+            {EXPERIENCE.map((x) => (
+              <OptionCard
+                key={x.id}
+                selected={experience === x.id}
+                onClick={() => setExperience(x.id)}
+                label={x.id}
+                sub={x.sub}
+              />
+            ))}
+          </div>
         )}
 
         {step === 3 && (
-          <Step n="Step 3" title="Experience">
-            <div className="mt-[22px] flex flex-col gap-2.5">
-              {EXPERIENCE.map((x) => (
-                <button key={x.id} onClick={() => setExperience(x.id)} className="rounded-[var(--r-md)] px-[18px] py-4 text-left" style={cardSel(experience === x.id)}>
-                  <div className="text-[15px] font-bold">{x.id}</div>
-                  <div className="mt-0.5 text-[12px]" style={{ opacity: 0.8 }}>{x.sub}</div>
-                </button>
-              ))}
-            </div>
-          </Step>
-        )}
-
-        {step === 4 && (
-          <Step n="Step 4 · optional" title="A few numbers">
-            <p className="mt-1.5 text-[13px] leading-relaxed text-muted">
-              These let OpenSets suggest starting weights and a daily protein target.
-              All optional: skip anything, and your first workouts fill in the rest.
-            </p>
-
-            <OnbLabel>Sex</OnbLabel>
-            <div className="flex gap-2.5">
-              {(['male', 'female'] as const).map((s) => (
-                <button
-                  key={s}
-                  onClick={() => setSex((cur) => (cur === s ? null : s))}
-                  className="flex-1 rounded-[var(--r-md)] px-4 py-3.5 text-[14px] font-bold capitalize"
-                  style={cardSel(sex === s)}
-                >
-                  {s}
-                </button>
-              ))}
-            </div>
-
-            <OnbLabel>Date of birth</OnbLabel>
-            <OnbBox>
-              <input
-                type="date"
-                value={dob}
-                onChange={(e) => setDob(e.target.value)}
-                aria-label="Date of birth"
-                className="min-w-0 flex-1 bg-transparent text-[16px] text-text placeholder:text-faint focus:outline-none"
-                style={{ fontFamily: 'var(--font-num)' }}
-              />
-            </OnbBox>
-
-            <OnbLabel>Height</OnbLabel>
-            <div className="flex gap-2.5">
-              <OnbBox>
+          <div className="mt-5 flex flex-col gap-3.5">
+            <Field label="Sex">
+              <div
+                className="grid grid-cols-2 gap-2"
+                role="radiogroup"
+                aria-label="Sex"
+              >
+                {(['male', 'female'] as const).map((s) => (
+                  <button
+                    key={s}
+                    type="button"
+                    role="radio"
+                    aria-checked={sex === s}
+                    onClick={() => setSex((cur) => (cur === s ? null : s))}
+                    className={`os-btn os-btn--sm os-press capitalize ${sex === s ? 'os-btn--ink' : ''}`}
+                  >
+                    {s}
+                  </button>
+                ))}
+              </div>
+            </Field>
+            <Field label="Date of birth">
+              <div className={fieldBox} style={fieldStyle}>
                 <input
-                  type="number"
-                  inputMode="numeric"
-                  value={heightFt}
-                  onChange={(e) => setHeightFt(e.target.value)}
-                  placeholder="—"
-                  aria-label="Height feet"
-                  className="min-w-0 flex-1 bg-transparent text-[18px] text-text placeholder:text-faint focus:outline-none"
-                  style={{ fontFamily: 'var(--font-num)' }}
+                  type="date"
+                  value={dob}
+                  onChange={(e) => setDob(e.target.value)}
+                  aria-label="Date of birth"
+                  className={inputCls}
+                  style={{ fontSize: 16 }}
                 />
-                <span className="text-[14px] text-muted">ft</span>
-              </OnbBox>
-              <OnbBox>
-                <input
-                  type="number"
-                  inputMode="numeric"
-                  value={heightInch}
-                  onChange={(e) => setHeightInch(e.target.value)}
-                  placeholder="—"
-                  aria-label="Height inches"
-                  className="min-w-0 flex-1 bg-transparent text-[18px] text-text placeholder:text-faint focus:outline-none"
-                  style={{ fontFamily: 'var(--font-num)' }}
-                />
-                <span className="text-[14px] text-muted">in</span>
-              </OnbBox>
-            </div>
-
-            <OnbLabel>Bodyweight</OnbLabel>
-            <OnbBox>
-              <input
-                type="number"
-                inputMode="decimal"
-                value={bodyweight}
-                onChange={(e) => setBodyweight(e.target.value)}
-                placeholder="—"
-                aria-label="Bodyweight"
-                className="min-w-0 flex-1 bg-transparent text-[18px] text-text placeholder:text-faint focus:outline-none"
-                style={{ fontFamily: 'var(--font-num)' }}
-              />
-              <span className="text-[14px] text-muted">{units}</span>
-            </OnbBox>
-
-            <OnbLabel>Body fat %</OnbLabel>
-            <OnbBox>
-              <input
-                type="number"
-                inputMode="decimal"
-                value={bodyFat}
-                onChange={(e) => setBodyFat(e.target.value)}
-                placeholder="—"
-                aria-label="Body fat percent"
-                className="min-w-0 flex-1 bg-transparent text-[18px] text-text placeholder:text-faint focus:outline-none"
-                style={{ fontFamily: 'var(--font-num)' }}
-              />
-              <span className="text-[14px] text-muted">%</span>
-            </OnbBox>
-
-            <div
-              className="mt-7 mb-1 text-[11px] font-bold uppercase text-faint"
-              style={{ letterSpacing: 'var(--tracking-caps)', fontFamily: 'var(--font-label)' }}
-            >
-              Goal target · optional
-            </div>
-            <p className="mb-1 text-[12px] leading-relaxed text-muted">
-              For a physique target — e.g. reach 12% body fat in 8 weeks.
-            </p>
-            <div className="flex gap-2.5">
-              <OnbBox>
+              </div>
+            </Field>
+            <Field label="Height">
+              <div className="flex gap-2">
+                <div className={fieldBox} style={fieldStyle}>
+                  <input
+                    type="number"
+                    inputMode="numeric"
+                    value={heightFt}
+                    onChange={(e) => setHeightFt(e.target.value)}
+                    placeholder="0"
+                    aria-label="Height feet"
+                    className={inputCls}
+                  />
+                  <span className="os-t">ft</span>
+                </div>
+                <div className={fieldBox} style={fieldStyle}>
+                  <input
+                    type="number"
+                    inputMode="numeric"
+                    value={heightInch}
+                    onChange={(e) => setHeightInch(e.target.value)}
+                    placeholder="0"
+                    aria-label="Height inches"
+                    className={inputCls}
+                  />
+                  <span className="os-t">in</span>
+                </div>
+              </div>
+            </Field>
+            <Field label="Bodyweight">
+              <div className={fieldBox} style={fieldStyle}>
                 <input
                   type="number"
                   inputMode="decimal"
-                  value={targetBodyFat}
-                  onChange={(e) => setTargetBodyFat(e.target.value)}
-                  placeholder="—"
-                  aria-label="Target body fat percent"
-                  className="min-w-0 flex-1 bg-transparent text-[18px] text-text placeholder:text-faint focus:outline-none"
-                  style={{ fontFamily: 'var(--font-num)' }}
+                  value={bodyweight}
+                  onChange={(e) => setBodyweight(e.target.value)}
+                  placeholder="0"
+                  aria-label="Bodyweight"
+                  className={inputCls}
                 />
-                <span className="text-[13px] text-muted">% BF</span>
-              </OnbBox>
-              <OnbBox>
+                <span className="os-t">{units}</span>
+              </div>
+            </Field>
+            <Field label="Body fat percent">
+              <div className={fieldBox} style={fieldStyle}>
                 <input
                   type="number"
-                  inputMode="numeric"
-                  value={timeframeWeeks}
-                  onChange={(e) => setTimeframeWeeks(e.target.value)}
-                  placeholder="—"
-                  aria-label="Goal timeframe weeks"
-                  className="min-w-0 flex-1 bg-transparent text-[18px] text-text placeholder:text-faint focus:outline-none"
-                  style={{ fontFamily: 'var(--font-num)' }}
+                  inputMode="decimal"
+                  value={bodyFat}
+                  onChange={(e) => setBodyFat(e.target.value)}
+                  placeholder="0"
+                  aria-label="Body fat percent"
+                  className={inputCls}
                 />
-                <span className="text-[13px] text-muted">weeks</span>
-              </OnbBox>
+                <span className="os-t">%</span>
+              </div>
+            </Field>
+            <div>
+              <div className="os-h2" style={{ marginTop: 6 }}>
+                Goal target <span>optional</span>
+              </div>
+              <p className="os-t mb-2 leading-snug">
+                For a physique target, such as 12 percent body fat in 8 weeks.
+              </p>
+              <div className="flex gap-2">
+                <div className={fieldBox} style={fieldStyle}>
+                  <input
+                    type="number"
+                    inputMode="decimal"
+                    value={targetBodyFat}
+                    onChange={(e) => setTargetBodyFat(e.target.value)}
+                    placeholder="0"
+                    aria-label="Target body fat percent"
+                    className={inputCls}
+                  />
+                  <span className="os-t">% fat</span>
+                </div>
+                <div className={fieldBox} style={fieldStyle}>
+                  <input
+                    type="number"
+                    inputMode="numeric"
+                    value={timeframeWeeks}
+                    onChange={(e) => setTimeframeWeeks(e.target.value)}
+                    placeholder="0"
+                    aria-label="Goal timeframe weeks"
+                    className={inputCls}
+                  />
+                  <span className="os-t">weeks</span>
+                </div>
+              </div>
             </div>
-
-            <OnbLabel>Priority muscles · optional</OnbLabel>
-            <p className="mb-2 text-[12px] leading-relaxed text-muted">
-              Lagging areas to bias extra volume toward.
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {PRIORITY_MUSCLES.map((m) => (
-                <button
-                  key={m.id}
-                  onClick={() =>
-                    setPriority((cur) =>
-                      cur.includes(m.id) ? cur.filter((x) => x !== m.id) : [...cur, m.id],
-                    )
-                  }
-                  className="rounded-[var(--r-pill)] px-4 py-2.5 text-[13px] font-semibold"
-                  style={cardSel(priority.includes(m.id))}
-                >
-                  {m.label}
-                </button>
-              ))}
+            <div>
+              <div className="os-h2" style={{ marginTop: 6 }}>
+                Priority muscles <span>optional</span>
+              </div>
+              <p className="os-t mb-2 leading-snug">
+                Lagging areas to bias extra volume toward.
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                {PRIORITY_MUSCLES.map((m) => (
+                  <Chip
+                    key={m.id}
+                    on={priority.includes(m.id)}
+                    onClick={() =>
+                      setPriority((cur) =>
+                        cur.includes(m.id)
+                          ? cur.filter((x) => x !== m.id)
+                          : [...cur, m.id],
+                      )
+                    }
+                  >
+                    {m.label}
+                  </Chip>
+                ))}
+              </div>
             </div>
-          </Step>
+          </div>
         )}
 
-        {step === 5 && (
-          <Step n="Recommended" title={`${goal} · ${days} days`} accentLabel>
-            <p className="mt-1.5 text-[14px] leading-relaxed text-muted">
-              {goal === 'Get stronger' || experience === 'Novice' ? 'Linear' : 'Double'} progression ·{' '}
-              {equipment.toLowerCase()} · built for {experience.toLowerCase()} lifters.
-            </p>
-            <div className="mt-5 flex flex-col gap-3.5">
-              {(plan?.program.days ?? []).map((day) => (
-                <div
-                  key={day.name}
-                  className="rounded-[var(--r-md)] border p-3.5"
-                  style={{ background: 'var(--surface)', borderColor: 'var(--border-card)' }}
-                >
-                  <div className="mb-2.5 flex items-center justify-between">
-                    <span className="text-[13px] font-bold text-text">{day.name}</span>
-                    <span className="text-[11px] text-faint" style={{ fontFamily: 'var(--font-num)' }}>
-                      {day.slots.length} exercises
-                    </span>
-                  </div>
-                  <div className="flex flex-col gap-1.5">
-                    {day.slots.map((s, i) => (
-                      <div key={s.exerciseId} className="flex items-center gap-2.5">
-                        <span className="w-[18px] text-[11px] text-accent" style={{ fontFamily: 'var(--font-num)' }}>
-                          {i + 1}
-                        </span>
-                        <span className="flex-1 truncate text-[13px] text-text">{s.exerciseName}</span>
-                        <span className="text-[11px] text-muted" style={{ fontFamily: 'var(--font-num)' }}>
-                          {s.scheme.sets}×{s.scheme.repTarget ?? `${s.scheme.repRange?.[0]}–${s.scheme.repRange?.[1]}`}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
+        {step === 4 && (
+          <div className="mt-4 flex flex-col gap-2.5">
+            {(plan?.program.days ?? []).map((day) => (
+              <div
+                key={day.name}
+                className="os-card"
+                style={{ padding: '10px 16px 6px' }}
+              >
+                <div className="flex items-center justify-between">
+                  <span
+                    className="text-[16px] font-extrabold"
+                    style={{ letterSpacing: '-.02em' }}
+                  >
+                    {day.name}
+                  </span>
+                  <span className="os-t">{day.slots.length} exercises</span>
                 </div>
-              ))}
-            </div>
-          </Step>
+                <div className="mt-1">
+                  {day.slots.map((s, i) => (
+                    <div
+                      key={s.exerciseId}
+                      className="os-row"
+                      style={{ padding: '9px 0' }}
+                    >
+                      <span
+                        className="os-t w-4"
+                        style={{ fontVariantNumeric: 'tabular-nums' }}
+                      >
+                        {i + 1}
+                      </span>
+                      <span className="min-w-0 flex-1 truncate text-[14px] font-semibold">
+                        {s.exerciseName}
+                      </span>
+                      <span
+                        className="os-t"
+                        style={{ fontVariantNumeric: 'tabular-nums' }}
+                      >
+                        {s.scheme.sets}×
+                        {s.scheme.repTarget ??
+                          `${s.scheme.repRange?.[0]}–${s.scheme.repRange?.[1]}`}
+                      </span>
+                      <span
+                        className="os-num w-14 text-right text-[15px]"
+                        style={{ letterSpacing: '-.02em' }}
+                      >
+                        {shownStart(s.startWeightLb, s.loadType) > 0
+                          ? fmtWeight(
+                              shownStart(s.startWeightLb, s.loadType),
+                              units,
+                            )
+                          : 'BW'}
+                        {shownStart(s.startWeightLb, s.loadType) > 0 && (
+                          <small className="os-t ml-0.5 text-[11px]">
+                            {units}
+                          </small>
+                        )}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+            <p className="os-t px-1 leading-snug">
+              {bodyDataGiven
+                ? 'Suggested from your body data, fine-tune in your first session.'
+                : 'Starting weights are conservative. Fine-tune them in your first session.'}
+            </p>
+            {!catalog && (
+              <p className="os-t text-center">Loading the exercise library…</p>
+            )}
+          </div>
         )}
       </div>
 
-      <div className="flex-none px-[22px] pb-[max(1.75rem,env(safe-area-inset-bottom))] pt-3">
+      <div className="os-dock">
         {buildError && (
-          <p role="alert" className="mb-2.5 text-center text-[13px] text-danger">
+          <p
+            role="alert"
+            className="mb-2.5 text-center text-[13px] font-semibold"
+            style={{ color: 'var(--danger)' }}
+          >
             {buildError}
           </p>
         )}
         <button
+          type="button"
           onClick={next}
-          disabled={busy}
-          className="h-[60px] w-full rounded-[var(--r-xl)] bg-accent text-[17px] font-bold text-accent-ink"
+          disabled={busy || (step === STEPS - 1 && !plan)}
+          className="os-btn os-btn--pri os-press"
         >
-          {busy ? 'Building…' : CTAS[step]}
+          {busy
+            ? 'Building…'
+            : step === STEPS - 1
+              ? 'Build my plan'
+              : 'Continue'}
         </button>
       </div>
-    </div>
-  );
-}
-
-function Step({
-  n,
-  title,
-  accentLabel,
-  children,
-}: {
-  n: string;
-  title: string;
-  accentLabel?: boolean;
-  children: React.ReactNode;
-}) {
-  return (
-    <div>
-      <div
-        className={`text-[11px] font-bold uppercase ${accentLabel ? 'text-accent' : 'text-faint'}`}
-        style={{ letterSpacing: 'var(--tracking-caps)', fontFamily: 'var(--font-label)' }}
-      >
-        {n}
-      </div>
-      <div className="mt-2 text-[26px] font-bold text-text" style={{ letterSpacing: 'var(--tracking-snug)' }}>
-        {title}
-      </div>
-      {children}
-    </div>
-  );
-}
-
-/** Small uppercase field label, spaced for the onboarding "numbers" step. */
-function OnbLabel({ children }: { children: React.ReactNode }) {
-  return (
-    <div
-      className="mb-2 mt-5 text-[11px] font-bold uppercase text-faint"
-      style={{ letterSpacing: 'var(--tracking-caps)', fontFamily: 'var(--font-label)' }}
-    >
-      {children}
-    </div>
-  );
-}
-
-/** Bordered input box matching the onboarding surface idiom. `min-w-0` lets it
- *  shrink to share width evenly when two sit side-by-side (e.g. ft/in). */
-function OnbBox({ children }: { children: React.ReactNode }) {
-  return (
-    <div
-      className="flex min-w-0 flex-1 items-center gap-2 rounded-[var(--r-md)] border px-4 py-3.5"
-      style={{ background: 'var(--surface)', borderColor: 'var(--border-card)' }}
-    >
-      {children}
     </div>
   );
 }
