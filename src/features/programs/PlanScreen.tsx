@@ -16,6 +16,7 @@ import {
 import { db } from '../../db/db';
 import { ScreenTitle } from '../../ui/StatGrid';
 import type { WorkoutTemplate } from '../../db/types';
+import { useScrollMemory } from '../../ui/scrollMemory';
 
 /* Plan: the week card, then each day as a card. Tapping a day expands it to its exercises
    and collapses the open one (one open at a time). The next day is lifted with an accent
@@ -35,6 +36,7 @@ const PHASE_LABEL: Record<string, string> = {
 };
 
 export function PlanScreen() {
+  const [, scrollRef] = useScrollMemory('plan');
   useCatalog();
   const nav = useNav();
   const profile = useProfile();
@@ -70,7 +72,10 @@ export function PlanScreen() {
     : 'Your program';
 
   return (
-    <div className="h-full overflow-auto px-[18px] pb-[120px] pt-2">
+    <div
+      ref={scrollRef}
+      className="h-full overflow-auto px-[18px] pb-[120px] pt-2"
+    >
       <ScreenTitle eyebrow={eyebrow} title="Plan" />
 
       {!programs?.length ? (

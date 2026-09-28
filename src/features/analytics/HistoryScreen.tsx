@@ -12,6 +12,7 @@ import { compact, monthDay, shortName, titleCase } from '../../lib/format';
 import { ScreenTitle, SectionHead, StatTiles } from '../../ui/StatGrid';
 import { TrendChart, type TrendPoint } from '../../ui/TrendChart';
 import type { LoggedSet } from '../../db/types';
+import { useScrollMemory } from '../../ui/scrollMemory';
 
 /* Trends: one layout. A range, the lifts with the most eligible sets as chips, the
    estimated one-rep max for the chosen lift with its delta, three tiles, weekly volume
@@ -26,6 +27,7 @@ const RANGE_MS: Record<Exclude<Range, 'All'>, number> = {
 const nameOf = (id: string) => getCatalogExercise(id)?.name ?? id;
 
 export function HistoryScreen() {
+  const [, scrollRef] = useScrollMemory('history');
   useCatalog();
   const nav = useNav();
   const { units } = useSettings();
@@ -104,7 +106,10 @@ export function HistoryScreen() {
 
   if (live.length === 0) {
     return (
-      <div className="h-full overflow-auto px-[18px] pb-[120px] pt-2">
+      <div
+        ref={scrollRef}
+        className="h-full overflow-auto px-[18px] pb-[120px] pt-2"
+      >
         <ScreenTitle eyebrow="No workouts yet" title="Trends" />
         <div className="os-card mt-4">
           <div
@@ -141,7 +146,10 @@ export function HistoryScreen() {
   const maxVol = Math.max(1, ...volume.map(([, n]) => n));
 
   return (
-    <div className="h-full overflow-auto px-[18px] pb-[120px] pt-2">
+    <div
+      ref={scrollRef}
+      className="h-full overflow-auto px-[18px] pb-[120px] pt-2"
+    >
       <ScreenTitle
         eyebrow={`${completedCount ?? 0} ${completedCount === 1 ? 'workout' : 'workouts'}`}
         title="Trends"

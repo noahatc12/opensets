@@ -1,4 +1,10 @@
-import { forwardRef, useMemo, useState, type ReactNode } from 'react';
+import {
+  forwardRef,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from 'react';
 import { useNav } from '../../ui/nav';
 import { Virtuoso } from 'react-virtuoso';
 import { useCatalog, useSearchIndex } from './useCatalog';
@@ -12,6 +18,7 @@ import { titleCase } from '../../lib/format';
 import { ScreenTitle, SectionHead } from '../../ui/StatGrid';
 import { Sheet, SheetHeader } from '../../ui/Sheet';
 import type { Exercise, Muscle } from '../../db/types';
+import { useScrollMemory } from '../../ui/scrollMemory';
 
 /* Library (spec §7): index-backed search with a synonym layer, muscle chips and a filter
    sheet, the lifter's own lifts first with their best e1RM, then the whole catalog
@@ -122,16 +129,27 @@ const ListCard = forwardRef<
   );
 });
 
+/** The search and filters outlive the screen, so opening an exercise and coming back
+ *  lands on the same results at the same place (scroll: ui/scrollMemory.ts). */
+const kept: { query: string; facets: FacetState } = {
+  query: '',
+  facets: emptyFacets(),
+};
+
 export function LibraryScreen() {
   const nav = useNav();
   const catalog = useCatalog();
   const index = useSearchIndex();
   const { units } = useSettings();
   const { best, sessions } = useBestE1rm();
-  const [query, setQuery] = useState('');
-  const [facets, setFacets] = useState<FacetState>(emptyFacets);
+  const [query, setQuery] = useState(kept.query);
+  const [facets, setFacets] = useState<FacetState>(kept.facets);
   const [sheetOpen, setSheetOpen] = useState(false);
-  const [scroller, setScroller] = useState<HTMLElement | null>(null);
+  const [scroller, setScroller] = useScrollMemory('library');
+  useEffect(() => {
+    kept.query = query;
+    kept.facets = facets;
+  }, [query, facets]);
 
   const activeCount =
     facets.muscles.size +

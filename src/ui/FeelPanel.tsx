@@ -1,6 +1,7 @@
-import { useState, useSyncExternalStore } from 'react';
+import { useEffect, useState, useSyncExternalStore } from 'react';
 import { Sheet, SheetHeader } from './Sheet';
 import { useNav } from './nav';
+import { viewportReadout } from './viewport';
 import {
   backFeel,
   getFeel,
@@ -97,6 +98,7 @@ export function FeelPanel() {
               setDemo(true);
             }}
           />
+          <ScreenReadout />
 
           <div className="mt-3 flex items-center justify-between">
             <button
@@ -149,6 +151,38 @@ export function FeelPanel() {
         </div>
       </Sheet>
     </>
+  );
+}
+
+/** The viewport numbers, for the bottom gap on the Home Screen app where `?probe` cannot
+ *  be typed. Measured on open, on resize, and on Measure. */
+function ScreenReadout() {
+  const [lines, setLines] = useState<string[]>([]);
+  useEffect(() => {
+    const measure = () => setLines(viewportReadout());
+    measure();
+    window.addEventListener('resize', measure);
+    return () => window.removeEventListener('resize', measure);
+  }, []);
+  return (
+    <div className="mt-3">
+      <div className="flex items-baseline justify-between">
+        <div>
+          <div className="text-[15px] font-bold">Screen</div>
+          <div className="os-t mt-0.5">Screenshot this on a tab screen.</div>
+        </div>
+        <button
+          type="button"
+          onClick={() => setLines(viewportReadout())}
+          className="os-chip os-chip--acc os-press flex-none"
+        >
+          Measure
+        </button>
+      </div>
+      <pre className="os-feel-numbers mt-2 whitespace-pre-wrap">
+        {lines.join('\n')}
+      </pre>
+    </div>
   );
 }
 

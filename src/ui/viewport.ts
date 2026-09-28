@@ -32,7 +32,7 @@ export function installViewportFix(): () => void {
       '--os-bottom-inset',
       standalone() && gap >= 20 ? '0px' : 'env(safe-area-inset-bottom, 0px)',
     );
-    if (probeWanted()) paintProbe(gap, screenH);
+    if (probeWanted()) paintProbe();
   };
   measure();
   window.addEventListener('resize', measure);
@@ -49,7 +49,7 @@ function probeWanted(): boolean {
   return /[?&]probe/.test(location.search) || /[?&]probe/.test(location.hash);
 }
 
-function paintProbe(gap: number, screenH: number) {
+function paintProbe() {
   let el = document.getElementById('os-probe');
   if (!el) {
     el = document.createElement('pre');
@@ -58,16 +58,44 @@ function paintProbe(gap: number, screenH: number) {
       'position:fixed;left:8px;top:60px;z-index:9999;margin:0;padding:8px 10px;border-radius:10px;background:rgba(0,0,0,.8);color:#fff;font:11px/1.4 ui-monospace,monospace;pointer-events:none;white-space:pre';
     document.body.appendChild(el);
   }
-  const cs = getComputedStyle(
-    document.querySelector('.os-shell') ?? document.documentElement,
-  );
-  el.textContent = [
-    `standalone ${matchMedia('(display-mode: standalone)').matches}`,
-    `screen ${screen.width}x${screen.height} (h used ${screenH})`,
-    `inner ${window.innerWidth}x${window.innerHeight}`,
-    `visual ${Math.round(window.visualViewport?.width ?? 0)}x${Math.round(window.visualViewport?.height ?? 0)}`,
-    `gap ${gap}px`,
-    `inset-bottom ${cs.getPropertyValue('--os-probe-inset').trim() || '?'}`,
-    `dvh ${cs.getPropertyValue('--os-probe-dvh').trim() || '?'}`,
-  ].join('\n');
+  el.textContent = viewportReadout().join('\n');
+}
+
+/** Every number that decides where the bottom of the app is, for device QA. Shown by
+ *  `?probe` and in the feel tuning panel (the Home Screen app has no address bar). */
+export function viewportReadout(): string[] {
+  const px = (css: string, prop: 'height' | 'paddingTop' | 'paddingBottom') => {
+    const d = document.createElement('div');
+    d.style.cssText = `position:fixed;left:-9999px;top:0;width:1px;visibility:hidden;${css}`;
+    document.body.appendChild(d);
+    const v = Math.round(parseFloat(getComputedStyle(d)[prop]) || 0);
+    d.remove();
+    return v;
+  };
+  const r = (sel: string) =>
+    document.querySelector(sel)?.getBoundingClientRect();
+  const shell = r('.os-shell');
+  const tabs = r('.os-tabs');
+  const root = getComputedStyle(document.documentElement);
+  const vv = window.visualViewport;
+  const standalone =
+    matchMedia('(display-mode: standalone)').matches ||
+    (navigator as Navigator & { standalone?: boolean }).standalone === true;
+  const screenH = Math.max(screen.height, screen.width);
+  const ios = /OS (\d+)[_.](\d+)/.exec(navigator.userAgent);
+  return [
+    `standalone ${standalone ? 'yes' : 'no'}${ios ? `, iOS ${ios[1]}.${ios[2]}` : ''}`,
+    `screen ${screen.width}x${screen.height}`,
+    `window ${window.innerWidth}x${window.innerHeight}, doc ${document.documentElement.clientHeight}`,
+    `visual ${Math.round(vv?.width ?? 0)}x${Math.round(vv?.height ?? 0)} at ${Math.round(vv?.offsetTop ?? 0)}`,
+    `dvh ${px('height:100dvh', 'height')}, svh ${px('height:100svh', 'height')}, lvh ${px('height:100lvh', 'height')}`,
+    `safe top ${px('padding-top:env(safe-area-inset-top)', 'paddingTop')}, bottom ${px('padding-bottom:env(safe-area-inset-bottom)', 'paddingBottom')}`,
+    `vgap ${root.getPropertyValue('--os-vgap').trim() || '-'}, bottom inset ${root.getPropertyValue('--os-bottom-inset').trim() || '-'}`,
+    shell
+      ? `shell ${Math.round(shell.top)} to ${Math.round(shell.bottom)}`
+      : 'shell -',
+    tabs
+      ? `island bottom ${Math.round(tabs.bottom)}, ${Math.round(window.innerHeight - tabs.bottom)} above window, ${Math.round(screenH - tabs.bottom)} above screen`
+      : 'island not on this screen',
+  ];
 }

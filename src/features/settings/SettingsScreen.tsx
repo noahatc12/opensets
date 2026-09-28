@@ -20,6 +20,7 @@ import { ScreenTitle, SectionHead, StatTiles } from '../../ui/StatGrid';
 import { ConfirmSheet } from '../../ui/Sheet';
 import { PlateMarks } from '../../ui/Plates';
 import { useTuneTaps } from '../../ui/tuneTaps';
+import { useScrollMemory } from '../../ui/scrollMemory';
 
 /* You: settings and data. Three tiles, Units and Appearance segments, then Training,
    Body and Your data as cards of rows, the storage status, the privacy card. */
@@ -127,6 +128,7 @@ export function SettingsScreen() {
 
   const fileRef = useRef<HTMLInputElement>(null);
   const versionRef = useRef<HTMLParagraphElement>(null);
+  const [, scrollRef] = useScrollMemory('settings');
   useTuneTaps(versionRef);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [confirmErase, setConfirmErase] = useState(false);
@@ -182,7 +184,10 @@ export function SettingsScreen() {
 
   return (
     <div className="relative flex h-full flex-col">
-      <div className="min-h-0 flex-1 overflow-auto px-[18px] pb-[120px] pt-2">
+      <div
+        ref={scrollRef}
+        className="min-h-0 flex-1 overflow-auto px-[18px] pb-[120px] pt-2"
+      >
         <ScreenTitle eyebrow="Settings and data" title="You" />
 
         <div className="mt-3.5">

@@ -33,6 +33,7 @@ import type {
   LoggedSet,
   WorkoutSession,
 } from '../../db/types';
+import { useScrollMemory } from '../../ui/scrollMemory';
 
 /* Today: the hub. A hero for the next workout, the week ring, two tiles, recent sessions.
    Every number comes from Dexie or the engine; the only sample path is seedSampleData. */
@@ -74,6 +75,7 @@ function lastWeights(sets: LoggedSet[]): Map<string, number> {
 }
 
 export function TodayScreen() {
+  const [, scrollRef] = useScrollMemory('today');
   const catalog = useCatalog();
   const nav = useNav();
   const { units } = useSettings();
@@ -184,7 +186,10 @@ export function TodayScreen() {
 
   if (!ready) {
     return (
-      <div className="h-full overflow-auto px-[18px] pb-[120px] pt-2">
+      <div
+        ref={scrollRef}
+        className="h-full overflow-auto px-[18px] pb-[120px] pt-2"
+      >
         {header}
         {resumeBanner}
         <div
@@ -325,7 +330,10 @@ export function TodayScreen() {
   }
 
   return (
-    <div className="h-full overflow-auto px-[18px] pb-[120px] pt-2">
+    <div
+      ref={scrollRef}
+      className="h-full overflow-auto px-[18px] pb-[120px] pt-2"
+    >
       {header}
       {resumeBanner}
       {newBlock && (
