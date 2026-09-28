@@ -1,265 +1,327 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { Button } from '../../components/Button';
-import { EmptyState } from '../../components/EmptyState';
-import { ChevronRightIcon, DumbbellIcon, PlusIcon } from '../../components/icons';
 import { useCatalog } from '../library/useCatalog';
 import { getCatalogExercise } from '../../db/catalog';
+import { useProfile } from '../../db/hooks';
+import { useSessionStore } from '../../state/session';
+import { shortName } from '../../lib/format';
 import {
   getActiveProgram,
   listTemplates,
+  nextTemplateForProgram,
   setActiveProgram,
+  startSessionFromTemplate,
 } from '../../db/repositories';
 import { db } from '../../db/db';
+import { ScreenTitle } from '../../ui/StatGrid';
+import type { WorkoutTemplate } from '../../db/types';
+
+/* Plan: the week card, then each day as a card. Tapping a day expands it to its exercises
+   and collapses the open one (one open at a time). The next day is lifted with an accent
+   ring and a Next chip and starts from here. */
 
 const nameOf = (id: string) => getCatalogExercise(id)?.name ?? id;
+const nowIso = () => new Date().toISOString();
+const estMin = (t: WorkoutTemplate) =>
+  Math.round(
+    t.slots.reduce((m, s) => m + s.scheme.sets * (s.restWorkSec + 35), 0) / 60,
+  );
+
+const PHASE_LABEL: Record<string, string> = {
+  accumulation: 'Building up',
+  intensification: 'Pushing harder',
+  deload: 'Deload week',
+};
 
 export function PlanScreen() {
   useCatalog();
   const navigate = useNavigate();
+  const profile = useProfile();
+  const beginSession = useSessionStore((s) => s.beginSession);
   const programs = useLiveQuery(() => db.programs.toArray());
   const activeProgram = useLiveQuery(() => getActiveProgram());
-  const activeTemplates = useLiveQuery(
-    () => (activeProgram ? listTemplates(activeProgram.id) : Promise.resolve([])),
+  const templates = useLiveQuery(
+    () =>
+      activeProgram
+        ? listTemplates(activeProgram.id)
+        : Promise.resolve([] as WorkoutTemplate[]),
     [activeProgram?.id],
   );
+  const nextTpl = useLiveQuery(
+    () =>
+      activeProgram
+        ? nextTemplateForProgram(activeProgram.id)
+        : Promise.resolve(undefined),
+    [activeProgram?.id],
+  );
+  const [openId, setOpenId] = useState<string | null>(null);
+  const open = openId ?? nextTpl?.id ?? null;
+
+  async function start(t: WorkoutTemplate) {
+    const s = await startSessionFromTemplate(t, nowIso());
+    beginSession(s.id);
+    navigate('/today');
+  }
+
+  const meso = activeProgram?.mesocycle;
+  const eyebrow = activeProgram
+    ? [activeProgram.name, profile?.goal].filter(Boolean).join(' · ')
+    : 'Your program';
 
   return (
-    <div className="h-full overflow-auto px-[22px] pb-24 pt-[max(1rem,env(safe-area-inset-top))]">
-      <div className="flex items-center justify-between py-2">
-        <div
-          className="text-[30px] font-bold text-text"
-          style={{ letterSpacing: 'var(--tracking-tight)' }}
-        >
-          Programs
-        </div>
-        <button
-          onClick={() => navigate('/routine/new')}
-          className="flex h-10 items-center gap-1.5 rounded-[var(--r-md)] px-4 text-[13px] font-bold"
-          style={{ background: 'var(--accent)', color: 'var(--accent-ink)' }}
-        >
-          <PlusIcon className="size-4" />
-          New
-        </button>
-      </div>
+    <div className="h-full overflow-auto px-[18px] pb-[120px] pt-2">
+      <ScreenTitle eyebrow={eyebrow} title="Plan" />
 
       {!programs?.length ? (
-        <EmptyState
-          title="No routines yet"
-          body="Build a routine and OpenSets will program your progression."
-          action={<Button onClick={() => navigate('/routine/new')}>Build a routine</Button>}
-        />
-      ) : activeProgram ? (
-        <ActiveProgramView
-          name={activeProgram.name}
-          dayCount={activeTemplates?.length ?? 0}
-          meso={
-            activeProgram.mesocycle
-              ? {
-                  week: activeProgram.mesocycle.weekIndex,
-                  total: activeProgram.mesocycle.totalWeeks,
-                  phase: activeProgram.mesocycle.phase,
-                  block: activeProgram.mesocycle.blockIndex ?? 0,
-                }
-              : undefined
-          }
-          templates={(activeTemplates ?? []).map((t) => ({
-            id: t.id,
-            name: t.name,
-            previews: t.slots.slice(0, 4).map((s) => nameOf(s.exerciseId)),
-            extra: Math.max(0, t.slots.length - 4),
-            exerciseCount: t.slots.length,
-          }))}
-          onOpenBuilder={() => navigate('/routine/new')}
-          onGenerate={() => navigate('/onboarding')}
-        />
-      ) : (
-        <InactiveProgramsView
-          programs={programs.map((p) => ({ id: p.id, name: p.name }))}
-          onMakeActive={(id) => void setActiveProgram(id)}
-          onGenerate={() => navigate('/onboarding')}
-        />
-      )}
-    </div>
-  );
-}
-
-interface TemplateRow {
-  id: string;
-  name: string;
-  previews: string[];
-  extra: number;
-  exerciseCount: number;
-}
-
-function ActiveProgramView({
-  name,
-  dayCount,
-  meso,
-  templates,
-  onOpenBuilder,
-  onGenerate,
-}: {
-  name: string;
-  dayCount: number;
-  meso?: { week: number; total: number; phase: string; block: number };
-  templates: TemplateRow[];
-  onOpenBuilder: () => void;
-  onGenerate: () => void;
-}) {
-  const dayLabel = `${dayCount} day${dayCount === 1 ? '' : 's'}`;
-  return (
-    <div className="mt-2">
-      {/* active program */}
-      <button
-        onClick={onOpenBuilder}
-        className="w-full rounded-[var(--r-xl)] bg-surface p-[18px] text-left"
-        style={{
-          border: '1.5px solid var(--accent)',
-          boxShadow: 'var(--hairline-top)',
-        }}
-      >
-        <div className="flex items-start justify-between gap-3">
-          <span
-            className="flex-none pt-px text-[10px] font-bold uppercase text-accent"
-            style={{
-              letterSpacing: 'var(--tracking-caps)',
-              fontFamily: 'var(--font-label)',
-            }}
+        <>
+          <div
+            className="os-card os-card--hero mt-4"
+            style={{ padding: '18px 18px 16px' }}
           >
-            Active
-          </span>
-          <span
-            className="text-right text-[11px] text-muted"
-            style={{
-              fontFamily: 'var(--font-num)',
-              fontVariantNumeric: 'tabular-nums',
-            }}
-          >
-            {meso
-              ? `${dayLabel} · ${meso.block > 0 ? `block ${meso.block + 1} · ` : ''}wk ${meso.week + 1} of ${meso.total} · ${meso.phase[0]!.toUpperCase()}${meso.phase.slice(1)}`
-              : dayLabel}
-          </span>
-        </div>
-        <div
-          className="mt-2 text-[21px] font-bold text-text"
-          style={{ letterSpacing: 'var(--tracking-snug)' }}
-        >
-          {name}
-        </div>
-        {templates.length > 0 && (
-          <div className="mt-3 flex flex-wrap gap-1.5">
-            {templates.map((t) => (
-              <span
-                key={t.id}
-                className="rounded-[var(--r-pill)] bg-bg px-[11px] py-1.5 text-[12px] text-muted"
-              >
-                {t.name}
-              </span>
-            ))}
-          </div>
-        )}
-      </button>
-
-      {/* all routines */}
-      <div
-        className="mx-1 mb-2.5 mt-[22px] text-[11px] font-bold uppercase text-faint"
-        style={{
-          letterSpacing: 'var(--tracking-caps)',
-          fontFamily: 'var(--font-label)',
-        }}
-      >
-        All routines
-      </div>
-      <div className="flex flex-col gap-2">
-        {templates.length === 0 ? (
-          <div className="rounded-[var(--r-md)] border bg-surface px-4 py-3.5 text-[13px] text-muted"
-            style={{ borderColor: 'var(--border-card)' }}
-          >
-            No days in this program yet.
-          </div>
-        ) : (
-          templates.map((t) => (
-            <button
-              key={t.id}
-              onClick={onOpenBuilder}
-              className="flex w-full items-center gap-3.5 rounded-[var(--r-md)] border bg-surface px-4 py-3.5 text-left"
-              style={{ borderColor: 'var(--border-card)' }}
+            <span className="os-t os-hero-t">Nothing scheduled</span>
+            <h2
+              className="mt-1.5 text-[30px] font-extrabold leading-[1.05]"
+              style={{ letterSpacing: '-.035em' }}
             >
-              <div
-                className="flex size-[38px] items-center justify-center rounded-[var(--r-sm)] bg-bg text-accent"
-              >
-                <DumbbellIcon className="size-[18px]" />
-              </div>
-              <div className="flex-1">
-                <div className="text-[14px] font-semibold text-text">{t.name}</div>
-                <div className="text-[12px] text-muted">
-                  {t.exerciseCount} exercise{t.exerciseCount === 1 ? '' : 's'}
+              No plan yet
+            </h2>
+            <p
+              className="mt-2.5 text-[14px] font-semibold leading-[1.4]"
+              style={{ opacity: 0.85 }}
+            >
+              Build one from your goals in five questions, or put a day together
+              by hand.
+            </p>
+            <button
+              type="button"
+              onClick={() => navigate('/onboarding')}
+              className="os-btn os-btn--hero os-press mt-4"
+            >
+              Build my plan <span className="text-[18px]">→</span>
+            </button>
+          </div>
+          <button
+            type="button"
+            onClick={() => navigate('/routine/new')}
+            className="os-btn os-btn--sm os-press mt-2.5"
+          >
+            Build manually
+          </button>
+        </>
+      ) : activeProgram ? (
+        <>
+          {meso && (
+            <div
+              className="os-card mt-4 flex items-center gap-3.5"
+              style={{ padding: '14px 16px' }}
+            >
+              <div className="min-w-0 flex-1">
+                <div
+                  className="text-[16px] font-extrabold"
+                  style={{ letterSpacing: '-.02em' }}
+                >
+                  Week {meso.weekIndex + 1} of {meso.totalWeeks}
+                </div>
+                <div className="os-t mt-0.5">
+                  {PHASE_LABEL[meso.phase] ?? meso.phase}
+                  {meso.phase !== 'deload' &&
+                    ` · deload in week ${meso.totalWeeks}`}
+                  {(meso.blockIndex ?? 0) > 0 &&
+                    ` · block ${(meso.blockIndex ?? 0) + 1}`}
                 </div>
               </div>
-              <ChevronRightIcon className="size-[18px] text-faint" />
+              <div className="flex gap-1" aria-hidden>
+                {Array.from({ length: meso.totalWeeks }, (_, i) => (
+                  <i
+                    key={i}
+                    style={{
+                      width: 12,
+                      height: 22,
+                      borderRadius: 4,
+                      background:
+                        i < meso.weekIndex
+                          ? 'var(--acc)'
+                          : i === meso.weekIndex
+                            ? 'var(--acc)'
+                            : 'var(--s3)',
+                      opacity: i === meso.weekIndex ? 0.45 : 1,
+                      boxShadow:
+                        i === meso.totalWeeks - 1 && i > meso.weekIndex
+                          ? 'inset 0 0 0 1.5px var(--mute)'
+                          : undefined,
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {(templates ?? []).length === 0 && (
+            <div
+              className="os-card mt-3 text-[14px] font-semibold"
+              style={{ color: 'var(--mute)' }}
+            >
+              No days in this program yet. Add one below.
+            </div>
+          )}
+
+          {(templates ?? []).map((t) => {
+            const isNext = t.id === nextTpl?.id;
+            const isOpen = t.id === open;
+            const names = t.slots.map((s) =>
+              shortName(nameOf(s.exerciseId), 16),
+            );
+            const shown = isOpen ? names : names.slice(0, 3);
+            const extra = names.length - shown.length;
+            return (
+              <div
+                key={t.id}
+                className={`os-card ${isNext ? 'os-card--lift os-card--next' : ''} ${meso || isNext ? 'mt-2.5' : 'mt-4'}`}
+                style={{ marginTop: isNext ? 12 : 10 }}
+              >
+                <button
+                  type="button"
+                  onClick={() => setOpenId(isOpen ? '' : t.id)}
+                  aria-expanded={isOpen}
+                  aria-label={`${t.name}, ${t.slots.length} exercises`}
+                  className="os-press block w-full text-left"
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <span
+                      className="truncate font-extrabold"
+                      style={{
+                        fontSize: isOpen ? 20 : 18,
+                        letterSpacing: '-.025em',
+                      }}
+                    >
+                      {t.name}
+                    </span>
+                    {isNext ? (
+                      <span
+                        className="os-chip os-chip--acc"
+                        style={{ height: 26, fontSize: 12 }}
+                      >
+                        Next
+                      </span>
+                    ) : (
+                      <span
+                        className="os-t"
+                        style={{ fontVariantNumeric: 'tabular-nums' }}
+                      >
+                        {estMin(t)} min
+                      </span>
+                    )}
+                  </div>
+                  {isOpen && (
+                    <div className="os-t mt-0.5">
+                      {t.slots.length}{' '}
+                      {t.slots.length === 1 ? 'exercise' : 'exercises'} ·{' '}
+                      {estMin(t)} min
+                    </div>
+                  )}
+                  <div className="mt-2.5 flex flex-wrap gap-1.5">
+                    {shown.map((n, i) => (
+                      <span
+                        key={i}
+                        className="os-chip"
+                        style={isNext ? { background: 'var(--s1)' } : undefined}
+                      >
+                        {n}
+                      </span>
+                    ))}
+                    {extra > 0 && (
+                      <span
+                        className="os-chip"
+                        style={isNext ? { background: 'var(--s1)' } : undefined}
+                      >
+                        +{extra}
+                      </span>
+                    )}
+                  </div>
+                </button>
+                <div className={`os-acc ${isOpen ? 'os-acc--open' : ''}`}>
+                  <div>
+                    <div className="mt-3.5">
+                      <button
+                        type="button"
+                        onClick={() => void start(t)}
+                        className={`os-btn os-btn--sm os-press ${isNext ? 'os-btn--pri' : ''}`}
+                        tabIndex={isOpen ? 0 : -1}
+                        style={
+                          !isNext ? { background: 'var(--s2)' } : undefined
+                        }
+                      >
+                        {isNext ? 'Start' : 'Start this day instead'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+
+          <div className="mt-3 grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() => navigate('/routine/new')}
+              className="os-btn os-btn--sm os-press"
+            >
+              + New day
             </button>
-          ))
-        )}
-      </div>
-
-      <GenerateCta onGenerate={onGenerate} />
+            <button
+              type="button"
+              onClick={() => navigate('/onboarding')}
+              className="os-btn os-btn--sm os-press"
+            >
+              Regenerate
+            </button>
+          </div>
+        </>
+      ) : (
+        <>
+          <div className="os-h2">Your programs</div>
+          <div className="os-card" style={{ padding: '4px 16px' }}>
+            {programs.map((p) => (
+              <button
+                key={p.id}
+                type="button"
+                onClick={() => void setActiveProgram(p.id)}
+                className="os-row os-press"
+              >
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-[15px] font-semibold">
+                    {p.name}
+                  </span>
+                  <span
+                    className="mt-0.5 block text-[12px] font-medium"
+                    style={{ color: 'var(--mute)' }}
+                  >
+                    Tap to make active
+                  </span>
+                </span>
+                <span className="os-chev" />
+              </button>
+            ))}
+          </div>
+          <div className="mt-3 grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() => navigate('/routine/new')}
+              className="os-btn os-btn--sm os-press"
+            >
+              + New day
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate('/onboarding')}
+              className="os-btn os-btn--sm os-press"
+            >
+              Build my plan
+            </button>
+          </div>
+        </>
+      )}
     </div>
-  );
-}
-
-function InactiveProgramsView({
-  programs,
-  onMakeActive,
-  onGenerate,
-}: {
-  programs: { id: string; name: string }[];
-  onMakeActive: (id: string) => void;
-  onGenerate: () => void;
-}) {
-  return (
-    <div className="mt-2">
-      <div
-        className="mx-1 mb-2.5 text-[11px] font-bold uppercase text-faint"
-        style={{
-          letterSpacing: 'var(--tracking-caps)',
-          fontFamily: 'var(--font-label)',
-        }}
-      >
-        All routines
-      </div>
-      <div className="flex flex-col gap-2">
-        {programs.map((p) => (
-          <button
-            key={p.id}
-            onClick={() => onMakeActive(p.id)}
-            className="flex w-full items-center gap-3.5 rounded-[var(--r-md)] border bg-surface px-4 py-3.5 text-left"
-            style={{ borderColor: 'var(--border-card)' }}
-          >
-            <div className="flex size-[38px] items-center justify-center rounded-[var(--r-sm)] bg-bg text-accent">
-              <DumbbellIcon className="size-[18px]" />
-            </div>
-            <div className="flex-1">
-              <div className="text-[14px] font-semibold text-text">{p.name}</div>
-              <div className="text-[12px] text-muted">Tap to make active</div>
-            </div>
-            <ChevronRightIcon className="size-[18px] text-faint" />
-          </button>
-        ))}
-      </div>
-      <GenerateCta onGenerate={onGenerate} />
-    </div>
-  );
-}
-
-function GenerateCta({ onGenerate }: { onGenerate: () => void }) {
-  return (
-    <button
-      onClick={onGenerate}
-      className="mt-[18px] h-[52px] w-full rounded-[var(--r-md)] bg-transparent text-[14px] font-semibold text-muted"
-      style={{ border: '1px dashed var(--border-strong)' }}
-    >
-      Generate a plan from your goals
-    </button>
   );
 }
