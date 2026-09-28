@@ -348,7 +348,7 @@ export function LibraryScreen() {
           )}
         </div>
 
-        <div className="os-chips mt-2.5">
+        <div className="os-chips mt-1">
           <button
             type="button"
             onClick={() => setSheetOpen(true)}

@@ -181,7 +181,7 @@ export function SheetHeader({
       <button
         type="button"
         onClick={onAction}
-        className="h-10 px-2 text-[14px] font-bold"
+        className="os-hit h-10 px-2 text-[14px] font-bold"
         style={{ color: 'var(--acc-tx)' }}
       >
         {action}

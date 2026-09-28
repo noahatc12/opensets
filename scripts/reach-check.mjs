@@ -234,6 +234,18 @@ async function run(profile) {
           const cx = r.left + r.width / 2;
           const cy = r.top + r.height / 2;
           const name = label(el);
+          // Hidden inside a clipping box that is not a scroller (a closed accordion):
+          // not on screen, so not a control a person can see.
+          let clipped = false;
+          for (let a = el.parentElement; a && !clipped; a = a.parentElement) {
+            const st = getComputedStyle(a);
+            if (/(hidden|clip)/.test(st.overflowY + st.overflowX)) {
+              const ar = a.getBoundingClientRect();
+              clipped =
+                cx < ar.left || cx > ar.right || cy < ar.top || cy > ar.bottom;
+            }
+          }
+          if (clipped) continue;
           const at = `${Math.round(cx)},${Math.round(cy)}`;
           if (cy < 0 || cy >= vh || cx < 0 || cx >= vw) {
             out.fail.push({
@@ -257,12 +269,33 @@ async function run(profile) {
               name,
               why: `on the home indicator (centre y ${Math.round(cy)}, screen ${vh})`,
             });
-          const small = Math.min(r.width, r.height);
-          if (small < 44 && el.tagName !== 'INPUT')
-            out.warn.push({
-              name,
-              why: `target ${Math.round(r.width)}x${Math.round(r.height)} (44 is the iOS minimum)`,
-            });
+          // The tap area, not the drawn box: a control owns the point 21 pt out from its
+          // centre in each direction (a 42 to 44 pt target), counting its invisible
+          // ::before hit area; a point may fall on a neighbouring control's own box.
+          if (el.tagName !== 'INPUT') {
+            const probes = [
+              [cx - 21, cy],
+              [cx + 21, cy],
+              [cx, cy - 21],
+              [cx, cy + 21],
+            ];
+            const lost = probes.filter(([x, y]) => {
+              const h = document.elementFromPoint(x, y);
+              if (h && (h === el || el.contains(h))) return false;
+              const other = h?.closest(Q);
+              if (other && other !== el) {
+                const o = other.getBoundingClientRect();
+                if (x >= o.left && x <= o.right && y >= o.top && y <= o.bottom)
+                  return false;
+              }
+              return true;
+            }).length;
+            if (lost > 0)
+              out.warn.push({
+                name,
+                why: `tap area ${Math.round(r.width)}x${Math.round(r.height)}, ${lost} of 4 edges short of 44 pt`,
+              });
+          }
         }
         for (const [p, t] of scrollers) p.scrollTop = t;
         return out;

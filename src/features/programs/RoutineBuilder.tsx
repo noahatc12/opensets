@@ -626,7 +626,7 @@ function Mini({
       <div className="os-num my-1 text-[22px]">
         {Number.isInteger(value) ? value : round2(value)}
       </div>
-      <div className="flex justify-center gap-1">
+      <div className="flex justify-center gap-1.5">
         <button
           type="button"
           onClick={() => set(value - step)}

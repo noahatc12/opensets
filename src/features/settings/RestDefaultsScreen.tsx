@@ -60,7 +60,7 @@ function TypeRow({
         <button
           onClick={() => set(seconds - step)}
           aria-label={`Decrease ${label} rest`}
-          className="grid size-8 place-items-center rounded-[var(--r-pill)] text-muted"
+          className="os-hit grid size-8 place-items-center rounded-[var(--r-pill)] text-muted"
           style={{ background: 'var(--bg)' }}
         >
           <MinusIcon className="size-[18px]" />
@@ -74,7 +74,7 @@ function TypeRow({
         <button
           onClick={() => set(seconds + step)}
           aria-label={`Increase ${label} rest`}
-          className="grid size-8 place-items-center rounded-[var(--r-pill)] text-muted"
+          className="os-hit grid size-8 place-items-center rounded-[var(--r-pill)] text-muted"
           style={{ background: 'var(--bg)' }}
         >
           <PlusIcon className="size-[18px]" />
