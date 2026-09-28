@@ -1,0 +1,224 @@
+<title>OpenSets Button Audit</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&display=swap">
+<style>
+  /* Layout: one phone-width column; each screen is a card of button rows, each row a
+     picture of what the press left on screen, what it did, and your mark. OpenSets tokens. */
+  :root {
+    --bg: #eeece7; --s1: #f8f7f4; --s2: #e7e4de; --s3: #dcd8d0;
+    --hl: rgba(255,255,255,.7); --line: rgba(20,18,14,.08);
+    --ink: #15171b; --ink2: #3d424b; --mute: #5b616a;
+    --acc: #f25a32; --acc-tx: #a53613; --acc-soft: rgba(242,90,50,.12);
+    --pos: #1c7044; --pos-soft: rgba(28,112,68,.12);
+    --warn: #8a5a00; --warn-soft: rgba(191,138,20,.16);
+    --bad: #b3261e; --bad-soft: rgba(179,38,30,.10);
+    --font: "Manrope", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --bg: #0d0f13; --s1: #171a21; --s2: #1f232c; --s3: #282d38;
+      --hl: rgba(255,255,255,.07); --line: rgba(255,255,255,.07);
+      --ink: #f3f4f6; --ink2: #c3c8d1; --mute: #939bab;
+      --acc: #ff6a45; --acc-tx: #ff8a5c; --acc-soft: rgba(255,106,69,.14);
+      --pos: #4fd18b; --pos-soft: rgba(79,209,139,.13);
+      --warn: #ffc857; --warn-soft: rgba(255,200,87,.13);
+      --bad: #ff8a80; --bad-soft: rgba(255,138,128,.12);
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #0d0f13; --s1: #171a21; --s2: #1f232c; --s3: #282d38;
+    --hl: rgba(255,255,255,.07); --line: rgba(255,255,255,.07);
+    --ink: #f3f4f6; --ink2: #c3c8d1; --mute: #939bab;
+    --acc: #ff6a45; --acc-tx: #ff8a5c; --acc-soft: rgba(255,106,69,.14);
+    --pos: #4fd18b; --pos-soft: rgba(79,209,139,.13);
+    --warn: #ffc857; --warn-soft: rgba(255,200,87,.13);
+    --bad: #ff8a80; --bad-soft: rgba(255,138,128,.12);
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font); font-size: 15px; line-height: 1.45; -webkit-font-smoothing: antialiased; }
+  .wrap { max-width: 680px; margin: 0 auto; padding-inline: 16px; padding-block: 22px 60px; display: flex; flex-direction: column; gap: 16px; }
+  h1 { margin: 0; font-size: 32px; font-weight: 800; letter-spacing: -.035em; line-height: 1.08; text-wrap: balance; }
+  h2 { margin: 0; font-size: 19px; font-weight: 800; letter-spacing: -.02em; }
+  p { margin: 0; }
+  .eyebrow { color: var(--mute); font-size: 13px; font-weight: 700; }
+  .lede { color: var(--ink2); margin-top: 8px; max-width: 62ch; }
+  .tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  @media (max-width: 460px) { .tiles { grid-template-columns: repeat(2, 1fr); } }
+  .tile { background: var(--s1); border-radius: 18px; padding: 12px 14px; box-shadow: inset 0 1px 0 var(--hl); }
+  .tile b { display: block; font-size: 26px; font-weight: 800; letter-spacing: -.03em; font-variant-numeric: tabular-nums; }
+  .tile span { color: var(--mute); font-size: 12.5px; font-weight: 700; }
+  .filters { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; display: flex; gap: 3px; padding: 3px; background: var(--s1); border-radius: 15px; box-shadow: inset 0 1px 0 var(--hl), 0 10px 24px -14px rgba(0,0,0,.5); }
+  .filters button { flex: 1; min-height: 44px; border: 0; border-radius: 12px; background: transparent; color: var(--mute); font: 700 13.5px/1.1 var(--font); cursor: pointer; }
+  .filters button[aria-pressed="true"] { background: var(--s3); color: var(--ink); }
+  .screen { background: var(--s1); border-radius: 22px; padding: 14px 14px 6px; box-shadow: inset 0 1px 0 var(--hl); display: flex; flex-direction: column; gap: 6px; }
+  .screen[hidden] { display: none; }
+  .shead { display: flex; gap: 12px; align-items: center; padding-bottom: 6px; }
+  .shead .sub { color: var(--mute); font-size: 13px; font-weight: 600; }
+  .row { display: grid; grid-template-columns: 58px minmax(0, 1fr); gap: 10px 12px; padding: 10px 0; border-top: 1px solid var(--line); }
+  .row[hidden] { display: none; }
+  .thumb { width: 58px; height: 126px; border-radius: 10px; background-color: var(--s2); background-repeat: no-repeat; box-shadow: inset 0 0 0 1px var(--line); }
+  .shead .thumb { width: 48px; height: 104px; flex: none; }
+  .body { min-width: 0; display: flex; flex-direction: column; gap: 5px; }
+  .name { font-weight: 800; font-size: 15px; overflow-wrap: anywhere; }
+  .did { color: var(--ink2); font-size: 13.5px; font-weight: 500; overflow-wrap: anywhere; }
+  .note { color: var(--ink); font-size: 13.5px; font-weight: 600; background: var(--s2); border-radius: 10px; padding: 7px 10px; }
+  .line { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .pill { font-size: 12px; font-weight: 800; padding: 3px 9px; border-radius: 999px; white-space: nowrap; }
+  .p-ok { background: var(--pos-soft); color: var(--pos); }
+  .p-nothing, .p-look { background: var(--warn-soft); color: var(--warn); }
+  .p-error { background: var(--bad-soft); color: var(--bad); }
+  .p-expected { background: var(--s2); color: var(--ink2); }
+  .mark { min-height: 36px; border: 0; border-radius: 11px; padding: 0 12px; background: var(--s2); color: var(--ink2); font: 700 13px var(--font); cursor: pointer; }
+  .mark[aria-pressed="true"] { background: var(--acc-soft); color: var(--acc-tx); box-shadow: inset 0 0 0 1.5px color-mix(in oklab, var(--acc) 50%, transparent); }
+  .mark:focus-visible, .filters button:focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; }
+  textarea { width: 100%; min-height: 60px; border: 0; border-radius: 10px; padding: 8px 10px; background: var(--s2); color: var(--ink); font: 500 14px var(--font); resize: vertical; }
+  .muted { color: var(--mute); font-size: 13.5px; font-weight: 600; }
+  .empty { padding: 18px; text-align: center; }
+  @media (prefers-reduced-motion: no-preference) { .mark, .filters button { transition: background .15s ease, color .15s ease; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow" id="ran">OpenSets</div>
+    <h1>Every button, pressed</h1>
+    <p class="lede">The crawler opened every screen, pop-up and workout moment in the live app, pressed each control once in a fresh copy, and wrote down what it did. The picture is the screen right after the press. Tap Doesn't make sense on anything that should work differently, and add a line if you want.</p>
+  </header>
+
+  <div class="tiles" id="tiles"></div>
+
+  <nav class="filters" aria-label="Show">
+    <button type="button" id="f-all" aria-pressed="true">All</button>
+    <button type="button" id="f-flag" aria-pressed="false">Needs a look</button>
+    <button type="button" id="f-mine" aria-pressed="false">Your marks</button>
+  </nav>
+
+  <div id="screens"><p class="muted empty">Loading the crawl.</p></div>
+</div>
+
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+  const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+  const S = { data: null, marks: new Map(), db: null, filter: 'all', busy: new Set(), readOnly: false };
+  try { const f = localStorage.getItem('os-audit-filter'); if (f) S.filter = f; } catch (_) {}
+
+  const PILL = {
+    ok: ['p-ok', 'Works'],
+    expected: ['p-expected', 'Fine as is'],
+    look: ['p-look', 'Needs a look'],
+    nothing: ['p-nothing', 'Nothing happened'],
+    error: ['p-error', 'Error'],
+  };
+  const key = (p) => `${p.state}__${p.i}`;
+  const flagged = (p) => p.verdict === 'look' || p.verdict === 'nothing' || p.verdict === 'error';
+
+  function thumbStyle(t, cell, w, h) {
+    const cols = S.data.sprite.cols, cw = S.data.sprite.w, ch = S.data.sprite.h;
+    const sx = w / cw, sy = h / ch;
+    t.style.backgroundImage = `url(${S.data.base}${cell.sprite})`;
+    t.style.backgroundSize = `${cols * cw * sx}px auto`;
+    t.style.backgroundPosition = `${-(cell.col * cw * sx)}px ${-(cell.row * ch * sy)}px`;
+  }
+
+  async function mark(p) {
+    const k = key(p);
+    if (!S.db || S.busy.has(k)) return;
+    S.busy.add(k); render();
+    try {
+      if (S.marks.has(k)) await S.db.doc('marks/' + k).delete();
+      else await S.db.doc('marks/' + k).set({ state: p.state, i: p.i, name: p.name, did: p.said, at: new Date().toISOString() });
+    } catch (e) { if (e && (e.code === 'not_granted' || e.code === 'invalid_argument')) S.readOnly = true; }
+    finally { S.busy.delete(k); render(); }
+  }
+  async function saveNote(p, text) {
+    const k = key(p); const m = S.marks.get(k);
+    if (!S.db || !m || (m.note || '') === text) return;
+    try { await S.db.doc('marks/' + k).update({ note: text }); } catch (_) {}
+  }
+
+  function renderTiles() {
+    const t = $('tiles'); t.replaceChildren();
+    const ps = S.data.presses;
+    const stats = [
+      [S.data.states.length, 'screens and moments'],
+      [ps.length, 'buttons pressed'],
+      [ps.filter(flagged).length, 'need a look'],
+      [S.marks.size, 'marked by you'],
+    ];
+    for (const [n, l] of stats) { const d = el('div', 'tile'); d.append(el('b', null, String(n)), el('span', null, l)); t.append(d); }
+  }
+
+  function render() {
+    if (!S.data) return;
+    for (const [id, f] of [['f-all', 'all'], ['f-flag', 'flag'], ['f-mine', 'mine']]) $(id).setAttribute('aria-pressed', String(S.filter === f));
+    renderTiles();
+    const root = $('screens'); root.replaceChildren();
+    let shown = 0;
+    for (const s of S.data.states) {
+      const rows = S.data.presses.filter((p) => p.state === s.id);
+      const vis = rows.filter((p) => S.filter === 'all' || (S.filter === 'flag' ? flagged(p) : S.marks.has(key(p))));
+      if (!vis.length) continue;
+      shown += vis.length;
+      const card = el('section', 'screen');
+      const head = el('div', 'shead');
+      const st = el('div', 'thumb'); if (s.cell) thumbStyle(st, s.cell, 48, 104); st.setAttribute('role', 'img'); st.setAttribute('aria-label', 'The screen before any press');
+      const hb = el('div'); hb.append(el('h2', null, s.title), el('div', 'sub', `${rows.length} controls · ${s.route || ''}`));
+      head.append(st, hb); card.append(head);
+      for (const p of vis) {
+        const r = el('div', 'row');
+        const th = el('div', 'thumb'); if (p.cell) thumbStyle(th, p.cell, 58, 126); th.setAttribute('role', 'img'); th.setAttribute('aria-label', 'The screen after the press');
+        const b = el('div', 'body');
+        b.append(el('div', 'name', p.name));
+        b.append(el('div', 'did', p.said ? 'Does: ' + p.said : p.problem || ''));
+        if (p.note) b.append(el('div', 'note', p.note));
+        const line = el('div', 'line');
+        const [cls, label] = PILL[p.verdict] || PILL.ok;
+        line.append(el('span', 'pill ' + cls, label));
+        if (S.db && !S.readOnly) {
+          const k = key(p); const on = S.marks.has(k);
+          const m = el('button', 'mark', on ? 'Marked: doesn’t make sense' : 'Doesn’t make sense');
+          m.type = 'button'; m.setAttribute('aria-pressed', String(on)); m.disabled = S.busy.has(k);
+          m.addEventListener('click', () => mark(p));
+          line.append(m);
+          b.append(line);
+          if (on) {
+            const ta = el('textarea'); ta.id = 'note-' + k; ta.placeholder = 'What should it do? (optional)';
+            ta.value = S.marks.get(k).note || '';
+            ta.addEventListener('blur', () => saveNote(p, ta.value.trim()));
+            b.append(ta);
+          }
+        } else b.append(line);
+        r.append(th, b); card.append(r);
+      }
+      root.append(card);
+    }
+    if (!shown) root.append(el('p', 'muted empty', S.filter === 'mine' ? 'Nothing marked yet. Tap Doesn’t make sense on any button.' : 'Nothing here.'));
+  }
+
+  for (const [id, f] of [['f-all', 'all'], ['f-flag', 'flag'], ['f-mine', 'mine']])
+    $(id).addEventListener('click', () => { S.filter = f; try { localStorage.setItem('os-audit-filter', f); } catch (_) {} render(); });
+
+  async function start() {
+    try {
+      const res = await fetch('report.json');
+      S.data = await res.json();
+      $('ran').textContent = `OpenSets · crawled ${S.data.ranAt}`;
+    } catch (_) { $('screens').replaceChildren(el('p', 'muted empty', 'The crawl data did not load. Reload the page.')); return; }
+    render();
+    if (!window.claude || typeof window.claude.use !== 'function') return;
+    let db = null;
+    try { db = await window.claude.use('db'); } catch (_) { db = null; }
+    if (!db) return;
+    S.db = db;
+    db.collection('marks').onSnapshot((snap) => {
+      S.marks = new Map(snap.docs.map((d) => [d.id, d.data()]));
+      render();
+    }, () => {});
+    render();
+  }
+  start();
+})();
+</script>

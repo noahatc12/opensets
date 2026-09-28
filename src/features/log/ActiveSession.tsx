@@ -224,6 +224,7 @@ function Logger({ vm }: { vm: LoggerVM }) {
         <button
           type="button"
           onClick={() => setCurrent(Math.max(0, current - 1))}
+          disabled={current === 0}
           className="os-icon-btn os-press"
           style={{ width: 32, height: 32, borderRadius: 10 }}
           aria-label="Previous exercise"
@@ -264,6 +265,7 @@ function Logger({ vm }: { vm: LoggerVM }) {
         <button
           type="button"
           onClick={() => setCurrent(Math.min(slots.length - 1, current + 1))}
+          disabled={current >= slots.length - 1}
           className="os-icon-btn os-press"
           style={{ width: 32, height: 32, borderRadius: 10 }}
           aria-label="Next exercise"
@@ -819,6 +821,12 @@ function Logger({ vm }: { vm: LoggerVM }) {
 
       {pickerMode && (
         <ExercisePicker
+          title={
+            pickerMode === 'swap'
+              ? `Swap ${shortName(nameOf(exId), 24)}`
+              : 'Add exercise'
+          }
+          verb={pickerMode === 'swap' ? 'Swap to' : 'Add'}
           onPick={(e) => void onPickExercise(e)}
           onClose={closePicker}
         />

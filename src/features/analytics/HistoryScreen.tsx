@@ -61,7 +61,10 @@ export function HistoryScreen() {
     for (const s of inRange)
       if (isE1rmEligible(s))
         count.set(s.exerciseId, (count.get(s.exerciseId) ?? 0) + 1);
-    return [...count.entries()].sort((a, b) => b[1] - a[1]).map(([id]) => id);
+    // Ties go by name, so equally trained lifts keep their places between visits.
+    return [...count.entries()]
+      .sort((a, b) => b[1] - a[1] || nameOf(a[0]).localeCompare(nameOf(b[0])))
+      .map(([id]) => id);
   }, [inRange]);
   const lift = liftId && lifts.includes(liftId) ? liftId : (lifts[0] ?? null);
 
