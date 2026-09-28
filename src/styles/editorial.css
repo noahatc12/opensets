@@ -1108,3 +1108,43 @@ body {
   font-family: inherit;
   margin-bottom: 0;
 }
+
+/* A text field in a well (Library search, picker search). On touch, focus is the iOS way:
+   the well lifts a shade and the caret takes the accent, with no coloured ring (Noah,
+   09-28: the ring "looks flimsy"). A keyboard user gets a clear ring on the whole well,
+   switched on by html[data-kbd] (App.tsx sets it on Tab, clears it on any touch). */
+[data-ds='editorial'] .os-search,
+[data-ds='editorial'] .os-well {
+  transition:
+    box-shadow var(--dur-fast) var(--ease-out),
+    background var(--dur-fast) var(--ease-out);
+}
+[data-ds='editorial'] .os-search input,
+[data-ds='editorial'] .os-well input {
+  caret-color: var(--acc);
+}
+[data-ds='editorial'] .os-search:focus-within,
+[data-ds='editorial'] .os-well:focus-within {
+  background: var(--s2);
+  box-shadow: inset 0 1px 0 var(--hl2);
+}
+[data-ds='editorial'] .os-search input:focus-visible,
+[data-ds='editorial'] .os-well input:focus-visible {
+  outline: none;
+}
+html[data-kbd] [data-ds='editorial'] .os-search:focus-within,
+html[data-kbd] [data-ds='editorial'] .os-well:focus-within,
+html[data-kbd][data-ds='editorial'] .os-search:focus-within,
+html[data-kbd][data-ds='editorial'] .os-well:focus-within {
+  box-shadow:
+    inset 0 1px 0 var(--hl2),
+    0 0 0 2px var(--acc);
+}
+
+/* Library rows: one fixed-height row per exercise (66.5 px, the measured row), full or an
+   empty placeholder, so the list's height is exact before anything is drawn. */
+[data-ds='editorial'] .os-lib-row {
+  padding: 0 16px;
+  height: 66.5px;
+  overflow: hidden;
+}

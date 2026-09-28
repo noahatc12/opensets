@@ -1,5 +1,6 @@
 import { NavLink, useLocation } from 'react-router-dom';
 import { useNav } from '../ui/nav';
+import { forgetScreens } from '../ui/scrollMemory';
 
 /* Floating glass tab bar. Five tabs. The active highlight is a pill inset 6px inside the
    66px island, so its radius (27px) is concentric with the island's (33px) at the ends. */
@@ -63,7 +64,11 @@ export function TabBar({ activePath }: { activePath?: string } = {}) {
           onClick={(e) => {
             if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
             e.preventDefault();
-            if (pathname !== t.to) nav.tab(t.to);
+            if (pathname === t.to) return;
+            // A new tab starts fresh: places and searches are kept only while you stay
+            // inside one tab (Noah, 09-28).
+            forgetScreens();
+            nav.tab(t.to);
           }}
         >
           <svg

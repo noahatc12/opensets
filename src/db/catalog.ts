@@ -29,6 +29,12 @@ export async function loadCatalog(): Promise<Exercise[]> {
   return inflight;
 }
 
+/** The catalog if it has already loaded this launch, so a screen can render it in its
+ *  first frame instead of one render later. */
+export function getCachedCatalog(): Exercise[] | null {
+  return cache;
+}
+
 export function getCatalogExercise(id: string): Exercise | undefined {
   return byId?.get(id);
 }

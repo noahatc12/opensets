@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
-import { loadCatalog } from '../../db/catalog';
+import { getCachedCatalog, loadCatalog } from '../../db/catalog';
 import type { Exercise } from '../../db/types';
 
 /** Load the bundled exercise catalog once; null while loading. */
 export function useCatalog(): Exercise[] | null {
-  const [exercises, setExercises] = useState<Exercise[] | null>(null);
+  const [exercises, setExercises] = useState<Exercise[] | null>(
+    getCachedCatalog,
+  );
   useEffect(() => {
     let live = true;
     loadCatalog()

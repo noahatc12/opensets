@@ -1,12 +1,5 @@
-import {
-  forwardRef,
-  useEffect,
-  useMemo,
-  useState,
-  type ReactNode,
-} from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNav } from '../../ui/nav';
-import { Virtuoso } from 'react-virtuoso';
 import { useCatalog } from './useCatalog';
 import { useBestE1rm } from './useBestE1rm';
 import { MUSCLE_GROUPS } from './muscleGroups';
@@ -18,7 +11,11 @@ import { titleCase } from '../../lib/format';
 import { ScreenTitle, SectionHead } from '../../ui/StatGrid';
 import { Sheet, SheetHeader } from '../../ui/Sheet';
 import type { Exercise, Muscle } from '../../db/types';
-import { useScrollMemory } from '../../ui/scrollMemory';
+import {
+  savedScrollTop,
+  useKeptState,
+  useScrollMemory,
+} from '../../ui/scrollMemory';
 
 /* Library (spec §7): index-backed search with a synonym layer, muscle chips and a filter
    sheet, the lifter's own lifts first with their best e1RM, then the whole catalog
@@ -118,37 +115,43 @@ function FilterSection({
 }
 
 /** The virtualized list draws its rows into a card. */
-const ListCard = forwardRef<
-  HTMLDivElement,
-  { style?: React.CSSProperties; children?: ReactNode }
->(function ListCard({ style, children, ...rest }, ref) {
-  return (
-    <div ref={ref} {...rest} style={style} className="os-card" data-list-card>
-      {children}
-    </div>
-  );
-});
-
-/** The search and filters outlive the screen, so opening an exercise and coming back
- *  lands on the same results at the same place (scroll: ui/scrollMemory.ts). */
-const kept: { query: string; facets: FacetState } = {
-  query: '',
-  facets: emptyFacets(),
-};
+/* The list keeps a fixed-height row for every exercise, so it has its exact full height
+   from the first frame and a restored position shows the right place with no flash (a
+   virtualized list scrolled its container to its own top on mount, 09-28). Only rows
+   within ROW_AHEAD px of the screen get their content; the rest are empty placeholders,
+   which keeps coming back to the Library fast. */
+const ROW_H = 66.5;
+const ROW_AHEAD = 1600;
+function rowWindow(
+  top: number,
+  listTop: number,
+  viewH: number,
+): [number, number] {
+  return [
+    Math.max(0, Math.floor((top - listTop - ROW_AHEAD) / ROW_H)),
+    Math.max(0, Math.ceil((top - listTop + viewH + ROW_AHEAD) / ROW_H)),
+  ];
+}
 
 export function LibraryScreen() {
   const nav = useNav();
   const catalog = useCatalog();
   const { units } = useSettings();
   const { best, sessions } = useBestE1rm();
-  const [query, setQuery] = useState(kept.query);
-  const [facets, setFacets] = useState<FacetState>(kept.facets);
+  // Search and filters outlive the screen within the Library tab (ui/scrollMemory.ts).
+  const [query, setQuery] = useKeptState('library.query', () => '');
+  const [facets, setFacets] = useKeptState<FacetState>(
+    'library.facets',
+    emptyFacets,
+  );
   const [sheetOpen, setSheetOpen] = useState(false);
   const [scroller, setScroller] = useScrollMemory('library');
-  useEffect(() => {
-    kept.query = query;
-    kept.facets = facets;
-  }, [query, facets]);
+  const listRef = useRef<HTMLDivElement>(null);
+  // First render: assume the list starts at the top of the scroller; the window is wide
+  // enough to cover the real offset (the header and Your lifts), then it tracks scroll.
+  const [win, setWin] = useState<[number, number]>(() =>
+    rowWindow(savedScrollTop('library'), 0, 900),
+  );
 
   const activeCount =
     facets.muscles.size +
@@ -258,6 +261,35 @@ export function LibraryScreen() {
     [results, sessions, best],
   );
   const topE1rm = yours.length ? (best.get(yours[0]!.id) ?? 0) : 0;
+
+  useEffect(() => {
+    const el = scroller;
+    if (!el) return;
+    let raf = 0;
+    const measure = () => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => {
+        const list = listRef.current;
+        if (!list) return;
+        const listTop =
+          list.getBoundingClientRect().top -
+          el.getBoundingClientRect().top +
+          el.scrollTop;
+        const next = rowWindow(el.scrollTop, listTop, el.clientHeight);
+        setWin((w) =>
+          Math.abs(w[0] - next[0]) < 6 && Math.abs(w[1] - next[1]) < 6
+            ? w
+            : next,
+        );
+      });
+    };
+    measure();
+    el.addEventListener('scroll', measure, { passive: true });
+    return () => {
+      cancelAnimationFrame(raf);
+      el.removeEventListener('scroll', measure);
+    };
+  }, [scroller, results]);
 
   const open = (ex: Exercise) =>
     nav.push(`/library/${encodeURIComponent(ex.id)}`);
@@ -430,13 +462,17 @@ export function LibraryScreen() {
             >
               {query || activeCount ? 'Matches' : 'All exercises'}
             </SectionHead>
-            {scroller && (
-              <Virtuoso
-                customScrollParent={scroller}
-                data={results}
-                components={{ List: ListCard }}
-                itemContent={(_, ex) => (
-                  <div style={{ padding: '0 16px' }}>
+            {/* Every row is in the page, each skipped by the browser while it is off
+                screen (content-visibility, sized in advance), so the list has its real
+                height from the first frame and a restored position shows the right rows
+                with no flash. A virtualized list scrolled its container to its own top on
+                mount and flashed it (09-28). */}
+            <div ref={listRef} className="os-card" data-list-card>
+              {results.map((ex, i) =>
+                i < win[0] || i > win[1] ? (
+                  <div key={ex.id} className="os-lib-row" aria-hidden />
+                ) : (
+                  <div key={ex.id} className="os-lib-row">
                     <button
                       type="button"
                       onClick={() => open(ex)}
@@ -456,9 +492,9 @@ export function LibraryScreen() {
                       <span className="os-chev" />
                     </button>
                   </div>
-                )}
-              />
-            )}
+                ),
+              )}
+            </div>
           </>
         )}
       </div>

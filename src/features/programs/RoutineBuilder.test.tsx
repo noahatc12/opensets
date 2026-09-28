@@ -107,12 +107,15 @@ describe('editing a saved day', () => {
       const saved = await db.templates.get(tpl.id);
       expect(saved!.slots[0]!.scheme.sets).toBe(4);
     });
-    const st = (await getExerciseState(programId, tpl.slots[0]!.exerciseId))!;
-    expect(st.workingWeightLb).toBe(135);
-    expect(st.consecutiveFails).toBe(1);
-    const work = st.pending!.sets.filter((s) => s.type !== 'warmup');
-    expect(work).toHaveLength(4);
-    expect(work.every((s) => s.targetWeightLb === 135)).toBe(true);
+    // The day is saved first, then the exercise is re-prescribed: wait for both.
+    await waitFor(async () => {
+      const st = (await getExerciseState(programId, tpl.slots[0]!.exerciseId))!;
+      const work = st.pending!.sets.filter((s) => s.type !== 'warmup');
+      expect(work).toHaveLength(4);
+      expect(st.workingWeightLb).toBe(135);
+      expect(st.consecutiveFails).toBe(1);
+      expect(work.every((s) => s.targetWeightLb === 135)).toBe(true);
+    });
     expect(await db.templates.count()).toBe(1);
   });
 
