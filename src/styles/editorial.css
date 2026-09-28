@@ -1260,3 +1260,10 @@ html[data-nav='down']::view-transition-new(root) {
 [data-ds='editorial'] .os-shell[data-workout='on'] main .pb-\[120px\] {
   padding-bottom: 184px;
 }
+
+/* An icon button that can do nothing right now looks it (the first exercise's Previous,
+   the last one's Next, a builder card's Up at the top). */
+[data-ds='editorial'] .os-icon-btn:disabled {
+  opacity: 0.35;
+  pointer-events: none;
+}

@@ -14,12 +14,18 @@ import type { Exercise } from '../../db/types';
 interface Props {
   onPick: (exercise: Exercise) => void;
   onClose: () => void;
+  /** The sheet's title: what picking does (Swap opened a sheet titled Add exercise). */
+  title?: string;
 }
 
 /** The Add exercise sheet (spec §7): search by name, alias, muscle and equipment
  *  (db/exerciseSearch.ts), muscle chips, a list virtualized across the full catalog,
  *  each row with the lifter's best e1RM when one is logged and the alias that matched. */
-export function ExercisePicker({ onPick, onClose }: Props) {
+export function ExercisePicker({
+  onPick,
+  onClose,
+  title = 'Add exercise',
+}: Props) {
   const catalog = useCatalog();
   const { units } = useSettings();
   const { best } = useBestE1rm();
@@ -56,8 +62,8 @@ export function ExercisePicker({ onPick, onClose }: Props) {
   }, [catalog, hits, group]);
 
   return (
-    <Sheet open onClose={onClose} label="Add exercise" height="78%">
-      <SheetHeader title="Add exercise" action="Cancel" onAction={onClose} />
+    <Sheet open onClose={onClose} label={title} height="78%">
+      <SheetHeader title={title} action="Cancel" onAction={onClose} />
       <div
         className="os-well mt-3 flex h-[46px] flex-none items-center gap-2.5 rounded-[14px] px-3.5"
         style={{

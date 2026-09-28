@@ -1,0 +1,66 @@
+{
+  "today-empty#Today": {
+    "verdict": "expected",
+    "note": "The tab you are on: it scrolls to the top, and the screen was already there."
+  },
+  "today#Today": {
+    "verdict": "expected",
+    "note": "The tab you are on: it scrolls to the top, and the screen was already there."
+  },
+  "plan#Plan": {
+    "verdict": "expected",
+    "note": "The tab you are on: it scrolls to the top, and the screen was already there."
+  },
+  "plan-pull-open#Plan": {
+    "verdict": "expected",
+    "note": "The tab you are on: it scrolls to the top, and the screen was already there."
+  },
+  "library#Library": {
+    "verdict": "expected",
+    "note": "The tab you are on: it scrolls to the top, and the screen was already there."
+  },
+  "workout-tucked-library#Library": {
+    "verdict": "expected",
+    "note": "The tab you are on: it scrolls to the top, and the screen was already there."
+  },
+  "trends#Trends": {
+    "verdict": "expected",
+    "note": "The tab you are on: it scrolls to the top, and the screen was already there."
+  },
+  "you#You": {
+    "verdict": "expected",
+    "note": "The tab you are on: it scrolls to the top, and the screen was already there."
+  },
+  "builder-edit-push#Double": {
+    "verdict": "expected",
+    "note": "Already selected."
+  },
+  "workout#1 Barbell Bench": {
+    "verdict": "expected",
+    "note": "Already the exercise on screen."
+  },
+  "workout#Skip": {
+    "verdict": "look",
+    "note": "Removes the whole exercise at once, with no undo, one row above the rest timer's own Skip. Review card f08 asks you: label it Skip exercise and offer Undo."
+  },
+  "workout#Log set": {
+    "verdict": "look",
+    "note": "Works. On a rep record it covers the screen with a record screen you have to tap away, most sessions in double progression. Review card f06."
+  },
+  "workout-rest#Skip": {
+    "verdict": "look",
+    "note": "Removes the whole exercise at once, with no undo, while the rest timer's own Skip sits just below it. Review card f08."
+  },
+  "workout-rest#Skip rest": {
+    "verdict": "look",
+    "note": "Works. Two Skip buttons on one screen do different things: this one ends the rest, the one above removes the exercise (f08)."
+  },
+  "sheet-exercise-picker#All": {
+    "verdict": "expected",
+    "note": "Already selected."
+  },
+  "sheet-swap-picker#All": {
+    "verdict": "expected",
+    "note": "Already selected."
+  }
+}
