@@ -1,8 +1,17 @@
-import { useEffect, type ReactNode } from 'react';
+import { useCallback, useEffect, useRef, type ReactNode } from 'react';
+import { attachDrag, scrolledAwayFromTop } from './gesture';
+import { spring, rubberBand, reducedMotion } from '../lib/spring';
 
-/* Bottom sheet: scrim that closes on tap, panel that rises on the out-ease, a grabber,
-   Escape closes. Positioned inside the app shell (position: relative) so it respects the
-   phone's safe areas the same way the tab bar does. */
+/* Bottom sheet. Rises on the iOS curve; drags with the finger once its content is at the
+   top; release past 35 percent of its height, or a flick faster than 0.4 px/ms, carries
+   it off with that velocity and the scrim fades with it; anything less springs back.
+   Dragging upward past open is rubber-banded. Tapping the scrim or pressing Escape runs
+   the same close animation. Positioned inside the app shell (position: relative) so it
+   respects the phone's safe areas the same way the tab bar does. */
+
+const CLOSE_FRACTION = 0.35;
+const FLICK = 0.4; // px per ms
+
 export function Sheet({
   open,
   onClose,
@@ -18,20 +27,117 @@ export function Sheet({
   height?: string;
   role?: 'dialog' | 'alertdialog';
 }) {
+  const panel = useRef<HTMLDivElement>(null);
+  const scrim = useRef<HTMLDivElement>(null);
+  const anim = useRef<ReturnType<typeof spring> | null>(null);
+  const closing = useRef(false);
+  const onCloseRef = useRef(onClose);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  });
+
+  const paint = useCallback((y: number) => {
+    const p = panel.current;
+    const s = scrim.current;
+    if (!p) return;
+    const h = p.offsetHeight || 1;
+    p.style.transform = `translate3d(0, ${y}px, 0)`;
+    if (s) s.style.opacity = String(Math.max(0, Math.min(1, 1 - y / h)));
+  }, []);
+
+  /** Close with motion, carrying `velocity` (px/ms) from the finger when there is one. */
+  const animateClose = useCallback(
+    (velocity = 0) => {
+      const p = panel.current;
+      if (closing.current) return;
+      closing.current = true;
+      if (!p || reducedMotion()) {
+        onCloseRef.current();
+        return;
+      }
+      anim.current?.cancel();
+      const from = currentY(p);
+      anim.current = spring({
+        from,
+        to: p.offsetHeight + 8,
+        velocity: Math.max(velocity, 0.9),
+        stiffness: 300,
+        damping: 34,
+        onUpdate: paint,
+        onDone: () => onCloseRef.current(),
+      });
+    },
+    [paint],
+  );
+
   useEffect(() => {
     if (!open) return;
+    closing.current = false;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape') animateClose();
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [open, onClose]);
+  }, [open, animateClose]);
+
+  useEffect(() => {
+    const p = panel.current;
+    if (!open || !p) return;
+    let y = 0;
+    const detach = attachDrag(p, {
+      onStart: (s) => {
+        if (Math.abs(s.dy) < Math.abs(s.dx)) return false;
+        // A downward drag on scrolled content is a scroll, not a dismiss.
+        if (s.dy > 0 && scrolledAwayFromTop(s.target, p)) return false;
+        if (s.dy < 0 && scrolledAwayFromTop(s.target, p)) return false;
+        anim.current?.cancel();
+        p.classList.add('os-sheet--dragging');
+        return true;
+      },
+      onMove: (s) => {
+        y = s.dy >= 0 ? s.dy : rubberBand(s.dy);
+        paint(y);
+      },
+      onEnd: (s, cancelled) => {
+        p.classList.remove('os-sheet--dragging');
+        const h = p.offsetHeight || 1;
+        const flick = s.vy > FLICK;
+        const shouldClose =
+          !cancelled &&
+          y > 0 &&
+          (y > h * CLOSE_FRACTION || flick) &&
+          s.vy > -FLICK;
+        if (shouldClose) {
+          animateClose(s.vy);
+          return;
+        }
+        anim.current = spring({
+          from: y,
+          to: 0,
+          velocity: s.vy,
+          stiffness: flick ? 320 : 420,
+          damping: flick ? 26 : 38,
+          onUpdate: paint,
+        });
+      },
+    });
+    return () => {
+      detach();
+      anim.current?.cancel();
+    };
+  }, [open, paint, animateClose]);
 
   if (!open) return null;
   return (
     <div className="absolute inset-0 z-40">
-      <div className="os-scrim" onClick={onClose} aria-hidden />
       <div
+        ref={scrim}
+        className="os-scrim"
+        onClick={() => animateClose()}
+        aria-hidden
+      />
+      <div
+        ref={panel}
         role={role}
         aria-modal="true"
         aria-label={label}
@@ -43,6 +149,11 @@ export function Sheet({
       </div>
     </div>
   );
+}
+
+function currentY(el: HTMLElement): number {
+  const m = /translate3d\(0px, ([-\d.]+)px/.exec(el.style.transform);
+  return m ? parseFloat(m[1]!) : 0;
 }
 
 /** Sheet header: bold title left, a text action right. */

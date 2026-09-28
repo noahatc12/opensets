@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNav } from '../../ui/nav';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../db/db';
 import { useSettings, updateSettings, useProfile } from '../../db/hooks';
@@ -92,7 +92,7 @@ const Value = ({
 );
 
 export function SettingsScreen() {
-  const navigate = useNavigate();
+  const nav = useNav();
   const catalog = useCatalog();
   const settings = useSettings();
   const profile = useProfile();
@@ -238,7 +238,7 @@ export function SettingsScreen() {
             label="Default rest"
             sub="For new exercises"
             value={<Value>{clock(settings.defaultRestWorkSec)}</Value>}
-            onClick={() => navigate('/rest-defaults')}
+            onClick={() => nav.push('/rest-defaults')}
           />
           <Row
             label="Bar and plates"
@@ -251,12 +251,12 @@ export function SettingsScreen() {
                 label={`${settings.plateInventoryLb.length} plate sizes`}
               />
             }
-            onClick={() => navigate('/plates')}
+            onClick={() => nav.push('/plates')}
           />
           <Row
             label="Rest by lift type"
             sub={restByType}
-            onClick={() => navigate('/rest-defaults')}
+            onClick={() => nav.push('/rest-defaults')}
           />
         </div>
 
@@ -265,7 +265,7 @@ export function SettingsScreen() {
           <Row
             label="Profile"
             sub={profileSummary}
-            onClick={() => navigate('/profile')}
+            onClick={() => nav.push('/profile')}
           />
           <Row
             label="Bodyweight"
@@ -277,17 +277,17 @@ export function SettingsScreen() {
                 <Value unit={units}>{fmtWeight(latestBw.valueLb, units)}</Value>
               ) : undefined
             }
-            onClick={() => navigate('/measurements')}
+            onClick={() => nav.push('/measurements')}
           />
           <Row
             label="Goals"
             sub={`${goalCount ?? 0} active`}
-            onClick={() => navigate('/goals')}
+            onClick={() => nav.push('/goals')}
           />
           <Row
             label="Measurements"
             sub="Waist, arms, photos"
-            onClick={() => navigate('/measurements')}
+            onClick={() => nav.push('/measurements')}
           />
         </div>
 

@@ -1,4 +1,5 @@
-import { NavLink } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
+import { useNav } from '../ui/nav';
 
 /* Floating glass tab bar. Five tabs. The active highlight is a pill inset 6px inside the
    66px island, so its radius (27px) is concentric with the island's (33px) at the ends. */
@@ -47,11 +48,32 @@ const TABS = [
 ] as const;
 
 export function TabBar() {
+  const nav = useNav();
+  const { pathname } = useLocation();
   return (
     <nav aria-label="Main" className="os-tabs">
       {TABS.map((t) => (
-        <NavLink key={t.to} to={t.to} className="os-tab os-press">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+        <NavLink
+          key={t.to}
+          to={t.to}
+          className="os-tab os-press"
+          onClick={(e) => {
+            if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+            e.preventDefault();
+            if (pathname !== t.to) nav.tab(t.to);
+          }}
+        >
+          <svg
+            width="22"
+            height="22"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden
+          >
             {t.icon}
           </svg>
           <span>{t.label}</span>

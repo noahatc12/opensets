@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom';
+import { useNav } from '../../ui/nav';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../db/db';
 import { useProfile } from '../../db/hooks';
@@ -12,7 +12,7 @@ import { ageFromBirthDate } from '../../lib/age';
  * basis is a height-adjusted weight. Framed as an estimate, never a prescription.
  */
 export function ProteinCard() {
-  const navigate = useNavigate();
+  const nav = useNav();
   const profile = useProfile();
   // Re-read whenever the measurements change (useLiveQuery tracks the table).
   const bodyweightLb = useLiveQuery(async () => {
@@ -37,7 +37,7 @@ export function ProteinCard() {
     return (
       <button
         type="button"
-        onClick={() => navigate('/measurements')}
+        onClick={() => nav.push('/measurements')}
         className="os-card os-press mt-3 block w-full text-left"
         style={{ padding: '14px 16px' }}
       >

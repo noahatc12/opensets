@@ -1,5 +1,7 @@
 import { useMemo, useRef, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
+import { useNav } from '../../ui/nav';
+import { Pushed } from '../../ui/Pushed';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../db/db';
 import { useCatalog } from './useCatalog';
@@ -110,7 +112,7 @@ function ImageCarousel({ images }: { images: string[] }) {
 
 export function ExerciseDetailScreen() {
   const catalog = useCatalog();
-  const navigate = useNavigate();
+  const nav = useNav();
   const { units } = useSettings();
   const { id = '' } = useParams();
   const ex = catalog ? getCatalogExercise(decodeURIComponent(id)) : undefined;
@@ -174,7 +176,7 @@ export function ExerciseDetailScreen() {
   if (!ex) {
     return (
       <div className="px-[18px] pt-[max(0.5rem,env(safe-area-inset-top))]">
-        <BackButton onClick={() => navigate('/library')} />
+        <BackButton onClick={() => nav.pop('/library')} />
         <div className="os-card mt-4 text-center">
           <div className="text-[15px] font-extrabold">Exercise not found</div>
           <p className="os-t mt-1">
@@ -217,143 +219,145 @@ export function ExerciseDetailScreen() {
     `${s.weightLb > 0 ? fmtWeight(s.weightLb, units) : 'BW'}×${s.reps}`;
 
   return (
-    <div className="relative h-full overflow-auto px-[18px] pb-[120px] pt-[max(0.5rem,env(safe-area-inset-top))]">
-      <BackButton onClick={() => navigate(-1)} />
-      <div className="os-t mt-3.5" style={{ color: 'var(--acc-tx)' }}>
-        {eyebrow}
-      </div>
-      <h1 className="os-h1 mt-0.5">{ex.name}</h1>
-
-      {ex.images.length > 0 && (
-        <div className="mt-3.5">
-          <ImageCarousel images={ex.images} />
+    <Pushed to={'/library'}>
+      <div className="relative h-full overflow-auto px-[18px] pb-[120px] pt-[max(0.5rem,env(safe-area-inset-top))]">
+        <BackButton onClick={() => nav.pop()} />
+        <div className="os-t mt-3.5" style={{ color: 'var(--acc-tx)' }}>
+          {eyebrow}
         </div>
-      )}
+        <h1 className="os-h1 mt-0.5">{ex.name}</h1>
 
-      <div className="mt-3.5">
-        <StatTiles
-          cols={3}
-          size={24}
-          stats={[
-            {
-              label: 'Best e1RM',
-              value:
-                best !== null
-                  ? roundDisplay(toUnit(best, units), units)
+        {ex.images.length > 0 && (
+          <div className="mt-3.5">
+            <ImageCarousel images={ex.images} />
+          </div>
+        )}
+
+        <div className="mt-3.5">
+          <StatTiles
+            cols={3}
+            size={24}
+            stats={[
+              {
+                label: 'Best e1RM',
+                value:
+                  best !== null
+                    ? roundDisplay(toUnit(best, units), units)
+                    : 'none',
+                color: best !== null ? 'var(--pr)' : 'var(--mute)',
+              },
+              {
+                label: 'Last top set',
+                value: lastTop
+                  ? `${lastTop.weightLb > 0 ? fmtWeight(lastTop.weightLb, units) : 'BW'}×${lastTop.reps}`
                   : 'none',
-              color: best !== null ? 'var(--pr)' : 'var(--mute)',
-            },
-            {
-              label: 'Last top set',
-              value: lastTop
-                ? `${lastTop.weightLb > 0 ? fmtWeight(lastTop.weightLb, units) : 'BW'}×${lastTop.reps}`
-                : 'none',
-              color: lastTop ? undefined : 'var(--mute)',
-            },
-            { label: 'Sessions', value: history.length },
-          ]}
-        />
-      </div>
+                color: lastTop ? undefined : 'var(--mute)',
+              },
+              { label: 'Sessions', value: history.length },
+            ]}
+          />
+        </div>
 
-      <div className="os-card mt-3">
-        <div className="flex justify-between">
-          <span className="os-t">e1RM trend</span>
-          {delta !== null ? (
-            <span
-              className="os-t"
-              style={{ color: delta >= 0 ? 'var(--pos)' : 'var(--danger)' }}
-            >
-              {delta >= 0 ? '+' : ''}
-              {roundDisplay(toUnit(delta, units), units)} in {weeks} wk
-            </span>
+        <div className="os-card mt-3">
+          <div className="flex justify-between">
+            <span className="os-t">e1RM trend</span>
+            {delta !== null ? (
+              <span
+                className="os-t"
+                style={{ color: delta >= 0 ? 'var(--pos)' : 'var(--danger)' }}
+              >
+                {delta >= 0 ? '+' : ''}
+                {roundDisplay(toUnit(delta, units), units)} in {weeks} wk
+              </span>
+            ) : (
+              <span className="os-t">
+                {trend.length === 1 ? 'one session so far' : 'no sessions yet'}
+              </span>
+            )}
+          </div>
+          {trend.length >= 2 ? (
+            <div className="mt-2">
+              <TrendChart points={trend} />
+            </div>
           ) : (
-            <span className="os-t">
-              {trend.length === 1 ? 'one session so far' : 'no sessions yet'}
-            </span>
+            <p className="os-t mt-2 leading-snug">
+              Log this lift in two sessions and the trend draws here.
+            </p>
           )}
         </div>
-        {trend.length >= 2 ? (
-          <div className="mt-2">
-            <TrendChart points={trend} />
+
+        {ex.instructions.length > 0 && (
+          <>
+            <SectionHead>How to</SectionHead>
+            <div className="os-card">
+              {ex.instructions.map((step, i) => (
+                <p
+                  key={i}
+                  className={`text-[14px] leading-[1.5] ${i > 0 ? 'mt-2' : ''}`}
+                  style={{ color: 'var(--ink2)' }}
+                >
+                  {step}
+                </p>
+              ))}
+            </div>
+          </>
+        )}
+
+        <SectionHead right={history.length || undefined}>History</SectionHead>
+        {history.length === 0 ? (
+          <div className="os-card">
+            <div className="text-[15px] font-extrabold">Not logged yet</div>
+            <p className="os-t mt-1">
+              Add it to a day and your sets will show here.
+            </p>
           </div>
         ) : (
-          <p className="os-t mt-2 leading-snug">
-            Log this lift in two sessions and the trend draws here.
-          </p>
-        )}
-      </div>
-
-      {ex.instructions.length > 0 && (
-        <>
-          <SectionHead>How to</SectionHead>
-          <div className="os-card">
-            {ex.instructions.map((step, i) => (
-              <p
-                key={i}
-                className={`text-[14px] leading-[1.5] ${i > 0 ? 'mt-2' : ''}`}
-                style={{ color: 'var(--ink2)' }}
-              >
-                {step}
-              </p>
+          <div className="os-card" style={{ padding: '4px 16px' }}>
+            {history.slice(0, 20).map((h) => (
+              <div key={h.id} className="os-row">
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-[15px] font-semibold">
+                    {dateShort(h.date)}
+                    {h.day ? ` · ${h.day}` : ''}
+                  </span>
+                  <span
+                    className="mt-0.5 block truncate text-[12px] font-medium"
+                    style={{
+                      color: 'var(--mute)',
+                      fontVariantNumeric: 'tabular-nums',
+                    }}
+                  >
+                    {h.sets.map(wr).join(' · ')}
+                  </span>
+                </span>
+                {h.bestE1rm !== null && (
+                  <span
+                    className="os-num text-[17px]"
+                    style={{
+                      letterSpacing: '-.02em',
+                      color: h.pr ? 'var(--pr)' : 'var(--ink)',
+                    }}
+                  >
+                    {roundDisplay(toUnit(h.bestE1rm, units), units)}
+                  </span>
+                )}
+              </div>
             ))}
           </div>
-        </>
-      )}
+        )}
 
-      <SectionHead right={history.length || undefined}>History</SectionHead>
-      {history.length === 0 ? (
-        <div className="os-card">
-          <div className="text-[15px] font-extrabold">Not logged yet</div>
-          <p className="os-t mt-1">
-            Add it to a day and your sets will show here.
-          </p>
+        <div className="os-dock">
+          <button
+            type="button"
+            onClick={() =>
+              nav.push('/routine/new', { state: { addExerciseId: ex.id } })
+            }
+            className="os-btn os-btn--ink os-press"
+          >
+            Add to a day
+          </button>
         </div>
-      ) : (
-        <div className="os-card" style={{ padding: '4px 16px' }}>
-          {history.slice(0, 20).map((h) => (
-            <div key={h.id} className="os-row">
-              <span className="min-w-0 flex-1">
-                <span className="block truncate text-[15px] font-semibold">
-                  {dateShort(h.date)}
-                  {h.day ? ` · ${h.day}` : ''}
-                </span>
-                <span
-                  className="mt-0.5 block truncate text-[12px] font-medium"
-                  style={{
-                    color: 'var(--mute)',
-                    fontVariantNumeric: 'tabular-nums',
-                  }}
-                >
-                  {h.sets.map(wr).join(' · ')}
-                </span>
-              </span>
-              {h.bestE1rm !== null && (
-                <span
-                  className="os-num text-[17px]"
-                  style={{
-                    letterSpacing: '-.02em',
-                    color: h.pr ? 'var(--pr)' : 'var(--ink)',
-                  }}
-                >
-                  {roundDisplay(toUnit(h.bestE1rm, units), units)}
-                </span>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
-
-      <div className="os-dock">
-        <button
-          type="button"
-          onClick={() =>
-            navigate('/routine/new', { state: { addExerciseId: ex.id } })
-          }
-          className="os-btn os-btn--ink os-press"
-        >
-          Add to a day
-        </button>
       </div>
-    </div>
+    </Pushed>
   );
 }

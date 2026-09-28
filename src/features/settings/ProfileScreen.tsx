@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNav } from '../../ui/nav';
+import { Pushed } from '../../ui/Pushed';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../db/db';
 import { updateProfile } from '../../db/hooks';
@@ -73,25 +74,27 @@ const inputCls =
   'min-w-0 flex-1 bg-transparent text-[18px] text-text placeholder:text-faint focus:outline-none';
 
 export function ProfileScreen() {
-  const navigate = useNavigate();
+  const nav = useNav();
   // undefined = still loading; null = no profile yet; row = loaded.
   const loaded = useLiveQuery(() =>
     db.profile.get('user').then((p) => p ?? null),
   );
 
   return (
-    <div className="relative flex h-full flex-col">
-      <div className="px-[18px] pt-[max(0.5rem,env(safe-area-inset-top))]">
-        <BackButton onClick={() => navigate('/settings')} />
-        <div className="os-t mt-3.5">You</div>
-        <h1 className="os-h1 mt-0.5">Profile</h1>
-      </div>
+    <Pushed to={'/settings'}>
+      <div className="relative flex h-full flex-col">
+        <div className="px-[18px] pt-[max(0.5rem,env(safe-area-inset-top))]">
+          <BackButton onClick={() => nav.tab('/settings')} />
+          <div className="os-t mt-3.5">You</div>
+          <h1 className="os-h1 mt-0.5">Profile</h1>
+        </div>
 
-      {loaded !== undefined && (
-        // Remount when the persisted row's identity changes so the form re-seeds.
-        <ProfileForm key={loaded?.updatedAt ?? 'new'} initial={loaded} />
-      )}
-    </div>
+        {loaded !== undefined && (
+          // Remount when the persisted row's identity changes so the form re-seeds.
+          <ProfileForm key={loaded?.updatedAt ?? 'new'} initial={loaded} />
+        )}
+      </div>
+    </Pushed>
   );
 }
 

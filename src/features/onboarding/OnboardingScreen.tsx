@@ -1,5 +1,6 @@
 import { useMemo, useState, type ReactNode } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNav } from '../../ui/nav';
+import { Pushed } from '../../ui/Pushed';
 import { useCatalog } from '../library/useCatalog';
 import { generatePlan } from '../../engine';
 import { useSettings } from '../../db/hooks';
@@ -189,7 +190,7 @@ const fieldStyle = { padding: '12px 14px' };
 const inputCls = 'os-input text-[18px] font-bold';
 
 export function OnboardingScreen() {
-  const navigate = useNavigate();
+  const nav = useNav();
   const catalog = useCatalog();
   const [step, setStep] = useState(0);
   const [goal, setGoal] = useState<string>('Build muscle');
@@ -313,398 +314,409 @@ export function OnboardingScreen() {
     } catch {
       /* ignore */
     }
-    navigate('/today');
+    nav.pop('/today');
   }
 
   const next = () =>
     step >= STEPS - 1 ? void finish() : setStep((s) => s + 1);
-  const back = () => (step === 0 ? navigate(-1) : setStep((s) => s - 1));
+  const back = () => (step === 0 ? nav.pop() : setStep((s) => s - 1));
   const bodyDataGiven = Boolean(bodyweightLb || sex);
 
   return (
-    <div className="relative flex h-full flex-col">
-      <div className="flex-1 overflow-auto px-[18px] pb-[120px] pt-[max(0.5rem,env(safe-area-inset-top))]">
-        <div className="flex items-center gap-3">
-          <BackButton onClick={back} />
-          <div
-            className="h-1.5 flex-1 overflow-hidden rounded-[3px]"
-            style={{ background: 'var(--s2)' }}
-            role="progressbar"
-            aria-valuemin={1}
-            aria-valuemax={STEPS}
-            aria-valuenow={step + 1}
-            aria-label="Onboarding progress"
-          >
+    <Pushed to={-1}>
+      <div className="relative flex h-full flex-col">
+        <div className="flex-1 overflow-auto px-[18px] pb-[120px] pt-[max(0.5rem,env(safe-area-inset-top))]">
+          <div className="flex items-center gap-3">
+            <BackButton onClick={back} />
             <div
-              className="h-full rounded-[3px] transition-[width]"
-              style={{
-                width: `${((step + 1) / STEPS) * 100}%`,
-                background: 'linear-gradient(90deg, var(--acc2), var(--acc))',
-              }}
-            />
-          </div>
-          <span className="os-t" style={{ fontVariantNumeric: 'tabular-nums' }}>
-            {step + 1} of {STEPS}
-          </span>
-        </div>
-
-        <h1
-          className="os-h1 mt-[26px]"
-          style={{ fontSize: 30, lineHeight: 1.1 }}
-        >
-          {step === STEPS - 1
-            ? `${GOALS.find((g) => g.id === goal)?.label ?? goal} · ${days} days`
-            : TITLES[step]}
-        </h1>
-        {SUBS[step] && (
-          <p className="os-t mt-2 font-medium leading-[1.4]">{SUBS[step]}</p>
-        )}
-        {step === STEPS - 1 && (
-          <p className="os-t mt-2 font-medium leading-[1.4]">
-            {goal === 'Get stronger' || experience === 'Novice'
-              ? 'Linear'
-              : 'Double'}{' '}
-            progression · {equipment.toLowerCase()} · built for{' '}
-            {experience.toLowerCase()} lifters.
-          </p>
-        )}
-
-        {step === 0 && (
-          <div
-            className="mt-[22px] flex flex-col gap-2.5"
-            role="radiogroup"
-            aria-label="Goal"
-          >
-            {GOALS.map((g) => (
-              <OptionCard
-                key={g.id}
-                selected={goal === g.id}
-                onClick={() => setGoal(g.id)}
-                icon={g.icon}
-                label={g.label}
-                sub={g.sub}
-              />
-            ))}
-          </div>
-        )}
-
-        {step === 1 && (
-          <>
-            <div
-              className="mt-5 grid grid-cols-4 gap-2"
-              role="radiogroup"
-              aria-label="Days per week"
+              className="h-1.5 flex-1 overflow-hidden rounded-[3px]"
+              style={{ background: 'var(--s2)' }}
+              role="progressbar"
+              aria-valuemin={1}
+              aria-valuemax={STEPS}
+              aria-valuenow={step + 1}
+              aria-label="Onboarding progress"
             >
-              {[3, 4, 5, 6].map((d) => (
-                <button
-                  key={d}
-                  type="button"
-                  role="radio"
-                  aria-checked={days === d}
-                  onClick={() => setDays(d)}
-                  className={`os-card os-press os-num aspect-square text-[26px] ${days === d ? 'os-card--lift os-card--selected' : ''}`}
-                  style={{ padding: 0, display: 'grid', placeItems: 'center' }}
-                >
-                  {d}
-                </button>
-              ))}
-            </div>
-            <div className="os-h2">Equipment</div>
-            <div className="flex flex-wrap gap-1.5">
-              {EQUIPMENT.map((e) => (
-                <Chip
-                  key={e}
-                  on={equipment === e}
-                  onClick={() => setEquipment(e)}
-                >
-                  {e}
-                </Chip>
-              ))}
-            </div>
-            <div className="os-h2">
-              Split <span>optional</span>
-            </div>
-            <div className="flex flex-wrap gap-1.5">
-              {SPLITS.map((s) => (
-                <Chip
-                  key={s.id}
-                  on={splitChoice === s.id}
-                  onClick={() => setSplitChoice(s.id)}
-                >
-                  {s.label}
-                </Chip>
-              ))}
-            </div>
-          </>
-        )}
-
-        {step === 2 && (
-          <div
-            className="mt-[22px] flex flex-col gap-2.5"
-            role="radiogroup"
-            aria-label="Experience"
-          >
-            {EXPERIENCE.map((x) => (
-              <OptionCard
-                key={x.id}
-                selected={experience === x.id}
-                onClick={() => setExperience(x.id)}
-                label={x.id}
-                sub={x.sub}
-              />
-            ))}
-          </div>
-        )}
-
-        {step === 3 && (
-          <div className="mt-5 flex flex-col gap-3.5">
-            <Field label="Sex">
               <div
-                className="grid grid-cols-2 gap-2"
+                className="h-full rounded-[3px] transition-[width]"
+                style={{
+                  width: `${((step + 1) / STEPS) * 100}%`,
+                  background: 'linear-gradient(90deg, var(--acc2), var(--acc))',
+                }}
+              />
+            </div>
+            <span
+              className="os-t"
+              style={{ fontVariantNumeric: 'tabular-nums' }}
+            >
+              {step + 1} of {STEPS}
+            </span>
+          </div>
+
+          <h1
+            className="os-h1 mt-[26px]"
+            style={{ fontSize: 30, lineHeight: 1.1 }}
+          >
+            {step === STEPS - 1
+              ? `${GOALS.find((g) => g.id === goal)?.label ?? goal} · ${days} days`
+              : TITLES[step]}
+          </h1>
+          {SUBS[step] && (
+            <p className="os-t mt-2 font-medium leading-[1.4]">{SUBS[step]}</p>
+          )}
+          {step === STEPS - 1 && (
+            <p className="os-t mt-2 font-medium leading-[1.4]">
+              {goal === 'Get stronger' || experience === 'Novice'
+                ? 'Linear'
+                : 'Double'}{' '}
+              progression · {equipment.toLowerCase()} · built for{' '}
+              {experience.toLowerCase()} lifters.
+            </p>
+          )}
+
+          {step === 0 && (
+            <div
+              className="mt-[22px] flex flex-col gap-2.5"
+              role="radiogroup"
+              aria-label="Goal"
+            >
+              {GOALS.map((g) => (
+                <OptionCard
+                  key={g.id}
+                  selected={goal === g.id}
+                  onClick={() => setGoal(g.id)}
+                  icon={g.icon}
+                  label={g.label}
+                  sub={g.sub}
+                />
+              ))}
+            </div>
+          )}
+
+          {step === 1 && (
+            <>
+              <div
+                className="mt-5 grid grid-cols-4 gap-2"
                 role="radiogroup"
-                aria-label="Sex"
+                aria-label="Days per week"
               >
-                {(['male', 'female'] as const).map((s) => (
+                {[3, 4, 5, 6].map((d) => (
                   <button
-                    key={s}
+                    key={d}
                     type="button"
                     role="radio"
-                    aria-checked={sex === s}
-                    onClick={() => setSex((cur) => (cur === s ? null : s))}
-                    className={`os-btn os-btn--sm os-press capitalize ${sex === s ? 'os-btn--ink' : ''}`}
+                    aria-checked={days === d}
+                    onClick={() => setDays(d)}
+                    className={`os-card os-press os-num aspect-square text-[26px] ${days === d ? 'os-card--lift os-card--selected' : ''}`}
+                    style={{
+                      padding: 0,
+                      display: 'grid',
+                      placeItems: 'center',
+                    }}
                   >
-                    {s}
+                    {d}
                   </button>
                 ))}
               </div>
-            </Field>
-            <Field label="Date of birth">
-              <div className={fieldBox} style={fieldStyle}>
-                <input
-                  type="date"
-                  value={dob}
-                  onChange={(e) => setDob(e.target.value)}
-                  aria-label="Date of birth"
-                  className={inputCls}
-                  style={{ fontSize: 16 }}
-                />
+              <div className="os-h2">Equipment</div>
+              <div className="flex flex-wrap gap-1.5">
+                {EQUIPMENT.map((e) => (
+                  <Chip
+                    key={e}
+                    on={equipment === e}
+                    onClick={() => setEquipment(e)}
+                  >
+                    {e}
+                  </Chip>
+                ))}
               </div>
-            </Field>
-            <Field label="Height">
-              <div className="flex gap-2">
+              <div className="os-h2">
+                Split <span>optional</span>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {SPLITS.map((s) => (
+                  <Chip
+                    key={s.id}
+                    on={splitChoice === s.id}
+                    onClick={() => setSplitChoice(s.id)}
+                  >
+                    {s.label}
+                  </Chip>
+                ))}
+              </div>
+            </>
+          )}
+
+          {step === 2 && (
+            <div
+              className="mt-[22px] flex flex-col gap-2.5"
+              role="radiogroup"
+              aria-label="Experience"
+            >
+              {EXPERIENCE.map((x) => (
+                <OptionCard
+                  key={x.id}
+                  selected={experience === x.id}
+                  onClick={() => setExperience(x.id)}
+                  label={x.id}
+                  sub={x.sub}
+                />
+              ))}
+            </div>
+          )}
+
+          {step === 3 && (
+            <div className="mt-5 flex flex-col gap-3.5">
+              <Field label="Sex">
+                <div
+                  className="grid grid-cols-2 gap-2"
+                  role="radiogroup"
+                  aria-label="Sex"
+                >
+                  {(['male', 'female'] as const).map((s) => (
+                    <button
+                      key={s}
+                      type="button"
+                      role="radio"
+                      aria-checked={sex === s}
+                      onClick={() => setSex((cur) => (cur === s ? null : s))}
+                      className={`os-btn os-btn--sm os-press capitalize ${sex === s ? 'os-btn--ink' : ''}`}
+                    >
+                      {s}
+                    </button>
+                  ))}
+                </div>
+              </Field>
+              <Field label="Date of birth">
                 <div className={fieldBox} style={fieldStyle}>
                   <input
-                    type="number"
-                    inputMode="numeric"
-                    value={heightFt}
-                    onChange={(e) => setHeightFt(e.target.value)}
-                    placeholder="0"
-                    aria-label="Height feet"
+                    type="date"
+                    value={dob}
+                    onChange={(e) => setDob(e.target.value)}
+                    aria-label="Date of birth"
                     className={inputCls}
+                    style={{ fontSize: 16 }}
                   />
-                  <span className="os-t">ft</span>
                 </div>
-                <div className={fieldBox} style={fieldStyle}>
-                  <input
-                    type="number"
-                    inputMode="numeric"
-                    value={heightInch}
-                    onChange={(e) => setHeightInch(e.target.value)}
-                    placeholder="0"
-                    aria-label="Height inches"
-                    className={inputCls}
-                  />
-                  <span className="os-t">in</span>
+              </Field>
+              <Field label="Height">
+                <div className="flex gap-2">
+                  <div className={fieldBox} style={fieldStyle}>
+                    <input
+                      type="number"
+                      inputMode="numeric"
+                      value={heightFt}
+                      onChange={(e) => setHeightFt(e.target.value)}
+                      placeholder="0"
+                      aria-label="Height feet"
+                      className={inputCls}
+                    />
+                    <span className="os-t">ft</span>
+                  </div>
+                  <div className={fieldBox} style={fieldStyle}>
+                    <input
+                      type="number"
+                      inputMode="numeric"
+                      value={heightInch}
+                      onChange={(e) => setHeightInch(e.target.value)}
+                      placeholder="0"
+                      aria-label="Height inches"
+                      className={inputCls}
+                    />
+                    <span className="os-t">in</span>
+                  </div>
                 </div>
-              </div>
-            </Field>
-            <Field label="Bodyweight">
-              <div className={fieldBox} style={fieldStyle}>
-                <input
-                  type="number"
-                  inputMode="decimal"
-                  value={bodyweight}
-                  onChange={(e) => setBodyweight(e.target.value)}
-                  placeholder="0"
-                  aria-label="Bodyweight"
-                  className={inputCls}
-                />
-                <span className="os-t">{units}</span>
-              </div>
-            </Field>
-            <Field label="Body fat percent">
-              <div className={fieldBox} style={fieldStyle}>
-                <input
-                  type="number"
-                  inputMode="decimal"
-                  value={bodyFat}
-                  onChange={(e) => setBodyFat(e.target.value)}
-                  placeholder="0"
-                  aria-label="Body fat percent"
-                  className={inputCls}
-                />
-                <span className="os-t">%</span>
-              </div>
-            </Field>
-            <div>
-              <div className="os-h2" style={{ marginTop: 6 }}>
-                Goal target <span>optional</span>
-              </div>
-              <p className="os-t mb-2 leading-snug">
-                For a physique target, such as 12 percent body fat in 8 weeks.
-              </p>
-              <div className="flex gap-2">
+              </Field>
+              <Field label="Bodyweight">
                 <div className={fieldBox} style={fieldStyle}>
                   <input
                     type="number"
                     inputMode="decimal"
-                    value={targetBodyFat}
-                    onChange={(e) => setTargetBodyFat(e.target.value)}
+                    value={bodyweight}
+                    onChange={(e) => setBodyweight(e.target.value)}
                     placeholder="0"
-                    aria-label="Target body fat percent"
+                    aria-label="Bodyweight"
                     className={inputCls}
                   />
-                  <span className="os-t">% fat</span>
+                  <span className="os-t">{units}</span>
                 </div>
+              </Field>
+              <Field label="Body fat percent">
                 <div className={fieldBox} style={fieldStyle}>
                   <input
                     type="number"
-                    inputMode="numeric"
-                    value={timeframeWeeks}
-                    onChange={(e) => setTimeframeWeeks(e.target.value)}
+                    inputMode="decimal"
+                    value={bodyFat}
+                    onChange={(e) => setBodyFat(e.target.value)}
                     placeholder="0"
-                    aria-label="Goal timeframe weeks"
+                    aria-label="Body fat percent"
                     className={inputCls}
                   />
-                  <span className="os-t">weeks</span>
+                  <span className="os-t">%</span>
+                </div>
+              </Field>
+              <div>
+                <div className="os-h2" style={{ marginTop: 6 }}>
+                  Goal target <span>optional</span>
+                </div>
+                <p className="os-t mb-2 leading-snug">
+                  For a physique target, such as 12 percent body fat in 8 weeks.
+                </p>
+                <div className="flex gap-2">
+                  <div className={fieldBox} style={fieldStyle}>
+                    <input
+                      type="number"
+                      inputMode="decimal"
+                      value={targetBodyFat}
+                      onChange={(e) => setTargetBodyFat(e.target.value)}
+                      placeholder="0"
+                      aria-label="Target body fat percent"
+                      className={inputCls}
+                    />
+                    <span className="os-t">% fat</span>
+                  </div>
+                  <div className={fieldBox} style={fieldStyle}>
+                    <input
+                      type="number"
+                      inputMode="numeric"
+                      value={timeframeWeeks}
+                      onChange={(e) => setTimeframeWeeks(e.target.value)}
+                      placeholder="0"
+                      aria-label="Goal timeframe weeks"
+                      className={inputCls}
+                    />
+                    <span className="os-t">weeks</span>
+                  </div>
                 </div>
               </div>
-            </div>
-            <div>
-              <div className="os-h2" style={{ marginTop: 6 }}>
-                Priority muscles <span>optional</span>
-              </div>
-              <p className="os-t mb-2 leading-snug">
-                Lagging areas to bias extra volume toward.
-              </p>
-              <div className="flex flex-wrap gap-1.5">
-                {PRIORITY_MUSCLES.map((m) => (
-                  <Chip
-                    key={m.id}
-                    on={priority.includes(m.id)}
-                    onClick={() =>
-                      setPriority((cur) =>
-                        cur.includes(m.id)
-                          ? cur.filter((x) => x !== m.id)
-                          : [...cur, m.id],
-                      )
-                    }
-                  >
-                    {m.label}
-                  </Chip>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {step === 4 && (
-          <div className="mt-4 flex flex-col gap-2.5">
-            {(plan?.program.days ?? []).map((day) => (
-              <div
-                key={day.name}
-                className="os-card"
-                style={{ padding: '10px 16px 6px' }}
-              >
-                <div className="flex items-center justify-between">
-                  <span
-                    className="text-[16px] font-extrabold"
-                    style={{ letterSpacing: '-.02em' }}
-                  >
-                    {day.name}
-                  </span>
-                  <span className="os-t">{day.slots.length} exercises</span>
+              <div>
+                <div className="os-h2" style={{ marginTop: 6 }}>
+                  Priority muscles <span>optional</span>
                 </div>
-                <div className="mt-1">
-                  {day.slots.map((s, i) => (
-                    <div
-                      key={s.exerciseId}
-                      className="os-row"
-                      style={{ padding: '9px 0' }}
+                <p className="os-t mb-2 leading-snug">
+                  Lagging areas to bias extra volume toward.
+                </p>
+                <div className="flex flex-wrap gap-1.5">
+                  {PRIORITY_MUSCLES.map((m) => (
+                    <Chip
+                      key={m.id}
+                      on={priority.includes(m.id)}
+                      onClick={() =>
+                        setPriority((cur) =>
+                          cur.includes(m.id)
+                            ? cur.filter((x) => x !== m.id)
+                            : [...cur, m.id],
+                        )
+                      }
                     >
-                      <span
-                        className="os-t w-4"
-                        style={{ fontVariantNumeric: 'tabular-nums' }}
-                      >
-                        {i + 1}
-                      </span>
-                      <span className="min-w-0 flex-1 truncate text-[14px] font-semibold">
-                        {s.exerciseName}
-                      </span>
-                      <span
-                        className="os-t"
-                        style={{ fontVariantNumeric: 'tabular-nums' }}
-                      >
-                        {s.scheme.sets}×
-                        {s.scheme.repTarget ??
-                          `${s.scheme.repRange?.[0]}–${s.scheme.repRange?.[1]}`}
-                      </span>
-                      <span
-                        className="os-num w-14 text-right text-[15px]"
-                        style={{ letterSpacing: '-.02em' }}
-                      >
-                        {shownStart(s.startWeightLb, s.loadType) > 0
-                          ? fmtWeight(
-                              shownStart(s.startWeightLb, s.loadType),
-                              units,
-                            )
-                          : 'BW'}
-                        {shownStart(s.startWeightLb, s.loadType) > 0 && (
-                          <small className="os-t ml-0.5 text-[11px]">
-                            {units}
-                          </small>
-                        )}
-                      </span>
-                    </div>
+                      {m.label}
+                    </Chip>
                   ))}
                 </div>
               </div>
-            ))}
-            <p className="os-t px-1 leading-snug">
-              {bodyDataGiven
-                ? 'Suggested from your body data, fine-tune in your first session.'
-                : 'Starting weights are conservative. Fine-tune them in your first session.'}
-            </p>
-            {!catalog && (
-              <p className="os-t text-center">Loading the exercise library…</p>
-            )}
-          </div>
-        )}
-      </div>
+            </div>
+          )}
 
-      <div className="os-dock">
-        {buildError && (
-          <p
-            role="alert"
-            className="mb-2.5 text-center text-[13px] font-semibold"
-            style={{ color: 'var(--danger)' }}
+          {step === 4 && (
+            <div className="mt-4 flex flex-col gap-2.5">
+              {(plan?.program.days ?? []).map((day) => (
+                <div
+                  key={day.name}
+                  className="os-card"
+                  style={{ padding: '10px 16px 6px' }}
+                >
+                  <div className="flex items-center justify-between">
+                    <span
+                      className="text-[16px] font-extrabold"
+                      style={{ letterSpacing: '-.02em' }}
+                    >
+                      {day.name}
+                    </span>
+                    <span className="os-t">{day.slots.length} exercises</span>
+                  </div>
+                  <div className="mt-1">
+                    {day.slots.map((s, i) => (
+                      <div
+                        key={s.exerciseId}
+                        className="os-row"
+                        style={{ padding: '9px 0' }}
+                      >
+                        <span
+                          className="os-t w-4"
+                          style={{ fontVariantNumeric: 'tabular-nums' }}
+                        >
+                          {i + 1}
+                        </span>
+                        <span className="min-w-0 flex-1 truncate text-[14px] font-semibold">
+                          {s.exerciseName}
+                        </span>
+                        <span
+                          className="os-t"
+                          style={{ fontVariantNumeric: 'tabular-nums' }}
+                        >
+                          {s.scheme.sets}×
+                          {s.scheme.repTarget ??
+                            `${s.scheme.repRange?.[0]}–${s.scheme.repRange?.[1]}`}
+                        </span>
+                        <span
+                          className="os-num w-14 text-right text-[15px]"
+                          style={{ letterSpacing: '-.02em' }}
+                        >
+                          {shownStart(s.startWeightLb, s.loadType) > 0
+                            ? fmtWeight(
+                                shownStart(s.startWeightLb, s.loadType),
+                                units,
+                              )
+                            : 'BW'}
+                          {shownStart(s.startWeightLb, s.loadType) > 0 && (
+                            <small className="os-t ml-0.5 text-[11px]">
+                              {units}
+                            </small>
+                          )}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+              <p className="os-t px-1 leading-snug">
+                {bodyDataGiven
+                  ? 'Suggested from your body data, fine-tune in your first session.'
+                  : 'Starting weights are conservative. Fine-tune them in your first session.'}
+              </p>
+              {!catalog && (
+                <p className="os-t text-center">
+                  Loading the exercise library…
+                </p>
+              )}
+            </div>
+          )}
+        </div>
+
+        <div className="os-dock">
+          {buildError && (
+            <p
+              role="alert"
+              className="mb-2.5 text-center text-[13px] font-semibold"
+              style={{ color: 'var(--danger)' }}
+            >
+              {buildError}
+            </p>
+          )}
+          <button
+            type="button"
+            onClick={next}
+            disabled={busy || (step === STEPS - 1 && !plan)}
+            className="os-btn os-btn--pri os-press"
           >
-            {buildError}
-          </p>
-        )}
-        <button
-          type="button"
-          onClick={next}
-          disabled={busy || (step === STEPS - 1 && !plan)}
-          className="os-btn os-btn--pri os-press"
-        >
-          {busy
-            ? 'Building…'
-            : step === STEPS - 1
-              ? 'Build my plan'
-              : 'Continue'}
-        </button>
+            {busy
+              ? 'Building…'
+              : step === STEPS - 1
+                ? 'Build my plan'
+                : 'Continue'}
+          </button>
+        </div>
       </div>
-    </div>
+    </Pushed>
   );
 }

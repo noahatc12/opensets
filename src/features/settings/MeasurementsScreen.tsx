@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNav } from '../../ui/nav';
+import { Pushed } from '../../ui/Pushed';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../db/db';
 import { newId } from '../../db/ids';
@@ -457,7 +458,7 @@ function LogMeasurementSheet({
 }
 
 export function MeasurementsScreen() {
-  const navigate = useNavigate();
+  const nav = useNav();
   const { units } = useSettings();
   const measurements = useLiveQuery(() => db.measurements.toArray());
   const [logging, setLogging] = useState(false);
@@ -470,51 +471,56 @@ export function MeasurementsScreen() {
   const photoCaption = captionWeight(recent, units);
 
   return (
-    <div className="relative flex h-full flex-col">
-      <div className="px-[18px] pt-[max(0.5rem,env(safe-area-inset-top))]">
-        <BackButton onClick={() => navigate('/settings')} />
-        <div className="os-t mt-3.5">You</div>
-        <h1 className="os-h1 mt-0.5">Measurements</h1>
-      </div>
-
-      <div className="os-scroll flex-1 overflow-auto px-[22px] pb-7 pt-1.5">
-        <div className="flex gap-2.5">
-          <StatCard
-            label="Bodyweight"
-            stat={bodyweightStat}
-            type="bodyweight"
-            unit={units}
-          />
-          <StatCard label="Waist" stat={waistStat} type="waist" unit="in" />
+    <Pushed to={'/settings'}>
+      <div className="relative flex h-full flex-col">
+        <div className="px-[18px] pt-[max(0.5rem,env(safe-area-inset-top))]">
+          <BackButton onClick={() => nav.tab('/settings')} />
+          <div className="os-t mt-3.5">You</div>
+          <h1 className="os-h1 mt-0.5">Measurements</h1>
         </div>
 
-        <ProgressPhotos caption={photoCaption} />
-
-        <div className="os-h2">Recent</div>
-        {recent.length > 0 ? (
-          <div className="flex flex-col gap-2">
-            {recent.map((m) => (
-              <MeasurementRow key={m.id} m={m} units={units} />
-            ))}
+        <div className="os-scroll flex-1 overflow-auto px-[22px] pb-7 pt-1.5">
+          <div className="flex gap-2.5">
+            <StatCard
+              label="Bodyweight"
+              stat={bodyweightStat}
+              type="bodyweight"
+              unit={units}
+            />
+            <StatCard label="Waist" stat={waistStat} type="waist" unit="in" />
           </div>
-        ) : (
-          <p className="mt-6 text-center text-[12.5px] leading-snug text-faint">
-            No measurements yet. Log your bodyweight or a tape measurement to
-            track change over time.
-          </p>
+
+          <ProgressPhotos caption={photoCaption} />
+
+          <div className="os-h2">Recent</div>
+          {recent.length > 0 ? (
+            <div className="flex flex-col gap-2">
+              {recent.map((m) => (
+                <MeasurementRow key={m.id} m={m} units={units} />
+              ))}
+            </div>
+          ) : (
+            <p className="mt-6 text-center text-[12.5px] leading-snug text-faint">
+              No measurements yet. Log your bodyweight or a tape measurement to
+              track change over time.
+            </p>
+          )}
+
+          <button
+            onClick={() => setLogging(true)}
+            className="os-btn os-btn--pri os-press mt-4"
+          >
+            Log measurement
+          </button>
+        </div>
+
+        {logging && (
+          <LogMeasurementSheet
+            onClose={() => setLogging(false)}
+            units={units}
+          />
         )}
-
-        <button
-          onClick={() => setLogging(true)}
-          className="os-btn os-btn--pri os-press mt-4"
-        >
-          Log measurement
-        </button>
       </div>
-
-      {logging && (
-        <LogMeasurementSheet onClose={() => setLogging(false)} units={units} />
-      )}
-    </div>
+    </Pushed>
   );
 }

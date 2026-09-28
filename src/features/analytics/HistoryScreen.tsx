@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNav } from '../../ui/nav';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../db/db';
 import { useCatalog } from '../library/useCatalog';
@@ -27,7 +27,7 @@ const nameOf = (id: string) => getCatalogExercise(id)?.name ?? id;
 
 export function HistoryScreen() {
   useCatalog();
-  const navigate = useNavigate();
+  const nav = useNav();
   const { units } = useSettings();
   const sets = useLiveQuery(() => db.sets.toArray());
   const completedCount = useLiveQuery(() =>
@@ -119,7 +119,7 @@ export function HistoryScreen() {
           </p>
           <button
             type="button"
-            onClick={() => navigate('/today')}
+            onClick={() => nav.tab('/today')}
             className="os-btn os-btn--sm os-btn--pri os-press mt-3.5"
           >
             Start a workout
@@ -310,7 +310,7 @@ export function HistoryScreen() {
                 key={s.id}
                 type="button"
                 onClick={() =>
-                  navigate(`/library/${encodeURIComponent(s.exerciseId)}`)
+                  nav.push(`/library/${encodeURIComponent(s.exerciseId)}`)
                 }
                 className="os-row os-press"
               >
