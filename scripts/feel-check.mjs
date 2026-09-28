@@ -1,6 +1,6 @@
 // Feel tuning check: proves the panel's choice changes what a gesture does, not just what
-// the panel shows. The same 140 px edge drag must spring home on Firm (commits past 43%)
-// and go back on Now (commits past 33%). Also covers both ways in (`?tune`, five taps on
+// the panel shows. The same 110 px edge drag must spring home on Firm (commits past ~126 px)
+// and go back on Now (~97 px). Also covers both ways in (`?tune`, five taps on
 // the Settings version line), the practice sheet, and saves the panel in both modes.
 //
 //   npm run build && npm run preview     (in another terminal)
@@ -103,10 +103,10 @@ for (const mode of ['dark', 'light']) {
     'the panel steps aside for the gesture',
     !(await panel(page).isVisible()),
   );
-  await drag(page, cdp, 6, 460, 146, 462);
+  await drag(page, cdp, 6, 460, 116, 462);
   await page.waitForTimeout(900);
   check(
-    'Firm: a 140 px drag springs home',
+    'Firm: a 110 px drag springs home',
     (await hash(page)) === '#/plates',
     await hash(page),
   );
@@ -118,7 +118,7 @@ for (const mode of ['dark', 'light']) {
     .getByRole('radio', { name: 'Now' })
     .click();
   await page.getByRole('button', { name: 'Hide' }).click();
-  await drag(page, cdp, 6, 460, 146, 462);
+  await drag(page, cdp, 6, 460, 116, 462);
   await page.waitForTimeout(900);
   check(
     'Now: the same drag goes back',

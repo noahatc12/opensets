@@ -1,7 +1,8 @@
 /**
  * The gesture feel: every spring and threshold the swipe-back and the sheets read, in one
- * place, so they can be tuned in the hand. "now" on both axes is exactly what shipped on
- * 2026-09-27 (tuned from Vaul's thresholds and the iOS curve, never from a device).
+ * place, so they can be tuned in the hand. "now" on both axes is what ships. On 2026-09-28
+ * Noah tried the panel on his iPhone and picked Soft and Easy over the 09-27 numbers (which
+ * came from Vaul's thresholds and the iOS curve, never a device); those became SHIPPED.
  *
  * Two axes per gesture, three settings each:
  *  - speed scales the spring's response time. Stiffness goes by 1/s^2 and damping by 1/s,
@@ -36,20 +37,23 @@ export const TRIGGER_SCALE: Record<Trigger, number> = {
   firm: 1.3,
 };
 
-/** What shipped. Changing a number here changes the app for everyone. */
+/** What ships. Changing a number here changes the app for everyone. These are the 09-27
+ *  numbers at Soft (response x1.25) and Easy (commit x0.75), Noah's pick on 09-28; the
+ *  09-27 originals were release 260/30, home 420/38, close 300/34, flick home 320/26,
+ *  commit 0.33 and 0.35 of the size, flick 0.45 and 0.4 px/ms. */
 export const SHIPPED = {
   back: {
-    release: { stiffness: 260, damping: 30 },
-    home: { stiffness: 420, damping: 38 },
-    closeFraction: 0.33,
-    flick: 0.45,
+    release: { stiffness: 166.4, damping: 24 },
+    home: { stiffness: 268.8, damping: 30.4 },
+    closeFraction: 0.2475,
+    flick: 0.3375,
   },
   sheet: {
-    close: { stiffness: 300, damping: 34 },
-    home: { stiffness: 420, damping: 38 },
-    flickHome: { stiffness: 320, damping: 26 },
-    closeFraction: 0.35,
-    flick: 0.4,
+    close: { stiffness: 192, damping: 27.2 },
+    home: { stiffness: 268.8, damping: 30.4 },
+    flickHome: { stiffness: 204.8, damping: 20.8 },
+    closeFraction: 0.2625,
+    flick: 0.3,
   },
 } as const;
 
@@ -58,7 +62,10 @@ export const DEFAULT_CHOICE: FeelChoice = {
   sheet: { speed: 'now', trigger: 'now' },
 };
 
-const KEY = 'opensets-feel';
+// v2 since the 09-28 bake: a choice stored against the old numbers (Soft and Easy, on
+// Noah's phone) would otherwise apply twice on top of the new ones.
+const KEY = 'opensets-feel-v2';
+const LEGACY_KEYS = ['opensets-feel'];
 const TUNE_KEY = 'opensets-tune';
 
 export function scaleSpring(p: SpringParams, speed: Speed): SpringParams {
@@ -127,6 +134,7 @@ function write(key: string, value: string | null): void {
   }
 }
 
+LEGACY_KEYS.forEach((k) => write(k, null));
 let current: FeelChoice = parseChoice(read(KEY));
 let tuning = read(TUNE_KEY) === '1';
 const listeners = new Set<() => void>();

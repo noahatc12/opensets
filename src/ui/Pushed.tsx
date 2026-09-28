@@ -8,7 +8,8 @@ import { useNav } from './nav';
    with the parent screen visible underneath, the way iOS does it. The parent is mounted
    the moment the drag begins (a second copy of that screen, live data, pointer-inert),
    sits 24 percent to the left and dimmed, and slides to rest as the finger travels.
-   Release past a third of the width, or a flick, carries the screen off with the finger's
+   Release past the commit point (a quarter of the width, src/lib/feel.ts), or a flick,
+   carries the screen off with the finger's
    own velocity and the route switches to the real parent, which looks the same, so the
    hand-off is invisible; anything less springs it home and the copy unmounts. The edge is
    24 px so chip rows and the image carousel keep their own horizontal scroll. */

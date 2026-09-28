@@ -8,7 +8,7 @@ import { spring, rubberBand, reducedMotion } from '../lib/spring';
 import { sheetFeel } from '../lib/feel';
 
 /* Bottom sheet. Rises on the iOS curve; drags with the finger once its content is at the
-   top; release past 35 percent of its height, or a flick faster than 0.4 px/ms, carries
+   top; release past the commit point, or a fast enough flick (src/lib/feel.ts), carries
    it off with that velocity and the scrim fades with it; anything less springs back.
    Dragging upward past open is rubber-banded. Tapping the scrim or pressing Escape runs
    the same close animation. Positioned inside the app shell (position: relative) so it
