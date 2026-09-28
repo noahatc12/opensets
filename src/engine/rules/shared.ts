@@ -42,7 +42,8 @@ export function performedWeight(work: SetResult[]): number | undefined {
   let best: number | undefined;
   let bestCount = 0;
   const counts = new Map<number, number>();
-  for (const s of work) counts.set(s.weightLb, (counts.get(s.weightLb) ?? 0) + 1);
+  for (const s of work)
+    counts.set(s.weightLb, (counts.get(s.weightLb) ?? 0) + 1);
   for (const [w, n] of counts) {
     if (best === undefined || n > bestCount || (n === bestCount && w < best)) {
       best = w;
@@ -54,13 +55,21 @@ export function performedWeight(work: SetResult[]): number | undefined {
 
 /** Did every working set hit (or beat) its rep target while completed? */
 export function allHit(work: SetResult[], targetReps: number): boolean {
-  return work.length > 0 && work.every((s) => s.completed && s.reps >= targetReps);
+  return (
+    work.length > 0 && work.every((s) => s.completed && s.reps >= targetReps)
+  );
 }
 
 /** Every working set completed at `weightLb` or heavier with at least `targetReps`.
  *  A set dropped below the main weight is a miss at that weight. */
-export function allHitAt(work: SetResult[], targetReps: number, weightLb: number): boolean {
-  return work.every((s) => s.completed && s.reps >= targetReps && s.weightLb >= weightLb);
+export function allHitAt(
+  work: SetResult[],
+  targetReps: number,
+  weightLb: number,
+): boolean {
+  return work.every(
+    (s) => s.completed && s.reps >= targetReps && s.weightLb >= weightLb,
+  );
 }
 
 /** Build the prescribed sets for a scheme at a fixed weight + rep target. */

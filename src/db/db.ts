@@ -94,7 +94,8 @@ export class OpenSetsDB extends Dexie {
     // exercised and proven (see ./backup.ts). Clock/id live in the db layer.
     this.version(2)
       .stores({
-        exercises: 'id, nameNorm, *primaryMuscles, equipment, category, isCustom',
+        exercises:
+          'id, nameNorm, *primaryMuscles, equipment, category, isCustom',
         programs: 'id, name, isActive',
         templates: 'id, programId, dayIndex',
         sessions: 'id, date, programId, templateId, status',
@@ -119,7 +120,8 @@ export class OpenSetsDB extends Dexie {
     // bump + pre-migration snapshot of the v2 data, so the round-trip stays provable.
     this.version(3)
       .stores({
-        exercises: 'id, nameNorm, *primaryMuscles, equipment, category, isCustom',
+        exercises:
+          'id, nameNorm, *primaryMuscles, equipment, category, isCustom',
         programs: 'id, name, isActive',
         templates: 'id, programId, dayIndex',
         sessions: 'id, date, programId, templateId, status',
@@ -145,7 +147,8 @@ export class OpenSetsDB extends Dexie {
     // snapshot of the v3 data so the round-trip stays provable.
     this.version(4)
       .stores({
-        exercises: 'id, nameNorm, *primaryMuscles, equipment, category, isCustom',
+        exercises:
+          'id, nameNorm, *primaryMuscles, equipment, category, isCustom',
         programs: 'id, name, isActive',
         templates: 'id, programId, dayIndex',
         sessions: 'id, date, programId, templateId, status',

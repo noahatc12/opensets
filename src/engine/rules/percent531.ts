@@ -98,7 +98,16 @@ export function percent531Next(
   }
 
   return {
-    prescription: { sets: buildWave(tm, targetWeek, rule.variant, settings), reason, flags },
-    nextState: { ...state, trainingMaxLb: tm, cyclePos: targetWeek, workingWeightLb: tm },
+    prescription: {
+      sets: buildWave(tm, targetWeek, rule.variant, settings),
+      reason,
+      flags,
+    },
+    nextState: {
+      ...state,
+      trainingMaxLb: tm,
+      cyclePos: targetWeek,
+      workingWeightLb: tm,
+    },
   };
 }

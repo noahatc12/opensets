@@ -139,7 +139,10 @@ export async function importEnvelope(
 
   // Replace wipes every table, so first keep a copy of the current data in `backups`
   // (keep 2). A wrong file is then recoverable instead of final. (Audit 2026-09-24.)
-  await createBackup(opts.snapshotId ?? newId(), opts.now ?? new Date().toISOString());
+  await createBackup(
+    opts.snapshotId ?? newId(),
+    opts.now ?? new Date().toISOString(),
+  );
 
   await db.transaction(
     'rw',

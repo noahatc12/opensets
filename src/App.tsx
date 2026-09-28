@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { installViewportFix } from './ui/viewport';
 import {
   HashRouter,
   Routes,
@@ -40,9 +41,15 @@ function AppShell() {
       void navigator.storage.persist();
     }
   }, []);
+  // The Home Screen container can report a viewport shorter than the screen; the shell
+  // extends by the measured gap (see ui/viewport.ts).
+  useEffect(() => installViewportFix(), []);
 
   return (
-    <div className="relative mx-auto flex h-dvh max-w-md flex-col overflow-hidden bg-bg" data-tabs={showTabs ? 'on' : 'off'}>
+    <div
+      className="os-shell fixed inset-0 mx-auto flex max-w-md flex-col overflow-hidden bg-bg"
+      data-tabs={showTabs ? 'on' : 'off'}
+    >
       <main className="flex-1 overflow-y-auto overscroll-contain">
         <ErrorBoundary key={pathname}>
           <Outlet />
@@ -67,7 +74,10 @@ export default function App() {
           <Route path="/library/:id" element={<ExerciseDetailScreen />} />
           <Route path="/history" element={<HistoryScreen />} />
           <Route path="/settings" element={<SettingsScreen />} />
-          <Route path="/appearance" element={<Navigate to="/settings" replace />} />
+          <Route
+            path="/appearance"
+            element={<Navigate to="/settings" replace />}
+          />
           <Route path="/plates" element={<PlatesScreen />} />
           <Route path="/rest-defaults" element={<RestDefaultsScreen />} />
           <Route path="/goals" element={<GoalsScreen />} />

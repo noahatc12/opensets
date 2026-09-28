@@ -1,7 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import { gzclpNext } from './gzclp';
 import { isLoadable } from '../rounding';
-import type { EngineSettings, ExerciseState, ProgressionRule, SetResult } from '../types';
+import type {
+  EngineSettings,
+  ExerciseState,
+  ProgressionRule,
+  SetResult,
+} from '../types';
 
 const settings: EngineSettings = {
   barLb: 45,
@@ -9,7 +14,8 @@ const settings: EngineSettings = {
   rounding: 'nearest',
   units: 'lb',
 };
-const rule = (tier: 1 | 2 | 3) => ({ kind: 'gzclp', tier }) as Extract<ProgressionRule, { kind: 'gzclp' }>;
+const rule = (tier: 1 | 2 | 3) =>
+  ({ kind: 'gzclp', tier }) as Extract<ProgressionRule, { kind: 'gzclp' }>;
 const state = (over: Partial<ExerciseState> = {}): ExerciseState => ({
   workingWeightLb: 60,
   consecutiveFails: 0,
@@ -25,7 +31,9 @@ const sets = (n: number, reps: number, completed = true): SetResult[] =>
     completed,
   }));
 const loadable = (r: ReturnType<typeof gzclpNext>) =>
-  r.prescription.sets.every((s) => isLoadable(s.targetWeightLb, settings.barLb, settings.plateInventoryLb));
+  r.prescription.sets.every((s) =>
+    isLoadable(s.targetWeightLb, settings.barLb, settings.plateInventoryLb),
+  );
 
 describe('GZCLP T1 (5×3 → 6×2 → 10×1)', () => {
   it('seeds stage 1 (5×3+) with no history', () => {
@@ -65,7 +73,9 @@ describe('GZCLP T1 (5×3 → 6×2 → 10×1)', () => {
   });
 
   it('stage-3 reset falls back to the working weight when no set is e1RM-eligible', () => {
-    const noE1rm: SetResult[] = [{ weightLb: 0, reps: 0, type: 'amrap', completed: false }];
+    const noE1rm: SetResult[] = [
+      { weightLb: 0, reps: 0, type: 'amrap', completed: false },
+    ];
     const r = gzclpNext(rule(1), state({ stage: 2 }), noE1rm, settings);
     // 0.85 * 60 = 51 → nearest loadable
     expect(r.nextState.workingWeightLb).toBeLessThan(60);
@@ -97,7 +107,12 @@ describe('GZCLP T2 (3×10 → 3×8 → 3×6)', () => {
   });
 
   it('miss 3×6 → restart 3×10 at the last 3×10 weight + increment', () => {
-    const r = gzclpNext(rule(2), state({ stage: 2, workingWeightLb: 80, anchorLb: 70 }), sets(3, 5), settings);
+    const r = gzclpNext(
+      rule(2),
+      state({ stage: 2, workingWeightLb: 80, anchorLb: 70 }),
+      sets(3, 5),
+      settings,
+    );
     expect(r.nextState.stage).toBe(0);
     expect(r.nextState.workingWeightLb).toBe(75); // anchor 70 + 5
     expect(r.prescription.sets[0]!.targetReps).toBe(10);

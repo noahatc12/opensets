@@ -41,7 +41,12 @@ export const useSessionStore = create<SessionUIState>((set) => ({
   currentExercise: 0,
   rest: null,
   beginSession: (sessionId) =>
-    set({ activeSessionId: sessionId, leftSessionId: null, currentExercise: 0, rest: null }),
+    set({
+      activeSessionId: sessionId,
+      leftSessionId: null,
+      currentExercise: 0,
+      rest: null,
+    }),
   leaveSession: () =>
     set((s) => ({
       leftSessionId: s.activeSessionId,
@@ -50,7 +55,12 @@ export const useSessionStore = create<SessionUIState>((set) => ({
       rest: null,
     })),
   endSession: () =>
-    set({ activeSessionId: null, leftSessionId: null, currentExercise: 0, rest: null }),
+    set({
+      activeSessionId: null,
+      leftSessionId: null,
+      currentExercise: 0,
+      rest: null,
+    }),
   setCurrentExercise: (i) => set({ currentExercise: i }),
   startRest: (seconds) =>
     set({

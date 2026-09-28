@@ -68,7 +68,9 @@ export interface Mesocycle {
   totalWeeks: number;
   /** Per-muscle weekly working-set landmarks (MEV/MAV/MRV) — the generator writes
    *  these from the engine's volume table; analytics (S12) charts logged volume vs them. */
-  volumeTargets?: Partial<Record<Muscle, { mev: number; mav: number; mrv: number }>>;
+  volumeTargets?: Partial<
+    Record<Muscle, { mev: number; mav: number; mrv: number }>
+  >;
   /** R3.5 — gates the per-muscle temporal set-count ramp. True only for volume-model
    *  goals (hypertrophy/recomp), where set count ramps toward MRV across the block. For
    *  strength (peaks via load — R5b) and fat-loss (maintenance in a deficit) it stays
@@ -130,7 +132,12 @@ export interface ExerciseSlot {
 
 /** Rest-tier buckets (§3.7) — coarse classification that maps to a rest duration.
  *  Heavy compounds rest longest; pump/iso work shortest. */
-export type RestTier = 'heavy' | 'compound' | 'accessory' | 'isolation' | 'pump';
+export type RestTier =
+  | 'heavy'
+  | 'compound'
+  | 'accessory'
+  | 'isolation'
+  | 'pump';
 
 export interface WorkoutTemplate {
   id: string;

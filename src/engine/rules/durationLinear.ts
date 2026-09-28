@@ -55,7 +55,12 @@ export function durationLinearNext(
   const n = Math.max(1, scheme.sets);
   const sets: PrescribedSet[] = [];
   for (let i = 0; i < n; i++) {
-    sets.push({ type: 'timed', targetReps: 1, targetWeightLb: 0, targetDurationSec: duration });
+    sets.push({
+      type: 'timed',
+      targetReps: 1,
+      targetWeightLb: 0,
+      targetDurationSec: duration,
+    });
   }
 
   return {

@@ -1,7 +1,13 @@
 import { describe, it, expect } from 'vitest';
 import { rpeTargetNext } from './rpeTarget';
 import { isLoadable } from '../rounding';
-import type { EngineSettings, ExerciseState, ProgressionRule, SetResult, SetScheme } from '../types';
+import type {
+  EngineSettings,
+  ExerciseState,
+  ProgressionRule,
+  SetResult,
+  SetScheme,
+} from '../types';
 
 const settings: EngineSettings = {
   barLb: 45,
@@ -9,10 +15,12 @@ const settings: EngineSettings = {
   rounding: 'nearest',
   units: 'lb',
 };
-const rule = { kind: 'rpeTarget', targetRpe: 8, targetReps: 5, loadStepPct: 0.04 } as Extract<
-  ProgressionRule,
-  { kind: 'rpeTarget' }
->;
+const rule = {
+  kind: 'rpeTarget',
+  targetRpe: 8,
+  targetReps: 5,
+  loadStepPct: 0.04,
+} as Extract<ProgressionRule, { kind: 'rpeTarget' }>;
 const scheme: SetScheme = { sets: 3 };
 const state = (w = 100): ExerciseState => ({
   workingWeightLb: w,
@@ -21,7 +29,13 @@ const state = (w = 100): ExerciseState => ({
   cyclePos: 0,
 });
 const top = (rpe: number | undefined): SetResult[] => [
-  { weightLb: 100, reps: 5, type: 'working', completed: true, ...(rpe !== undefined ? { rpe } : {}) },
+  {
+    weightLb: 100,
+    reps: 5,
+    type: 'working',
+    completed: true,
+    ...(rpe !== undefined ? { rpe } : {}),
+  },
 ];
 
 describe('RPE-target autoregulation', () => {
@@ -65,7 +79,9 @@ describe('RPE-target autoregulation', () => {
   it('every prescribed weight is loadable', () => {
     const r = rpeTargetNext(rule, state(100), top(6), settings, scheme);
     expect(
-      r.prescription.sets.every((s) => isLoadable(s.targetWeightLb, settings.barLb, settings.plateInventoryLb)),
+      r.prescription.sets.every((s) =>
+        isLoadable(s.targetWeightLb, settings.barLb, settings.plateInventoryLb),
+      ),
     ).toBe(true);
   });
 });

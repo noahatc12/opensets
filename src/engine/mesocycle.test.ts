@@ -24,7 +24,8 @@ const base: Prescription = {
   reason: 'Hit 8/8/8 — hold 135 lb.',
   flags: [],
 };
-const working = (p: Prescription) => p.sets.filter((s) => s.type === 'working' || s.type === 'amrap');
+const working = (p: Prescription) =>
+  p.sets.filter((s) => s.type === 'working' || s.type === 'amrap');
 
 describe('mesocycle plan (§2.2)', () => {
   it('schedules accumulation → intensification → a final deload, clamped 4–12 wk', () => {
@@ -44,7 +45,9 @@ describe('RPE moves by phase + ramps within phase (§3.5 setup)', () => {
     expect(targetRpeForWeek(plan6, intWeek)).toBeGreaterThanOrEqual(8);
     expect(targetRpeForWeek(plan6, deloadWeek)).toBe(6);
     // ramps within accumulation (week 0 < week 2)
-    expect(targetRpeForWeek(plan6, 2)).toBeGreaterThan(targetRpeForWeek(plan6, 0));
+    expect(targetRpeForWeek(plan6, 2)).toBeGreaterThan(
+      targetRpeForWeek(plan6, 0),
+    );
   });
 });
 
@@ -70,8 +73,12 @@ describe('per-muscle weekly volume lands in MEV/MRV bands and ramps (§2.5)', ()
       expect(v).toBeGreaterThanOrEqual(mev);
       expect(v).toBeLessThanOrEqual(mrv);
     }
-    expect(weeklyVolumeTarget('chest', plan6, 2)).toBeGreaterThan(weeklyVolumeTarget('chest', plan6, 0));
-    expect(weeklyVolumeTarget('chest', plan6, intWeek)).toBeGreaterThan(weeklyVolumeTarget('chest', plan6, 0));
+    expect(weeklyVolumeTarget('chest', plan6, 2)).toBeGreaterThan(
+      weeklyVolumeTarget('chest', plan6, 0),
+    );
+    expect(weeklyVolumeTarget('chest', plan6, intWeek)).toBeGreaterThan(
+      weeklyVolumeTarget('chest', plan6, 0),
+    );
   });
 });
 
@@ -116,8 +123,12 @@ describe('LOAD-BEARING: two different weeks → two different prescriptions for 
   });
 
   it('phase is reflected in the human-readable reason (week + phase + RPE)', () => {
-    expect(applyPeriodization(base, plan6, 0).reason).toMatch(/Wk 1 Accumulation \(RPE 7\)/);
-    expect(applyPeriodization(base, plan6, deloadWeek).reason).toMatch(/Deload/);
+    expect(applyPeriodization(base, plan6, 0).reason).toMatch(
+      /Wk 1 Accumulation \(RPE 7\)/,
+    );
+    expect(applyPeriodization(base, plan6, deloadWeek).reason).toMatch(
+      /Deload/,
+    );
   });
 });
 
@@ -136,7 +147,9 @@ describe('rampProgress — 0 at week-1 and deload, 1 at the intensification peak
   it('climbs monotonically across the work weeks', () => {
     const work = [0, 1, 2, intWeek]; // acc,acc,acc,int
     for (let i = 1; i < work.length; i++) {
-      expect(rampProgress(plan6, work[i]!)).toBeGreaterThan(rampProgress(plan6, work[i - 1]!));
+      expect(rampProgress(plan6, work[i]!)).toBeGreaterThan(
+        rampProgress(plan6, work[i - 1]!),
+      );
     }
   });
 });
@@ -152,7 +165,9 @@ describe('weeklyRampFactor — ≥1 always, per-muscle ratio, resets at deload',
 
   it('never drops below 1 on any week (⇒ never below the R3 base ⇒ never below MEV)', () => {
     for (let w = 0; w < plan6.totalWeeks; w++) {
-      expect(weeklyRampFactor(chest.mev, chest.mrv, plan6, w)).toBeGreaterThanOrEqual(1);
+      expect(
+        weeklyRampFactor(chest.mev, chest.mrv, plan6, w),
+      ).toBeGreaterThanOrEqual(1);
     }
   });
 

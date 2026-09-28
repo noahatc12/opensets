@@ -73,7 +73,8 @@ export function apreNext(
   if (work.length === 0) {
     reason = `APRE-${rm} — calibrate your ${rm}RM.`;
   } else {
-    const amrapSet = work.find((s) => s.type === 'amrap') ?? work[work.length - 1]!;
+    const amrapSet =
+      work.find((s) => s.type === 'amrap') ?? work[work.length - 1]!;
     const reps = amrapSet.completed ? amrapSet.reps : 0;
     const delta = deltaFor(rm, reps);
     rmWeight = state.workingWeightLb + delta;
@@ -88,8 +89,16 @@ export function apreNext(
   const rmW = roundLoad(rmWeight, settings);
   const spec = APRE[rm];
   const sets: PrescribedSet[] = [
-    { type: 'working', targetReps: spec.warmReps[0], targetWeightLb: roundLoad(0.5 * rmW, settings) },
-    { type: 'working', targetReps: spec.warmReps[1], targetWeightLb: roundLoad(0.75 * rmW, settings) },
+    {
+      type: 'working',
+      targetReps: spec.warmReps[0],
+      targetWeightLb: roundLoad(0.5 * rmW, settings),
+    },
+    {
+      type: 'working',
+      targetReps: spec.warmReps[1],
+      targetWeightLb: roundLoad(0.75 * rmW, settings),
+    },
     { type: 'amrap', targetReps: rm, targetWeightLb: rmW, amrap: true },
     { type: 'amrap', targetReps: rm, targetWeightLb: rmW, amrap: true },
   ];

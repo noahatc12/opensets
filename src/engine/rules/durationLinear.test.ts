@@ -1,6 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import { durationLinearNext } from './durationLinear';
-import type { EngineSettings, ExerciseState, ProgressionRule, SetResult, SetScheme } from '../types';
+import type {
+  EngineSettings,
+  ExerciseState,
+  ProgressionRule,
+  SetResult,
+  SetScheme,
+} from '../types';
 
 const settings: EngineSettings = {
   barLb: 45,
@@ -21,7 +27,9 @@ const state = (over: Partial<ExerciseState> = {}): ExerciseState => ({
   cyclePos: 0,
   ...over,
 });
-const did: SetResult[] = [{ weightLb: 0, reps: 1, durationSec: 30, type: 'timed', completed: true }];
+const did: SetResult[] = [
+  { weightLb: 0, reps: 1, durationSec: 30, type: 'timed', completed: true },
+];
 
 describe('durationLinear (timed holds / cardio)', () => {
   it('seeds the current duration with no history', () => {
@@ -33,27 +41,51 @@ describe('durationLinear (timed holds / cardio)', () => {
   });
 
   it('holds the duration before the bump interval is reached', () => {
-    const r = durationLinearNext(rule(5, 2), state({ cyclePos: 0 }), did, settings, scheme);
+    const r = durationLinearNext(
+      rule(5, 2),
+      state({ cyclePos: 0 }),
+      did,
+      settings,
+      scheme,
+    );
     expect(r.nextState.cyclePos).toBe(1);
     expect(r.nextState.workingWeightLb).toBe(30);
     expect(r.prescription.reason).toMatch(/1\/2/);
   });
 
   it('bumps the duration once the interval is reached and resets the counter', () => {
-    const r = durationLinearNext(rule(5, 2), state({ cyclePos: 1 }), did, settings, scheme);
+    const r = durationLinearNext(
+      rule(5, 2),
+      state({ cyclePos: 1 }),
+      did,
+      settings,
+      scheme,
+    );
     expect(r.nextState.workingWeightLb).toBe(35);
     expect(r.nextState.cyclePos).toBe(0);
     expect(r.prescription.reason).toMatch(/\+5s/);
   });
 
   it('formats minutes for longer holds', () => {
-    const r = durationLinearNext(rule(30, 1), state({ workingWeightLb: 90, cyclePos: 0 }), did, settings, scheme);
+    const r = durationLinearNext(
+      rule(30, 1),
+      state({ workingWeightLb: 90, cyclePos: 0 }),
+      did,
+      settings,
+      scheme,
+    );
     expect(r.nextState.workingWeightLb).toBe(120);
     expect(r.prescription.reason).toMatch(/2m/); // 120s → "2m"
   });
 
   it('formats minutes-and-seconds', () => {
-    const r = durationLinearNext(rule(0, 1), state({ workingWeightLb: 90 }), did, settings, scheme);
+    const r = durationLinearNext(
+      rule(0, 1),
+      state({ workingWeightLb: 90 }),
+      did,
+      settings,
+      scheme,
+    );
     expect(r.prescription.sets[0]!.targetDurationSec).toBe(90);
     expect(r.prescription.reason).toMatch(/1m 30s/);
   });

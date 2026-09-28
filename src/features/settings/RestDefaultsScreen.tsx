@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { useNav } from '../../ui/nav';
 import { Pushed } from '../../ui/Pushed';
+import { SettingsScreen } from './SettingsScreen';
+import { TabBar } from '../../components/TabBar';
 import { useSettings, updateSettings } from '../../db/hooks';
 import { PlusIcon, MinusIcon } from '../../components/icons';
 import { BackButton } from '../../ui/StatGrid';
@@ -96,7 +98,15 @@ export function RestDefaultsScreen() {
     settings.restAccessorySec ?? DEFAULT_SETTINGS.restAccessorySec;
 
   return (
-    <Pushed to={'/settings'}>
+    <Pushed
+      to="/settings"
+      parent={
+        <>
+          <SettingsScreen />
+          <TabBar activePath="/settings" />
+        </>
+      }
+    >
       <div className="flex h-full flex-col">
         <div className="px-[18px] pt-[max(0.5rem,env(safe-area-inset-top))]">
           <BackButton onClick={() => nav.tab('/settings')} />

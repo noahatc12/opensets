@@ -97,6 +97,17 @@ await drag(6, 420, 330, 430, {
       () => document.querySelector('.os-pushed')?.style.transform ?? '',
     );
     check('screen follows the finger', /translate3d\(\d+/.test(tf), tf);
+    const under = await page.evaluate(() => {
+      const u = document.querySelector('.os-pushed-parent');
+      return u
+        ? { text: u.textContent?.slice(0, 40), tf: u.style.transform }
+        : null;
+    });
+    check(
+      'parent screen is under the finger',
+      !!under && /Library/.test(under.text ?? ''),
+      JSON.stringify(under),
+    );
   },
 });
 await page.waitForTimeout(900);

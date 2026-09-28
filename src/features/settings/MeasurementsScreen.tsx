@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useNav } from '../../ui/nav';
 import { Pushed } from '../../ui/Pushed';
+import { SettingsScreen } from './SettingsScreen';
+import { TabBar } from '../../components/TabBar';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../db/db';
 import { newId } from '../../db/ids';
@@ -471,7 +473,15 @@ export function MeasurementsScreen() {
   const photoCaption = captionWeight(recent, units);
 
   return (
-    <Pushed to={'/settings'}>
+    <Pushed
+      to="/settings"
+      parent={
+        <>
+          <SettingsScreen />
+          <TabBar activePath="/settings" />
+        </>
+      }
+    >
       <div className="relative flex h-full flex-col">
         <div className="px-[18px] pt-[max(0.5rem,env(safe-area-inset-top))]">
           <BackButton onClick={() => nav.tab('/settings')} />

@@ -22,8 +22,17 @@ export type Mode = 'dark' | 'light';
  *  every screen is ported. */
 export type DesignTemplate = 'tempo' | 'readout' | 'editorial';
 export type ColorTheme =
-  | 'tempo' | 'teal' | 'graphite' | 'steel' | 'volt'
-  | 'ember' | 'clinic' | 'midnight' | 'rose' | 'pine' | 'custom'
+  | 'tempo'
+  | 'teal'
+  | 'graphite'
+  | 'steel'
+  | 'volt'
+  | 'ember'
+  | 'clinic'
+  | 'midnight'
+  | 'rose'
+  | 'pine'
+  | 'custom'
   | 'signal';
 
 /** The premium skin has exactly one accent; the value exists so a stored selection can be
@@ -39,22 +48,38 @@ export const PREMIUM_THEME: ColorTheme = 'signal';
 export interface CuratedTheme {
   id: Exclude<ColorTheme, 'custom'>;
   label: string;
-  swatch: string;          // accent shown in the picker (dark mode)
+  swatch: string; // accent shown in the picker (dark mode)
   retintNeutrals: boolean;
-  bestIn?: Mode;           // optional hint
+  bestIn?: Mode; // optional hint
 }
 
 export const CURATED_THEMES: CuratedTheme[] = [
-  { id: 'tempo',    label: 'Tempo',      swatch: '#cda35f', retintNeutrals: false },
-  { id: 'teal',     label: 'Teal',       swatch: '#1fe0c4', retintNeutrals: false },
-  { id: 'graphite', label: 'Graphite',   swatch: '#e8e6e1', retintNeutrals: false },
-  { id: 'steel',    label: 'Cold Steel', swatch: '#6fa0d6', retintNeutrals: true  },
-  { id: 'volt',     label: 'Volt',       swatch: '#c2ee3f', retintNeutrals: true  },
-  { id: 'ember',    label: 'Ember',      swatch: '#ff7a3c', retintNeutrals: false },
-  { id: 'clinic',   label: 'Clinic',     swatch: '#2f7df0', retintNeutrals: false, bestIn: 'light' },
-  { id: 'midnight', label: 'Midnight',   swatch: '#8d8ef2', retintNeutrals: true  },
-  { id: 'rose',     label: 'Rose',       swatch: '#e06a86', retintNeutrals: false },
-  { id: 'pine',     label: 'Pine',       swatch: '#3fae6b', retintNeutrals: false },
+  { id: 'tempo', label: 'Tempo', swatch: '#cda35f', retintNeutrals: false },
+  { id: 'teal', label: 'Teal', swatch: '#1fe0c4', retintNeutrals: false },
+  {
+    id: 'graphite',
+    label: 'Graphite',
+    swatch: '#e8e6e1',
+    retintNeutrals: false,
+  },
+  { id: 'steel', label: 'Cold Steel', swatch: '#6fa0d6', retintNeutrals: true },
+  { id: 'volt', label: 'Volt', swatch: '#c2ee3f', retintNeutrals: true },
+  { id: 'ember', label: 'Ember', swatch: '#ff7a3c', retintNeutrals: false },
+  {
+    id: 'clinic',
+    label: 'Clinic',
+    swatch: '#2f7df0',
+    retintNeutrals: false,
+    bestIn: 'light',
+  },
+  {
+    id: 'midnight',
+    label: 'Midnight',
+    swatch: '#8d8ef2',
+    retintNeutrals: true,
+  },
+  { id: 'rose', label: 'Rose', swatch: '#e06a86', retintNeutrals: false },
+  { id: 'pine', label: 'Pine', swatch: '#3fae6b', retintNeutrals: false },
 ];
 
 /* ============================================================================
@@ -68,20 +93,36 @@ export const CURATED_THEMES: CuratedTheme[] = [
 type RGB = [number, number, number]; // 0..255
 
 export function hslToRgb(h: number, s: number, l: number): RGB {
-  s /= 100; l /= 100;
+  s /= 100;
+  l /= 100;
   const k = (n: number) => (n + h / 30) % 12;
   const a = s * Math.min(l, 1 - l);
-  const f = (n: number) => l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
+  const f = (n: number) =>
+    l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
   return [f(0), f(8), f(4)].map((x) => Math.round(x * 255)) as RGB;
 }
 
 export function rgbToHex([r, g, b]: RGB): string {
-  return '#' + [r, g, b].map((x) => Math.max(0, Math.min(255, Math.round(x))).toString(16).padStart(2, '0')).join('').toUpperCase();
+  return (
+    '#' +
+    [r, g, b]
+      .map((x) =>
+        Math.max(0, Math.min(255, Math.round(x)))
+          .toString(16)
+          .padStart(2, '0'),
+      )
+      .join('')
+      .toUpperCase()
+  );
 }
 
 export function hexToRgb(hex: string): RGB {
   const h = hex.replace('#', '');
-  return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)];
+  return [
+    parseInt(h.slice(0, 2), 16),
+    parseInt(h.slice(2, 4), 16),
+    parseInt(h.slice(4, 6), 16),
+  ];
 }
 
 export function hexToHsl(hex: string): { h: number; s: number; l: number } {
@@ -89,13 +130,16 @@ export function hexToHsl(hex: string): { h: number; s: number; l: number } {
   const R = rgb[0] / 255,
     G = rgb[1] / 255,
     B = rgb[2] / 255;
-  const mx = Math.max(R, G, B), mn = Math.min(R, G, B), d = mx - mn;
+  const mx = Math.max(R, G, B),
+    mn = Math.min(R, G, B),
+    d = mx - mn;
   let h = 0;
   if (d) {
     if (mx === R) h = ((G - B) / d) % 6;
     else if (mx === G) h = (B - R) / d + 2;
     else h = (R - G) / d + 4;
-    h *= 60; if (h < 0) h += 360;
+    h *= 60;
+    if (h < 0) h += 360;
   }
   const l = (mx + mn) / 2;
   const s = d === 0 ? 0 : d / (1 - Math.abs(2 * l - 1));
@@ -118,29 +162,45 @@ export function inkFor(accentHex: string): string {
 }
 
 // --- sRGB <-> linear <-> oklab -------------------------------------------
-const toLin = (c: number) => { c /= 255; return c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4); };
-const toSrgb = (c: number) => { const v = c <= 0.0031308 ? c * 12.92 : 1.055 * Math.pow(c, 1 / 2.4) - 0.055; return Math.round(Math.max(0, Math.min(1, v)) * 255); };
+const toLin = (c: number) => {
+  c /= 255;
+  return c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+};
+const toSrgb = (c: number) => {
+  const v = c <= 0.0031308 ? c * 12.92 : 1.055 * Math.pow(c, 1 / 2.4) - 0.055;
+  return Math.round(Math.max(0, Math.min(1, v)) * 255);
+};
 
 function rgbToOklab([r, g, b]: RGB): [number, number, number] {
-  const lr = toLin(r), lg = toLin(g), lb = toLin(b);
-  const l = Math.cbrt(0.4122214708 * lr + 0.5363325363 * lg + 0.0514459929 * lb);
-  const m = Math.cbrt(0.2119034982 * lr + 0.6806995451 * lg + 0.1073969566 * lb);
-  const s = Math.cbrt(0.0883024619 * lr + 0.2817188376 * lg + 0.6299787005 * lb);
+  const lr = toLin(r),
+    lg = toLin(g),
+    lb = toLin(b);
+  const l = Math.cbrt(
+    0.4122214708 * lr + 0.5363325363 * lg + 0.0514459929 * lb,
+  );
+  const m = Math.cbrt(
+    0.2119034982 * lr + 0.6806995451 * lg + 0.1073969566 * lb,
+  );
+  const s = Math.cbrt(
+    0.0883024619 * lr + 0.2817188376 * lg + 0.6299787005 * lb,
+  );
   return [
-    0.2104542553 * l + 0.7936177850 * m - 0.0040720468 * s,
-    1.9779984951 * l - 2.4285922050 * m + 0.4505937099 * s,
-    0.0259040371 * l + 0.7827717662 * m - 0.8086757660 * s,
+    0.2104542553 * l + 0.793617785 * m - 0.0040720468 * s,
+    1.9779984951 * l - 2.428592205 * m + 0.4505937099 * s,
+    0.0259040371 * l + 0.7827717662 * m - 0.808675766 * s,
   ];
 }
 function oklabToRgb([L, A, B]: [number, number, number]): RGB {
   const l_ = L + 0.3963377774 * A + 0.2158037573 * B;
   const m_ = L - 0.1055613458 * A - 0.0638541728 * B;
-  const s_ = L - 0.0894841775 * A - 1.2914855480 * B;
-  const l = l_ ** 3, m = m_ ** 3, s = s_ ** 3;
+  const s_ = L - 0.0894841775 * A - 1.291485548 * B;
+  const l = l_ ** 3,
+    m = m_ ** 3,
+    s = s_ ** 3;
   return [
     toSrgb(+4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s),
     toSrgb(-1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s),
-    toSrgb(-0.0041960863 * l - 0.7034186147 * m + 1.7076147010 * s),
+    toSrgb(-0.0041960863 * l - 0.7034186147 * m + 1.707614701 * s),
   ];
 }
 
@@ -169,37 +229,72 @@ export function mixOklab(aHex: string, bHex: string, t: number): string {
 
 export interface CustomSeed {
   /** Base ground color (darkest surface in dark mode, lightest in light). */
-  baseColor: string;   // hex
+  baseColor: string; // hex
   /** Brand accent. */
-  accent: string;      // hex
+  accent: string; // hex
   mode: Mode;
 }
 
 export interface DerivedPalette {
   // neutrals
-  bg: string; surface: string; surface2: string; elevated: string;
-  border: string; borderStrong: string;
+  bg: string;
+  surface: string;
+  surface2: string;
+  elevated: string;
+  border: string;
+  borderStrong: string;
   // text tiers
-  text: string; muted: string; faint: string;
+  text: string;
+  muted: string;
+  faint: string;
   // accent ramp
-  accent: string; accentHover: string; accentInk: string; pr: string;
+  accent: string;
+  accentHover: string;
+  accentInk: string;
+  pr: string;
   // shared semantics (carried from the base mode — not derived from accent)
-  success: string; warning: string; danger: string;
+  success: string;
+  warning: string;
+  danger: string;
 }
 
 // fixed step percentages — keep in lockstep with theme.css [data-theme="custom"]
-const DARK_STEPS = { surface: 5, surface2: 9, elevated: 14, border: 14, borderStrong: 24, text: 92, muted: 56, faint: 32 };
-const LIGHT_STEPS = { surface2: 4, border: 12, borderStrong: 20, text: 90, muted: 55, faint: 32 };
+const DARK_STEPS = {
+  surface: 5,
+  surface2: 9,
+  elevated: 14,
+  border: 14,
+  borderStrong: 24,
+  text: 92,
+  muted: 56,
+  faint: 32,
+};
+const LIGHT_STEPS = {
+  surface2: 4,
+  border: 12,
+  borderStrong: 20,
+  text: 90,
+  muted: 55,
+  faint: 32,
+};
 
 const SEMANTICS = {
-  dark:  { success: '#6FBF8E', warning: '#E0A85C', danger: '#E0735C' },
+  dark: { success: '#6FBF8E', warning: '#E0A85C', danger: '#E0735C' },
   light: { success: '#2F9E63', warning: '#BD7E1C', danger: '#CF4D36' },
 };
 
 /** Full palette, computed in JS (no CSS color-mix needed). */
-export function deriveCustomTheme({ baseColor, accent, mode }: CustomSeed): DerivedPalette {
+export function deriveCustomTheme({
+  baseColor,
+  accent,
+  mode,
+}: CustomSeed): DerivedPalette {
   const accentInk = inkFor(accent);
-  const accentHover = mixOklab(accent, mode === 'dark' ? '#FFFFFF' : '#1A1714', 0.16);
+  const accentHover = mixOklab(
+    accent,
+    mode === 'dark' ? '#FFFFFF' : '#1A1714',
+    0.16,
+  );
   const pr = mixOklab(accent, '#F4D98A', 0.55);
   const sem = SEMANTICS[mode];
 
@@ -216,7 +311,11 @@ export function deriveCustomTheme({ baseColor, accent, mode }: CustomSeed): Deri
       text: mix(DARK_STEPS.text),
       muted: mix(DARK_STEPS.muted),
       faint: mix(DARK_STEPS.faint),
-      accent, accentHover, accentInk, pr, ...sem,
+      accent,
+      accentHover,
+      accentInk,
+      pr,
+      ...sem,
     };
   }
 
@@ -233,7 +332,11 @@ export function deriveCustomTheme({ baseColor, accent, mode }: CustomSeed): Deri
     text: mix(LIGHT_STEPS.text),
     muted: mix(LIGHT_STEPS.muted),
     faint: mix(LIGHT_STEPS.faint),
-    accent, accentHover, accentInk, pr, ...sem,
+    accent,
+    accentHover,
+    accentInk,
+    pr,
+    ...sem,
   };
 }
 
@@ -242,11 +345,22 @@ export function deriveCustomTheme({ baseColor, accent, mode }: CustomSeed): Deri
  *  CSS rules. */
 export function paletteToCssVars(p: DerivedPalette): Record<string, string> {
   return {
-    '--bg': p.bg, '--surface': p.surface, '--surface-2': p.surface2, '--elevated': p.elevated,
-    '--border': p.border, '--border-strong': p.borderStrong,
-    '--text': p.text, '--muted': p.muted, '--faint': p.faint,
-    '--accent': p.accent, '--accent-hover': p.accentHover, '--accent-ink': p.accentInk, '--pr': p.pr,
-    '--success': p.success, '--warning': p.warning, '--danger': p.danger,
+    '--bg': p.bg,
+    '--surface': p.surface,
+    '--surface-2': p.surface2,
+    '--elevated': p.elevated,
+    '--border': p.border,
+    '--border-strong': p.borderStrong,
+    '--text': p.text,
+    '--muted': p.muted,
+    '--faint': p.faint,
+    '--accent': p.accent,
+    '--accent-hover': p.accentHover,
+    '--accent-ink': p.accentInk,
+    '--pr': p.pr,
+    '--success': p.success,
+    '--warning': p.warning,
+    '--danger': p.danger,
   };
 }
 

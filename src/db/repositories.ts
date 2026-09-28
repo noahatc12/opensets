@@ -60,12 +60,21 @@ interface RampCtx {
 
 /** Per-muscle week-1 base set counts (Σ `scheme.sets` over each muscle's slots) across the
  *  whole program — the R3 static allocation the temporal ramp scales up from. */
-async function baseSetsByMuscle(programId: string): Promise<Map<Muscle, number>> {
-  const tpls = await db.templates.where('programId').equals(programId).toArray();
+async function baseSetsByMuscle(
+  programId: string,
+): Promise<Map<Muscle, number>> {
+  const tpls = await db.templates
+    .where('programId')
+    .equals(programId)
+    .toArray();
   const base = new Map<Muscle, number>();
   for (const t of tpls) {
     for (const s of t.slots) {
-      if (s.primaryMuscle) base.set(s.primaryMuscle, (base.get(s.primaryMuscle) ?? 0) + s.scheme.sets);
+      if (s.primaryMuscle)
+        base.set(
+          s.primaryMuscle,
+          (base.get(s.primaryMuscle) ?? 0) + s.scheme.sets,
+        );
     }
   }
   return base;
@@ -102,7 +111,10 @@ function periodize(
 ): Prescription {
   if (!meso) return prescription;
   const plan = buildMesocyclePlan(meso.totalWeeks);
-  const week = Math.max(0, Math.min(plan.totalWeeks - 1, Math.round(meso.weekIndex)));
+  const week = Math.max(
+    0,
+    Math.min(plan.totalWeeks - 1, Math.round(meso.weekIndex)),
+  );
   const phase = phaseForWeek(plan, week);
   const rpe = targetRpeForWeek(plan, week);
 
@@ -136,7 +148,10 @@ function periodize(
   return {
     sets: [...warmups, ...scaled],
     reason: `${prescription.reason} · Wk ${week + 1} ${phaseLabel} (RPE ${rpe})`,
-    flags: phase === 'deload' ? [...prescription.flags, 'deload'] : prescription.flags,
+    flags:
+      phase === 'deload'
+        ? [...prescription.flags, 'deload']
+        : prescription.flags,
   };
 }
 
@@ -144,8 +159,10 @@ function periodize(
 export function loadStepsOf(s: UserSettings): LoadSteps {
   return {
     dumbbellStepLb: s.dumbbellStepLb ?? DEFAULT_LOAD_STEPS.dumbbellStepLb,
-    dumbbellSmallStepLb: s.dumbbellSmallStepLb ?? DEFAULT_LOAD_STEPS.dumbbellSmallStepLb,
-    dumbbellSmallBelowLb: s.dumbbellSmallBelowLb ?? DEFAULT_LOAD_STEPS.dumbbellSmallBelowLb,
+    dumbbellSmallStepLb:
+      s.dumbbellSmallStepLb ?? DEFAULT_LOAD_STEPS.dumbbellSmallStepLb,
+    dumbbellSmallBelowLb:
+      s.dumbbellSmallBelowLb ?? DEFAULT_LOAD_STEPS.dumbbellSmallBelowLb,
     stackStepLb: s.stackStepLb ?? DEFAULT_LOAD_STEPS.stackStepLb,
   };
 }
@@ -249,9 +266,9 @@ export async function nextTemplateForProgram(
 ): Promise<WorkoutTemplate | undefined> {
   const tpls = await listTemplates(programId);
   if (tpls.length === 0) return undefined;
-  const done = (await db.sessions.where('programId').equals(programId).toArray()).filter(
-    (s) => s.status === 'completed' && s.templateId,
-  );
+  const done = (
+    await db.sessions.where('programId').equals(programId).toArray()
+  ).filter((s) => s.status === 'completed' && s.templateId);
   if (done.length === 0) return tpls[0];
   const when = (s: WorkoutSession) => s.endedAt ?? s.startedAt;
   const last = done.reduce((a, b) => (when(b) > when(a) ? b : a));
@@ -309,7 +326,9 @@ export function makeSlot(
     ...(coaching?.tempo ? { tempo: coaching.tempo } : {}),
     ...(coaching?.coachingCue ? { coachingCue: coaching.coachingCue } : {}),
     ...(coaching?.restTier ? { restTier: coaching.restTier } : {}),
-    ...(coaching?.primaryMuscle ? { primaryMuscle: coaching.primaryMuscle } : {}),
+    ...(coaching?.primaryMuscle
+      ? { primaryMuscle: coaching.primaryMuscle }
+      : {}),
     ...(coaching?.loadType ? { loadType: coaching.loadType } : {}),
   };
 }
@@ -363,20 +382,30 @@ export async function seedExerciseState(
   return row;
 }
 
-function withFlag(p: Prescription, flag: Prescription['flags'][number]): Prescription {
+function withFlag(
+  p: Prescription,
+  flag: Prescription['flags'][number],
+): Prescription {
   return p.flags.includes(flag) ? p : { ...p, flags: [...p.flags, flag] };
 }
 
 /** The most recent bodyweight entry, in lb (the measurements log is the source of truth). */
 export async function latestBodyweightLb(): Promise<number | undefined> {
-  const rows = await db.measurements.where('type').equals('bodyweight').toArray();
+  const rows = await db.measurements
+    .where('type')
+    .equals('bodyweight')
+    .toArray();
   rows.sort((a, b) => b.date.localeCompare(a.date));
   return rows.find((r) => r.valueLb !== undefined && r.valueLb > 0)?.valueLb;
 }
 
 /** A body-aware starting weight for a slot with no history (a swap or an add), from
  *  the on-device profile and the latest bodyweight. Nothing leaves the device. */
-async function bodyAwareStartLb(slot: ExerciseSlot, loadType: LoadType, now: string): Promise<number> {
+async function bodyAwareStartLb(
+  slot: ExerciseSlot,
+  loadType: LoadType,
+  now: string,
+): Promise<number> {
   const profile = await db.profile.get('user');
   return startingWeightLb({
     loadType,
@@ -460,7 +489,8 @@ export async function completeSessionAndAdvance(
   if (!pre || pre.status !== 'active') return;
   const userSettings = await getSettings();
   const loadTypes = new Map<string, LoadType>();
-  for (const slot of pre.executedSlots ?? []) loadTypes.set(slot.slotId, await loadTypeOf(slot));
+  for (const slot of pre.executedSlots ?? [])
+    loadTypes.set(slot.slotId, await loadTypeOf(slot));
 
   await db.transaction(
     'rw',
@@ -486,12 +516,18 @@ export async function completeSessionAndAdvance(
         const plan = buildMesocyclePlan(meso.totalWeeks);
         const dayCount = Math.max(
           1,
-          await db.templates.where('programId').equals(session.programId).count(),
+          await db.templates
+            .where('programId')
+            .equals(session.programId)
+            .count(),
         );
         const done =
-          (await db.sessions.where('programId').equals(session.programId).toArray()).filter(
-            (s) => s.status === 'completed',
-          ).length + 1;
+          (
+            await db.sessions
+              .where('programId')
+              .equals(session.programId)
+              .toArray()
+          ).filter((s) => s.status === 'completed').length + 1;
         let blockStart = meso.blockStartSessions ?? 0;
         let blockIndex = meso.blockIndex ?? 0;
         let weekIndex = Math.floor((done - blockStart) / dayCount);
@@ -535,7 +571,11 @@ export async function completeSessionAndAdvance(
           programId: session.programId!,
           exerciseId: slot.exerciseId,
           updatedAt: now,
-          pending: periodize(prescription, nextMeso, rampCtxForSlot(slot, nextMeso, baseByMuscle)),
+          pending: periodize(
+            prescription,
+            nextMeso,
+            rampCtxForSlot(slot, nextMeso, baseByMuscle),
+          ),
         };
         await db.exerciseState.put(row);
       }

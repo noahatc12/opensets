@@ -93,10 +93,13 @@ describe('nextPrescription (dispatcher)', () => {
     { kind: 'apre', rm: 6 },
     { kind: 'repsOnly', repIncrement: 1 },
     { kind: 'durationLinear', incrementSec: 5, everyNSessions: 2 },
-  ] as ProgressionRule[])('dispatches the Phase-2 rule "%s" (no throw)', (rule) => {
-    const r = nextPrescription(rule, state, noHistory, settings, scheme);
-    expect(r.prescription.sets.length).toBeGreaterThan(0);
-    expect(typeof r.prescription.reason).toBe('string');
-    expect(r.nextState).toBeDefined();
-  });
+  ] as ProgressionRule[])(
+    'dispatches the Phase-2 rule "%s" (no throw)',
+    (rule) => {
+      const r = nextPrescription(rule, state, noHistory, settings, scheme);
+      expect(r.prescription.sets.length).toBeGreaterThan(0);
+      expect(typeof r.prescription.reason).toBe('string');
+      expect(r.nextState).toBeDefined();
+    },
+  );
 });

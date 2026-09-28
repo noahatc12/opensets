@@ -2,6 +2,8 @@ import { useMemo, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useNav } from '../../ui/nav';
 import { Pushed } from '../../ui/Pushed';
+import { LibraryScreen } from './LibraryScreen';
+import { TabBar } from '../../components/TabBar';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../db/db';
 import { useCatalog } from './useCatalog';
@@ -219,7 +221,15 @@ export function ExerciseDetailScreen() {
     `${s.weightLb > 0 ? fmtWeight(s.weightLb, units) : 'BW'}×${s.reps}`;
 
   return (
-    <Pushed to={'/library'}>
+    <Pushed
+      to="/library"
+      parent={
+        <>
+          <LibraryScreen />
+          <TabBar activePath="/library" />
+        </>
+      }
+    >
       <div className="relative h-full overflow-auto px-[18px] pb-[120px] pt-[max(0.5rem,env(safe-area-inset-top))]">
         <BackButton onClick={() => nav.pop()} />
         <div className="os-t mt-3.5" style={{ color: 'var(--acc-tx)' }}>
