@@ -13,6 +13,7 @@ import { useSettings } from '../../db/hooks';
 import { e1rm, isE1rmEligible } from '../../engine';
 import { fmtWeight, kgToLb, toUnit } from '../../lib/units';
 import type { WeightUnit } from '../../lib/units';
+import { Sheet, SheetHeader } from '../../ui/Sheet';
 
 /* Ported from the Tempo prototype Goals screen (showGoals): a back header +
    scroll list of goal cards (title · percent · progress bar · subline) and a
@@ -227,106 +228,66 @@ function AddGoalSheet({
     onClose();
   }
 
+  // A Sheet, like every pop-up in the app: it drags down to close and is a dialog to
+  // assistive tech. (It was a hand-built overlay that did neither; reach-check 09-28.)
   return (
-    <div
-      className="absolute inset-0 z-10 flex flex-col justify-end"
-      style={{ background: 'color-mix(in oklab, var(--bg) 55%, transparent)' }}
-      onClick={onClose}
-    >
-      <div
-        className="rounded-t-[var(--r-xl)] border-t px-[22px] pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-4"
-        style={{
-          background: 'var(--surface)',
-        }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div
-          className="mx-auto mb-3.5 h-1 w-9 rounded-full"
-          style={{ background: 'var(--border-strong)' }}
-        />
-        <div
-          className="mb-3.5 text-[17px] font-bold text-text"
-          style={{ letterSpacing: 'var(--tracking-snug)' }}
-        >
-          New goal
-        </div>
+    <Sheet open onClose={onClose} label="New goal">
+      <SheetHeader title="New goal" action="Cancel" onAction={onClose} />
 
-        <label className="os-t mb-1.5 block">Type</label>
-        <div className="mb-4 flex flex-wrap gap-1.5">
-          {GOAL_TYPES.map((g) => {
-            const active = type === g.value;
-            return (
-              <button
-                key={g.value}
-                onClick={() => setType(g.value)}
-                className="rounded-[var(--r-pill)] px-3 py-1.5 text-[12px] font-semibold"
-                style={{
-                  background: active ? 'var(--ink)' : 'var(--bg)',
-                  color: active ? 'var(--bg)' : 'var(--muted)',
-                }}
-              >
-                {g.label}
-              </button>
-            );
-          })}
-        </div>
+      <div className="os-t mt-3">Type</div>
+      <div className="mt-2 flex flex-wrap gap-2">
+        {GOAL_TYPES.map((g) => (
+          <button
+            key={g.value}
+            type="button"
+            aria-pressed={type === g.value}
+            onClick={() => setType(g.value)}
+            className={`os-chip os-press ${type === g.value ? 'os-chip--acc' : ''}`}
+          >
+            {g.label}
+          </button>
+        ))}
+      </div>
 
-        <label className="os-t mb-1.5 block">
-          Target{unit ? ` (${unit})` : ''}
-        </label>
+      <div className="os-t mt-4">Target{unit ? ` (${unit})` : ''}</div>
+      <div className="os-card os-card--lift mt-2 flex items-center px-4 py-3">
         <input
           type="number"
           inputMode="decimal"
           value={target}
           onChange={(e) => setTarget(e.target.value)}
           placeholder="0"
-          className="mb-4 w-full os-card px-3.5 py-3 text-[15px] text-text outline-none"
-          style={{
-            ...numFont,
-            background: 'var(--bg)',
-          }}
+          aria-label={`Target${unit ? `, ${unit}` : ''}`}
+          className="os-num min-w-0 flex-1 bg-transparent text-[20px] focus:outline-none"
         />
-
-        <label className="os-t mb-1.5 block">Direction</label>
-        <div
-          className="mb-5 flex gap-1 rounded-[var(--r-sm)] p-1"
-          style={{ background: 'var(--bg)' }}
-        >
-          {(['increase', 'decrease'] as const).map((d) => {
-            const active = direction === d;
-            return (
-              <button
-                key={d}
-                onClick={() => setDirection(d)}
-                className="flex-1 rounded-[7px] py-2 text-[13px]"
-                style={{
-                  fontWeight: active ? 700 : 600,
-                  background: active ? 'var(--ink)' : 'transparent',
-                  color: active ? 'var(--bg)' : 'var(--muted)',
-                }}
-              >
-                {d === 'increase' ? 'Increase' : 'Decrease'}
-              </button>
-            );
-          })}
-        </div>
-
-        <button
-          onClick={() => void save()}
-          disabled={!valid}
-          className="h-12 w-full rounded-[var(--r-md)] text-[14px] font-bold"
-          style={{
-            background: valid ? 'var(--ink)' : 'var(--surface-2)',
-            color: valid ? 'var(--bg)' : 'var(--faint)',
-          }}
-        >
-          Save goal
-        </button>
       </div>
-    </div>
+
+      <div className="os-t mt-4">Direction</div>
+      <div className="os-seg mt-2" role="radiogroup" aria-label="Direction">
+        {(['increase', 'decrease'] as const).map((d) => (
+          <button
+            key={d}
+            type="button"
+            role="radio"
+            aria-checked={direction === d}
+            onClick={() => setDirection(d)}
+          >
+            {d === 'increase' ? 'Increase' : 'Decrease'}
+          </button>
+        ))}
+      </div>
+
+      <button
+        type="button"
+        onClick={() => void save()}
+        disabled={!valid}
+        className="os-btn os-btn--pri os-press mt-5"
+      >
+        Save goal
+      </button>
+    </Sheet>
   );
 }
-
 export function GoalsScreen() {
   const nav = useNav();
   const { units } = useSettings();

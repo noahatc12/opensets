@@ -19,7 +19,10 @@
     "design:check": "node scripts/design-shot.mjs",
     "design:check:fixtures": "node scripts/design-shot.mjs --fixtures",
     "design:shots": "node scripts/redesign-shot.mjs",
-    "design:gestures": "node scripts/gesture-check.mjs"
+    "design:gestures": "node scripts/gesture-check.mjs",
+    "design:reach": "node scripts/reach-check.mjs",
+    "design:scroll": "node scripts/scroll-check.mjs",
+    "design:feel": "node scripts/feel-check.mjs"
   },
   "dependencies": {
     "@fontsource-variable/hanken-grotesk": "^5.2.8",

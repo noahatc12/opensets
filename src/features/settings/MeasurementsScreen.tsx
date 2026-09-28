@@ -11,6 +11,7 @@ import { BackButton } from '../../ui/StatGrid';
 import { useSettings } from '../../db/hooks';
 import { fmtWeight, kgToLb, toUnit } from '../../lib/units';
 import type { WeightUnit } from '../../lib/units';
+import { Sheet, SheetHeader } from '../../ui/Sheet';
 
 /* Ported from the Tempo prototype Measurements screen (showMeasurements): a back
    header + stat cards (Bodyweight / Waist) + a PROGRESS PHOTOS row + a recent-
@@ -363,102 +364,84 @@ function LogMeasurementSheet({
     if (!valid) return;
     // Bodyweight is entered in the user's unit but stored canonical lb; lengths store inches as-is.
     const storedWeightLb = units === 'kg' ? kgToLb(valueNum) : valueNum;
+    // The chosen day: today keeps the exact time; an earlier day is stored at noon, so a
+    // time-zone shift can never move it to the neighbouring date. (Always nowIso() before
+    // 09-28, which ignored the date field.)
     const m: Measurement = {
       id: newId(),
       type,
-      date: nowIso(),
+      date:
+        date === today()
+          ? nowIso()
+          : new Date(`${date}T12:00:00`).toISOString(),
       ...(isWeight(type) ? { valueLb: storedWeightLb } : { valueIn: valueNum }),
     };
     await db.measurements.add(m);
     onClose();
   }
 
+  // A Sheet, like every pop-up in the app: it drags down to close and is a dialog to
+  // assistive tech. (It was a hand-built overlay that did neither; reach-check 09-28.)
   return (
-    <div
-      className="absolute inset-0 z-10 flex flex-col justify-end"
-      style={{ background: 'color-mix(in oklab, var(--bg) 55%, transparent)' }}
-      onClick={onClose}
-    >
-      <div
-        className="rounded-t-[var(--r-xl)] border-t px-[22px] pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-4"
-        style={{
-          background: 'var(--surface)',
-        }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div
-          className="mx-auto mb-3.5 h-1 w-9 rounded-full"
-          style={{ background: 'var(--border-strong)' }}
-        />
-        <div
-          className="mb-3.5 text-[17px] font-bold text-text"
-          style={{ letterSpacing: 'var(--tracking-snug)' }}
-        >
-          Log measurement
-        </div>
+    <Sheet open onClose={onClose} label="Log measurement">
+      <SheetHeader title="Log measurement" action="Cancel" onAction={onClose} />
 
-        <label className="os-h2">Type</label>
-        <div className="mb-4 flex flex-wrap gap-1.5">
-          {MEASUREMENT_TYPES.map((t) => {
-            const active = type === t.value;
-            return (
-              <button
-                key={t.value}
-                onClick={() => setType(t.value)}
-                className="rounded-[var(--r-pill)] px-3 py-1.5 text-[12px] font-semibold"
-                style={{
-                  background: active ? 'var(--ink)' : 'var(--bg)',
-                  color: active ? 'var(--bg)' : 'var(--muted)',
-                }}
-              >
-                {t.label}
-              </button>
-            );
-          })}
-        </div>
-
-        <label className="os-h2">Value ({unit})</label>
-        <input
-          type="number"
-          inputMode="decimal"
-          value={value}
-          onChange={(e) => setValue(e.target.value)}
-          placeholder="0"
-          className="mb-4 w-full os-card px-3.5 py-3 text-[15px] text-text outline-none"
-          style={{
-            ...numFont,
-            background: 'var(--bg)',
-          }}
-        />
-
-        <label className="os-h2">Date</label>
-        <input
-          type="date"
-          value={date}
-          onChange={(e) => setDate(e.target.value)}
-          className="mb-5 w-full os-card px-3.5 py-3 text-[15px] text-text outline-none"
-          style={{
-            ...numFont,
-            background: 'var(--bg)',
-          }}
-        />
-
-        <button
-          onClick={() => void save()}
-          disabled={!valid}
-          className="h-12 w-full rounded-[var(--r-md)] text-[14px] font-bold"
-          style={{
-            background: valid ? 'var(--ink)' : 'var(--surface-2)',
-            color: valid ? 'var(--bg)' : 'var(--faint)',
-          }}
-        >
-          Save measurement
-        </button>
+      <div className="os-t mt-3">Type</div>
+      <div className="mt-2 flex flex-wrap gap-2">
+        {MEASUREMENT_TYPES.map((t) => (
+          <button
+            key={t.value}
+            type="button"
+            aria-pressed={type === t.value}
+            onClick={() => setType(t.value)}
+            className={`os-chip os-press ${type === t.value ? 'os-chip--acc' : ''}`}
+          >
+            {t.label}
+          </button>
+        ))}
       </div>
-    </div>
+
+      <div className="mt-4 flex gap-2.5">
+        <div className="min-w-0 flex-1">
+          <div className="os-t">Value ({unit})</div>
+          <div className="os-card os-card--lift mt-2 flex items-center px-4 py-3">
+            <input
+              type="number"
+              inputMode="decimal"
+              value={value}
+              onChange={(e) => setValue(e.target.value)}
+              placeholder="0"
+              aria-label={`Value, ${unit}`}
+              className="os-num min-w-0 flex-1 bg-transparent text-[20px] focus:outline-none"
+            />
+          </div>
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="os-t">Date</div>
+          <div className="os-card os-card--lift mt-2 flex items-center px-4 py-3">
+            <input
+              type="date"
+              value={date}
+              max={today()}
+              onChange={(e) => setDate(e.target.value)}
+              aria-label="Date"
+              className="os-num min-w-0 flex-1 bg-transparent text-[16px] focus:outline-none"
+            />
+          </div>
+        </div>
+      </div>
+
+      <button
+        type="button"
+        onClick={() => void save()}
+        disabled={!valid}
+        className="os-btn os-btn--pri os-press mt-5"
+      >
+        Save measurement
+      </button>
+    </Sheet>
   );
 }
-
 export function MeasurementsScreen() {
   const nav = useNav();
   const { units } = useSettings();
