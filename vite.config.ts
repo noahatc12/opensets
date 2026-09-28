@@ -22,8 +22,10 @@ export default defineConfig({
         short_name: 'OpenSets',
         description:
           'Free, offline-first strength training. Plans your workouts, tracks every set, and tells you when to add weight — your data never leaves your device.',
-        theme_color: '#0a0d12',
-        background_color: '#0a0d12',
+        // The premium ground. iOS paints the reserved home-indicator zone of a Home Screen
+        // web app in this colour, so it must match --bg or it reads as a bar.
+        theme_color: '#0d0f13',
+        background_color: '#0d0f13',
         display: 'standalone',
         orientation: 'portrait',
         categories: ['health', 'fitness', 'sports'],

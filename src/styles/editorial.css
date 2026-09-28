@@ -429,7 +429,7 @@
   position: absolute;
   left: 14px;
   right: 14px;
-  bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+  bottom: calc(14px + var(--os-bottom-inset, env(safe-area-inset-bottom, 0px)));
   height: 66px;
   border-radius: 33px;
   display: grid;
@@ -485,7 +485,8 @@
   bottom: 0;
   background: var(--s1);
   border-radius: 28px 28px 0 0;
-  padding: 10px 18px calc(24px + env(safe-area-inset-bottom, 0px));
+  padding: 10px 18px
+    calc(24px + var(--os-bottom-inset, env(safe-area-inset-bottom, 0px)));
   box-shadow:
     inset 0 1.5px 0 var(--hl2),
     var(--shadow-sheet);
@@ -693,7 +694,8 @@
   left: 0;
   right: 0;
   bottom: 0;
-  padding: 14px 18px calc(18px + env(safe-area-inset-bottom, 0px));
+  padding: 14px 18px
+    calc(18px + var(--os-bottom-inset, env(safe-area-inset-bottom, 0px)));
   background: linear-gradient(
     180deg,
     color-mix(in oklab, var(--bg) 0%, transparent),
@@ -956,7 +958,6 @@ html[data-nav='tab']::view-transition-new(root) {
   height: 100%;
   background: var(--bg);
   will-change: transform;
-  touch-action: pan-y;
 }
 [data-ds='editorial'] .os-pushed--dragging {
   box-shadow: -10px 0 30px rgba(0, 0, 0, 0.35);
@@ -980,7 +981,6 @@ html[data-nav='tab']::view-transition-new(root) {
 /* Sheets rise on the iOS curve and follow the finger without a transition fighting it. */
 [data-ds='editorial'] .os-sheet {
   animation: os-up var(--dur-nav) var(--ease-ios);
-  touch-action: pan-y;
   will-change: transform;
 }
 [data-ds='editorial'] .os-sheet--dragging,
@@ -1025,12 +1025,14 @@ html[data-nav='tab']::view-transition-new(root) {
    indicator, so the island sits 10 px above them; on the Home Screen there is nothing
    below the app, so the indicator's inset is added back. */
 [data-ds='editorial'] .os-tabs {
-  bottom: 10px;
+  bottom: 8px;
   transition: transform 260ms var(--ease-ios);
 }
 @media (display-mode: standalone), (display-mode: fullscreen) {
   [data-ds='editorial'] .os-tabs {
-    bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+    bottom: calc(
+      8px + var(--os-bottom-inset, env(safe-area-inset-bottom, 0px))
+    );
   }
 }
 
@@ -1046,7 +1048,7 @@ html[data-nav='tab']::view-transition-new(root) {
    viewport stops short of it (measured into --os-vgap by ui/viewport.ts). The island and
    every dock measure their safe-area clearance from this edge. */
 [data-ds='editorial'] .os-shell {
-  bottom: calc(-1 * var(--os-vgap, 0px));
+  bottom: 0;
   --os-probe-inset: env(safe-area-inset-bottom, 0px);
   --os-probe-dvh: 100dvh;
 }

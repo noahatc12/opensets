@@ -46,6 +46,14 @@ function persistAndApply(sel: ThemeSelection): void {
   }
   if (typeof document !== 'undefined') {
     applyTheme(document.documentElement, sel);
+    // The browser chrome and the Home Screen container's reserved zones take their
+    // colour from this tag; it follows the mode so neither reads as a bar.
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (meta)
+      meta.setAttribute(
+        'content',
+        sel.mode === 'light' ? '#eeece7' : '#0d0f13',
+      );
   }
 }
 
