@@ -165,10 +165,13 @@ export function SheetHeader({
   title,
   action,
   onAction,
+  actionDisabled = false,
 }: {
   title: string;
   action: string;
   onAction: () => void;
+  /** The action has nothing to do right now (Clear all with no filter on). */
+  actionDisabled?: boolean;
 }) {
   return (
     <div className="flex flex-none items-center justify-between">
@@ -181,7 +184,8 @@ export function SheetHeader({
       <button
         type="button"
         onClick={onAction}
-        className="os-hit h-10 px-2 text-[14px] font-bold"
+        disabled={actionDisabled}
+        className="os-hit h-10 px-2 text-[14px] font-bold disabled:opacity-40"
         style={{ color: 'var(--acc-tx)' }}
       >
         {action}

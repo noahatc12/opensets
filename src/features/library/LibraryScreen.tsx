@@ -510,6 +510,7 @@ export function LibraryScreen() {
           title="Filters"
           action="Clear all"
           onAction={() => setFacets(emptyFacets())}
+          actionDisabled={activeCount === 0}
         />
         <div className="mt-3 min-h-0 overflow-auto">
           <FilterSection

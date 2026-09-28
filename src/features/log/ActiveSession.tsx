@@ -826,6 +826,7 @@ function Logger({ vm }: { vm: LoggerVM }) {
               ? `Swap ${shortName(nameOf(exId), 24)}`
               : 'Add exercise'
           }
+          verb={pickerMode === 'swap' ? 'Swap to' : 'Add'}
           onPick={(e) => void onPickExercise(e)}
           onClose={closePicker}
         />

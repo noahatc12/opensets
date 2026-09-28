@@ -62,5 +62,69 @@
   "sheet-swap-picker#All": {
     "verdict": "expected",
     "note": "Already selected."
+  },
+  "you#Pounds": {
+    "verdict": "expected",
+    "note": "Already selected."
+  },
+  "you#Dark": {
+    "verdict": "expected",
+    "note": "Already selected."
+  },
+  "plates#45 lb": {
+    "verdict": "expected",
+    "note": "Already selected."
+  },
+  "sheet-new-goal#Lift target": {
+    "verdict": "expected",
+    "note": "Already selected."
+  },
+  "sheet-log-measurement#Bodyweight": {
+    "verdict": "expected",
+    "note": "Already selected."
+  },
+  "onboarding-1#Build muscle": {
+    "verdict": "expected",
+    "note": "Already selected."
+  },
+  "onboarding-2#4": {
+    "verdict": "expected",
+    "note": "Already selected."
+  },
+  "onboarding-2#Full gym": {
+    "verdict": "expected",
+    "note": "Already selected."
+  },
+  "onboarding-2#Auto": {
+    "verdict": "expected",
+    "note": "Already selected."
+  },
+  "onboarding-3#Intermediate": {
+    "verdict": "expected",
+    "note": "Already selected."
+  },
+  "trends#12W": {
+    "verdict": "expected",
+    "note": "Already selected."
+  },
+  "workout-rest#1 Barbell Bench": {
+    "verdict": "expected",
+    "note": "Already selected."
+  },
+  "rest-defaults#15s": {
+    "verdict": "expected",
+    "note": "Already selected."
+  },
+  "trends#Barbell Bench Pre": {
+    "verdict": "expected",
+    "note": "Already selected."
+  },
+  "plates#Dumbbell jumps: 5": {
+    "verdict": "expected",
+    "note": "Already selected."
+  },
+  "sheet-new-goal#Increase": {
+    "verdict": "expected",
+    "note": "Already selected."
   }
 }

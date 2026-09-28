@@ -82,7 +82,9 @@ export function KeypadSheet({
             onClick={() => k && press(k)}
             aria-label={k === 'del' ? 'Delete' : k || undefined}
             tabIndex={k ? 0 : -1}
-            className="os-press h-14 rounded-[14px] text-[24px] font-bold"
+            // Nothing typed yet: Delete has nothing to remove, so it says so.
+            disabled={k === 'del' && buf === ''}
+            className="os-press h-14 rounded-[14px] text-[24px] font-bold disabled:opacity-40"
             style={{
               background: 'var(--s2)',
               boxShadow: 'inset 0 1px 0 var(--hl2)',

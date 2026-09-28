@@ -178,7 +178,9 @@ export function RestDefaultsScreen() {
               return (
                 <button
                   key={s}
+                  type="button"
                   onClick={() => setStep(s)}
+                  aria-pressed={active}
                   className="flex-1 rounded-[var(--r-sm)] py-2.5 text-center text-[14px]"
                   style={{
                     fontFamily: 'var(--font-num)',

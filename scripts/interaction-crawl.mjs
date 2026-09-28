@@ -240,6 +240,11 @@ const CONTROLS = () => {
       tag: el.tagName.toLowerCase(),
       disabled:
         el.disabled === true || el.getAttribute('aria-disabled') === 'true',
+      // Already chosen: pressing it again rightly changes nothing.
+      selected:
+        el.getAttribute('aria-pressed') === 'true' ||
+        el.getAttribute('aria-checked') === 'true' ||
+        el.getAttribute('aria-current') === 'page',
     };
   });
 };
@@ -314,7 +319,12 @@ const OBSERVE = async () => {
         q.onsuccess = () => res(q.result);
         q.onerror = () => res([]);
       });
-      data[store] = `${rows.length}:${JSON.stringify(rows).length}`;
+      // A real hash: a rest time from 180 to 195 keeps the JSON the same length.
+      const json = JSON.stringify(rows);
+      let hash = 5381;
+      for (let k = 0; k < json.length; k++)
+        hash = ((hash << 5) + hash + json.charCodeAt(k)) | 0;
+      data[store] = `${rows.length}:${hash}`;
     }
     db.close();
   }
@@ -407,7 +417,13 @@ async function worker() {
   while (next < jobs.length) {
     const { s, c } = jobs[next++];
     const h = await fresh(s.seed);
-    const rec = { state: s.id, i: c.i, name: c.name, tag: c.tag };
+    const rec = {
+      state: s.id,
+      i: c.i,
+      name: c.name,
+      tag: c.tag,
+      selected: c.selected,
+    };
     try {
       await s.recipe(h);
       await h.page.waitForTimeout(400);

@@ -16,6 +16,8 @@ interface Props {
   onClose: () => void;
   /** The sheet's title: what picking does (Swap opened a sheet titled Add exercise). */
   title?: string;
+  /** What picking a row does, for its name: "Add" or "Swap to". */
+  verb?: string;
 }
 
 /** The Add exercise sheet (spec §7): search by name, alias, muscle and equipment
@@ -25,6 +27,7 @@ export function ExercisePicker({
   onPick,
   onClose,
   title = 'Add exercise',
+  verb = 'Add',
 }: Props) {
   const catalog = useCatalog();
   const { units } = useSettings();
@@ -135,7 +138,7 @@ export function ExercisePicker({
                   type="button"
                   onClick={() => onPick(e)}
                   className="os-row os-press"
-                  aria-label={`Add ${e.name}`}
+                  aria-label={`${verb} ${e.name}`}
                 >
                   <Thumb ex={e} />
                   <span className="min-w-0 flex-1">

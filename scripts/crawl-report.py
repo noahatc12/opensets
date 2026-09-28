@@ -9,10 +9,13 @@ press that works but should work differently: a note says why), nothing, or erro
 """
 import json
 import os
+import re
 import shutil
 from PIL import Image
 
 SRC = '.shots/crawl'
+# A partial re-crawl (CRAWL_ONLY, SHOT_OUT) replaces those screens in the full one.
+PARTIALS = sorted(d.path for d in os.scandir('.shots') if d.is_dir() and d.name.startswith('crawl-partial'))
 OUT = '.shots/crawl-report'
 CW, CH, COLS = 130, 282, 10
 
@@ -58,6 +61,21 @@ JUDGE = json.load(open('scripts/crawl-judgments.json', encoding='utf-8')) if os.
     'scripts/crawl-judgments.json') else {}
 
 
+# The app's tables in the lifter's words, for "saves ..." lines.
+STORES = {
+    'activeSession': 'the workout in progress', 'sessions': 'workouts', 'sets': 'logged sets',
+    'exerciseState': 'lift progress', 'programs': 'plans', 'templates': 'plan days',
+    'settings': 'settings', 'profile': 'profile', 'goals': 'goals', 'measurements': 'measurements',
+    'backups': 'backups',
+}
+
+
+def plain(said):
+    def repl(m):
+        return 'saves ' + ', '.join(STORES.get(x.strip(), x.strip()) for x in m.group(1).split(','))
+    return re.sub(r'saves to ([\w, ]+?)(?=;|$)', repl, said)
+
+
 def judge(p):
     # An exact name wins over a prefix ("Skip" is not "Skip rest").
     keyed = [(k.partition('#'), v) for k, v in JUDGE.items()]
@@ -72,12 +90,23 @@ def judge(p):
 
 def main():
     crawl = json.load(open(f'{SRC}/crawl.json', encoding='utf-8'))
+    src_of = {s['id']: SRC for s in crawl['states']}
+    for partial in PARTIALS:  # in name order, later ones win
+        if not os.path.exists(f'{partial}/crawl.json'):
+            continue
+        part = json.load(open(f'{partial}/crawl.json', encoding='utf-8'))
+        redo = {s['id'] for s in part['states']}
+        crawl['states'] = [part['states'][[x['id'] for x in part['states']].index(s['id'])]
+                           if s['id'] in redo else s for s in crawl['states']]
+        crawl['presses'] = [p for p in crawl['presses'] if p['state'] not in redo] + part['presses']
+        src_of.update({sid: partial for sid in redo})
     os.makedirs(OUT, exist_ok=True)
     states, presses = [], []
     for s in crawl['states']:
         sid = s['id']
+        src = src_of[sid]
         mine = sorted([p for p in crawl['presses'] if p['state'] == sid], key=lambda p: p['i'])
-        pics = [f'{SRC}/{sid}/_state.jpg'] + [f"{SRC}/{sid}/{str(p['i']).zfill(2)}.jpg" for p in mine]
+        pics = [f'{src}/{sid}/_state.jpg'] + [f"{src}/{sid}/{str(p['i']).zfill(2)}.jpg" for p in mine]
         rows = (len(pics) + COLS - 1) // COLS
         sheet = Image.new('RGB', (COLS * CW, max(1, rows) * CH), (30, 30, 34))
         for n, f in enumerate(pics):
@@ -94,10 +123,13 @@ def main():
                 v['verdict'] = 'error' if p.get('failed') else 'expected'
                 v['problem'] = p.get('failed') or f"Not pressed: {p.get('skipped')}"
             else:
-                v['said'] = '; '.join(p.get('said') or []) or 'nothing'
+                v['said'] = plain('; '.join(p.get('said') or [])) or 'nothing'
                 if p.get('errors'):
                     v['verdict'] = 'error'
                     v['note'] = 'An error on the page: ' + p['errors'][0][:140]
+                elif p.get('dead') and p.get('selected'):
+                    v['verdict'] = 'expected'
+                    v['note'] = 'Already selected.'
                 elif p.get('dead'):
                     v['verdict'] = 'nothing'
                 else:
