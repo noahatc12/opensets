@@ -178,7 +178,7 @@ export function ExerciseDetailScreen() {
   if (!ex) {
     return (
       <div className="px-[18px] pt-[max(0.5rem,env(safe-area-inset-top))]">
-        <BackButton onClick={() => nav.pop('/library')} />
+        <BackButton onClick={() => nav.back('/library')} />
         <div className="os-card mt-4 text-center">
           <div className="text-[15px] font-extrabold">Exercise not found</div>
           <p className="os-t mt-1">
@@ -231,7 +231,7 @@ export function ExerciseDetailScreen() {
       }
     >
       <div className="relative h-full overflow-auto px-[18px] pb-[120px] pt-[max(0.5rem,env(safe-area-inset-top))]">
-        <BackButton onClick={() => nav.pop()} />
+        <BackButton onClick={() => nav.back('/library')} />
         <div className="os-t mt-3.5" style={{ color: 'var(--acc-tx)' }}>
           {eyebrow}
         </div>

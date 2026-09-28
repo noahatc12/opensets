@@ -1,5 +1,6 @@
 import { NavLink, useLocation } from 'react-router-dom';
 import { useNav } from '../ui/nav';
+import { reducedMotion } from '../lib/spring';
 import { forgetScreens } from '../ui/scrollMemory';
 
 /* Floating glass tab bar. Five tabs. The active highlight is a pill inset 6px inside the
@@ -48,6 +49,18 @@ const TABS = [
   },
 ] as const;
 
+function scrollTabToTop(): void {
+  const main = document.querySelector('.os-shell main');
+  const scroller = main
+    ? [main, ...main.querySelectorAll<HTMLElement>('*')].find(
+        (el) =>
+          el.scrollHeight > el.clientHeight + 4 &&
+          /(auto|scroll)/.test(getComputedStyle(el).overflowY),
+      )
+    : null;
+  scroller?.scrollTo({ top: 0, behavior: reducedMotion() ? 'auto' : 'smooth' });
+}
+
 export function TabBar({ activePath }: { activePath?: string } = {}) {
   const nav = useNav();
   const { pathname } = useLocation();
@@ -64,7 +77,11 @@ export function TabBar({ activePath }: { activePath?: string } = {}) {
           onClick={(e) => {
             if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
             e.preventDefault();
-            if (pathname === t.to) return;
+            // The tab you are on: back to its top, the iOS way (NAV.md, rule 3).
+            if (pathname === t.to) {
+              scrollTabToTop();
+              return;
+            }
             // A new tab starts fresh: places and searches are kept only while you stay
             // inside one tab (Noah, 09-28).
             forgetScreens();

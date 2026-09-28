@@ -1,9 +1,8 @@
-import { useEffect, useMemo } from 'react';
+import { useMemo } from 'react';
 import { useNav } from '../../ui/nav';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../db/db';
 import { t } from '../../i18n/strings';
-import { useSessionStore } from '../../state/session';
 import { useCatalog } from '../library/useCatalog';
 import { getCatalogExercise } from '../../db/catalog';
 import { e1rm } from '../../engine';
@@ -24,7 +23,7 @@ import {
   getActiveWorkoutSession,
 } from '../../db/repositories';
 import { seedSampleData } from '../../db/sampleData';
-import { ActiveSession } from './ActiveSession';
+import { openWorkout } from './workoutMotion';
 import { ProteinCard } from './ProteinCard';
 import { Ring } from '../../ui/Ring';
 import { StatTiles, SectionHead } from '../../ui/StatGrid';
@@ -79,12 +78,16 @@ export function TodayScreen() {
   const catalog = useCatalog();
   const nav = useNav();
   const { units } = useSettings();
-  const activeSessionId = useSessionStore((s) => s.activeSessionId);
-  const leftSessionId = useSessionStore((s) => s.leftSessionId);
-  const beginSession = useSessionStore((s) => s.beginSession);
-
-  // The in-progress session, if any (live). Drives auto-resume and the Resume control.
+  // The in-progress session, if any (live): Today's card shows it instead of the next
+  // day (docs/redesign/NAV.md, rule 5). Auto-resume lives with the workout cover.
   const resumable = useLiveQuery(() => getActiveWorkoutSession());
+  const resumableTpl = useLiveQuery(
+    async () =>
+      resumable?.templateId
+        ? db.templates.get(resumable.templateId)
+        : undefined,
+    [resumable?.templateId],
+  );
   const activeProgram = useLiveQuery(() => getActiveProgram());
   const templates = useLiveQuery(
     () =>
@@ -113,21 +116,13 @@ export function TodayScreen() {
   );
   const allSets = useLiveQuery(() => db.sets.toArray());
 
-  useEffect(() => {
-    if (activeSessionId) return;
-    // Auto-resume on a cold reopen, but NOT a session the user just LEFT via Back;
-    // that one is offered through the Resume control instead of bouncing back in.
-    if (resumable && resumable.id !== leftSessionId) beginSession(resumable.id);
-  }, [activeSessionId, resumable, leftSessionId, beginSession]);
-
   const live = useMemo(
     () => (allSets ?? []).filter((s) => !s.deletedAt && s.completed),
     [allSets],
   );
 
-  if (activeSessionId) return <ActiveSession />;
-
-  const tpl = nextTpl ?? templates?.[0];
+  // A workout in progress is the day on the card; otherwise the next day in the rotation.
+  const tpl = (resumable && resumableTpl) || nextTpl || templates?.[0];
   const ready = tpl && tpl.slots.length > 0;
   const meso = activeProgram?.mesocycle;
   const newBlock = meso && (meso.blockIndex ?? 0) > 0 && meso.weekIndex === 0;
@@ -172,12 +167,11 @@ export function TodayScreen() {
     </div>
   );
 
-  // Resume control for a session the user left via Back (kept active and resumable).
-  // Rendered in every hub state so an in-progress workout can never be stranded.
+  // With no plan to show, a workout in progress still gets its way back in.
   const resumeBanner = resumable ? (
     <button
       type="button"
-      onClick={() => beginSession(resumable.id)}
+      onClick={() => openWorkout(resumable.id)}
       className="os-btn os-btn--pri os-press mt-4"
     >
       Resume workout in progress
@@ -326,7 +320,7 @@ export function TodayScreen() {
   async function start() {
     if (!tpl) return;
     const s = await startSessionFromTemplate(tpl, nowIso());
-    beginSession(s.id);
+    openWorkout(s.id);
   }
 
   return (
@@ -335,7 +329,6 @@ export function TodayScreen() {
       className="h-full overflow-auto px-[18px] pb-[120px] pt-2"
     >
       {header}
-      {resumeBanner}
       {newBlock && (
         <p role="status" className="os-t mt-3 leading-snug">
           Block {(meso.blockIndex ?? 0) + 1} started. Same exercises, with
@@ -350,7 +343,9 @@ export function TodayScreen() {
       >
         <div className="flex items-center justify-between">
           <span className="os-t os-hero-t">
-            Up next · Day {dayIndex + 1} of {dayCount}
+            {resumable
+              ? 'In progress'
+              : `Up next · Day ${dayIndex + 1} of ${dayCount}`}
           </span>
           <span
             className="os-t os-hero-t"
@@ -401,9 +396,17 @@ export function TodayScreen() {
           ))}
           {extra > 0 && <span className="os-chip os-hero-chip">+{extra}</span>}
         </div>
-        {/* While a workout is in progress (left via Back), Resume is the only entry:
-            no Start here, so a second active session cannot be spawned. */}
-        {!resumable && (
+        {/* While a workout is in progress, Resume is the only entry: no Start here, so
+            a second active session cannot be spawned. */}
+        {resumable ? (
+          <button
+            type="button"
+            onClick={() => openWorkout(resumable.id)}
+            className="os-btn os-btn--hero os-press mt-4"
+          >
+            Resume workout <span className="text-[18px]">→</span>
+          </button>
+        ) : (
           <button
             type="button"
             onClick={() => void start()}

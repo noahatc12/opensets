@@ -1,4 +1,5 @@
-import { useEffect } from 'react';
+import { useCallback, useEffect } from 'react';
+import { useLiveQuery } from 'dexie-react-hooks';
 import { installViewportFix } from './ui/viewport';
 import { FeelPanel } from './ui/FeelPanel';
 import { tuneWantedFromUrl } from './ui/tuneTaps';
@@ -10,6 +11,7 @@ import {
   Navigate,
   Outlet,
   useLocation,
+  UNSAFE_RouteContext as RouteContext,
 } from 'react-router-dom';
 import { TabBar } from './components/TabBar';
 import { ReloadPrompt } from './components/ReloadPrompt';
@@ -28,8 +30,41 @@ import { GoalsScreen } from './features/settings/GoalsScreen';
 import { MeasurementsScreen } from './features/settings/MeasurementsScreen';
 import { ProfileScreen } from './features/settings/ProfileScreen';
 import { OnboardingScreen } from './features/onboarding/OnboardingScreen';
+import { WorkoutBar, WorkoutCover } from './features/log/WorkoutCover';
+import { getActiveWorkoutSession } from './db/repositories';
+import { ScreenAtContext } from './ui/screenAt';
+import type { Origin } from './ui/nav';
 
 const TAB_ROUTES = ['/today', '/plan', '/library', '/history', '/settings'];
+
+/** Every screen, once: the app's routes, and the copy shown under a swipe back. */
+function screenRoutes() {
+  return [
+    <Route key="today" path="/today" element={<TodayScreen />} />,
+    <Route key="plan" path="/plan" element={<PlanScreen />} />,
+    <Route key="rnew" path="/routine/new" element={<RoutineBuilder />} />,
+    <Route
+      key="redit"
+      path="/routine/:templateId"
+      element={<RoutineBuilder />}
+    />,
+    <Route key="lib" path="/library" element={<LibraryScreen />} />,
+    <Route key="ex" path="/library/:id" element={<ExerciseDetailScreen />} />,
+    <Route key="hist" path="/history" element={<HistoryScreen />} />,
+    <Route key="you" path="/settings" element={<SettingsScreen />} />,
+    <Route
+      key="app"
+      path="/appearance"
+      element={<Navigate to="/settings" replace />}
+    />,
+    <Route key="plates" path="/plates" element={<PlatesScreen />} />,
+    <Route key="rest" path="/rest-defaults" element={<RestDefaultsScreen />} />,
+    <Route key="goals" path="/goals" element={<GoalsScreen />} />,
+    <Route key="meas" path="/measurements" element={<MeasurementsScreen />} />,
+    <Route key="prof" path="/profile" element={<ProfileScreen />} />,
+    <Route key="onb" path="/onboarding" element={<OnboardingScreen />} />,
+  ];
+}
 
 function AppShell() {
   const inSession = useSessionStore((s) => s.activeSessionId !== null);
@@ -37,6 +72,27 @@ function AppShell() {
   // The floating tab bar shows on the five tabs; pushed screens and the active
   // session are full-screen.
   const showTabs = TAB_ROUTES.includes(pathname) && !inSession;
+  // A workout tucked away: a bar on every tab but Today, whose card already shows it.
+  const resumable = useLiveQuery(() => getActiveWorkoutSession());
+  const barOn = showTabs && pathname !== '/today' && Boolean(resumable);
+  // The screen a pushed screen came from, drawn under the finger during a swipe back.
+  const screenAt = useCallback(
+    (o: Origin) => (
+      <>
+        {/* Matched from the top, not inside the pushed screen's own route: a location
+            override must sit under its parent route, and the origin never does. */}
+        <RouteContext.Provider
+          value={{ outlet: null, matches: [], isDataRoute: false }}
+        >
+          <Routes location={{ pathname: o.path, state: o.state }}>
+            {screenRoutes()}
+          </Routes>
+        </RouteContext.Provider>
+        {TAB_ROUTES.includes(o.path) && <TabBar activePath={o.path} />}
+      </>
+    ),
+    [],
+  );
 
   // Storage durability ladder (spec §9): request persistence post-load.
   useEffect(() => {
@@ -73,13 +129,24 @@ function AppShell() {
     <div
       className="os-shell fixed inset-0 mx-auto flex max-w-md flex-col overflow-hidden bg-bg"
       data-tabs={showTabs ? 'on' : 'off'}
+      data-workout={barOn ? 'on' : 'off'}
     >
-      <main className="flex-1 overflow-y-auto overscroll-contain">
-        <ErrorBoundary key={pathname}>
-          <Outlet />
-        </ErrorBoundary>
-      </main>
+      <ScreenAtContext.Provider value={screenAt}>
+        {/* Under the workout cover the screen is kept, not usable: out of reach of touch,
+            focus and VoiceOver until the cover lowers. */}
+        <main
+          className="flex-1 overflow-y-auto overscroll-contain"
+          inert={inSession || undefined}
+          aria-hidden={inSession || undefined}
+        >
+          <ErrorBoundary key={pathname}>
+            <Outlet />
+          </ErrorBoundary>
+        </main>
+      </ScreenAtContext.Provider>
+      {barOn && resumable && <WorkoutBar session={resumable} />}
       {showTabs && <TabBar />}
+      <WorkoutCover resumable={resumable} />
       <ReloadPrompt />
       <FeelPanel />
     </div>
@@ -88,28 +155,15 @@ function AppShell() {
 
 export default function App() {
   return (
-    <HashRouter>
+    // Navigations commit at once, not as a low-priority transition: the slide between
+    // screens is a view transition that snapshots the page inside its callback, and a
+    // deferred commit left it sliding the old screen over a copy of itself before the
+    // new one snapped in (measured 09-28, live since the feel layer shipped).
+    <HashRouter useTransitions={false}>
       <Routes>
         <Route element={<AppShell />}>
           <Route index element={<Navigate to="/today" replace />} />
-          <Route path="/today" element={<TodayScreen />} />
-          <Route path="/plan" element={<PlanScreen />} />
-          <Route path="/routine/new" element={<RoutineBuilder />} />
-          <Route path="/routine/:templateId" element={<RoutineBuilder />} />
-          <Route path="/library" element={<LibraryScreen />} />
-          <Route path="/library/:id" element={<ExerciseDetailScreen />} />
-          <Route path="/history" element={<HistoryScreen />} />
-          <Route path="/settings" element={<SettingsScreen />} />
-          <Route
-            path="/appearance"
-            element={<Navigate to="/settings" replace />}
-          />
-          <Route path="/plates" element={<PlatesScreen />} />
-          <Route path="/rest-defaults" element={<RestDefaultsScreen />} />
-          <Route path="/goals" element={<GoalsScreen />} />
-          <Route path="/measurements" element={<MeasurementsScreen />} />
-          <Route path="/profile" element={<ProfileScreen />} />
-          <Route path="/onboarding" element={<OnboardingScreen />} />
+          {screenRoutes()}
           <Route path="*" element={<Navigate to="/today" replace />} />
         </Route>
       </Routes>

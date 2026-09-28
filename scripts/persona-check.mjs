@@ -245,7 +245,9 @@ const ctaText = (page) =>
     .getByRole('button', { name: /^Log set/ })
     .first()
     .innerText();
-const exerciseName = (page) => page.locator('h1').first().innerText();
+// The logger is a cover over the screen that started it; its heading is the exercise.
+const exerciseName = (page) =>
+  page.locator('.os-cover h1, main h1').first().innerText();
 
 async function pickExercise(p, query, pick) {
   const page = p.page;
@@ -782,9 +784,7 @@ async function hurried() {
   );
   await settle(p, 800);
   await shot(p, 'today-left');
-  const resume = page.getByRole('button', {
-    name: 'Resume workout in progress',
-  });
+  const resume = page.getByRole('button', { name: /^Resume workout/ });
   check(p, await shown(resume), 'Today offers Resume after leaving');
   await tap(p, resume, 'Resume');
   await settle(p, 800);

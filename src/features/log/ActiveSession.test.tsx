@@ -27,10 +27,24 @@ import {
   startSessionFromTemplate,
   getExerciseState,
   getSessionSets,
+  getActiveWorkoutSession,
 } from '../../db/repositories';
 import { useSessionStore } from '../../state/session';
 import { ActiveSession } from './ActiveSession';
 import { TodayScreen } from './TodayScreen';
+import { WorkoutCover } from './WorkoutCover';
+import { useLiveQuery } from 'dexie-react-hooks';
+
+/** Today with the workout cover over it, as the app shell renders them (NAV.md, rule 5). */
+function Hub() {
+  const resumable = useLiveQuery(() => getActiveWorkoutSession());
+  return (
+    <>
+      <TodayScreen />
+      <WorkoutCover resumable={resumable} />
+    </>
+  );
+}
 import type { WorkoutSession } from '../../db/types';
 import type { ProgressionRule } from '../../engine/types';
 
@@ -348,7 +362,7 @@ describe('Summary: Discard', () => {
 });
 
 describe('Session resume on reload', () => {
-  it('TodayScreen resumes an in-flight session', async () => {
+  it('the workout cover resumes an in-flight session on a fresh load', async () => {
     const { session } = await seedActiveSession();
     // Simulate a fresh load: the ephemeral store is empty, the session is in Dexie.
     useSessionStore.setState({
@@ -358,10 +372,10 @@ describe('Session resume on reload', () => {
     });
     render(
       <MemoryRouter>
-        <TodayScreen />
+        <Hub />
       </MemoryRouter>,
     );
-    // The logger (not the Today hub) renders once the active session is picked up.
+    // The logger rises over Today once the active session is picked up.
     await waitFor(() => {
       expect(useSessionStore.getState().activeSessionId).toBe(session.id);
     });
@@ -422,14 +436,14 @@ describe('Back is a non-destructive leave (#2)', () => {
   const renderToday = () =>
     render(
       <MemoryRouter>
-        <TodayScreen />
+        <Hub />
       </MemoryRouter>,
     );
 
   it('Back keeps the session active + resumable: no completion, no progression advance, snapshot kept', async () => {
     const { session, programId } = await seedActiveSession();
     const user = userEvent.setup();
-    renderToday(); // activeSessionId set → renders the active session
+    renderToday(); // activeSessionId set → the cover shows the active session
     await user.click(await logButton()); // log one set
     // Wait for the debounced recovery snapshot so "snapshot kept" is a real assertion.
     await waitFor(async () =>
