@@ -140,11 +140,18 @@ export function ExercisePicker({ onPick, onClose }: Props) {
                         .join(' · ')}
                     </span>
                   </span>
-                  <span
-                    className="os-chip os-chip--acc grid size-[34px] place-items-center p-0 text-[18px]"
-                    aria-hidden
-                  >
-                    +
+                  <span className="os-icon-btn os-icon-btn--acc" aria-hidden>
+                    <svg
+                      width="20"
+                      height="20"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.4"
+                      strokeLinecap="round"
+                    >
+                      <path d="M12 5v14M5 12h14" />
+                    </svg>
                   </span>
                 </button>
               );

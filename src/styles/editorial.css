@@ -1056,3 +1056,11 @@ html,
 body {
   background: var(--bg);
 }
+
+/* The add control on picker rows: a rounded square like the logger's steppers, the
+   plus drawn as a stroke so it centres optically, tinted with the accent. */
+[data-ds='editorial'] .os-icon-btn--acc {
+  background: var(--acc-soft);
+  color: var(--acc-tx);
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--acc) 25%, transparent);
+}
