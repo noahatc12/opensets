@@ -14,7 +14,9 @@
  * and any time are passed in. Inputs are engine-local structural types so this module
  * imports nothing from /src/db (the catalog passes db.Exercise[], which conforms).
  */
-import type { Muscle, ProgressionRule } from '../types';
+import type { LoadType, Muscle, ProgressionRule } from '../types';
+import { loadTypeFor } from '../loading';
+import { startingWeightLb } from '../body';
 import {
   buildMesocyclePlan,
   landmarksFor,
@@ -97,6 +99,8 @@ export interface GeneratedSlot {
   /** R3.5 — the muscle this slot's volume was allocated to (the pattern's `muscles[0]`).
    *  Keys the per-muscle temporal ramp once persisted onto the slot. */
   primaryMuscle: Muscle;
+  /** How the chosen exercise is loaded; decides reachable weights (audit 2026-09-24). */
+  loadType: LoadType;
 }
 export interface GeneratedDay {
   name: string;
@@ -399,25 +403,8 @@ function score(ex: GenExercise, pat: Pattern, pool: ReadonlySet<string>, strengt
   return s;
 }
 
-/**
- * Profile-scaled starting weight (lb). A light seed (spec §6.6) — the flat
- * equipment baseline scaled by bodyweight × sex × experience, so a heavier advanced
- * lifter seeds higher than a lighter novice. Week-1 calibration is the real source of
- * truth; this only prefills plausible numbers. (A bodyweight-relative strength-standards
- * TABLE is a later refinement.) Engine rounds to loadable plates at prescription time.
- */
-function seedWeight(ex: GenExercise, compound: boolean, profile: GenProfile, exp: Experience): number {
-  if (ex.isBodyweight || ex.equipment === 'bodyweight') return 0;
-  let base: number;
-  if (ex.equipment === 'barbell') base = compound ? 95 : 45;
-  else if (ex.equipment === 'dumbbell' || ex.equipment === 'kettlebell') base = compound ? 30 : 15;
-  else base = compound ? 50 : 25;
-
-  const bwFactor = profile.bodyweightLb ? clamp(profile.bodyweightLb / 170, 0.6, 1.6) : 1;
-  const sexFactor = profile.sex === 'female' ? 0.65 : 1;
-  const expFactor = exp === 'Novice' ? 0.85 : exp === 'Advanced' ? 1.2 : 1;
-  return Math.round(base * bwFactor * sexFactor * expFactor);
-}
+/* Starting weights: see ../body.ts (movement- and body-aware, replaces the old flat
+   equipment constants that seeded squat, bench, press and deadlift identically). */
 
 const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
 
@@ -729,9 +716,14 @@ export function generatePlan(
       used.add(chosen.id);
       for (const m of chosen.primaryMuscles) trainedMuscles.add(m);
 
+      const loadType = loadTypeFor(chosen.equipment, chosen.isBodyweight);
       let rule: ProgressionRule;
       let scheme: GeneratedSlot['scheme'];
-      if (useGzclp) {
+      if (loadType === 'bodyweight' && !useGzclp) {
+        // Bodyweight lifts progress by reps, not by adding plates to a push-up.
+        rule = { kind: 'repsOnly', repIncrement: 1 };
+        scheme = { ...(pat.compound ? compoundScheme : isoScheme), sets: allocSets };
+      } else if (useGzclp) {
         const tier: 1 | 2 | 3 = !pat.compound ? 3 : dayCompoundCount === 0 ? 1 : 2;
         if (pat.compound) dayCompoundCount += 1;
         rule = { kind: 'gzclp', tier };
@@ -752,11 +744,20 @@ export function generatePlan(
         rest: pat.compound
           ? { warmupSec: 60, workSec: rest.compoundSec }
           : { warmupSec: 45, workSec: rest.isolationSec },
-        startWeightLb: seedWeight(chosen, pat.compound, profile, experience),
+        startWeightLb: startingWeightLb({
+          loadType,
+          pattern: pat.key,
+          compound: pat.compound,
+          bodyweightLb: profile.bodyweightLb,
+          sex: profile.sex,
+          ageYears: profile.ageYears,
+          experience,
+        }),
         tempo: coaching.tempo,
         coachingCue: coaching.cue,
         restTier: coaching.tier,
         primaryMuscle: pat.muscles[0]!,
+        loadType,
       });
     }
     planDays.push({ name: types[di]!, slots });

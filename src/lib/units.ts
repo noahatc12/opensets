@@ -20,13 +20,22 @@ export const unitLabel = (unit: WeightUnit): WeightUnit => unit;
 
 /**
  * Format a canonical lb weight for display in the user's unit.
- * lb rounds to the nearest 1 (pounds read clean as whole numbers); kg rounds to
- * the nearest 0.5 (plate granularity). Trailing ".0" is dropped.
+ * lb rounds to the nearest 0.25, so every real load shows exactly (a 12.5 lb
+ * dumbbell, a 47.5 lb bar with 1.25s); it used to round to whole pounds and show
+ * weights nobody could load. kg rounds to the nearest 0.5 (plate granularity).
+ * Trailing zeros are dropped.
  */
 export function fmtWeight(lb: number, unit: WeightUnit): string {
   const v = toUnit(lb, unit);
-  const r = unit === 'kg' ? Math.round(v * 2) / 2 : Math.round(v);
-  return Number.isInteger(r) ? String(r) : String(r);
+  const r = unit === 'kg' ? Math.round(v * 2) / 2 : Math.round(v * 4) / 4;
+  return String(r);
+}
+
+/** A canonical lb weight as an editable number in the display unit: lb to the nearest
+ *  0.25 (so 2.5 and 1.25 survive), kg to the nearest 0.5. */
+export function displayWeight(lb: number, unit: WeightUnit): number {
+  const v = toUnit(lb, unit);
+  return unit === 'kg' ? Math.round(v * 2) / 2 : Math.round(v * 4) / 4;
 }
 
 /** Round a converted value to a tidy display precision (for e1RM etc.). */

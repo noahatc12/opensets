@@ -1,27 +1,30 @@
-import { useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../db/db';
 import { useSettings, updateSettings, useProfile } from '../../db/hooks';
 import { useThemeStore } from '../../state/theme';
-import { inToFtIn } from '../../lib/units';
+import { inToFtIn, fmtWeight, toUnit } from '../../lib/units';
+import { clock, compact, monthDay } from '../../lib/format';
+import { ageFromBirthDate } from '../../lib/age';
 import {
   downloadEnvelope,
   importFromJson,
   ImportError,
 } from '../../db/exportImport';
-import { ChevronRightIcon, ChevronLeftIcon, ShieldIcon } from '../../components/icons';
-import { fmtWeight } from '../../lib/units';
+import { seedSampleData } from '../../db/sampleData';
+import { useCatalog } from '../library/useCatalog';
 import { usePersistentStorage } from './usePersistentStorage';
 import { t } from '../../i18n/strings';
+import { ScreenTitle, SectionHead, StatTiles } from '../../ui/StatGrid';
+import { ConfirmSheet } from '../../ui/Sheet';
+import { PlateMarks } from '../../ui/Plates';
 
-/* Ported from the Tempo prototype Settings screen: grouped list rows
-   (Units / Training / Storage / App) + privacy card + footer. */
+/* You: settings and data. Three tiles, Units and Appearance segments, then Training,
+   Body and Your data as cards of rows, the storage status, the privacy card. */
 
 const nowIso = () => new Date().toISOString();
-const numFont = { fontFamily: 'var(--font-num)' as const };
 
-/** Compact byte formatter for storage usage/quota. */
 function fmtBytes(n: number): string {
   if (n < 1024) return `${n} B`;
   const kb = n / 1024;
@@ -31,75 +34,117 @@ function fmtBytes(n: number): string {
   return `${(mb / 1024).toFixed(1)} GB`;
 }
 
-function Group({ children }: { children: React.ReactNode }) {
-  return (
-    <div
-      className="overflow-hidden rounded-[var(--r-md)] border"
-      style={{ background: 'var(--surface)', borderColor: 'var(--border-card)' }}
-    >
-      {children}
-    </div>
-  );
-}
-
 function Row({
   label,
+  sub,
   value,
   onClick,
-  last,
+  danger,
 }: {
   label: string;
+  sub?: string;
   value?: React.ReactNode;
   onClick?: () => void;
-  last?: boolean;
+  danger?: boolean;
 }) {
-  return (
-    <button
-      onClick={onClick}
-      disabled={!onClick}
-      className="flex w-full items-center gap-3 px-4 py-3.5 text-left"
-      style={last ? undefined : { borderBottom: '1px solid var(--border)' }}
-    >
-      <span className="flex-1 text-[14px] font-medium text-text">{label}</span>
+  const inner = (
+    <>
+      <span className="min-w-0 flex-1">
+        <span
+          className="block truncate text-[15px] font-semibold"
+          style={danger ? { color: 'var(--danger)' } : undefined}
+        >
+          {label}
+        </span>
+        {sub && (
+          <span
+            className="mt-0.5 block truncate text-[12px] font-medium"
+            style={{ color: 'var(--mute)' }}
+          >
+            {sub}
+          </span>
+        )}
+      </span>
       {value}
-      {onClick && <ChevronRightIcon className="size-[18px] text-faint" />}
+      {onClick && !danger && <span className="os-chev" />}
+    </>
+  );
+  return onClick ? (
+    <button type="button" onClick={onClick} className="os-row os-press">
+      {inner}
     </button>
+  ) : (
+    <div className="os-row">{inner}</div>
   );
 }
 
-const SectionLabel = ({ children }: { children: React.ReactNode }) => (
-  <div
-    className="mx-1 mb-2 mt-[22px] text-[11px] font-bold uppercase text-faint"
-    style={{ letterSpacing: 'var(--tracking-caps)', fontFamily: 'var(--font-label)' }}
-  >
+const Value = ({
+  children,
+  unit,
+}: {
+  children: React.ReactNode;
+  unit?: string;
+}) => (
+  <span className="os-num text-[17px]" style={{ letterSpacing: '-.02em' }}>
     {children}
-  </div>
+    {unit && <small className="os-t ml-1 text-[12px]">{unit}</small>}
+  </span>
 );
 
 export function SettingsScreen() {
   const navigate = useNavigate();
+  const catalog = useCatalog();
   const settings = useSettings();
   const profile = useProfile();
-  const goalCount = useLiveQuery(() => db.goals.count());
+  const mode = useThemeStore((s) => s.selection.mode);
+  const setTheme = useThemeStore((s) => s.update);
+  const storage = usePersistentStorage();
+  const goalCount = useLiveQuery(() =>
+    db.goals.filter((g) => g.status === 'active').count(),
+  );
+  const workouts = useLiveQuery(() =>
+    db.sessions.where('status').equals('completed').count(),
+  );
+  const sets = useLiveQuery(() => db.sets.toArray());
+  const latestBw = useLiveQuery(async () => {
+    const rows = await db.measurements
+      .filter((m) => m.type === 'bodyweight' && m.valueLb !== undefined)
+      .toArray();
+    return rows.sort((a, b) => b.date.localeCompare(a.date))[0] ?? null;
+  });
+  const { lifted, records } = useMemo(() => {
+    let lifted = 0;
+    let records = 0;
+    for (const s of sets ?? []) {
+      if (s.deletedAt || !s.completed) continue;
+      if (s.type === 'working' || s.type === 'amrap')
+        lifted += Math.max(0, s.weightLb) * s.reps;
+      if (s.isPR?.length) records++;
+    }
+    return { lifted, records };
+  }, [sets]);
 
-  // Compact profile summary for the Settings row (e.g. "Male · 5'10\"").
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [feedback, setFeedback] = useState<string | null>(null);
+  const [confirmErase, setConfirmErase] = useState(false);
+  // Import replaces everything, so a picked file waits here for an explicit confirm.
+  const [pendingImport, setPendingImport] = useState<File | null>(null);
+
+  const units = settings.units;
   const profileSummary = (() => {
-    if (!profile) return 'Set up';
+    if (!profile) return 'Not set up yet';
     const parts: string[] = [];
-    if (profile.sex) parts.push(profile.sex[0]!.toUpperCase() + profile.sex.slice(1));
+    if (profile.sex)
+      parts.push(profile.sex[0]!.toUpperCase() + profile.sex.slice(1));
+    const age = ageFromBirthDate(profile.birthDate, nowIso());
+    if (age !== undefined) parts.push(String(age));
     if (profile.heightIn != null) {
       const { ft, in: inch } = inToFtIn(profile.heightIn);
       parts.push(`${ft}'${inch}"`);
     }
-    return parts.length ? parts.join(' · ') : 'Edit';
+    return parts.length ? parts.join(' · ') : 'Tap to fill in';
   })();
-  const sel = useThemeStore((s) => s.selection);
-  const storage = usePersistentStorage();
-  const fileRef = useRef<HTMLInputElement>(null);
-  const [feedback, setFeedback] = useState<string | null>(null);
-  const [confirmReset, setConfirmReset] = useState(false);
 
-  /** Wipe the local database + stored preferences, then reload as a fresh install. */
   async function resetAll() {
     try {
       await db.delete();
@@ -115,258 +160,259 @@ export function SettingsScreen() {
   }
 
   async function handleImport(file: File) {
+    setPendingImport(null);
     try {
       await importFromJson(await file.text());
-      setFeedback('Backup restored.');
+      setFeedback(
+        'Data replaced. Your previous data was saved as a snapshot on this device.',
+      );
     } catch (err) {
-      setFeedback(err instanceof ImportError ? err.message : 'Could not read file.');
+      setFeedback(
+        err instanceof ImportError ? err.message : 'Could not read that file.',
+      );
     } finally {
       if (fileRef.current) fileRef.current.value = '';
     }
   }
 
-  const themeLabel = `${sel.theme[0]!.toUpperCase()}${sel.theme.slice(1)} · ${sel.mode === 'dark' ? 'Dark' : 'Light'}`;
+  const restByType = `Compound ${clock(settings.restCompoundSec)} · isolation ${clock(settings.restIsolationSec)} · accessory ${clock(settings.restAccessorySec)}`;
 
   return (
-    <div className="flex h-full flex-col">
-      <div className="flex items-center gap-2.5 px-[18px] pb-2.5 pt-[max(0.5rem,env(safe-area-inset-top))]">
-        <button onClick={() => navigate('/today')} className="grid size-10 place-items-center bg-transparent text-muted" aria-label="Back">
-          <ChevronLeftIcon className="size-[22px]" />
-        </button>
-        <div className="text-[22px] font-bold text-text" style={{ letterSpacing: 'var(--tracking-snug)' }}>
-          Settings
-        </div>
-      </div>
+    <div className="relative flex h-full flex-col">
+      <div className="min-h-0 flex-1 overflow-auto px-[18px] pb-[120px] pt-2">
+        <ScreenTitle eyebrow="Settings and data" title="You" />
 
-      <div className="os-scroll flex-1 overflow-auto px-[22px] pb-8 pt-1.5">
-        <SectionLabel>Units</SectionLabel>
-        <div
-          className="flex items-center justify-between rounded-[var(--r-md)] border px-4 py-3.5"
-          style={{ background: 'var(--surface)', borderColor: 'var(--border-card)' }}
-        >
-          <span className="text-[14px] font-semibold text-text">Weight unit</span>
-          <div className="flex gap-1 rounded-[var(--r-sm)] p-1" style={{ background: 'var(--bg)' }}>
-            {(['kg', 'lb'] as const).map((u) => {
-              const active = settings.units === u;
-              return (
-                <button
-                  key={u}
-                  onClick={() => void updateSettings({ units: u })}
-                  className="rounded-[7px] px-3.5 py-1.5 text-[13px]"
-                  style={{
-                    ...numFont,
-                    fontWeight: active ? 700 : 600,
-                    background: active ? 'var(--accent)' : 'transparent',
-                    color: active ? 'var(--accent-ink)' : 'var(--muted)',
-                  }}
-                >
-                  {u}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-        <p className="mx-1 mt-2 text-[11px] leading-snug text-faint">
-          lb is canonical. kg is converted for display only — e.g. 185 lb = 84 kg.
-        </p>
-
-        <SectionLabel>Profile</SectionLabel>
-        <Group>
-          <Row
-            label="Your profile"
-            value={<span className="text-[13px] text-muted">{profileSummary}</span>}
-            onClick={() => navigate('/profile')}
-            last
+        <div className="mt-3.5">
+          <StatTiles
+            cols={3}
+            size={24}
+            stats={[
+              { label: 'Workouts', value: workouts ?? 0 },
+              {
+                label: 'Lifted',
+                value: compact(toUnit(lifted, units)),
+                unit: units,
+              },
+              {
+                label: 'Records',
+                value: records,
+                color: records > 0 ? 'var(--pr)' : undefined,
+              },
+            ]}
           />
-        </Group>
+        </div>
 
-        <SectionLabel>Training</SectionLabel>
-        <Group>
+        <SectionHead>Units</SectionHead>
+        <div className="os-seg" role="radiogroup" aria-label="Weight unit">
+          {(['lb', 'kg'] as const).map((u) => (
+            <button
+              key={u}
+              type="button"
+              role="radio"
+              aria-checked={units === u}
+              onClick={() => void updateSettings({ units: u })}
+            >
+              {u === 'lb' ? 'Pounds' : 'Kilograms'}
+            </button>
+          ))}
+        </div>
+
+        <SectionHead>Appearance</SectionHead>
+        <div className="os-seg" role="radiogroup" aria-label="Appearance">
+          {(['dark', 'light'] as const).map((m) => (
+            <button
+              key={m}
+              type="button"
+              role="radio"
+              aria-checked={mode === m}
+              onClick={() => setTheme({ mode: m })}
+            >
+              {m === 'dark' ? 'Dark' : 'Light'}
+            </button>
+          ))}
+        </div>
+
+        <SectionHead>Training</SectionHead>
+        <div className="os-card" style={{ padding: '4px 16px' }}>
           <Row
-            label="Plate inventory"
+            label="Default rest"
+            sub="For new exercises"
+            value={<Value>{clock(settings.defaultRestWorkSec)}</Value>}
+            onClick={() => navigate('/rest-defaults')}
+          />
+          <Row
+            label="Bar and plates"
+            sub={`${fmtWeight(settings.barLb, units)} ${units} bar · ${settings.plateInventoryLb.length} plate sizes`}
             value={
-              <span className="flex gap-1">
-                {[...settings.plateInventoryLb]
-                  .sort((a, b) => b - a)
-                  .slice(0, 2)
-                  .map((p) => (
-                    <span
-                      key={p}
-                      className="rounded-[var(--r-pill)] bg-bg px-[7px] py-[3px] text-[10px] text-muted"
-                      style={numFont}
-                    >
-                      {fmtWeight(p, settings.units)}
-                    </span>
-                  ))}
-                {settings.plateInventoryLb.length > 2 && (
-                  <span className="rounded-[var(--r-pill)] bg-bg px-[7px] py-[3px] text-[10px] text-muted" style={numFont}>
-                    +{settings.plateInventoryLb.length - 2}
-                  </span>
-                )}
-              </span>
+              <PlateMarks
+                platesLb={settings.plateInventoryLb}
+                units={units}
+                sleeve={false}
+                label={`${settings.plateInventoryLb.length} plate sizes`}
+              />
             }
             onClick={() => navigate('/plates')}
           />
           <Row
-            label="Default rest"
-            value={
-              <span className="text-[13px] text-muted" style={numFont}>
-                {Math.floor(settings.defaultRestWorkSec / 60)}:
-                {String(settings.defaultRestWorkSec % 60).padStart(2, '0')}
-              </span>
-            }
+            label="Rest by lift type"
+            sub={restByType}
             onClick={() => navigate('/rest-defaults')}
+          />
+        </div>
+
+        <SectionHead>Body</SectionHead>
+        <div className="os-card" style={{ padding: '4px 16px' }}>
+          <Row
+            label="Profile"
+            sub={profileSummary}
+            onClick={() => navigate('/profile')}
+          />
+          <Row
+            label="Bodyweight"
+            sub={
+              latestBw ? `Logged ${monthDay(latestBw.date)}` : 'Not logged yet'
+            }
+            value={
+              latestBw?.valueLb !== undefined ? (
+                <Value unit={units}>{fmtWeight(latestBw.valueLb, units)}</Value>
+              ) : undefined
+            }
+            onClick={() => navigate('/measurements')}
           />
           <Row
             label="Goals"
-            value={
-              <span className="text-[13px] text-muted">
-                {goalCount ?? 0} active
-              </span>
-            }
+            sub={`${goalCount ?? 0} active`}
             onClick={() => navigate('/goals')}
           />
-          <Row label="Body measurements" onClick={() => navigate('/measurements')} last />
-        </Group>
-
-        <SectionLabel>App</SectionLabel>
-        <Group>
           <Row
-            label="Appearance"
-            value={<span className="text-[13px] text-muted">{themeLabel}</span>}
-            onClick={() => navigate('/appearance')}
+            label="Measurements"
+            sub="Waist, arms, photos"
+            onClick={() => navigate('/measurements')}
           />
-          <Row label="Backup & export" onClick={() => void downloadEnvelope(nowIso())} />
-          <Row label="Import data" onClick={() => fileRef.current?.click()} last />
-        </Group>
+        </div>
+
+        <SectionHead>Your data</SectionHead>
+        <div className="os-card" style={{ padding: '4px 16px' }}>
+          <Row
+            label="Export backup"
+            sub="Everything, as one JSON file"
+            onClick={() => void downloadEnvelope(nowIso())}
+          />
+          <Row
+            label="Import backup"
+            sub="Asks before replacing anything"
+            onClick={() => fileRef.current?.click()}
+          />
+          <Row
+            label="Load sample data"
+            sub="A demo program with six weeks of history"
+            onClick={() => {
+              if (!catalog) return;
+              void seedSampleData(catalog, nowIso()).then(() =>
+                setFeedback(
+                  'Sample data loaded. It is now the active program.',
+                ),
+              );
+            }}
+          />
+          <Row
+            label="Erase all data"
+            onClick={() => setConfirmErase(true)}
+            danger
+          />
+        </div>
         <input
           ref={fileRef}
           type="file"
           accept="application/json,.json"
           className="hidden"
+          aria-label="Import backup file"
           onChange={(e) => {
             const f = e.target.files?.[0];
-            if (f) void handleImport(f);
+            if (f) {
+              setFeedback(null);
+              setPendingImport(f);
+            }
           }}
         />
-
         {feedback && (
-          <p role="status" className="mt-3 text-center text-[12px] text-muted">
+          <p role="status" className="os-t mt-2.5 text-center leading-snug">
             {feedback}
           </p>
         )}
 
         {storage.supported && (
-          <>
-            <SectionLabel>Storage</SectionLabel>
-            <div
-              className="overflow-hidden rounded-[var(--r-md)] border"
-              style={{ background: 'var(--surface)', borderColor: 'var(--border-card)' }}
-            >
-              <div
-                className="px-4 py-3.5"
-                style={!storage.persisted ? { borderBottom: '1px solid var(--border)' } : undefined}
+          <div className="os-t mt-3 flex items-center justify-between gap-3 px-1 leading-snug">
+            <span>
+              {storage.persisted
+                ? 'Storage is persistent'
+                : 'Storage is best effort'}
+              {storage.usageBytes !== null
+                ? ` · ${fmtBytes(storage.usageBytes)} used`
+                : ''}
+            </span>
+            {!storage.persisted && (
+              <button
+                type="button"
+                onClick={() => void storage.request()}
+                className="os-press min-h-11 flex-none px-1 font-bold"
+                style={{ color: 'var(--acc-tx)' }}
               >
-                <div className="flex items-center justify-between">
-                  <span className="text-[14px] font-medium text-text">On-device storage</span>
-                  <span
-                    className="text-[12px] font-semibold"
-                    style={{ color: storage.persisted ? 'var(--success)' : 'var(--muted)' }}
-                  >
-                    {storage.persisted ? 'Persistent' : 'Best-effort'}
-                  </span>
-                </div>
-                <p className="mt-1 text-[12px] leading-snug text-muted">
-                  {storage.persisted ? t.settings.storagePersisted : t.settings.storageBestEffort}
-                </p>
-                {storage.usageBytes !== null && (
-                  <p className="mt-1.5 text-[11px] text-faint" style={numFont}>
-                    {t.settings.usage} {fmtBytes(storage.usageBytes)}
-                    {storage.quotaBytes ? ` of ${fmtBytes(storage.quotaBytes)}` : ''}
-                  </p>
-                )}
-              </div>
-              {!storage.persisted && (
-                <button
-                  onClick={() => void storage.request()}
-                  className="flex w-full items-center px-4 py-3.5 text-left text-[14px] font-medium text-accent"
-                >
-                  {t.settings.requestPersist}
-                </button>
-              )}
-            </div>
-          </>
+                Make persistent
+              </button>
+            )}
+          </div>
         )}
 
-        <SectionLabel>Data</SectionLabel>
-        <div
-          className="overflow-hidden rounded-[var(--r-md)] border"
-          style={{
-            background: 'var(--surface)',
-            borderColor: confirmReset
-              ? 'color-mix(in oklab, var(--danger) 45%, var(--border-card))'
-              : 'var(--border-card)',
-          }}
-        >
-          {!confirmReset ? (
-            <button
-              onClick={() => setConfirmReset(true)}
-              className="flex w-full items-center gap-3 px-4 py-3.5 text-left"
-            >
-              <span className="flex-1 text-[14px] font-medium text-danger">Reset all data</span>
-              <ChevronRightIcon className="size-[18px] text-faint" />
-            </button>
-          ) : (
-            <div className="px-4 py-3.5">
-              <p className="text-[13px] leading-snug text-text">
-                Permanently erase all workouts, programs, history, goals, and settings on
-                this device. This can't be undone.
-              </p>
-              <div className="mt-3.5 flex gap-2">
-                <button
-                  onClick={() => setConfirmReset(false)}
-                  className="h-11 flex-1 rounded-[var(--r-sm)] text-[13px] font-semibold text-text"
-                  style={{ background: 'var(--surface-2)' }}
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={() => void resetAll()}
-                  className="h-11 flex-1 rounded-[var(--r-sm)] text-[13px] font-bold"
-                  style={{ background: 'var(--danger)', color: '#fff' }}
-                >
-                  Erase everything
-                </button>
-              </div>
+        <div className="os-card mt-3 flex items-start gap-3">
+          <svg
+            width="22"
+            height="22"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="var(--pos)"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="flex-none"
+            aria-hidden
+          >
+            <path d="M12 3l7 3v5c0 4.5-3 7.7-7 9-4-1.3-7-4.5-7-9V6l7-3z" />
+            <path d="M9 12l2 2 4-4" />
+          </svg>
+          <div>
+            <div className="text-[14px] font-extrabold">Private by default</div>
+            <div className="os-t mt-0.5 font-medium leading-[1.4]">
+              {t.settings.privacy}
             </div>
-          )}
-        </div>
-        <p className="mx-1 mt-2 text-[11px] leading-snug text-faint">
-          Restores the default appearance and clears onboarding — the app reloads like a
-          fresh install.
-        </p>
-
-        <div
-          className="mt-[22px] rounded-[var(--r-md)] border p-4"
-          style={{
-            background: 'color-mix(in oklab, var(--accent) 7%, var(--surface))',
-            borderColor: 'color-mix(in oklab, var(--accent) 16%, transparent)',
-          }}
-        >
-          <div className="flex items-center gap-2">
-            <ShieldIcon className="size-4 text-accent" />
-            <span className="text-[13px] font-bold text-accent">Private by default</span>
           </div>
-          <p className="mt-1.5 text-[12.5px] leading-snug text-muted">
-            Your data never leaves your device. No account, no sync, no tracking.
-          </p>
         </div>
-        <p className="mt-[18px] text-center text-[11px] leading-snug text-faint">
-          Educational tool — not medical advice.
+        <p className="os-t mt-4 text-center leading-snug">
+          {t.settings.disclaimer}
           <br />
           v1.0 · MIT · free-exercise-db
         </p>
       </div>
+
+      <ConfirmSheet
+        open={pendingImport !== null}
+        title="Replace all data?"
+        body={`Every workout, program and setting on this device will be replaced with ${pendingImport?.name ?? 'the file'}. Your current data is saved as a snapshot first.`}
+        cta="Replace data"
+        onConfirm={() => pendingImport && void handleImport(pendingImport)}
+        onClose={() => {
+          setPendingImport(null);
+          if (fileRef.current) fileRef.current.value = '';
+        }}
+      />
+      <ConfirmSheet
+        open={confirmErase}
+        title="Erase all data?"
+        body="Every workout, program, measurement, goal and setting on this device goes. The app reloads like a fresh install. This cannot be undone."
+        cta="Erase everything"
+        onConfirm={() => void resetAll()}
+        onClose={() => setConfirmErase(false)}
+      />
     </div>
   );
 }

@@ -122,7 +122,10 @@ export type PrescriptionFlag =
   | 'deload'
   | 'stageChange'
   | 'tmIncrease'
-  | 'plateauSuspected';
+  | 'plateauSuspected'
+  /** A starting weight nobody has lifted yet: the UI labels it and asks the lifter
+   *  to calibrate it (their first log replaces it). */
+  | 'suggested';
 
 /** A single prescribed set within a prescription. */
 export interface PrescribedSet {
@@ -147,6 +150,25 @@ export interface Prescription {
 export type RoundingMode = 'nearest' | 'down' | 'up';
 
 /**
+ * How an exercise's load is built, which decides what weights are reachable:
+ * a plate-loaded barbell (bar + plate pairs), a dumbbell or kettlebell (per hand,
+ * fixed increments), a weight stack (cable / machine / fixed bars), or bodyweight
+ * (the number is EXTERNAL load: 0 = bodyweight only, negative = assisted).
+ */
+export type LoadType = 'barbell' | 'dumbbell' | 'stack' | 'bodyweight';
+
+/** Increments for the non-barbell load types (lb). Editable on the Plates screen. */
+export interface LoadSteps {
+  /** Dumbbell step at and above `dumbbellSmallBelowLb` (per hand). */
+  dumbbellStepLb: number;
+  /** Dumbbell step below `dumbbellSmallBelowLb` (per hand). */
+  dumbbellSmallStepLb: number;
+  dumbbellSmallBelowLb: number;
+  /** Cable / machine stack step. */
+  stackStepLb: number;
+}
+
+/**
  * Settings the engine needs but does not own. Passed in to keep the module pure
  * (no reading global config / DB). `plateInventoryLb` is the set of plate
  * denominations the lifter owns; loads must be loadable from PAIRS of these.
@@ -158,6 +180,10 @@ export interface EngineSettings {
   rounding: RoundingMode;
   /** Display units. Storage/computation is always lb; this is informational only. */
   units: 'kg' | 'lb';
+  /** How this exercise is loaded. Omitted = barbell (the original behaviour). */
+  loadType?: LoadType;
+  /** Non-barbell increments. Omitted = DEFAULT_LOAD_STEPS. */
+  steps?: LoadSteps;
 }
 
 /**

@@ -3,7 +3,11 @@ import { weeklyVolumeByMuscle, type ExerciseMuscles } from './weeklyVolume';
 import type { LoggedSet, Muscle } from '../../db/types';
 
 let n = 0;
-function set(exerciseId: string, date: string, type: LoggedSet['type'] = 'working'): LoggedSet {
+function set(
+  exerciseId: string,
+  date: string,
+  type: LoggedSet['type'] = 'working',
+): LoggedSet {
   return {
     id: `s${n++}`,
     sessionId: 'sess',
@@ -19,7 +23,10 @@ function set(exerciseId: string, date: string, type: LoggedSet['type'] = 'workin
 
 // bench → primary Chest, secondary Triceps+Shoulders; squat → primary Quads, secondary Glutes.
 const muscles: Record<string, ExerciseMuscles> = {
-  bench: { primary: ['chest' as Muscle], secondary: ['triceps' as Muscle, 'shoulders' as Muscle] },
+  bench: {
+    primary: ['chest' as Muscle],
+    secondary: ['triceps' as Muscle, 'shoulders' as Muscle],
+  },
   squat: { primary: ['quadriceps' as Muscle], secondary: ['glutes' as Muscle] },
 };
 const lookup = (id: string): ExerciseMuscles | undefined => muscles[id];
@@ -31,8 +38,15 @@ describe('weeklyVolumeByMuscle', () => {
 
   it('weights primary 1.0 and secondary 0.5 per set', () => {
     // two bench sets in-window → chest 2.0, triceps 1.0, shoulders 1.0
-    const v = weeklyVolumeByMuscle([set('bench', '2026-06-20'), set('bench', '2026-06-21')], lookup);
-    expect(Object.fromEntries(v)).toEqual({ chest: 2, triceps: 1, shoulders: 1 });
+    const v = weeklyVolumeByMuscle(
+      [set('bench', '2026-06-20'), set('bench', '2026-06-21')],
+      lookup,
+    );
+    expect(Object.fromEntries(v)).toEqual({
+      chest: 2,
+      triceps: 1,
+      shoulders: 1,
+    });
   });
 
   it('only counts the 7-day window anchored at the latest set', () => {
@@ -52,16 +66,27 @@ describe('weeklyVolumeByMuscle', () => {
 
   it('ignores warmup / non-hard sets', () => {
     const v = weeklyVolumeByMuscle(
-      [set('bench', '2026-06-20', 'warmup' as LoggedSet['type']), set('bench', '2026-06-20', 'amrap')],
+      [
+        set('bench', '2026-06-20', 'warmup' as LoggedSet['type']),
+        set('bench', '2026-06-20', 'amrap'),
+      ],
       lookup,
     );
     // only the amrap counts → chest 1.0
-    expect(Object.fromEntries(v)).toEqual({ chest: 1, triceps: 0.5, shoulders: 0.5 });
+    expect(Object.fromEntries(v)).toEqual({
+      chest: 1,
+      triceps: 0.5,
+      shoulders: 0.5,
+    });
   });
 
   it('sorts descending and caps to topN', () => {
     const v = weeklyVolumeByMuscle(
-      [set('bench', '2026-06-20'), set('bench', '2026-06-20'), set('squat', '2026-06-20')],
+      [
+        set('bench', '2026-06-20'),
+        set('bench', '2026-06-20'),
+        set('squat', '2026-06-20'),
+      ],
       lookup,
       2,
     );

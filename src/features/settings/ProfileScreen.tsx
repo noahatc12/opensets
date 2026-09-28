@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../db/db';
 import { updateProfile } from '../../db/hooks';
-import { ChevronLeftIcon } from '../../components/icons';
+import { BackButton } from '../../ui/StatGrid';
 import { inToFtIn, ftInToIn } from '../../lib/units';
 import { useCatalog } from '../library/useCatalog';
 import { getCatalogExercise } from '../../db/catalog';
@@ -26,7 +26,13 @@ import type {
    Fields persist on change (toggles/selects) or blur (number/date inputs). The editable
    form is a keyed child seeded from the persisted row via props — no setState-in-effect. */
 
-const GOALS = ['Build muscle', 'Lose fat', 'Recomposition', 'Get stronger', 'General fitness'] as const;
+const GOALS = [
+  'Build muscle',
+  'Lose fat',
+  'Recomposition',
+  'Get stronger',
+  'General fitness',
+] as const;
 const EXPERIENCE_OPTS: Experience[] = ['Novice', 'Intermediate', 'Advanced'];
 const EQUIPMENT_OPTS: EquipmentProfile[] = ['Full gym', 'Home rack', 'Minimal'];
 const DAY_OPTS = [3, 4, 5, 6];
@@ -35,25 +41,28 @@ const numFont = { fontFamily: 'var(--font-num)' as const };
 
 const cardSel = (active: boolean) =>
   active
-    ? { background: 'var(--accent)', color: 'var(--accent-ink)' as const, border: '1px solid transparent' }
-    : { background: 'var(--surface)', color: 'var(--text)' as const, border: '1px solid var(--border-card)' };
+    ? {
+        background: 'var(--ink)',
+        color: 'var(--bg)' as const,
+        border: '1px solid transparent',
+      }
+    : {
+        background: 'var(--surface)',
+        color: 'var(--text)' as const,
+        border: '1px solid var(--border-card)',
+      };
 
 function Label({ children }: { children: React.ReactNode }) {
-  return (
-    <div
-      className="mb-2 mt-[22px] text-[11px] font-bold uppercase text-faint"
-      style={{ letterSpacing: 'var(--tracking-caps)', fontFamily: 'var(--font-label)' }}
-    >
-      {children}
-    </div>
-  );
+  return <div className="os-h2">{children}</div>;
 }
 
 function Box({ children }: { children: React.ReactNode }) {
   return (
     <div
-      className="flex min-w-0 flex-1 items-center gap-2 rounded-[var(--r-md)] border px-4 py-3.5"
-      style={{ background: 'var(--surface)', borderColor: 'var(--border-card)' }}
+      className="flex min-w-0 flex-1 items-center gap-2 os-card px-4 py-3.5"
+      style={{
+        background: 'var(--surface)',
+      }}
     >
       {children}
     </div>
@@ -66,17 +75,16 @@ const inputCls =
 export function ProfileScreen() {
   const navigate = useNavigate();
   // undefined = still loading; null = no profile yet; row = loaded.
-  const loaded = useLiveQuery(() => db.profile.get('user').then((p) => p ?? null));
+  const loaded = useLiveQuery(() =>
+    db.profile.get('user').then((p) => p ?? null),
+  );
 
   return (
-    <div className="flex h-full flex-col">
-      <div className="flex items-center gap-2.5 px-[18px] pb-2.5 pt-[max(0.5rem,env(safe-area-inset-top))]">
-        <button onClick={() => navigate('/settings')} className="grid size-10 place-items-center bg-transparent text-muted" aria-label="Back">
-          <ChevronLeftIcon className="size-[22px]" />
-        </button>
-        <div className="text-[22px] font-bold text-text" style={{ letterSpacing: 'var(--tracking-snug)' }}>
-          Profile
-        </div>
+    <div className="relative flex h-full flex-col">
+      <div className="px-[18px] pt-[max(0.5rem,env(safe-area-inset-top))]">
+        <BackButton onClick={() => navigate('/settings')} />
+        <div className="os-t mt-3.5">You</div>
+        <h1 className="os-h1 mt-0.5">Profile</h1>
       </div>
 
       {loaded !== undefined && (
@@ -102,14 +110,24 @@ function ProfileForm({ initial }: { initial: ProfileRow | null }) {
     initial?.targetBodyFatPct != null ? String(initial.targetBodyFatPct) : '',
   );
   const [timeframeWeeks, setTimeframeWeeks] = useState(
-    initial?.goalTimeframeWeeks != null ? String(initial.goalTimeframeWeeks) : '',
+    initial?.goalTimeframeWeeks != null
+      ? String(initial.goalTimeframeWeeks)
+      : '',
   );
   // R1 goal-aware preference inputs.
-  const [experience, setExperience] = useState<Experience | ''>(initial?.experience ?? '');
+  const [experience, setExperience] = useState<Experience | ''>(
+    initial?.experience ?? '',
+  );
   const [days, setDays] = useState<number | null>(initial?.days ?? null);
-  const [equipment, setEquipment] = useState<EquipmentProfile | ''>(initial?.equipment ?? '');
-  const [splitChoice, setSplitChoice] = useState<SplitChoice>(initial?.splitChoice ?? 'auto');
-  const [priority, setPriority] = useState<Muscle[]>(initial?.priorityMuscles ?? []);
+  const [equipment, setEquipment] = useState<EquipmentProfile | ''>(
+    initial?.equipment ?? '',
+  );
+  const [splitChoice, setSplitChoice] = useState<SplitChoice>(
+    initial?.splitChoice ?? 'auto',
+  );
+  const [priority, setPriority] = useState<Muscle[]>(
+    initial?.priorityMuscles ?? [],
+  );
   const [avoid, setAvoid] = useState<string[]>(initial?.avoidExerciseIds ?? []);
   const [showPicker, setShowPicker] = useState(false);
   const catalog = useCatalog();
@@ -146,270 +164,281 @@ function ProfileForm({ initial }: { initial: ProfileRow | null }) {
   function saveHeight() {
     const ft = parseInt(heightFt, 10);
     const inch = parseInt(heightInch, 10);
-    const hIn = ftInToIn(Number.isNaN(ft) ? 0 : ft, Number.isNaN(inch) ? 0 : inch);
+    const hIn = ftInToIn(
+      Number.isNaN(ft) ? 0 : ft,
+      Number.isNaN(inch) ? 0 : inch,
+    );
     save({ heightIn: hIn > 0 ? hIn : undefined });
   }
 
   return (
-    <div className="os-scroll flex-1 overflow-auto px-[22px] pb-10 pt-1.5">
-      <p className="text-[13px] leading-relaxed text-muted">
-        Used to personalize your plan and (later) calorie/protein targets. Everything
-        is optional and stays on your device.
-      </p>
+    <>
+      <div className="os-scroll flex-1 overflow-auto px-[22px] pb-10 pt-1.5">
+        <p className="text-[13px] leading-relaxed text-muted">
+          Used to personalize your plan and (later) calorie/protein targets.
+          Everything is optional and stays on your device.
+        </p>
 
-      <Label>Sex</Label>
-      <div className="flex gap-2.5">
-        {(['male', 'female'] as const).map((s) => (
-          <button
-            key={s}
-            onClick={() => {
-              const next = sex === s ? null : s;
-              setSex(next);
-              save({ sex: next ?? undefined });
-            }}
-            className="flex-1 rounded-[var(--r-md)] px-4 py-3.5 text-[14px] font-bold capitalize"
-            style={cardSel(sex === s)}
-          >
-            {s}
-          </button>
-        ))}
-      </div>
+        <Label>Sex</Label>
+        <div className="flex gap-2.5">
+          {(['male', 'female'] as const).map((s) => (
+            <button
+              key={s}
+              onClick={() => {
+                const next = sex === s ? null : s;
+                setSex(next);
+                save({ sex: next ?? undefined });
+              }}
+              className="flex-1 rounded-[var(--r-md)] px-4 py-3.5 text-[14px] font-bold capitalize"
+              style={cardSel(sex === s)}
+            >
+              {s}
+            </button>
+          ))}
+        </div>
 
-      <Label>Date of birth</Label>
-      <Box>
-        <input
-          type="date"
-          value={dob}
-          onChange={(e) => setDob(e.target.value)}
-          onBlur={() => save({ birthDate: dob || undefined })}
-          aria-label="Date of birth"
-          className="min-w-0 flex-1 bg-transparent text-[16px] text-text placeholder:text-faint focus:outline-none"
-          style={numFont}
-        />
-      </Box>
-
-      <Label>Height</Label>
-      <div className="flex gap-2.5">
+        <Label>Date of birth</Label>
         <Box>
           <input
-            type="number"
-            inputMode="numeric"
-            value={heightFt}
-            onChange={(e) => setHeightFt(e.target.value)}
-            onBlur={saveHeight}
-            placeholder="—"
-            aria-label="Height feet"
-            className={inputCls}
+            type="date"
+            value={dob}
+            onChange={(e) => setDob(e.target.value)}
+            onBlur={() => save({ birthDate: dob || undefined })}
+            aria-label="Date of birth"
+            className="min-w-0 flex-1 bg-transparent text-[16px] text-text placeholder:text-faint focus:outline-none"
             style={numFont}
           />
-          <span className="text-[14px] text-muted">ft</span>
         </Box>
-        <Box>
-          <input
-            type="number"
-            inputMode="numeric"
-            value={heightInch}
-            onChange={(e) => setHeightInch(e.target.value)}
-            onBlur={saveHeight}
-            placeholder="—"
-            aria-label="Height inches"
-            className={inputCls}
-            style={numFont}
-          />
-          <span className="text-[14px] text-muted">in</span>
-        </Box>
-      </div>
 
-      <Label>Body fat %</Label>
-      <Box>
-        <input
-          type="number"
-          inputMode="decimal"
-          value={bodyFat}
-          onChange={(e) => setBodyFat(e.target.value)}
-          onBlur={() => save({ bodyFatPct: numOrUndef(bodyFat) })}
-          placeholder="—"
-          aria-label="Body fat percent"
-          className={inputCls}
-          style={numFont}
-        />
-        <span className="text-[14px] text-muted">%</span>
-      </Box>
+        <Label>Height</Label>
+        <div className="flex gap-2.5">
+          <Box>
+            <input
+              type="number"
+              inputMode="numeric"
+              value={heightFt}
+              onChange={(e) => setHeightFt(e.target.value)}
+              onBlur={saveHeight}
+              placeholder="0"
+              aria-label="Height feet"
+              className={inputCls}
+              style={numFont}
+            />
+            <span className="text-[14px] text-muted">ft</span>
+          </Box>
+          <Box>
+            <input
+              type="number"
+              inputMode="numeric"
+              value={heightInch}
+              onChange={(e) => setHeightInch(e.target.value)}
+              onBlur={saveHeight}
+              placeholder="0"
+              aria-label="Height inches"
+              className={inputCls}
+              style={numFont}
+            />
+            <span className="text-[14px] text-muted">in</span>
+          </Box>
+        </div>
 
-      <Label>Goal</Label>
-      <div className="flex flex-col gap-2.5">
-        {GOALS.map((g) => (
-          <button
-            key={g}
-            onClick={() => {
-              setGoal(g);
-              save({ goal: g });
-            }}
-            className="rounded-[var(--r-md)] px-[18px] py-3.5 text-left text-[14px] font-bold"
-            style={cardSel(goal === g)}
-          >
-            {g}
-          </button>
-        ))}
-      </div>
-
-      <Label>Training age</Label>
-      <div className="flex gap-2.5">
-        {EXPERIENCE_OPTS.map((x) => (
-          <button
-            key={x}
-            onClick={() => {
-              setExperience(x);
-              save({ experience: x });
-            }}
-            className="flex-1 rounded-[var(--r-md)] px-3 py-3.5 text-[13px] font-bold"
-            style={cardSel(experience === x)}
-          >
-            {x}
-          </button>
-        ))}
-      </div>
-
-      <Label>Days per week</Label>
-      <div className="flex gap-2.5">
-        {DAY_OPTS.map((d) => (
-          <button
-            key={d}
-            onClick={() => {
-              setDays(d);
-              save({ days: d });
-            }}
-            className="flex-1 rounded-[var(--r-md)] py-3.5 text-[16px] font-bold"
-            style={{ ...cardSel(days === d), ...numFont }}
-          >
-            {d}
-          </button>
-        ))}
-      </div>
-
-      <Label>Equipment</Label>
-      <div className="flex flex-wrap gap-2">
-        {EQUIPMENT_OPTS.map((e) => (
-          <button
-            key={e}
-            onClick={() => {
-              setEquipment(e);
-              save({ equipment: e });
-            }}
-            className="rounded-[var(--r-pill)] px-4 py-2.5 text-[13px] font-semibold"
-            style={cardSel(equipment === e)}
-          >
-            {e}
-          </button>
-        ))}
-      </div>
-
-      <Label>Split</Label>
-      <div className="flex flex-wrap gap-2">
-        {SPLITS.map((s) => (
-          <button
-            key={s.id}
-            onClick={() => {
-              setSplitChoice(s.id);
-              save({ splitChoice: s.id });
-            }}
-            className="rounded-[var(--r-pill)] px-4 py-2.5 text-[13px] font-semibold"
-            style={cardSel(splitChoice === s.id)}
-          >
-            {s.label}
-          </button>
-        ))}
-      </div>
-
-      <Label>Goal target · optional</Label>
-      <p className="mb-2 text-[12px] leading-relaxed text-muted">
-        For a physique target — e.g. reach 12% body fat in 8 weeks.
-      </p>
-      <div className="flex gap-2.5">
+        <Label>Body fat %</Label>
         <Box>
           <input
             type="number"
             inputMode="decimal"
-            value={targetBodyFat}
-            onChange={(e) => setTargetBodyFat(e.target.value)}
-            onBlur={() => save({ targetBodyFatPct: numOrUndef(targetBodyFat) })}
-            placeholder="—"
-            aria-label="Target body fat percent"
+            value={bodyFat}
+            onChange={(e) => setBodyFat(e.target.value)}
+            onBlur={() => save({ bodyFatPct: numOrUndef(bodyFat) })}
+            placeholder="0"
+            aria-label="Body fat percent"
             className={inputCls}
             style={numFont}
           />
-          <span className="text-[13px] text-muted">% BF</span>
+          <span className="text-[14px] text-muted">%</span>
         </Box>
-        <Box>
-          <input
-            type="number"
-            inputMode="numeric"
-            value={timeframeWeeks}
-            onChange={(e) => setTimeframeWeeks(e.target.value)}
-            onBlur={() => save({ goalTimeframeWeeks: numOrUndef(timeframeWeeks) })}
-            placeholder="—"
-            aria-label="Goal timeframe weeks"
-            className={inputCls}
-            style={numFont}
-          />
-          <span className="text-[13px] text-muted">weeks</span>
-        </Box>
-      </div>
 
-      <Label>Priority muscles</Label>
-      <p className="mb-2 text-[12px] leading-relaxed text-muted">
-        Lagging areas to bias extra volume toward.
-      </p>
-      <div className="flex flex-wrap gap-2">
-        {PRIORITY_MUSCLES.map((m) => (
-          <button
-            key={m.id}
-            onClick={() => togglePriority(m.id)}
-            className="rounded-[var(--r-pill)] px-4 py-2.5 text-[13px] font-semibold"
-            style={cardSel(priority.includes(m.id))}
-          >
-            {m.label}
-          </button>
-        ))}
-      </div>
-
-      <Label>Avoid exercises</Label>
-      <p className="mb-2 text-[12px] leading-relaxed text-muted">
-        Excluded from generated plans (injury or preference).
-      </p>
-      <div className="flex flex-wrap items-center gap-2">
-        {avoid.map((id) => {
-          const ex = catalog ? getCatalogExercise(id) : undefined;
-          return (
+        <Label>Goal</Label>
+        <div className="flex flex-col gap-2.5">
+          {GOALS.map((g) => (
             <button
-              key={id}
-              onClick={() => removeAvoid(id)}
-              className="flex max-w-full items-center gap-1.5 rounded-[var(--r-pill)] px-3 py-2 text-[13px] font-semibold"
-              style={cardSel(true)}
-              aria-label={`Remove ${ex?.name ?? id}`}
+              key={g}
+              onClick={() => {
+                setGoal(g);
+                save({ goal: g });
+              }}
+              className="rounded-[var(--r-md)] px-[18px] py-3.5 text-left text-[14px] font-bold"
+              style={cardSel(goal === g)}
             >
-              <span className="truncate">{ex?.name ?? id}</span>
-              <span aria-hidden>×</span>
+              {g}
             </button>
-          );
-        })}
-        <button
-          onClick={() => setShowPicker(true)}
-          className="rounded-[var(--r-pill)] px-4 py-2 text-[13px] font-semibold"
-          style={cardSel(false)}
-        >
-          + Add
-        </button>
+          ))}
+        </div>
+
+        <Label>Training age</Label>
+        <div className="flex gap-2.5">
+          {EXPERIENCE_OPTS.map((x) => (
+            <button
+              key={x}
+              onClick={() => {
+                setExperience(x);
+                save({ experience: x });
+              }}
+              className="flex-1 rounded-[var(--r-md)] px-3 py-3.5 text-[13px] font-bold"
+              style={cardSel(experience === x)}
+            >
+              {x}
+            </button>
+          ))}
+        </div>
+
+        <Label>Days per week</Label>
+        <div className="flex gap-2.5">
+          {DAY_OPTS.map((d) => (
+            <button
+              key={d}
+              onClick={() => {
+                setDays(d);
+                save({ days: d });
+              }}
+              className="flex-1 rounded-[var(--r-md)] py-3.5 text-[16px] font-bold"
+              style={{ ...cardSel(days === d), ...numFont }}
+            >
+              {d}
+            </button>
+          ))}
+        </div>
+
+        <Label>Equipment</Label>
+        <div className="flex flex-wrap gap-2">
+          {EQUIPMENT_OPTS.map((e) => (
+            <button
+              key={e}
+              onClick={() => {
+                setEquipment(e);
+                save({ equipment: e });
+              }}
+              className="rounded-[var(--r-pill)] px-4 py-2.5 text-[13px] font-semibold"
+              style={cardSel(equipment === e)}
+            >
+              {e}
+            </button>
+          ))}
+        </div>
+
+        <Label>Split</Label>
+        <div className="flex flex-wrap gap-2">
+          {SPLITS.map((s) => (
+            <button
+              key={s.id}
+              onClick={() => {
+                setSplitChoice(s.id);
+                save({ splitChoice: s.id });
+              }}
+              className="rounded-[var(--r-pill)] px-4 py-2.5 text-[13px] font-semibold"
+              style={cardSel(splitChoice === s.id)}
+            >
+              {s.label}
+            </button>
+          ))}
+        </div>
+
+        <Label>Goal target · optional</Label>
+        <p className="mb-2 text-[12px] leading-relaxed text-muted">
+          For a physique target, such as 12 percent body fat in 8 weeks.
+        </p>
+        <div className="flex gap-2.5">
+          <Box>
+            <input
+              type="number"
+              inputMode="decimal"
+              value={targetBodyFat}
+              onChange={(e) => setTargetBodyFat(e.target.value)}
+              onBlur={() =>
+                save({ targetBodyFatPct: numOrUndef(targetBodyFat) })
+              }
+              placeholder="0"
+              aria-label="Target body fat percent"
+              className={inputCls}
+              style={numFont}
+            />
+            <span className="text-[13px] text-muted">% BF</span>
+          </Box>
+          <Box>
+            <input
+              type="number"
+              inputMode="numeric"
+              value={timeframeWeeks}
+              onChange={(e) => setTimeframeWeeks(e.target.value)}
+              onBlur={() =>
+                save({ goalTimeframeWeeks: numOrUndef(timeframeWeeks) })
+              }
+              placeholder="0"
+              aria-label="Goal timeframe weeks"
+              className={inputCls}
+              style={numFont}
+            />
+            <span className="text-[13px] text-muted">weeks</span>
+          </Box>
+        </div>
+
+        <Label>Priority muscles</Label>
+        <p className="mb-2 text-[12px] leading-relaxed text-muted">
+          Lagging areas to bias extra volume toward.
+        </p>
+        <div className="flex flex-wrap gap-2">
+          {PRIORITY_MUSCLES.map((m) => (
+            <button
+              key={m.id}
+              onClick={() => togglePriority(m.id)}
+              className="rounded-[var(--r-pill)] px-4 py-2.5 text-[13px] font-semibold"
+              style={cardSel(priority.includes(m.id))}
+            >
+              {m.label}
+            </button>
+          ))}
+        </div>
+
+        <Label>Avoid exercises</Label>
+        <p className="mb-2 text-[12px] leading-relaxed text-muted">
+          Excluded from generated plans (injury or preference).
+        </p>
+        <div className="flex flex-wrap items-center gap-2">
+          {avoid.map((id) => {
+            const ex = catalog ? getCatalogExercise(id) : undefined;
+            return (
+              <button
+                key={id}
+                onClick={() => removeAvoid(id)}
+                className="flex max-w-full items-center gap-1.5 rounded-[var(--r-pill)] px-3 py-2 text-[13px] font-semibold"
+                style={cardSel(true)}
+                aria-label={`Remove ${ex?.name ?? id}`}
+              >
+                <span className="truncate">{ex?.name ?? id}</span>
+                <span aria-hidden>×</span>
+              </button>
+            );
+          })}
+          <button
+            onClick={() => setShowPicker(true)}
+            className="rounded-[var(--r-pill)] px-4 py-2 text-[13px] font-semibold"
+            style={cardSel(false)}
+          >
+            + Add
+          </button>
+        </div>
+
+        <p className="mx-1 mt-6 text-[11px] leading-snug text-faint">
+          Height is stored in inches and shown in feet/inches. Bodyweight lives
+          under Body measurements.
+        </p>
       </div>
-
-      <p className="mx-1 mt-6 text-[11px] leading-snug text-faint">
-        Height is stored in inches and shown in feet/inches. Bodyweight lives under
-        Body measurements.
-      </p>
-
       {showPicker && (
-        <ExercisePicker onPick={(e) => addAvoid(e.id)} onClose={() => setShowPicker(false)} />
+        <ExercisePicker
+          onPick={(e) => addAvoid(e.id)}
+          onClose={() => setShowPicker(false)}
+        />
       )}
-    </div>
+    </>
   );
 }

@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Design check calibration: clean</title>
+<!--
+  Calibration fixture. Every one of the twelve rules must report PASS against this page.
+  If a rule fails here, the rule has a false positive and the rule is wrong, not the page.
+  Its twin, broken.html, differs by exactly three deliberate deltas.
+-->
+<script type="application/json" id="design-tokens">
+{
+  "name": "calibration",
+  "colors": ["#f3ede1", "#faf7ef", "#211c14", "#75694f", "#dccdb1", "#9e3b2d", "#9a8f76"],
+  "radii": [4, 8, 16],
+  "spaceScale": [4, 8, 12, 16, 24, 32],
+  "typeScale": [12, 14, 16, 20, 32],
+  "views": [
+    {
+      "name": "habits",
+      "states": {
+        "loading": "#v-loading",
+        "empty": "#v-empty",
+        "error": "#v-error",
+        "overflow": "#v-overflow"
+      }
+    }
+  ]
+}
+</script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { background: #f3ede1; }
+  body { font-family: system-ui, sans-serif; color: #211c14; }
+
+  .page { padding: 16px; max-width: 480px; }
+
+  /* One depth technique: border. No background, so no tone step. */
+  .card {
+    border: 1px solid #dccdb1;
+    border-radius: 16px;
+    padding: 8px;
+    margin-bottom: 16px;
+  }
+
+  /* One depth technique: tone step. Radius is the outer 16 minus the outer 8 padding. */
+  .panel {
+    background: #faf7ef;
+    border-radius: 8px;
+    padding: 16px;
+  }
+
+  .title { font-size: 20px; margin-bottom: 8px; }
+  .body { font-size: 16px; color: #211c14; }
+
+  .state { font-size: 14px; color: #75694f; margin-bottom: 8px; overflow-wrap: anywhere; }
+
+  .btn {
+    font-family: inherit;
+    font-size: 14px;
+    color: #211c14;
+    background: transparent;
+    border: 1px solid #dccdb1;
+    border-radius: 4px;
+    padding: 8px 16px;
+    margin-top: 8px;
+  }
+  .btn:focus { outline: 2px solid #9e3b2d; outline-offset: 2px; }
+</style>
+</head>
+<body>
+  <main class="page">
+    <section class="card">
+      <div class="panel">
+        <h1 class="title">This week</h1>
+        <p class="body">Four habits tracked. Every value on this page resolves to a declared token.</p>
+      </div>
+    </section>
+
+    <div class="state" id="v-loading">Loading your habits</div>
+    <div class="state" id="v-empty">No habits yet. Add one to get started.</div>
+    <div class="state" id="v-error">We could not load your habits. Check your connection and try again.</div>
+    <div class="state" id="v-overflow">Averylongunbrokenhabitnamethatwouldotherwisepushthelayoutsidewaysandbreakthecolumn</div>
+
+    <button class="btn" onclick="document.getElementById('v-empty').textContent = 'Saved'">Save changes</button>
+  </main>
+</body>
+</html>

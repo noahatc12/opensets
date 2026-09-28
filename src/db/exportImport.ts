@@ -8,6 +8,8 @@
  * and unit-testable; only `downloadEnvelope`/`pickAndReadFile` touch the DOM.
  */
 import { db, SCHEMA_VERSION } from './db';
+import { createBackup } from './backup';
+import { newId } from './ids';
 import type { ExportEnvelope } from './types';
 
 /** The tables that participate in export/import, in stable order.
@@ -121,16 +123,23 @@ export function migrateEnvelope(env: ExportEnvelope): ExportEnvelope {
 export interface ImportOptions {
   /** 'replace' wipes the DB first (P0). 'merge' is a P1 feature. */
   mode?: 'replace';
+  /** Id + time for the safety snapshot taken before the replace (injectable for tests). */
+  snapshotId?: string;
+  now?: string;
 }
 
-/** Validate → migrate → restore the whole database from an envelope. */
+/** Validate → snapshot what is about to be replaced → migrate → restore. */
 export async function importEnvelope(
   value: unknown,
-  _opts: ImportOptions = {},
+  opts: ImportOptions = {},
 ): Promise<void> {
   assertValidEnvelope(value);
   const env = migrateEnvelope(value);
   const d = env.data;
+
+  // Replace wipes every table, so first keep a copy of the current data in `backups`
+  // (keep 2). A wrong file is then recoverable instead of final. (Audit 2026-09-24.)
+  await createBackup(opts.snapshotId ?? newId(), opts.now ?? new Date().toISOString());
 
   await db.transaction(
     'rw',

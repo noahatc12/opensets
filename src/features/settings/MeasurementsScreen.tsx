@@ -4,7 +4,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../db/db';
 import { newId } from '../../db/ids';
 import type { Measurement, ProgressPhoto } from '../../db/types';
-import { ChevronLeftIcon } from '../../components/icons';
+import { BackButton } from '../../ui/StatGrid';
 import { useSettings } from '../../db/hooks';
 import { fmtWeight, kgToLb, toUnit } from '../../lib/units';
 import type { WeightUnit } from '../../lib/units';
@@ -21,22 +21,21 @@ const numFont = {
   fontVariantNumeric: 'tabular-nums' as const,
 };
 
-const capsLabel = {
-  fontFamily: 'var(--font-label)',
-  letterSpacing: 'var(--tracking-caps)',
-};
-
 const nowIso = () => new Date().toISOString();
 const today = () => nowIso().slice(0, 10);
 
 /** Bodyweight stores a weight (lb); every other type stores a length (inches). */
 const isWeight = (type: string) => type === 'bodyweight';
 /** Unit label for a type: weight follows the kg/lb setting; lengths are always inches. */
-const unitFor = (type: string, units: WeightUnit) => (isWeight(type) ? units : 'in');
+const unitFor = (type: string, units: WeightUnit) =>
+  isWeight(type) ? units : 'in';
 /** Raw stored value (canonical lb for weight, inches otherwise). */
 const valueOf = (m: Measurement) => (isWeight(m.type) ? m.valueLb : m.valueIn);
 /** Display string for a measurement value: weight converts to the user's unit, lengths render as-is. */
-const displayValue = (m: Measurement, units: WeightUnit): string | undefined => {
+const displayValue = (
+  m: Measurement,
+  units: WeightUnit,
+): string | undefined => {
   const v = valueOf(m);
   if (v === undefined) return undefined;
   return isWeight(m.type) ? fmtWeight(v, units) : String(v);
@@ -140,13 +139,17 @@ function StatCard({
         : 'var(--muted)';
   return (
     <div
-      className="flex-1 rounded-[var(--r-md)] border p-4"
-      style={{ background: 'var(--surface)', borderColor: 'var(--border-card)' }}
+      className="flex-1 os-card p-4"
+      style={{
+        background: 'var(--surface)',
+      }}
     >
       <div className="text-[11px] text-muted">{label}</div>
       <div className="mt-1 text-[22px] font-semibold text-text" style={numFont}>
-        {stat !== undefined ? fmtStat(stat.value, type) : '—'}
-        {stat !== undefined && <span className="text-[12px] text-muted">{unit}</span>}
+        {stat !== undefined ? fmtStat(stat.value, type) : 'none'}
+        {stat !== undefined && (
+          <span className="text-[12px] text-muted">{unit}</span>
+        )}
       </div>
       <div className="mt-1 text-[11px]" style={{ color: deltaColor }}>
         {stat === undefined
@@ -163,7 +166,15 @@ function StatCard({
 function CameraIcon() {
   return (
     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden>
-      <rect x="3" y="5" width="18" height="14" rx="2" stroke="currentColor" strokeWidth="1.5" />
+      <rect
+        x="3"
+        y="5"
+        width="18"
+        height="14"
+        rx="2"
+        stroke="currentColor"
+        strokeWidth="1.5"
+      />
       <circle cx="8.5" cy="10" r="1.5" fill="currentColor" />
       <path
         d="M5 17l4.5-4 3 2.5L17 11l2 2"
@@ -177,7 +188,10 @@ function CameraIcon() {
 }
 
 /** Resolve a measurement type's latest value (display units) for a photo caption. */
-function captionWeight(rows: Measurement[], units: WeightUnit): string | undefined {
+function captionWeight(
+  rows: Measurement[],
+  units: WeightUnit,
+): string | undefined {
   const bw = rows.find((m) => m.type === 'bodyweight');
   if (!bw || bw.valueLb === undefined) return undefined;
   return `${fmtWeight(bw.valueLb, units)} ${units}`;
@@ -198,8 +212,11 @@ function AddPhotoTile() {
   }
   return (
     <label
-      className="flex aspect-[3/4] cursor-pointer flex-col items-center justify-center gap-1.5 rounded-[var(--r-md)] border border-dashed text-faint"
-      style={{ background: 'var(--surface)', borderColor: 'var(--border-strong)' }}
+      className="flex aspect-[3/4] cursor-pointer flex-col items-center justify-center gap-1.5 os-card border-dashed text-faint"
+      style={{
+        background: 'var(--surface)',
+        borderColor: 'var(--border-strong)',
+      }}
     >
       <CameraIcon />
       <span className="text-[10px]">Add photo</span>
@@ -215,7 +232,13 @@ function AddPhotoTile() {
 
 /** A stored progress photo rendered from its Blob, with date + bodyweight caption.
  *  Owns the object URL and revokes it on unmount / blob change to avoid leaks. */
-function PhotoTile({ photo, caption }: { photo: ProgressPhoto; caption?: string }) {
+function PhotoTile({
+  photo,
+  caption,
+}: {
+  photo: ProgressPhoto;
+  caption?: string;
+}) {
   const [url, setUrl] = useState<string | undefined>();
   const blob = photo.blob;
   useEffect(() => {
@@ -232,11 +255,17 @@ function PhotoTile({ photo, caption }: { photo: ProgressPhoto; caption?: string 
   return (
     <div className="flex-1">
       <div
-        className="aspect-[3/4] overflow-hidden rounded-[var(--r-md)] border"
-        style={{ background: 'var(--surface)', borderColor: 'var(--border-card)' }}
+        className="aspect-[3/4] overflow-hidden os-card"
+        style={{
+          background: 'var(--surface)',
+        }}
       >
         {url !== undefined && (
-          <img src={url} alt="Progress photo" className="size-full object-cover" />
+          <img
+            src={url}
+            alt="Progress photo"
+            className="size-full object-cover"
+          />
         )}
       </div>
       <div
@@ -265,12 +294,7 @@ function ProgressPhotos({ caption }: { caption?: string }) {
 
   return (
     <>
-      <div
-        className="mx-1 mb-2.5 mt-[22px] text-[11px] font-bold uppercase text-faint"
-        style={capsLabel}
-      >
-        Progress photos
-      </div>
+      <div className="os-h2">Progress photos</div>
       <div className="flex gap-2.5">
         {shown.map((p) => (
           <PhotoTile key={p.id} photo={p} caption={caption} />
@@ -289,31 +313,48 @@ function MeasurementRow({ m, units }: { m: Measurement; units: WeightUnit }) {
   const display = displayValue(m, units);
   return (
     <div
-      className="flex items-center justify-between rounded-[var(--r-md)] border px-4 py-3"
-      style={{ background: 'var(--surface)', borderColor: 'var(--border-card)' }}
+      className="flex items-center justify-between os-card px-4 py-3"
+      style={{
+        background: 'var(--surface)',
+      }}
     >
       <div className="flex flex-col">
-        <span className="text-[14px] font-semibold text-text">{typeLabel(m.type)}</span>
-        <span className="text-[11px] text-faint" style={{ fontFamily: 'var(--font-num)' }}>
+        <span className="text-[14px] font-semibold text-text">
+          {typeLabel(m.type)}
+        </span>
+        <span
+          className="text-[11px] text-faint"
+          style={{ fontFamily: 'var(--font-num)' }}
+        >
           {fmtDate(m.date)}
         </span>
       </div>
       <span className="text-[15px] text-text" style={numFont}>
-        {display !== undefined ? display : '—'}
+        {display !== undefined ? display : 'none'}
         <span className="text-[12px] text-muted">{unitFor(m.type, units)}</span>
       </span>
     </div>
   );
 }
 
-function LogMeasurementSheet({ onClose, units }: { onClose: () => void; units: WeightUnit }) {
+function LogMeasurementSheet({
+  onClose,
+  units,
+}: {
+  onClose: () => void;
+  units: WeightUnit;
+}) {
   const [type, setType] = useState<string>('bodyweight');
   const [value, setValue] = useState('');
   const [date, setDate] = useState(today());
 
   const unit = unitFor(type, units);
   const valueNum = Number(value);
-  const valid = value.trim() !== '' && Number.isFinite(valueNum) && valueNum > 0 && date !== '';
+  const valid =
+    value.trim() !== '' &&
+    Number.isFinite(valueNum) &&
+    valueNum > 0 &&
+    date !== '';
 
   async function save() {
     if (!valid) return;
@@ -337,17 +378,23 @@ function LogMeasurementSheet({ onClose, units }: { onClose: () => void; units: W
     >
       <div
         className="rounded-t-[var(--r-xl)] border-t px-[22px] pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-4"
-        style={{ background: 'var(--surface)', borderColor: 'var(--border-card)' }}
+        style={{
+          background: 'var(--surface)',
+        }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="mx-auto mb-3.5 h-1 w-9 rounded-full" style={{ background: 'var(--border-strong)' }} />
-        <div className="mb-3.5 text-[17px] font-bold text-text" style={{ letterSpacing: 'var(--tracking-snug)' }}>
+        <div
+          className="mx-auto mb-3.5 h-1 w-9 rounded-full"
+          style={{ background: 'var(--border-strong)' }}
+        />
+        <div
+          className="mb-3.5 text-[17px] font-bold text-text"
+          style={{ letterSpacing: 'var(--tracking-snug)' }}
+        >
           Log measurement
         </div>
 
-        <label className="mb-1.5 block text-[11px] font-bold uppercase text-faint" style={capsLabel}>
-          Type
-        </label>
+        <label className="os-h2">Type</label>
         <div className="mb-4 flex flex-wrap gap-1.5">
           {MEASUREMENT_TYPES.map((t) => {
             const active = type === t.value;
@@ -357,8 +404,8 @@ function LogMeasurementSheet({ onClose, units }: { onClose: () => void; units: W
                 onClick={() => setType(t.value)}
                 className="rounded-[var(--r-pill)] px-3 py-1.5 text-[12px] font-semibold"
                 style={{
-                  background: active ? 'var(--accent)' : 'var(--bg)',
-                  color: active ? 'var(--accent-ink)' : 'var(--muted)',
+                  background: active ? 'var(--ink)' : 'var(--bg)',
+                  color: active ? 'var(--bg)' : 'var(--muted)',
                 }}
               >
                 {t.label}
@@ -367,28 +414,30 @@ function LogMeasurementSheet({ onClose, units }: { onClose: () => void; units: W
           })}
         </div>
 
-        <label className="mb-1.5 block text-[11px] font-bold uppercase text-faint" style={capsLabel}>
-          Value ({unit})
-        </label>
+        <label className="os-h2">Value ({unit})</label>
         <input
           type="number"
           inputMode="decimal"
           value={value}
           onChange={(e) => setValue(e.target.value)}
           placeholder="0"
-          className="mb-4 w-full rounded-[var(--r-md)] border px-3.5 py-3 text-[15px] text-text outline-none"
-          style={{ ...numFont, background: 'var(--bg)', borderColor: 'var(--border-card)' }}
+          className="mb-4 w-full os-card px-3.5 py-3 text-[15px] text-text outline-none"
+          style={{
+            ...numFont,
+            background: 'var(--bg)',
+          }}
         />
 
-        <label className="mb-1.5 block text-[11px] font-bold uppercase text-faint" style={capsLabel}>
-          Date
-        </label>
+        <label className="os-h2">Date</label>
         <input
           type="date"
           value={date}
           onChange={(e) => setDate(e.target.value)}
-          className="mb-5 w-full rounded-[var(--r-md)] border px-3.5 py-3 text-[15px] text-text outline-none"
-          style={{ ...numFont, background: 'var(--bg)', borderColor: 'var(--border-card)' }}
+          className="mb-5 w-full os-card px-3.5 py-3 text-[15px] text-text outline-none"
+          style={{
+            ...numFont,
+            background: 'var(--bg)',
+          }}
         />
 
         <button
@@ -396,8 +445,8 @@ function LogMeasurementSheet({ onClose, units }: { onClose: () => void; units: W
           disabled={!valid}
           className="h-12 w-full rounded-[var(--r-md)] text-[14px] font-bold"
           style={{
-            background: valid ? 'var(--accent)' : 'var(--surface-2)',
-            color: valid ? 'var(--accent-ink)' : 'var(--faint)',
+            background: valid ? 'var(--ink)' : 'var(--surface-2)',
+            color: valid ? 'var(--bg)' : 'var(--faint)',
           }}
         >
           Save measurement
@@ -413,43 +462,35 @@ export function MeasurementsScreen() {
   const measurements = useLiveQuery(() => db.measurements.toArray());
   const [logging, setLogging] = useState(false);
 
-  const recent = [...(measurements ?? [])].sort((a, b) => b.date.localeCompare(a.date));
+  const recent = [...(measurements ?? [])].sort((a, b) =>
+    b.date.localeCompare(a.date),
+  );
   const bodyweightStat = statFor(recent, 'bodyweight', units);
   const waistStat = statFor(recent, 'waist', units);
   const photoCaption = captionWeight(recent, units);
 
   return (
     <div className="relative flex h-full flex-col">
-      <div className="flex items-center gap-2.5 px-[18px] pb-2 pt-[max(0.5rem,env(safe-area-inset-top))]">
-        <button
-          onClick={() => navigate('/settings')}
-          className="grid size-10 place-items-center bg-transparent text-muted"
-          aria-label="Back"
-        >
-          <ChevronLeftIcon className="size-[22px]" />
-        </button>
-        <div
-          className="text-[20px] font-bold text-text"
-          style={{ letterSpacing: 'var(--tracking-snug)' }}
-        >
-          Measurements
-        </div>
+      <div className="px-[18px] pt-[max(0.5rem,env(safe-area-inset-top))]">
+        <BackButton onClick={() => navigate('/settings')} />
+        <div className="os-t mt-3.5">You</div>
+        <h1 className="os-h1 mt-0.5">Measurements</h1>
       </div>
 
       <div className="os-scroll flex-1 overflow-auto px-[22px] pb-7 pt-1.5">
         <div className="flex gap-2.5">
-          <StatCard label="Bodyweight" stat={bodyweightStat} type="bodyweight" unit={units} />
+          <StatCard
+            label="Bodyweight"
+            stat={bodyweightStat}
+            type="bodyweight"
+            unit={units}
+          />
           <StatCard label="Waist" stat={waistStat} type="waist" unit="in" />
         </div>
 
         <ProgressPhotos caption={photoCaption} />
 
-        <div
-          className="mx-1 mb-2.5 mt-[22px] text-[11px] font-bold uppercase text-faint"
-          style={capsLabel}
-        >
-          Recent
-        </div>
+        <div className="os-h2">Recent</div>
         {recent.length > 0 ? (
           <div className="flex flex-col gap-2">
             {recent.map((m) => (
@@ -458,20 +499,22 @@ export function MeasurementsScreen() {
           </div>
         ) : (
           <p className="mt-6 text-center text-[12.5px] leading-snug text-faint">
-            No measurements yet. Log your bodyweight or a tape measurement to track change over time.
+            No measurements yet. Log your bodyweight or a tape measurement to
+            track change over time.
           </p>
         )}
 
         <button
           onClick={() => setLogging(true)}
-          className="mt-4 h-12 w-full rounded-[var(--r-md)] text-[14px] font-bold"
-          style={{ background: 'var(--accent)', color: 'var(--accent-ink)' }}
+          className="os-btn os-btn--pri os-press mt-4"
         >
           Log measurement
         </button>
       </div>
 
-      {logging && <LogMeasurementSheet onClose={() => setLogging(false)} units={units} />}
+      {logging && (
+        <LogMeasurementSheet onClose={() => setLogging(false)} units={units} />
+      )}
     </div>
   );
 }

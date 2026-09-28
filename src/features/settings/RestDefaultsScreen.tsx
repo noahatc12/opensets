@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSettings, updateSettings } from '../../db/hooks';
-import { ChevronLeftIcon, PlusIcon, MinusIcon } from '../../components/icons';
+import { PlusIcon, MinusIcon } from '../../components/icons';
+import { BackButton } from '../../ui/StatGrid';
 import { DEFAULT_SETTINGS } from '../../db/db';
 
 /* Ported from the OpenSets prototype `showRestDefaults` screen (Rest timer,
@@ -22,16 +23,12 @@ type Step = (typeof STEPS)[number];
 const MIN_SEC = 0;
 const MAX_SEC = 600; // 10:00 cap
 
-const fmt = (sec: number) => `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`;
+const fmt = (sec: number) =>
+  `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`;
 const clamp = (n: number) => Math.min(MAX_SEC, Math.max(MIN_SEC, n));
 
 const SectionLabel = ({ children }: { children: React.ReactNode }) => (
-  <div
-    className="mt-[22px] mb-2.5 mx-1 text-[11px] font-bold uppercase text-faint"
-    style={{ letterSpacing: 'var(--tracking-caps)', fontFamily: 'var(--font-label)' }}
-  >
-    {children}
-  </div>
+  <div className="os-h2">{children}</div>
 );
 
 type RestField = 'restCompoundSec' | 'restIsolationSec' | 'restAccessorySec';
@@ -50,8 +47,10 @@ function TypeRow({
   const set = (next: number) => void updateSettings({ [field]: clamp(next) });
   return (
     <div
-      className="flex items-center justify-between rounded-[var(--r-md)] border px-4 py-3.5"
-      style={{ background: 'var(--surface)', borderColor: 'var(--border-card)' }}
+      className="flex items-center justify-between os-card px-4 py-3.5"
+      style={{
+        background: 'var(--surface)',
+      }}
     >
       <span className="text-[14px] text-text">{label}</span>
       <div className="flex items-center gap-3">
@@ -88,26 +87,19 @@ export function RestDefaultsScreen() {
   const [step, setStep] = useState<Step>(15);
 
   const autoStart = settings.restAutoStart ?? DEFAULT_SETTINGS.restAutoStart;
-  const compoundSec = settings.restCompoundSec ?? DEFAULT_SETTINGS.restCompoundSec;
-  const isolationSec = settings.restIsolationSec ?? DEFAULT_SETTINGS.restIsolationSec;
-  const accessorySec = settings.restAccessorySec ?? DEFAULT_SETTINGS.restAccessorySec;
+  const compoundSec =
+    settings.restCompoundSec ?? DEFAULT_SETTINGS.restCompoundSec;
+  const isolationSec =
+    settings.restIsolationSec ?? DEFAULT_SETTINGS.restIsolationSec;
+  const accessorySec =
+    settings.restAccessorySec ?? DEFAULT_SETTINGS.restAccessorySec;
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex items-center gap-2.5 px-[18px] pb-2 pt-[max(0.5rem,env(safe-area-inset-top))]">
-        <button
-          onClick={() => navigate('/settings')}
-          className="grid size-10 place-items-center bg-transparent text-muted"
-          aria-label="Back"
-        >
-          <ChevronLeftIcon className="size-[22px]" />
-        </button>
-        <div
-          className="text-[20px] font-bold text-text"
-          style={{ letterSpacing: 'var(--tracking-snug)' }}
-        >
-          Rest timer
-        </div>
+      <div className="px-[18px] pt-[max(0.5rem,env(safe-area-inset-top))]">
+        <BackButton onClick={() => navigate('/settings')} />
+        <div className="os-t mt-3.5">You</div>
+        <h1 className="os-h1 mt-0.5">Rest timer</h1>
       </div>
 
       <div className="os-scroll flex-1 overflow-auto px-[22px] pb-7 pt-1.5">
@@ -115,15 +107,19 @@ export function RestDefaultsScreen() {
         <button
           onClick={() => void updateSettings({ restAutoStart: !autoStart })}
           aria-pressed={autoStart}
-          className="flex w-full items-center justify-between rounded-[var(--r-md)] border px-4 py-3.5 text-left"
-          style={{ background: 'var(--surface)', borderColor: 'var(--border-card)' }}
+          className="flex w-full items-center justify-between os-card px-4 py-3.5 text-left"
+          style={{
+            background: 'var(--surface)',
+          }}
         >
           <span className="text-[14px] font-semibold text-text">
             Auto-start on logged set
           </span>
           <span
             className="relative h-7 w-[46px] flex-none rounded-[var(--r-pill)] transition-colors"
-            style={{ background: autoStart ? 'var(--accent)' : 'var(--surface-2)' }}
+            style={{
+              background: autoStart ? 'var(--accent)' : 'var(--surface-2)',
+            }}
           >
             <span
               className="absolute top-[3px] size-[22px] rounded-full transition-all"
@@ -138,15 +134,32 @@ export function RestDefaultsScreen() {
 
         <SectionLabel>Default by exercise type</SectionLabel>
         <div className="flex flex-col gap-2">
-          <TypeRow label="Compound" field="restCompoundSec" seconds={compoundSec} step={step} />
-          <TypeRow label="Isolation" field="restIsolationSec" seconds={isolationSec} step={step} />
-          <TypeRow label="Accessory" field="restAccessorySec" seconds={accessorySec} step={step} />
+          <TypeRow
+            label="Compound"
+            field="restCompoundSec"
+            seconds={compoundSec}
+            step={step}
+          />
+          <TypeRow
+            label="Isolation"
+            field="restIsolationSec"
+            seconds={isolationSec}
+            step={step}
+          />
+          <TypeRow
+            label="Accessory"
+            field="restAccessorySec"
+            seconds={accessorySec}
+            step={step}
+          />
         </div>
 
         <SectionLabel>±&nbsp;Step</SectionLabel>
         <div
-          className="flex gap-1.5 rounded-[var(--r-md)] border p-[5px]"
-          style={{ background: 'var(--surface)', borderColor: 'var(--border-card)' }}
+          className="flex gap-1.5 os-card p-[5px]"
+          style={{
+            background: 'var(--surface)',
+          }}
         >
           {STEPS.map((s) => {
             const active = s === step;
@@ -158,8 +171,8 @@ export function RestDefaultsScreen() {
                 style={{
                   fontFamily: 'var(--font-num)',
                   fontWeight: active ? 700 : 600,
-                  background: active ? 'var(--accent)' : 'transparent',
-                  color: active ? 'var(--accent-ink)' : 'var(--muted)',
+                  background: active ? 'var(--ink)' : 'transparent',
+                  color: active ? 'var(--bg)' : 'var(--muted)',
                 }}
               >
                 {s}s
@@ -169,8 +182,8 @@ export function RestDefaultsScreen() {
         </div>
 
         <p className="mx-1 mt-2 text-[11px] leading-snug text-faint">
-          New exercises start their rest timer at the length for their type. The ±
-          Step control sets how much each tap adjusts.
+          New exercises start their rest timer at the length for their type. The
+          ± Step control sets how much each tap adjusts.
         </p>
       </div>
     </div>

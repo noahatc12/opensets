@@ -14,6 +14,7 @@ import type {
   Prescription,
   PRKind,
   Muscle,
+  LoadType,
 } from '../engine/types';
 
 // The Muscle taxonomy now lives in the pure engine (the plan generator needs it and
@@ -73,6 +74,13 @@ export interface Mesocycle {
    *  strength (peaks via load — R5b) and fat-loss (maintenance in a deficit) it stays
    *  false, so those programs keep their R3 static base. */
   rampsVolume?: boolean;
+  /** Which block this is, 0-based. After the deload the program starts the next
+   *  block at week 0 (same exercises, volume back to the start of the ramp) instead
+   *  of parking in deload. Absent on pre-rollover programs = block 0. */
+  blockIndex?: number;
+  /** Completed sessions on this program before the current block began (the week
+   *  counter's anchor). Absent = 0. */
+  blockStartSessions?: number;
 }
 
 export interface Program {
@@ -95,6 +103,10 @@ export interface ExerciseSlot {
    *  `muscles[0]`). Keys the per-muscle temporal ramp in `periodize`. Optional: slots
    *  from pre-R3.5 programs and ad-hoc mid-workout slots lack it and simply don't ramp. */
   primaryMuscle?: Muscle;
+  /** How the load is built (barbell / dumbbell / stack / bodyweight), which decides the
+   *  reachable weights. Set from the exercise's equipment when the slot is made.
+   *  Optional: older slots lack it and are resolved from the catalog at use time. */
+  loadType?: LoadType;
   scheme: {
     sets: number;
     repTarget?: number;
@@ -233,6 +245,12 @@ export interface UserSettings {
   restAccessorySec: number;
   /** When true, the rest timer auto-starts after each logged set. */
   restAutoStart: boolean;
+  /** Dumbbell and machine increments (lb), edited on the Plates screen. Older rows
+   *  lack them; consumers read with `?? DEFAULT_LOAD_STEPS`. */
+  dumbbellStepLb?: number;
+  dumbbellSmallStepLb?: number;
+  dumbbellSmallBelowLb?: number;
+  stackStepLb?: number;
   theme: 'dark' | 'light' | 'system';
   soundOn: boolean;
   backupNudgeEvery: number;

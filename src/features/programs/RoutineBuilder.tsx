@@ -1,11 +1,18 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Card } from '../../components/Card';
-import { Stepper } from '../../components/Stepper';
-import { Segmented } from '../../components/Segmented';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { useLiveQuery } from 'dexie-react-hooks';
+import { useProfile, useSettings } from '../../db/hooks';
+import { startingWeightLb } from '../../engine/body';
+import { ageFromBirthDate } from '../../lib/age';
+import { displayWeight, kgToLb } from '../../lib/units';
+import { clock, titleCase } from '../../lib/format';
 import { ExercisePicker } from '../library/ExercisePicker';
+import { useCatalog } from '../library/useCatalog';
+import { getCatalogExercise } from '../../db/catalog';
+import { BackButton } from '../../ui/StatGrid';
 import type { Exercise, ExerciseSlot } from '../../db/types';
 import type { ProgressionRule } from '../../engine/types';
+import { loadTypeFor, roundForLoad } from '../../engine/loading';
 import {
   createProgram,
   setActiveProgram,
@@ -13,8 +20,15 @@ import {
   saveTemplate,
   makeSlot,
   seedExerciseState,
+  latestBodyweightLb,
+  loadStepsOf,
 } from '../../db/repositories';
-import { ChevronLeftIcon, CloseIcon, PlusIcon } from '../../components/icons';
+
+/* The routine builder. Creates a new program with one day. The title is the 32px
+   heading itself, typed in place; each exercise is a card with mini steppers; the day is
+   saved from the button at the bottom. Reordering is by the up and down arrows on each
+   card: pointer drag on a scrolling phone page needs a gesture layer this build does not
+   have, and arrows are exact. */
 
 type RuleKind = 'linear' | 'double' | 'manual';
 
@@ -30,7 +44,7 @@ interface SlotDraft {
   restWorkSec: number;
 }
 
-function draftFor(exercise: Exercise): SlotDraft {
+function draftFor(exercise: Exercise, startingWeightLb: number): SlotDraft {
   return {
     exercise,
     ruleKind: exercise.isBodyweight ? 'manual' : 'linear',
@@ -39,7 +53,7 @@ function draftFor(exercise: Exercise): SlotDraft {
     repMin: 8,
     repMax: 12,
     incrementLb: 2.5,
-    startingWeightLb: exercise.isBodyweight ? 0 : 20,
+    startingWeightLb,
     restWorkSec: 180,
   };
 }
@@ -48,17 +62,68 @@ const nowIso = () => new Date().toISOString();
 
 export function RoutineBuilder() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [name, setName] = useState('');
   const [drafts, setDrafts] = useState<SlotDraft[]>([]);
+  const [seededFrom, setSeededFrom] = useState<string | null>(null);
   const [picking, setPicking] = useState(false);
   const [saving, setSaving] = useState(false);
+  useCatalog();
+  const settings = useSettings();
+  const profile = useProfile();
+  const bodyweightLb = useLiveQuery(() => latestBodyweightLb());
+
+  /** A cautious body-aware start for a newly added exercise, rounded to what this
+   *  gym can load (the lifter can still edit it before saving). */
+  function suggestedStartLb(exercise: Exercise): number {
+    const loadType = loadTypeFor(exercise.equipment, exercise.isBodyweight);
+    const raw = startingWeightLb({
+      loadType,
+      compound: exercise.mechanic === 'compound',
+      bodyweightLb,
+      sex: profile?.sex,
+      ageYears: ageFromBirthDate(profile?.birthDate, nowIso()),
+      experience: profile?.experience,
+    });
+    return roundForLoad(
+      raw,
+      loadType,
+      settings.barLb,
+      settings.plateInventoryLb,
+      loadStepsOf(settings),
+    );
+  }
+  // Exercise detail's "Add to a day" hands the exercise over in router state; it becomes
+  // the first card once the catalog is here.
+  const addId = (location.state as { addExerciseId?: string } | null)
+    ?.addExerciseId;
+  const addEx = addId ? getCatalogExercise(addId) : undefined;
+  if (addEx && seededFrom !== addEx.id && drafts.length === 0) {
+    setSeededFrom(addEx.id);
+    setDrafts([draftFor(addEx, suggestedStartLb(addEx))]);
+  }
+  const shown = (lb: number) => displayWeight(lb, settings.units);
+  const fromShown = (v: number) => (settings.units === 'kg' ? kgToLb(v) : v);
 
   const update = (i: number, patch: Partial<SlotDraft>) =>
     setDrafts((ds) => ds.map((d, j) => (j === i ? { ...d, ...patch } : d)));
   const remove = (i: number) => setDrafts((ds) => ds.filter((_, j) => j !== i));
+  const move = (i: number, dir: -1 | 1) =>
+    setDrafts((ds) => {
+      const j = i + dir;
+      if (j < 0 || j >= ds.length) return ds;
+      const next = ds.slice();
+      [next[i], next[j]] = [next[j]!, next[i]!];
+      return next;
+    });
+
+  const est = Math.round(
+    drafts.reduce((m, d) => m + d.sets * (d.restWorkSec + 35), 0) / 60,
+  );
+  const canSave = name.trim().length > 0 && drafts.length > 0 && !saving;
 
   async function save() {
-    if (!name.trim() || drafts.length === 0) return;
+    if (!canSave) return;
     setSaving(true);
     const now = nowIso();
     const program = await createProgram(name.trim(), now);
@@ -87,14 +152,19 @@ export function RoutineBuilder() {
         d.ruleKind === 'double'
           ? { sets: d.sets, repRange: [d.repMin, d.repMax] }
           : { sets: d.sets, repTarget: d.repTarget };
-      return makeSlot(d.exercise.id, order, rule, scheme, {
-        warmupSec: 60,
-        workSec: d.restWorkSec,
-      });
+      return makeSlot(
+        d.exercise.id,
+        order,
+        rule,
+        scheme,
+        { warmupSec: 60, workSec: d.restWorkSec },
+        {
+          loadType: loadTypeFor(d.exercise.equipment, d.exercise.isBodyweight),
+        },
+      );
     });
     tpl.slots = slots;
     await saveTemplate(tpl);
-
     await Promise.all(
       slots.map((slot, i) =>
         seedExerciseState(program.id, slot, drafts[i]!.startingWeightLb, now),
@@ -104,145 +174,231 @@ export function RoutineBuilder() {
   }
 
   return (
-    <div className="flex h-full flex-col">
-      <div className="flex items-center justify-between px-[18px] pb-2 pt-[max(0.5rem,env(safe-area-inset-top))]">
-        <div className="flex items-center gap-1.5">
-          <button onClick={() => navigate('/today')} className="grid size-10 place-items-center bg-transparent text-muted" aria-label="Back">
-            <ChevronLeftIcon className="size-[22px]" />
-          </button>
-          <div className="text-[20px] font-bold text-text" style={{ letterSpacing: 'var(--tracking-snug)' }}>
-            New routine
-          </div>
+    <div className="relative flex h-full flex-col">
+      <div className="flex-1 overflow-auto px-[18px] pb-[120px] pt-[max(0.5rem,env(safe-area-inset-top))]">
+        <BackButton onClick={() => navigate(-1)} />
+        <div className="os-t mt-3.5">
+          Day 1 · {drafts.length}{' '}
+          {drafts.length === 1 ? 'exercise' : 'exercises'}
+          {drafts.length > 0 && ` · ${est} min`}
         </div>
-        <button
-          onClick={() => void save()}
-          disabled={!name.trim() || drafts.length === 0 || saving}
-          className="h-[38px] rounded-[var(--r-md)] bg-accent px-4 text-[13px] font-bold text-accent-ink disabled:opacity-40"
-        >
-          {saving ? '…' : 'Save'}
-        </button>
-      </div>
-
-      <div className="os-scroll flex-1 overflow-auto px-[22px] pb-8 pt-1.5">
         <input
           value={name}
           onChange={(e) => setName(e.target.value)}
-          placeholder="Routine name (e.g. Upper / Lower A)"
-          className="min-h-12 w-full rounded-[var(--r-md)] border bg-surface px-3.5 text-[16px] text-text placeholder:text-faint focus:outline-none"
-          style={{ borderColor: 'var(--border-card)' }}
+          placeholder="Name this day"
+          aria-label="Day name"
+          className="os-input mt-0.5 w-full"
+          style={{
+            padding: 0,
+            fontSize: 32,
+            fontWeight: 800,
+            letterSpacing: '-.035em',
+            lineHeight: 1.05,
+          }}
         />
 
-        <div className="mt-3.5 flex flex-col gap-3">
+        <div className="mt-3.5 flex flex-col gap-2">
           {drafts.map((d, i) => (
-            <Card key={d.exercise.id + i} className="flex flex-col gap-3">
-              <div className="flex items-start justify-between gap-2">
-                <span className="text-[15px] font-semibold text-text">
-                  {d.exercise.name}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => remove(i)}
-                  aria-label="Remove exercise"
-                  className="text-faint hover:text-danger"
+            <div
+              key={d.exercise.id + i}
+              className="os-card"
+              style={{ padding: '12px 12px 12px 14px' }}
+            >
+              <div className="flex items-center gap-2.5">
+                <span
+                  className="os-num w-[22px] text-[20px]"
+                  style={{ color: 'var(--faint)' }}
                 >
-                  <CloseIcon className="size-[18px]" />
-                </button>
+                  {i + 1}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <div className="text-[15px] font-extrabold leading-tight">
+                    {d.exercise.name}
+                  </div>
+                  <div className="os-t truncate text-[12px]">
+                    {[
+                      titleCase(d.exercise.primaryMuscles[0]),
+                      titleCase(d.exercise.equipment),
+                      `rest ${clock(d.restWorkSec)}`,
+                    ]
+                      .filter(Boolean)
+                      .join(' · ')}
+                  </div>
+                </div>
+                <div className="flex flex-none items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => move(i, -1)}
+                    disabled={i === 0}
+                    className="os-icon-btn os-press"
+                    style={{ width: 32, height: 32, borderRadius: 10 }}
+                    aria-label={`Move ${d.exercise.name} up`}
+                  >
+                    <Chevron up />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => move(i, 1)}
+                    disabled={i === drafts.length - 1}
+                    className="os-icon-btn os-press"
+                    style={{ width: 32, height: 32, borderRadius: 10 }}
+                    aria-label={`Move ${d.exercise.name} down`}
+                  >
+                    <Chevron />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => remove(i)}
+                    className="os-icon-btn os-press"
+                    style={{
+                      width: 32,
+                      height: 32,
+                      borderRadius: 10,
+                      color: 'var(--mute)',
+                    }}
+                    aria-label={`Remove ${d.exercise.name}`}
+                  >
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.2"
+                      strokeLinecap="round"
+                      aria-hidden
+                    >
+                      <path d="M6 6l12 12M18 6L6 18" />
+                    </svg>
+                  </button>
+                </div>
               </div>
 
-              <Segmented
-                ariaLabel="Progression"
-                value={d.ruleKind}
-                onChange={(ruleKind) => update(i, { ruleKind })}
-                options={[
-                  { value: 'linear', label: 'Linear' },
-                  { value: 'double', label: 'Double' },
-                  { value: 'manual', label: 'Manual' },
-                ]}
-              />
+              <div
+                className="os-seg mt-2.5"
+                role="radiogroup"
+                aria-label="Progression"
+                style={{ background: 'var(--s2)' }}
+              >
+                {(['linear', 'double', 'manual'] as const).map((k) => (
+                  <button
+                    key={k}
+                    type="button"
+                    role="radio"
+                    aria-checked={d.ruleKind === k}
+                    onClick={() => update(i, { ruleKind: k })}
+                  >
+                    {k === 'linear'
+                      ? 'Linear'
+                      : k === 'double'
+                        ? 'Double'
+                        : 'Manual'}
+                  </button>
+                ))}
+              </div>
 
-              <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-                <Labeled label="Sets">
-                  <Stepper
-                    ariaLabel="sets"
-                    value={d.sets}
-                    min={1}
-                    max={10}
-                    onChange={(sets) => update(i, { sets })}
-                  />
-                </Labeled>
+              <div className="mt-2.5 grid grid-cols-3 gap-1.5">
+                <Mini
+                  label="Sets"
+                  value={d.sets}
+                  onChange={(v) => update(i, { sets: v })}
+                  min={1}
+                  max={10}
+                  name="sets"
+                />
                 {d.ruleKind === 'double' ? (
                   <>
-                    <Labeled label="Rep min">
-                      <Stepper
-                        ariaLabel="rep min"
-                        value={d.repMin}
-                        min={1}
-                        max={d.repMax}
-                        onChange={(repMin) => update(i, { repMin })}
-                      />
-                    </Labeled>
-                    <Labeled label="Rep max">
-                      <Stepper
-                        ariaLabel="rep max"
-                        value={d.repMax}
-                        min={d.repMin}
-                        max={30}
-                        onChange={(repMax) => update(i, { repMax })}
-                      />
-                    </Labeled>
+                    <Mini
+                      label="Reps from"
+                      value={d.repMin}
+                      onChange={(v) => update(i, { repMin: v })}
+                      min={1}
+                      max={d.repMax}
+                      name="rep min"
+                    />
+                    <Mini
+                      label="Reps to"
+                      value={d.repMax}
+                      onChange={(v) => update(i, { repMax: v })}
+                      min={d.repMin}
+                      max={30}
+                      name="rep max"
+                    />
                   </>
                 ) : (
-                  <Labeled label="Reps">
-                    <Stepper
-                      ariaLabel="reps"
-                      value={d.repTarget}
-                      min={1}
-                      max={30}
-                      onChange={(repTarget) => update(i, { repTarget })}
-                    />
-                  </Labeled>
-                )}
-                <Labeled label="Start (kg)">
-                  <Stepper
-                    ariaLabel="starting weight"
-                    value={d.startingWeightLb}
-                    min={0}
-                    step={2.5}
-                    onChange={(startingWeightLb) =>
-                      update(i, { startingWeightLb })
-                    }
+                  <Mini
+                    label="Reps"
+                    value={d.repTarget}
+                    onChange={(v) => update(i, { repTarget: v })}
+                    min={1}
+                    max={30}
+                    name="reps"
                   />
-                </Labeled>
-                {d.ruleKind !== 'manual' && (
-                  <Labeled label="+kg / step">
-                    <Stepper
-                      ariaLabel="increment"
-                      value={d.incrementLb}
-                      min={1.25}
-                      step={1.25}
-                      onChange={(incrementLb) => update(i, { incrementLb })}
-                    />
-                  </Labeled>
                 )}
+                <Mini
+                  label={`Start · ${settings.units}`}
+                  value={shown(d.startingWeightLb)}
+                  onChange={(v) =>
+                    update(i, { startingWeightLb: fromShown(v) })
+                  }
+                  min={0}
+                  step={settings.units === 'kg' ? 1 : 2.5}
+                  name="starting weight"
+                />
+                {d.ruleKind !== 'manual' && (
+                  <Mini
+                    label={`Step · ${settings.units}`}
+                    value={shown(d.incrementLb)}
+                    onChange={(v) => update(i, { incrementLb: fromShown(v) })}
+                    min={settings.units === 'kg' ? 0.5 : 1.25}
+                    step={settings.units === 'kg' ? 0.5 : 1.25}
+                    name="increment"
+                  />
+                )}
+                <Mini
+                  label="Rest · sec"
+                  value={d.restWorkSec}
+                  onChange={(v) => update(i, { restWorkSec: v })}
+                  min={30}
+                  max={600}
+                  step={15}
+                  name="rest"
+                />
               </div>
-            </Card>
+            </div>
           ))}
 
           <button
+            type="button"
             onClick={() => setPicking(true)}
-            className="flex h-12 w-full items-center justify-center gap-1.5 rounded-[var(--r-md)] border border-dashed text-[14px] font-semibold text-accent"
-            style={{ borderColor: 'var(--border-strong)' }}
+            className="os-btn os-press"
+            style={{
+              background: 'transparent',
+              boxShadow: 'inset 0 0 0 1.5px var(--s3)',
+              color: 'var(--ink2)',
+            }}
           >
-            <PlusIcon className="size-[18px]" /> Add exercise
+            + Add exercise
           </button>
         </div>
+      </div>
+
+      <div className="os-dock">
+        <button
+          type="button"
+          onClick={() => void save()}
+          disabled={!canSave}
+          className="os-btn os-btn--pri os-press"
+        >
+          {saving ? 'Saving…' : 'Save day'}
+        </button>
       </div>
 
       {picking && (
         <ExercisePicker
           onClose={() => setPicking(false)}
           onPick={(ex) => {
-            setDrafts((ds) => [...ds, draftFor(ex)]);
+            setDrafts((ds) => [...ds, draftFor(ex, suggestedStartLb(ex))]);
             setPicking(false);
           }}
         />
@@ -251,19 +407,74 @@ export function RoutineBuilder() {
   );
 }
 
-function Labeled({
+const round2 = (n: number) => Math.round(n * 100) / 100;
+
+/** A mini stepper tile: label, numeral, minus and plus. */
+function Mini({
   label,
-  children,
+  value,
+  onChange,
+  min = 0,
+  max = Infinity,
+  step = 1,
+  name,
 }: {
   label: string;
-  children: React.ReactNode;
+  value: number;
+  onChange: (v: number) => void;
+  min?: number;
+  max?: number;
+  step?: number;
+  name: string;
 }) {
+  const set = (v: number) => onChange(Math.min(max, Math.max(min, round2(v))));
   return (
-    <label className="flex flex-col gap-1">
-      <span className="text-[11px] uppercase tracking-wide text-faint">
-        {label}
-      </span>
-      {children}
-    </label>
+    <div
+      className="rounded-[14px] px-1.5 py-2 text-center"
+      style={{ background: 'var(--s2)', boxShadow: 'inset 0 1px 0 var(--hl)' }}
+    >
+      <div className="os-t truncate text-[11px]">{label}</div>
+      <div className="os-num my-1 text-[22px]">
+        {Number.isInteger(value) ? value : round2(value)}
+      </div>
+      <div className="flex justify-center gap-1">
+        <button
+          type="button"
+          onClick={() => set(value - step)}
+          disabled={value <= min}
+          className="os-step os-step--sm os-press"
+          aria-label={`Decrease ${name}`}
+        >
+          −
+        </button>
+        <button
+          type="button"
+          onClick={() => set(value + step)}
+          disabled={value >= max}
+          className="os-step os-step--sm os-press"
+          aria-label={`Increase ${name}`}
+        >
+          +
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function Chevron({ up }: { up?: boolean }) {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d={up ? 'M6 15l6-6 6 6' : 'M6 9l6 6 6-6'} />
+    </svg>
   );
 }

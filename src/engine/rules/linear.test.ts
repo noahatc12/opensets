@@ -103,7 +103,8 @@ describe('linear progression', () => {
     const r = linearNext(
       rule,
       state({ workingWeightLb: 62.5 }),
-      [set({ reps: 5 })],
+      // Logged at the prescribed 62.5 (progression now starts from the logged weight).
+      [set({ weightLb: 62.5, reps: 5 })],
       settings,
       scheme,
     );

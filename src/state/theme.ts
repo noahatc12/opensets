@@ -5,15 +5,21 @@
  * is applied before first paint (initTheme in main.tsx).
  */
 import { create } from 'zustand';
-import { applyTheme, type ThemeSelection } from '../theme';
+import { applyTheme, PREMIUM_THEME, type ThemeSelection } from '../theme';
 
 const KEY = 'opensets-theme';
-const DEFAULT: ThemeSelection = { mode: 'dark', theme: 'teal', ds: 'readout' };
+const DEFAULT: ThemeSelection = { mode: 'dark', theme: PREMIUM_THEME, ds: 'editorial' };
+
+/** The premium skin replaces the earlier ones: any stored selection keeps its mode and
+ *  lands on the single accent. There is no appearance picker beyond dark and light. */
+function migrate(sel: ThemeSelection): ThemeSelection {
+  return { mode: sel.mode === 'light' ? 'light' : 'dark', theme: PREMIUM_THEME, ds: 'editorial' };
+}
 
 function load(): ThemeSelection {
   try {
     const raw = localStorage.getItem(KEY);
-    if (raw) return { ...DEFAULT, ...(JSON.parse(raw) as Partial<ThemeSelection>) };
+    if (raw) return migrate({ ...DEFAULT, ...(JSON.parse(raw) as Partial<ThemeSelection>) });
   } catch {
     /* ignore */
   }

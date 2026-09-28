@@ -4,7 +4,8 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../db/db';
 import { newId } from '../../db/ids';
 import type { Goal, GoalType, Measurement } from '../../db/types';
-import { ChevronLeftIcon, PlusIcon } from '../../components/icons';
+import { PlusIcon } from '../../components/icons';
+import { BackButton } from '../../ui/StatGrid';
 import { useSettings } from '../../db/hooks';
 import { e1rm, isE1rmEligible } from '../../engine';
 import { fmtWeight, kgToLb, toUnit } from '../../lib/units';
@@ -40,7 +41,10 @@ const typeMeta = (t: GoalType) => GOAL_TYPES.find((g) => g.value === t);
 const isWeightGoal = (t: GoalType) => t === 'liftTarget' || t === 'bodyweight';
 
 /** target value + unit label for display, converting weight targets to the user's unit. */
-function displayTarget(goal: Goal, units: WeightUnit): { value: string; unit: string } {
+function displayTarget(
+  goal: Goal,
+  units: WeightUnit,
+): { value: string; unit: string } {
   if (isWeightGoal(goal.type)) {
     return { value: fmtWeight(goal.target, units), unit: units };
   }
@@ -55,10 +59,14 @@ function goalTitle(goal: Goal, units: WeightUnit): string {
   return `${label} ${value}${unit ? ` ${unit}` : ''}`.trim();
 }
 
-const clamp = (n: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, n));
+const clamp = (n: number, lo: number, hi: number) =>
+  Math.min(hi, Math.max(lo, n));
 
 /** Latest measurement of a given type (max by date), or undefined if none. */
-function latestMeasurement(rows: Measurement[], type: string): Measurement | undefined {
+function latestMeasurement(
+  rows: Measurement[],
+  type: string,
+): Measurement | undefined {
   let best: Measurement | undefined;
   for (const m of rows) {
     if (m.type !== type) continue;
@@ -68,14 +76,22 @@ function latestMeasurement(rows: Measurement[], type: string): Measurement | und
 }
 
 /** Progress toward a target given a direction. Both args canonical (lb / in). */
-function pctToward(current: number, target: number, direction: Goal['direction']): number {
+function pctToward(
+  current: number,
+  target: number,
+  direction: Goal['direction'],
+): number {
   if (target <= 0 || current <= 0) return 0;
   const ratio = direction === 'decrease' ? target / current : current / target;
   return clamp(ratio * 100, 0, 100);
 }
 
 /** Format a current/target line in the right unit. Weight goals convert to {units}. */
-function progressSubline(goal: Goal, currentLb: number | null, units: WeightUnit): string {
+function progressSubline(
+  goal: Goal,
+  currentLb: number | null,
+  units: WeightUnit,
+): string {
   const { value: targetStr, unit } = displayTarget(goal, units);
   if (currentLb === null) {
     const verb = goal.direction === 'increase' ? 'Reach' : 'Reduce to';
@@ -91,7 +107,10 @@ function GoalCard({ goal, units }: { goal: Goal; units: WeightUnit }) {
   // Best estimated 1RM for a liftTarget goal, from logged eligible sets.
   const liftCurrent = useLiveQuery(async () => {
     if (goal.type !== 'liftTarget' || !goal.exerciseId) return null;
-    const sets = await db.sets.where('exerciseId').equals(goal.exerciseId).toArray();
+    const sets = await db.sets
+      .where('exerciseId')
+      .equals(goal.exerciseId)
+      .toArray();
     let best = 0;
     for (const s of sets) {
       if (s.deletedAt || !isE1rmEligible(s)) continue;
@@ -129,10 +148,10 @@ function GoalCard({ goal, units }: { goal: Goal; units: WeightUnit }) {
 
   return (
     <div
-      className="rounded-[var(--r-md)] border"
+      className="os-card"
       style={{
         background: 'var(--surface)',
-        borderColor: 'var(--border-card)',
+
         padding: '16px 18px',
       }}
     >
@@ -142,7 +161,10 @@ function GoalCard({ goal, units }: { goal: Goal; units: WeightUnit }) {
         </span>
         <span
           className="text-[13px]"
-          style={{ ...numFont, color: pct > 0 ? 'var(--accent)' : 'var(--muted)' }}
+          style={{
+            ...numFont,
+            color: pct > 0 ? 'var(--acc-tx)' : 'var(--muted)',
+          }}
         >
           {pct}%
         </span>
@@ -156,7 +178,10 @@ function GoalCard({ goal, units }: { goal: Goal; units: WeightUnit }) {
           style={{ width: `${pct}%`, background: 'var(--accent)' }}
         />
       </div>
-      <div className="mt-2 text-[11.5px] text-muted" style={{ fontFamily: 'var(--font-num)' }}>
+      <div
+        className="mt-2 text-[12px] text-muted"
+        style={{ fontFamily: 'var(--font-num)' }}
+      >
         {progressSubline(goal, current, units)}
         {current !== null ? ` · ${pct}%` : ''}
       </div>
@@ -164,21 +189,29 @@ function GoalCard({ goal, units }: { goal: Goal; units: WeightUnit }) {
   );
 }
 
-function AddGoalSheet({ onClose, units }: { onClose: () => void; units: WeightUnit }) {
+function AddGoalSheet({
+  onClose,
+  units,
+}: {
+  onClose: () => void;
+  units: WeightUnit;
+}) {
   const [type, setType] = useState<GoalType>('liftTarget');
   const [target, setTarget] = useState('');
   const [direction, setDirection] = useState<Goal['direction']>('increase');
 
   // Weight goals collect input in the user's unit and show {units}; others use their fixed unit.
   const weight = isWeightGoal(type);
-  const unit = weight ? units : typeMeta(type)?.unit ?? '';
+  const unit = weight ? units : (typeMeta(type)?.unit ?? '');
   const targetNum = Number(target);
-  const valid = target.trim() !== '' && Number.isFinite(targetNum) && targetNum > 0;
+  const valid =
+    target.trim() !== '' && Number.isFinite(targetNum) && targetNum > 0;
 
   async function save() {
     if (!valid) return;
     // Store canonical lb: convert weight targets entered in kg; everything else stored as-is.
-    const storedTarget = weight && units === 'kg' ? kgToLb(targetNum) : targetNum;
+    const storedTarget =
+      weight && units === 'kg' ? kgToLb(targetNum) : targetNum;
     const goal: Goal = {
       id: newId(),
       type,
@@ -199,17 +232,23 @@ function AddGoalSheet({ onClose, units }: { onClose: () => void; units: WeightUn
     >
       <div
         className="rounded-t-[var(--r-xl)] border-t px-[22px] pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-4"
-        style={{ background: 'var(--surface)', borderColor: 'var(--border-card)' }}
+        style={{
+          background: 'var(--surface)',
+        }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="mx-auto mb-3.5 h-1 w-9 rounded-full" style={{ background: 'var(--border-strong)' }} />
-        <div className="mb-3.5 text-[17px] font-bold text-text" style={{ letterSpacing: 'var(--tracking-snug)' }}>
+        <div
+          className="mx-auto mb-3.5 h-1 w-9 rounded-full"
+          style={{ background: 'var(--border-strong)' }}
+        />
+        <div
+          className="mb-3.5 text-[17px] font-bold text-text"
+          style={{ letterSpacing: 'var(--tracking-snug)' }}
+        >
           New goal
         </div>
 
-        <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-wide text-faint">
-          Type
-        </label>
+        <label className="os-t mb-1.5 block">Type</label>
         <div className="mb-4 flex flex-wrap gap-1.5">
           {GOAL_TYPES.map((g) => {
             const active = type === g.value;
@@ -219,8 +258,8 @@ function AddGoalSheet({ onClose, units }: { onClose: () => void; units: WeightUn
                 onClick={() => setType(g.value)}
                 className="rounded-[var(--r-pill)] px-3 py-1.5 text-[12px] font-semibold"
                 style={{
-                  background: active ? 'var(--accent)' : 'var(--bg)',
-                  color: active ? 'var(--accent-ink)' : 'var(--muted)',
+                  background: active ? 'var(--ink)' : 'var(--bg)',
+                  color: active ? 'var(--bg)' : 'var(--muted)',
                 }}
               >
                 {g.label}
@@ -229,7 +268,7 @@ function AddGoalSheet({ onClose, units }: { onClose: () => void; units: WeightUn
           })}
         </div>
 
-        <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-wide text-faint">
+        <label className="os-t mb-1.5 block">
           Target{unit ? ` (${unit})` : ''}
         </label>
         <input
@@ -238,14 +277,18 @@ function AddGoalSheet({ onClose, units }: { onClose: () => void; units: WeightUn
           value={target}
           onChange={(e) => setTarget(e.target.value)}
           placeholder="0"
-          className="mb-4 w-full rounded-[var(--r-md)] border px-3.5 py-3 text-[15px] text-text outline-none"
-          style={{ ...numFont, background: 'var(--bg)', borderColor: 'var(--border-card)' }}
+          className="mb-4 w-full os-card px-3.5 py-3 text-[15px] text-text outline-none"
+          style={{
+            ...numFont,
+            background: 'var(--bg)',
+          }}
         />
 
-        <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-wide text-faint">
-          Direction
-        </label>
-        <div className="mb-5 flex gap-1 rounded-[var(--r-sm)] p-1" style={{ background: 'var(--bg)' }}>
+        <label className="os-t mb-1.5 block">Direction</label>
+        <div
+          className="mb-5 flex gap-1 rounded-[var(--r-sm)] p-1"
+          style={{ background: 'var(--bg)' }}
+        >
           {(['increase', 'decrease'] as const).map((d) => {
             const active = direction === d;
             return (
@@ -255,8 +298,8 @@ function AddGoalSheet({ onClose, units }: { onClose: () => void; units: WeightUn
                 className="flex-1 rounded-[7px] py-2 text-[13px]"
                 style={{
                   fontWeight: active ? 700 : 600,
-                  background: active ? 'var(--accent)' : 'transparent',
-                  color: active ? 'var(--accent-ink)' : 'var(--muted)',
+                  background: active ? 'var(--ink)' : 'transparent',
+                  color: active ? 'var(--bg)' : 'var(--muted)',
                 }}
               >
                 {d === 'increase' ? 'Increase' : 'Decrease'}
@@ -270,8 +313,8 @@ function AddGoalSheet({ onClose, units }: { onClose: () => void; units: WeightUn
           disabled={!valid}
           className="h-12 w-full rounded-[var(--r-md)] text-[14px] font-bold"
           style={{
-            background: valid ? 'var(--accent)' : 'var(--surface-2)',
-            color: valid ? 'var(--accent-ink)' : 'var(--faint)',
+            background: valid ? 'var(--ink)' : 'var(--surface-2)',
+            color: valid ? 'var(--bg)' : 'var(--faint)',
           }}
         >
           Save goal
@@ -291,20 +334,10 @@ export function GoalsScreen() {
 
   return (
     <div className="relative flex h-full flex-col">
-      <div className="flex items-center gap-2.5 px-[18px] pb-2 pt-[max(0.5rem,env(safe-area-inset-top))]">
-        <button
-          onClick={() => navigate('/settings')}
-          className="grid size-10 place-items-center bg-transparent text-muted"
-          aria-label="Back"
-        >
-          <ChevronLeftIcon className="size-[22px]" />
-        </button>
-        <div
-          className="text-[20px] font-bold text-text"
-          style={{ letterSpacing: 'var(--tracking-snug)' }}
-        >
-          Goals
-        </div>
+      <div className="px-[18px] pt-[max(0.5rem,env(safe-area-inset-top))]">
+        <BackButton onClick={() => navigate('/settings')} />
+        <div className="os-t mt-3.5">You</div>
+        <h1 className="os-h1 mt-0.5">Goals</h1>
       </div>
 
       <div className="os-scroll flex-1 overflow-auto px-[22px] pb-7 pt-1.5">
@@ -323,14 +356,19 @@ export function GoalsScreen() {
         <button
           onClick={() => setAdding(true)}
           className="mt-4 flex h-12 w-full items-center justify-center gap-1.5 rounded-[var(--r-md)] text-[14px] font-semibold text-accent"
-          style={{ border: '1px dashed var(--border-strong)', background: 'transparent' }}
+          style={{
+            border: '1px dashed var(--border-strong)',
+            background: 'transparent',
+          }}
         >
           <PlusIcon className="size-[18px]" />
           New goal
         </button>
       </div>
 
-      {adding && <AddGoalSheet onClose={() => setAdding(false)} units={units} />}
+      {adding && (
+        <AddGoalSheet onClose={() => setAdding(false)} units={units} />
+      )}
     </div>
   );
 }

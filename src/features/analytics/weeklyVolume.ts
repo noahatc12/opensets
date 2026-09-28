@@ -30,7 +30,10 @@ export function weeklyVolumeByMuscle(
 
   // Anchor = latest logged hard-set date; window = the 7 days ending there
   // (inclusive of both ends).
-  const anchorMs = hard.reduce((mx, s) => Math.max(mx, new Date(s.date).getTime()), 0);
+  const anchorMs = hard.reduce(
+    (mx, s) => Math.max(mx, new Date(s.date).getTime()),
+    0,
+  );
   const startMs = anchorMs - 6 * DAY_MS;
 
   const weights = new Map<Muscle, number>();
@@ -40,7 +43,8 @@ export function weeklyVolumeByMuscle(
     const m = getMuscles(s.exerciseId);
     if (!m) continue;
     for (const p of m.primary) weights.set(p, (weights.get(p) ?? 0) + 1);
-    for (const sec of m.secondary) weights.set(sec, (weights.get(sec) ?? 0) + 0.5);
+    for (const sec of m.secondary)
+      weights.set(sec, (weights.get(sec) ?? 0) + 0.5);
   }
 
   return [...weights.entries()].sort((a, b) => b[1] - a[1]).slice(0, topN);
