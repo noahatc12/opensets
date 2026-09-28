@@ -1,5 +1,5 @@
 import { forwardRef, useMemo, useState, type ReactNode } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNav } from '../../ui/nav';
 import { Virtuoso } from 'react-virtuoso';
 import { useCatalog, useSearchIndex } from './useCatalog';
 import { useBestE1rm } from './useBestE1rm';
@@ -123,7 +123,7 @@ const ListCard = forwardRef<
 });
 
 export function LibraryScreen() {
-  const navigate = useNavigate();
+  const nav = useNav();
   const catalog = useCatalog();
   const index = useSearchIndex();
   const { units } = useSettings();
@@ -227,7 +227,7 @@ export function LibraryScreen() {
   const topE1rm = yours.length ? (best.get(yours[0]!.id) ?? 0) : 0;
 
   const open = (ex: Exercise) =>
-    navigate(`/library/${encodeURIComponent(ex.id)}`);
+    nav.push(`/library/${encodeURIComponent(ex.id)}`);
   const meta = (ex: Exercise) =>
     [titleCase(ex.primaryMuscles[0]), titleCase(ex.equipment)]
       .filter(Boolean)

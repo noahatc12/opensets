@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNav } from '../../ui/nav';
+import { Pushed } from '../../ui/Pushed';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../db/db';
 import { newId } from '../../db/ids';
@@ -325,7 +326,7 @@ function AddGoalSheet({
 }
 
 export function GoalsScreen() {
-  const navigate = useNavigate();
+  const nav = useNav();
   const { units } = useSettings();
   const goals = useLiveQuery(() => db.goals.toArray());
   const [adding, setAdding] = useState(false);
@@ -333,42 +334,45 @@ export function GoalsScreen() {
   const active = (goals ?? []).filter((g) => g.status !== 'abandoned');
 
   return (
-    <div className="relative flex h-full flex-col">
-      <div className="px-[18px] pt-[max(0.5rem,env(safe-area-inset-top))]">
-        <BackButton onClick={() => navigate('/settings')} />
-        <div className="os-t mt-3.5">You</div>
-        <h1 className="os-h1 mt-0.5">Goals</h1>
-      </div>
+    <Pushed to={'/settings'}>
+      <div className="relative flex h-full flex-col">
+        <div className="px-[18px] pt-[max(0.5rem,env(safe-area-inset-top))]">
+          <BackButton onClick={() => nav.tab('/settings')} />
+          <div className="os-t mt-3.5">You</div>
+          <h1 className="os-h1 mt-0.5">Goals</h1>
+        </div>
 
-      <div className="os-scroll flex-1 overflow-auto px-[22px] pb-7 pt-1.5">
-        {active.length > 0 ? (
-          <div className="flex flex-col gap-3">
-            {active.map((g) => (
-              <GoalCard key={g.id} goal={g} units={units} />
-            ))}
-          </div>
-        ) : (
-          <p className="mt-8 text-center text-[12.5px] leading-snug text-faint">
-            No goals yet. Set a target to track progress against your training.
-          </p>
+        <div className="os-scroll flex-1 overflow-auto px-[22px] pb-7 pt-1.5">
+          {active.length > 0 ? (
+            <div className="flex flex-col gap-3">
+              {active.map((g) => (
+                <GoalCard key={g.id} goal={g} units={units} />
+              ))}
+            </div>
+          ) : (
+            <p className="mt-8 text-center text-[12.5px] leading-snug text-faint">
+              No goals yet. Set a target to track progress against your
+              training.
+            </p>
+          )}
+
+          <button
+            onClick={() => setAdding(true)}
+            className="mt-4 flex h-12 w-full items-center justify-center gap-1.5 rounded-[var(--r-md)] text-[14px] font-semibold text-accent"
+            style={{
+              border: '1px dashed var(--border-strong)',
+              background: 'transparent',
+            }}
+          >
+            <PlusIcon className="size-[18px]" />
+            New goal
+          </button>
+        </div>
+
+        {adding && (
+          <AddGoalSheet onClose={() => setAdding(false)} units={units} />
         )}
-
-        <button
-          onClick={() => setAdding(true)}
-          className="mt-4 flex h-12 w-full items-center justify-center gap-1.5 rounded-[var(--r-md)] text-[14px] font-semibold text-accent"
-          style={{
-            border: '1px dashed var(--border-strong)',
-            background: 'transparent',
-          }}
-        >
-          <PlusIcon className="size-[18px]" />
-          New goal
-        </button>
       </div>
-
-      {adding && (
-        <AddGoalSheet onClose={() => setAdding(false)} units={units} />
-      )}
-    </div>
+    </Pushed>
   );
 }

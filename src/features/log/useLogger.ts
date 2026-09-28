@@ -5,7 +5,7 @@
  * hook, not a rebuild). No JSX here: state, derived values, and actions only.
  */
 import { useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNav } from '../../ui/nav';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../db/db';
 import { useSettings } from '../../db/hooks';
@@ -167,7 +167,7 @@ export function useLogger(): LoggerVM | null {
   const endSession = useSessionStore((s) => s.endSession);
   const leaveSession = useSessionStore((s) => s.leaveSession);
   const restoreUI = useSessionStore((s) => s.restoreUI);
-  const navigate = useNavigate();
+  const nav = useNav();
 
   const [finishing, setFinishing] = useState(false);
   const [whyOpen, setWhyOpen] = useState(false);
@@ -387,7 +387,7 @@ export function useLogger(): LoggerVM | null {
     await completeSessionAndAdvance(session!.id, nowIso());
     await clearActiveSnapshot();
     endSession();
-    navigate('/today');
+    nav.pop('/today');
   }
 
   /** Throw the session away: every logged set is soft-deleted (undoable in the data),
@@ -403,7 +403,7 @@ export function useLogger(): LoggerVM | null {
     await db.sessions.update(session!.id, { status: 'partial', endedAt: now });
     await clearActiveSnapshot();
     endSession();
-    navigate('/today');
+    nav.pop('/today');
   }
 
   /** Non-destructive leave: step out to Today without finalizing. The session stays
@@ -413,7 +413,7 @@ export function useLogger(): LoggerVM | null {
   function leave() {
     stopRest();
     leaveSession();
-    navigate('/today');
+    nav.pop('/today');
   }
 
   async function undoSet(setId: string) {

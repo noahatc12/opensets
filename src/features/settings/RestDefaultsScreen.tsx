@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNav } from '../../ui/nav';
+import { Pushed } from '../../ui/Pushed';
 import { useSettings, updateSettings } from '../../db/hooks';
 import { PlusIcon, MinusIcon } from '../../components/icons';
 import { BackButton } from '../../ui/StatGrid';
@@ -82,7 +83,7 @@ function TypeRow({
 }
 
 export function RestDefaultsScreen() {
-  const navigate = useNavigate();
+  const nav = useNav();
   const settings = useSettings();
   const [step, setStep] = useState<Step>(15);
 
@@ -95,97 +96,99 @@ export function RestDefaultsScreen() {
     settings.restAccessorySec ?? DEFAULT_SETTINGS.restAccessorySec;
 
   return (
-    <div className="flex h-full flex-col">
-      <div className="px-[18px] pt-[max(0.5rem,env(safe-area-inset-top))]">
-        <BackButton onClick={() => navigate('/settings')} />
-        <div className="os-t mt-3.5">You</div>
-        <h1 className="os-h1 mt-0.5">Rest timer</h1>
-      </div>
+    <Pushed to={'/settings'}>
+      <div className="flex h-full flex-col">
+        <div className="px-[18px] pt-[max(0.5rem,env(safe-area-inset-top))]">
+          <BackButton onClick={() => nav.tab('/settings')} />
+          <div className="os-t mt-3.5">You</div>
+          <h1 className="os-h1 mt-0.5">Rest timer</h1>
+        </div>
 
-      <div className="os-scroll flex-1 overflow-auto px-[22px] pb-7 pt-1.5">
-        {/* Auto-start pill toggle */}
-        <button
-          onClick={() => void updateSettings({ restAutoStart: !autoStart })}
-          aria-pressed={autoStart}
-          className="flex w-full items-center justify-between os-card px-4 py-3.5 text-left"
-          style={{
-            background: 'var(--surface)',
-          }}
-        >
-          <span className="text-[14px] font-semibold text-text">
-            Auto-start on logged set
-          </span>
-          <span
-            className="relative h-7 w-[46px] flex-none rounded-[var(--r-pill)] transition-colors"
+        <div className="os-scroll flex-1 overflow-auto px-[22px] pb-7 pt-1.5">
+          {/* Auto-start pill toggle */}
+          <button
+            onClick={() => void updateSettings({ restAutoStart: !autoStart })}
+            aria-pressed={autoStart}
+            className="flex w-full items-center justify-between os-card px-4 py-3.5 text-left"
             style={{
-              background: autoStart ? 'var(--accent)' : 'var(--surface-2)',
+              background: 'var(--surface)',
             }}
           >
+            <span className="text-[14px] font-semibold text-text">
+              Auto-start on logged set
+            </span>
             <span
-              className="absolute top-[3px] size-[22px] rounded-full transition-all"
+              className="relative h-7 w-[46px] flex-none rounded-[var(--r-pill)] transition-colors"
               style={{
-                background: autoStart ? 'var(--accent-ink)' : 'var(--muted)',
-                left: autoStart ? 'auto' : '3px',
-                right: autoStart ? '3px' : 'auto',
+                background: autoStart ? 'var(--accent)' : 'var(--surface-2)',
               }}
-            />
-          </span>
-        </button>
-
-        <SectionLabel>Default by exercise type</SectionLabel>
-        <div className="flex flex-col gap-2">
-          <TypeRow
-            label="Compound"
-            field="restCompoundSec"
-            seconds={compoundSec}
-            step={step}
-          />
-          <TypeRow
-            label="Isolation"
-            field="restIsolationSec"
-            seconds={isolationSec}
-            step={step}
-          />
-          <TypeRow
-            label="Accessory"
-            field="restAccessorySec"
-            seconds={accessorySec}
-            step={step}
-          />
-        </div>
-
-        <SectionLabel>±&nbsp;Step</SectionLabel>
-        <div
-          className="flex gap-1.5 os-card p-[5px]"
-          style={{
-            background: 'var(--surface)',
-          }}
-        >
-          {STEPS.map((s) => {
-            const active = s === step;
-            return (
-              <button
-                key={s}
-                onClick={() => setStep(s)}
-                className="flex-1 rounded-[var(--r-sm)] py-2.5 text-center text-[14px]"
+            >
+              <span
+                className="absolute top-[3px] size-[22px] rounded-full transition-all"
                 style={{
-                  fontFamily: 'var(--font-num)',
-                  fontWeight: active ? 700 : 600,
-                  background: active ? 'var(--ink)' : 'transparent',
-                  color: active ? 'var(--bg)' : 'var(--muted)',
+                  background: autoStart ? 'var(--accent-ink)' : 'var(--muted)',
+                  left: autoStart ? 'auto' : '3px',
+                  right: autoStart ? '3px' : 'auto',
                 }}
-              >
-                {s}s
-              </button>
-            );
-          })}
-        </div>
+              />
+            </span>
+          </button>
 
-        <p className="mx-1 mt-2 text-[11px] leading-snug text-faint">
-          New exercises start their rest timer at the length for their type. The
-          ± Step control sets how much each tap adjusts.
-        </p>
+          <SectionLabel>Default by exercise type</SectionLabel>
+          <div className="flex flex-col gap-2">
+            <TypeRow
+              label="Compound"
+              field="restCompoundSec"
+              seconds={compoundSec}
+              step={step}
+            />
+            <TypeRow
+              label="Isolation"
+              field="restIsolationSec"
+              seconds={isolationSec}
+              step={step}
+            />
+            <TypeRow
+              label="Accessory"
+              field="restAccessorySec"
+              seconds={accessorySec}
+              step={step}
+            />
+          </div>
+
+          <SectionLabel>±&nbsp;Step</SectionLabel>
+          <div
+            className="flex gap-1.5 os-card p-[5px]"
+            style={{
+              background: 'var(--surface)',
+            }}
+          >
+            {STEPS.map((s) => {
+              const active = s === step;
+              return (
+                <button
+                  key={s}
+                  onClick={() => setStep(s)}
+                  className="flex-1 rounded-[var(--r-sm)] py-2.5 text-center text-[14px]"
+                  style={{
+                    fontFamily: 'var(--font-num)',
+                    fontWeight: active ? 700 : 600,
+                    background: active ? 'var(--ink)' : 'transparent',
+                    color: active ? 'var(--bg)' : 'var(--muted)',
+                  }}
+                >
+                  {s}s
+                </button>
+              );
+            })}
+          </div>
+
+          <p className="mx-1 mt-2 text-[11px] leading-snug text-faint">
+            New exercises start their rest timer at the length for their type.
+            The ± Step control sets how much each tap adjusts.
+          </p>
+        </div>
       </div>
-    </div>
+    </Pushed>
   );
 }

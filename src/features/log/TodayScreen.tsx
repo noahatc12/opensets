@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNav } from '../../ui/nav';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../db/db';
 import { t } from '../../i18n/strings';
@@ -75,7 +75,7 @@ function lastWeights(sets: LoggedSet[]): Map<string, number> {
 
 export function TodayScreen() {
   const catalog = useCatalog();
-  const navigate = useNavigate();
+  const nav = useNav();
   const { units } = useSettings();
   const activeSessionId = useSessionStore((s) => s.activeSessionId);
   const leftSessionId = useSessionStore((s) => s.leftSessionId);
@@ -144,7 +144,7 @@ export function TodayScreen() {
       </div>
       <button
         type="button"
-        onClick={() => navigate('/settings')}
+        onClick={() => nav.tab('/settings')}
         aria-label="You"
         className="os-press grid size-11 place-items-center rounded-full"
         style={{
@@ -207,7 +207,7 @@ export function TodayScreen() {
           </p>
           <button
             type="button"
-            onClick={() => navigate('/onboarding')}
+            onClick={() => nav.push('/onboarding')}
             className="os-btn os-btn--hero os-press mt-4"
           >
             Build my plan <span className="text-[18px]">→</span>
@@ -216,7 +216,7 @@ export function TodayScreen() {
         <div className="mt-2.5 grid grid-cols-2 gap-2">
           <button
             type="button"
-            onClick={() => navigate('/routine/new')}
+            onClick={() => nav.push('/routine/new')}
             className="os-btn os-btn--sm os-press"
           >
             Build manually
@@ -485,7 +485,7 @@ export function TodayScreen() {
       {/* recent */}
       {recent.length > 0 && (
         <>
-          <SectionHead right="All" onRight={() => navigate('/history')}>
+          <SectionHead right="All" onRight={() => nav.tab('/history')}>
             Recent
           </SectionHead>
           <div className="os-card" style={{ padding: '4px 16px' }}>
@@ -508,7 +508,7 @@ export function TodayScreen() {
                 <button
                   key={s.id}
                   type="button"
-                  onClick={() => navigate('/history')}
+                  onClick={() => nav.tab('/history')}
                   className="os-row os-press"
                 >
                   <span

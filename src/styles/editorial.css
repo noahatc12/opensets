@@ -838,3 +838,198 @@
 [data-ds='editorial'] .text-faint {
   color: var(--mute);
 }
+
+/* ---- Feel: navigation, gestures, scrolling (2026-09-27) ------------------- */
+/* The iOS curve: fast out of the finger, long settle. */
+[data-ds='editorial'] {
+  --ease-ios: cubic-bezier(0.32, 0.72, 0, 1);
+  --dur-nav: 380ms;
+}
+
+/* Route changes. <html data-nav> carries the intent for the transition's lifetime. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: var(--dur-nav, 380ms);
+  animation-timing-function: cubic-bezier(0.32, 0.72, 0, 1);
+  mix-blend-mode: normal;
+}
+html[data-nav='push']::view-transition-old(root) {
+  animation-name: os-nav-recede;
+}
+html[data-nav='push']::view-transition-new(root) {
+  animation-name: os-nav-enter-right;
+  box-shadow: -12px 0 40px rgba(0, 0, 0, 0.35);
+}
+html[data-nav='pop']::view-transition-old(root) {
+  animation-name: os-nav-leave-right;
+  z-index: 1;
+  box-shadow: -12px 0 40px rgba(0, 0, 0, 0.35);
+}
+html[data-nav='pop']::view-transition-new(root) {
+  animation-name: os-nav-return;
+}
+/* After a swipe the leaving screen is already off; only the parent settles in. */
+html[data-nav='swipe']::view-transition-old(root) {
+  animation: os-fade-out 160ms ease-out;
+}
+html[data-nav='swipe']::view-transition-new(root) {
+  animation: os-nav-return 300ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+html[data-nav='tab']::view-transition-old(root) {
+  animation: os-fade-out 120ms ease-out;
+}
+html[data-nav='tab']::view-transition-new(root) {
+  animation: os-tab-in 220ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+/* The active tab pill glides between tabs instead of blinking. */
+::view-transition-group(os-tab-pill) {
+  animation-duration: 260ms;
+  animation-timing-function: cubic-bezier(0.32, 0.72, 0, 1);
+}
+::view-transition-old(os-tab-pill),
+::view-transition-new(os-tab-pill) {
+  animation: none;
+  height: 100%;
+}
+[data-ds='editorial'] .os-tab[aria-current='page'] {
+  view-transition-name: os-tab-pill;
+}
+@keyframes os-nav-enter-right {
+  from {
+    transform: translate3d(100%, 0, 0);
+  }
+  to {
+    transform: none;
+  }
+}
+@keyframes os-nav-recede {
+  from {
+    transform: none;
+    filter: brightness(1);
+  }
+  to {
+    transform: translate3d(-24%, 0, 0);
+    filter: brightness(0.72);
+  }
+}
+@keyframes os-nav-leave-right {
+  from {
+    transform: none;
+  }
+  to {
+    transform: translate3d(100%, 0, 0);
+  }
+}
+@keyframes os-nav-return {
+  from {
+    transform: translate3d(-24%, 0, 0);
+    filter: brightness(0.72);
+  }
+  to {
+    transform: none;
+    filter: brightness(1);
+  }
+}
+@keyframes os-fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+@keyframes os-tab-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 6px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* A pushed screen while the finger drags it: a dim behind it and a soft left edge. */
+[data-ds='editorial'] .os-pushed {
+  position: relative;
+  height: 100%;
+  background: var(--bg);
+  will-change: transform;
+  touch-action: pan-y;
+}
+[data-ds='editorial'] .os-pushed--dragging {
+  box-shadow: -10px 0 30px rgba(0, 0, 0, 0.35);
+}
+[data-ds='editorial'] .os-pushed--dragging::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background: rgba(0, 0, 0, calc(0.5 * (1 - var(--os-back-dim, 0))));
+  pointer-events: none;
+}
+
+/* Sheets rise on the iOS curve and follow the finger without a transition fighting it. */
+[data-ds='editorial'] .os-sheet {
+  animation: os-up var(--dur-nav) var(--ease-ios);
+  touch-action: pan-y;
+  will-change: transform;
+}
+[data-ds='editorial'] .os-sheet--dragging,
+[data-ds='editorial'] .os-sheet--dragging * {
+  user-select: none;
+  -webkit-user-select: none;
+}
+[data-ds='editorial'] .os-scrim {
+  will-change: opacity;
+}
+
+/* Scrolling: every pane keeps its own momentum and bounce, the shell never rubber-bands,
+   chip rows and the carousel snap, and taps never wait. */
+[data-ds='editorial'] .overflow-auto,
+[data-ds='editorial'] .overflow-y-auto {
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
+}
+[data-ds='editorial'] .os-chips {
+  scroll-snap-type: x proximity;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+}
+[data-ds='editorial'] .os-chips > * {
+  scroll-snap-align: start;
+}
+[data-ds='editorial'] button,
+[data-ds='editorial'] a,
+[data-ds='editorial'] [role='button'] {
+  touch-action: manipulation;
+}
+/* Press: down fast, release with a small settle. */
+[data-ds='editorial'] .os-press {
+  transition: transform 140ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+[data-ds='editorial'] .os-press:active {
+  transform: scale(0.97);
+  transition-duration: 60ms;
+}
+
+/* The tab island. In a browser tab Safari's own controls already clear the home
+   indicator, so the island sits 10 px above them; on the Home Screen there is nothing
+   below the app, so the indicator's inset is added back. */
+[data-ds='editorial'] .os-tabs {
+  bottom: 10px;
+  transition: transform 260ms var(--ease-ios);
+}
+@media (display-mode: standalone), (display-mode: fullscreen) {
+  [data-ds='editorial'] .os-tabs {
+    bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(root),
+  ::view-transition-new(root),
+  ::view-transition-group(os-tab-pill) {
+    animation: none !important;
+  }
+}

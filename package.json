@@ -18,7 +18,8 @@
     "build:exercises": "node scripts/build-exercises.ts",
     "design:check": "node scripts/design-shot.mjs",
     "design:check:fixtures": "node scripts/design-shot.mjs --fixtures",
-    "design:shots": "node scripts/redesign-shot.mjs"
+    "design:shots": "node scripts/redesign-shot.mjs",
+    "design:gestures": "node scripts/gesture-check.mjs"
   },
   "dependencies": {
     "@fontsource-variable/hanken-grotesk": "^5.2.8",

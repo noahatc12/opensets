@@ -1,5 +1,7 @@
 import { useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
+import { useNav } from '../../ui/nav';
+import { Pushed } from '../../ui/Pushed';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useProfile, useSettings } from '../../db/hooks';
 import { startingWeightLb } from '../../engine/body';
@@ -61,7 +63,7 @@ function draftFor(exercise: Exercise, startingWeightLb: number): SlotDraft {
 const nowIso = () => new Date().toISOString();
 
 export function RoutineBuilder() {
-  const navigate = useNavigate();
+  const nav = useNav();
   const location = useLocation();
   const [name, setName] = useState('');
   const [drafts, setDrafts] = useState<SlotDraft[]>([]);
@@ -170,240 +172,242 @@ export function RoutineBuilder() {
         seedExerciseState(program.id, slot, drafts[i]!.startingWeightLb, now),
       ),
     );
-    navigate('/today');
+    nav.pop('/today');
   }
 
   return (
-    <div className="relative flex h-full flex-col">
-      <div className="flex-1 overflow-auto px-[18px] pb-[120px] pt-[max(0.5rem,env(safe-area-inset-top))]">
-        <BackButton onClick={() => navigate(-1)} />
-        <div className="os-t mt-3.5">
-          Day 1 · {drafts.length}{' '}
-          {drafts.length === 1 ? 'exercise' : 'exercises'}
-          {drafts.length > 0 && ` · ${est} min`}
-        </div>
-        <input
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder="Name this day"
-          aria-label="Day name"
-          className="os-input mt-0.5 w-full"
-          style={{
-            padding: 0,
-            fontSize: 32,
-            fontWeight: 800,
-            letterSpacing: '-.035em',
-            lineHeight: 1.05,
-          }}
-        />
+    <Pushed to={-1}>
+      <div className="relative flex h-full flex-col">
+        <div className="flex-1 overflow-auto px-[18px] pb-[120px] pt-[max(0.5rem,env(safe-area-inset-top))]">
+          <BackButton onClick={() => nav.pop()} />
+          <div className="os-t mt-3.5">
+            Day 1 · {drafts.length}{' '}
+            {drafts.length === 1 ? 'exercise' : 'exercises'}
+            {drafts.length > 0 && ` · ${est} min`}
+          </div>
+          <input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Name this day"
+            aria-label="Day name"
+            className="os-input mt-0.5 w-full"
+            style={{
+              padding: 0,
+              fontSize: 32,
+              fontWeight: 800,
+              letterSpacing: '-.035em',
+              lineHeight: 1.05,
+            }}
+          />
 
-        <div className="mt-3.5 flex flex-col gap-2">
-          {drafts.map((d, i) => (
-            <div
-              key={d.exercise.id + i}
-              className="os-card"
-              style={{ padding: '12px 12px 12px 14px' }}
-            >
-              <div className="flex items-center gap-2.5">
-                <span
-                  className="os-num w-[22px] text-[20px]"
-                  style={{ color: 'var(--faint)' }}
-                >
-                  {i + 1}
-                </span>
-                <div className="min-w-0 flex-1">
-                  <div className="text-[15px] font-extrabold leading-tight">
-                    {d.exercise.name}
-                  </div>
-                  <div className="os-t truncate text-[12px]">
-                    {[
-                      titleCase(d.exercise.primaryMuscles[0]),
-                      titleCase(d.exercise.equipment),
-                      `rest ${clock(d.restWorkSec)}`,
-                    ]
-                      .filter(Boolean)
-                      .join(' · ')}
-                  </div>
-                </div>
-                <div className="flex flex-none items-center gap-1">
-                  <button
-                    type="button"
-                    onClick={() => move(i, -1)}
-                    disabled={i === 0}
-                    className="os-icon-btn os-press"
-                    style={{ width: 32, height: 32, borderRadius: 10 }}
-                    aria-label={`Move ${d.exercise.name} up`}
-                  >
-                    <Chevron up />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => move(i, 1)}
-                    disabled={i === drafts.length - 1}
-                    className="os-icon-btn os-press"
-                    style={{ width: 32, height: 32, borderRadius: 10 }}
-                    aria-label={`Move ${d.exercise.name} down`}
-                  >
-                    <Chevron />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => remove(i)}
-                    className="os-icon-btn os-press"
-                    style={{
-                      width: 32,
-                      height: 32,
-                      borderRadius: 10,
-                      color: 'var(--mute)',
-                    }}
-                    aria-label={`Remove ${d.exercise.name}`}
-                  >
-                    <svg
-                      width="16"
-                      height="16"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2.2"
-                      strokeLinecap="round"
-                      aria-hidden
-                    >
-                      <path d="M6 6l12 12M18 6L6 18" />
-                    </svg>
-                  </button>
-                </div>
-              </div>
-
+          <div className="mt-3.5 flex flex-col gap-2">
+            {drafts.map((d, i) => (
               <div
-                className="os-seg mt-2.5"
-                role="radiogroup"
-                aria-label="Progression"
-                style={{ background: 'var(--s2)' }}
+                key={d.exercise.id + i}
+                className="os-card"
+                style={{ padding: '12px 12px 12px 14px' }}
               >
-                {(['linear', 'double', 'manual'] as const).map((k) => (
-                  <button
-                    key={k}
-                    type="button"
-                    role="radio"
-                    aria-checked={d.ruleKind === k}
-                    onClick={() => update(i, { ruleKind: k })}
+                <div className="flex items-center gap-2.5">
+                  <span
+                    className="os-num w-[22px] text-[20px]"
+                    style={{ color: 'var(--faint)' }}
                   >
-                    {k === 'linear'
-                      ? 'Linear'
-                      : k === 'double'
-                        ? 'Double'
-                        : 'Manual'}
-                  </button>
-                ))}
-              </div>
+                    {i + 1}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <div className="text-[15px] font-extrabold leading-tight">
+                      {d.exercise.name}
+                    </div>
+                    <div className="os-t truncate text-[12px]">
+                      {[
+                        titleCase(d.exercise.primaryMuscles[0]),
+                        titleCase(d.exercise.equipment),
+                        `rest ${clock(d.restWorkSec)}`,
+                      ]
+                        .filter(Boolean)
+                        .join(' · ')}
+                    </div>
+                  </div>
+                  <div className="flex flex-none items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => move(i, -1)}
+                      disabled={i === 0}
+                      className="os-icon-btn os-press"
+                      style={{ width: 32, height: 32, borderRadius: 10 }}
+                      aria-label={`Move ${d.exercise.name} up`}
+                    >
+                      <Chevron up />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => move(i, 1)}
+                      disabled={i === drafts.length - 1}
+                      className="os-icon-btn os-press"
+                      style={{ width: 32, height: 32, borderRadius: 10 }}
+                      aria-label={`Move ${d.exercise.name} down`}
+                    >
+                      <Chevron />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => remove(i)}
+                      className="os-icon-btn os-press"
+                      style={{
+                        width: 32,
+                        height: 32,
+                        borderRadius: 10,
+                        color: 'var(--mute)',
+                      }}
+                      aria-label={`Remove ${d.exercise.name}`}
+                    >
+                      <svg
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.2"
+                        strokeLinecap="round"
+                        aria-hidden
+                      >
+                        <path d="M6 6l12 12M18 6L6 18" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
 
-              <div className="mt-2.5 grid grid-cols-3 gap-1.5">
-                <Mini
-                  label="Sets"
-                  value={d.sets}
-                  onChange={(v) => update(i, { sets: v })}
-                  min={1}
-                  max={10}
-                  name="sets"
-                />
-                {d.ruleKind === 'double' ? (
-                  <>
-                    <Mini
-                      label="Reps from"
-                      value={d.repMin}
-                      onChange={(v) => update(i, { repMin: v })}
-                      min={1}
-                      max={d.repMax}
-                      name="rep min"
-                    />
-                    <Mini
-                      label="Reps to"
-                      value={d.repMax}
-                      onChange={(v) => update(i, { repMax: v })}
-                      min={d.repMin}
-                      max={30}
-                      name="rep max"
-                    />
-                  </>
-                ) : (
+                <div
+                  className="os-seg mt-2.5"
+                  role="radiogroup"
+                  aria-label="Progression"
+                  style={{ background: 'var(--s2)' }}
+                >
+                  {(['linear', 'double', 'manual'] as const).map((k) => (
+                    <button
+                      key={k}
+                      type="button"
+                      role="radio"
+                      aria-checked={d.ruleKind === k}
+                      onClick={() => update(i, { ruleKind: k })}
+                    >
+                      {k === 'linear'
+                        ? 'Linear'
+                        : k === 'double'
+                          ? 'Double'
+                          : 'Manual'}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="mt-2.5 grid grid-cols-3 gap-1.5">
                   <Mini
-                    label="Reps"
-                    value={d.repTarget}
-                    onChange={(v) => update(i, { repTarget: v })}
+                    label="Sets"
+                    value={d.sets}
+                    onChange={(v) => update(i, { sets: v })}
                     min={1}
-                    max={30}
-                    name="reps"
+                    max={10}
+                    name="sets"
                   />
-                )}
-                <Mini
-                  label={`Start · ${settings.units}`}
-                  value={shown(d.startingWeightLb)}
-                  onChange={(v) =>
-                    update(i, { startingWeightLb: fromShown(v) })
-                  }
-                  min={0}
-                  step={settings.units === 'kg' ? 1 : 2.5}
-                  name="starting weight"
-                />
-                {d.ruleKind !== 'manual' && (
+                  {d.ruleKind === 'double' ? (
+                    <>
+                      <Mini
+                        label="Reps from"
+                        value={d.repMin}
+                        onChange={(v) => update(i, { repMin: v })}
+                        min={1}
+                        max={d.repMax}
+                        name="rep min"
+                      />
+                      <Mini
+                        label="Reps to"
+                        value={d.repMax}
+                        onChange={(v) => update(i, { repMax: v })}
+                        min={d.repMin}
+                        max={30}
+                        name="rep max"
+                      />
+                    </>
+                  ) : (
+                    <Mini
+                      label="Reps"
+                      value={d.repTarget}
+                      onChange={(v) => update(i, { repTarget: v })}
+                      min={1}
+                      max={30}
+                      name="reps"
+                    />
+                  )}
                   <Mini
-                    label={`Step · ${settings.units}`}
-                    value={shown(d.incrementLb)}
-                    onChange={(v) => update(i, { incrementLb: fromShown(v) })}
-                    min={settings.units === 'kg' ? 0.5 : 1.25}
-                    step={settings.units === 'kg' ? 0.5 : 1.25}
-                    name="increment"
+                    label={`Start · ${settings.units}`}
+                    value={shown(d.startingWeightLb)}
+                    onChange={(v) =>
+                      update(i, { startingWeightLb: fromShown(v) })
+                    }
+                    min={0}
+                    step={settings.units === 'kg' ? 1 : 2.5}
+                    name="starting weight"
                   />
-                )}
-                <Mini
-                  label="Rest · sec"
-                  value={d.restWorkSec}
-                  onChange={(v) => update(i, { restWorkSec: v })}
-                  min={30}
-                  max={600}
-                  step={15}
-                  name="rest"
-                />
+                  {d.ruleKind !== 'manual' && (
+                    <Mini
+                      label={`Step · ${settings.units}`}
+                      value={shown(d.incrementLb)}
+                      onChange={(v) => update(i, { incrementLb: fromShown(v) })}
+                      min={settings.units === 'kg' ? 0.5 : 1.25}
+                      step={settings.units === 'kg' ? 0.5 : 1.25}
+                      name="increment"
+                    />
+                  )}
+                  <Mini
+                    label="Rest · sec"
+                    value={d.restWorkSec}
+                    onChange={(v) => update(i, { restWorkSec: v })}
+                    min={30}
+                    max={600}
+                    step={15}
+                    name="rest"
+                  />
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
 
+            <button
+              type="button"
+              onClick={() => setPicking(true)}
+              className="os-btn os-press"
+              style={{
+                background: 'transparent',
+                boxShadow: 'inset 0 0 0 1.5px var(--s3)',
+                color: 'var(--ink2)',
+              }}
+            >
+              + Add exercise
+            </button>
+          </div>
+        </div>
+
+        <div className="os-dock">
           <button
             type="button"
-            onClick={() => setPicking(true)}
-            className="os-btn os-press"
-            style={{
-              background: 'transparent',
-              boxShadow: 'inset 0 0 0 1.5px var(--s3)',
-              color: 'var(--ink2)',
-            }}
+            onClick={() => void save()}
+            disabled={!canSave}
+            className="os-btn os-btn--pri os-press"
           >
-            + Add exercise
+            {saving ? 'Saving…' : 'Save day'}
           </button>
         </div>
-      </div>
 
-      <div className="os-dock">
-        <button
-          type="button"
-          onClick={() => void save()}
-          disabled={!canSave}
-          className="os-btn os-btn--pri os-press"
-        >
-          {saving ? 'Saving…' : 'Save day'}
-        </button>
+        {picking && (
+          <ExercisePicker
+            onClose={() => setPicking(false)}
+            onPick={(ex) => {
+              setDrafts((ds) => [...ds, draftFor(ex, suggestedStartLb(ex))]);
+              setPicking(false);
+            }}
+          />
+        )}
       </div>
-
-      {picking && (
-        <ExercisePicker
-          onClose={() => setPicking(false)}
-          onPick={(ex) => {
-            setDrafts((ds) => [...ds, draftFor(ex, suggestedStartLb(ex))]);
-            setPicking(false);
-          }}
-        />
-      )}
-    </div>
+    </Pushed>
   );
 }
 

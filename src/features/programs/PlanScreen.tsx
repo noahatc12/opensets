@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNav } from '../../ui/nav';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useCatalog } from '../library/useCatalog';
 import { getCatalogExercise } from '../../db/catalog';
@@ -36,7 +36,7 @@ const PHASE_LABEL: Record<string, string> = {
 
 export function PlanScreen() {
   useCatalog();
-  const navigate = useNavigate();
+  const nav = useNav();
   const profile = useProfile();
   const beginSession = useSessionStore((s) => s.beginSession);
   const programs = useLiveQuery(() => db.programs.toArray());
@@ -61,7 +61,7 @@ export function PlanScreen() {
   async function start(t: WorkoutTemplate) {
     const s = await startSessionFromTemplate(t, nowIso());
     beginSession(s.id);
-    navigate('/today');
+    nav.pop('/today');
   }
 
   const meso = activeProgram?.mesocycle;
@@ -95,7 +95,7 @@ export function PlanScreen() {
             </p>
             <button
               type="button"
-              onClick={() => navigate('/onboarding')}
+              onClick={() => nav.push('/onboarding')}
               className="os-btn os-btn--hero os-press mt-4"
             >
               Build my plan <span className="text-[18px]">→</span>
@@ -103,7 +103,7 @@ export function PlanScreen() {
           </div>
           <button
             type="button"
-            onClick={() => navigate('/routine/new')}
+            onClick={() => nav.push('/routine/new')}
             className="os-btn os-btn--sm os-press mt-2.5"
           >
             Build manually
@@ -264,14 +264,14 @@ export function PlanScreen() {
           <div className="mt-3 grid grid-cols-2 gap-2">
             <button
               type="button"
-              onClick={() => navigate('/routine/new')}
+              onClick={() => nav.push('/routine/new')}
               className="os-btn os-btn--sm os-press"
             >
               + New day
             </button>
             <button
               type="button"
-              onClick={() => navigate('/onboarding')}
+              onClick={() => nav.push('/onboarding')}
               className="os-btn os-btn--sm os-press"
             >
               Regenerate
@@ -307,14 +307,14 @@ export function PlanScreen() {
           <div className="mt-3 grid grid-cols-2 gap-2">
             <button
               type="button"
-              onClick={() => navigate('/routine/new')}
+              onClick={() => nav.push('/routine/new')}
               className="os-btn os-btn--sm os-press"
             >
               + New day
             </button>
             <button
               type="button"
-              onClick={() => navigate('/onboarding')}
+              onClick={() => nav.push('/onboarding')}
               className="os-btn os-btn--sm os-press"
             >
               Build my plan
