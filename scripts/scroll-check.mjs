@@ -81,16 +81,26 @@ await page.evaluate(() => {
 });
 await page.waitForTimeout(500);
 const before = await libState();
-check('library scrolled deep', before && before.top > 5000, JSON.stringify(before));
+check(
+  'library scrolled deep',
+  before && before.top > 5000,
+  JSON.stringify(before),
+);
 await page.getByRole('button', { name: before.first }).first().click();
 await page.waitForTimeout(700);
-check('opened the exercise', (await hash()).startsWith('#/library/'), await hash());
+check(
+  'opened the exercise',
+  (await hash()).startsWith('#/library/'),
+  await hash(),
+);
 await page.getByRole('button', { name: /back/i }).first().click();
 await page.waitForTimeout(900);
 const afterBack = await libState();
 check(
   'Back button: same place in the Library',
-  afterBack && Math.abs(afterBack.top - before.top) <= 2 && afterBack.first === before.first,
+  afterBack &&
+    Math.abs(afterBack.top - before.top) <= 2 &&
+    afterBack.first === before.first,
   `${JSON.stringify(before)} -> ${JSON.stringify(afterBack)}`,
 );
 
@@ -130,13 +140,16 @@ await page.evaluate(() => {
 await page.getByRole('textbox', { name: /search exercises/i }).fill('curl');
 await page.waitForTimeout(500);
 const firstHit = await page.evaluate(
-  () => document.querySelector('main button.os-row span span')?.textContent ?? '',
+  () =>
+    document.querySelector('main button.os-row span span')?.textContent ?? '',
 );
 await page.getByRole('button', { name: firstHit }).first().click();
 await page.waitForTimeout(700);
 await page.getByRole('button', { name: /back/i }).first().click();
 await page.waitForTimeout(900);
-const q = await page.getByRole('textbox', { name: /search exercises/i }).inputValue();
+const q = await page
+  .getByRole('textbox', { name: /search exercises/i })
+  .inputValue();
 check('search text kept after coming back', q === 'curl', q);
 await page.getByRole('textbox', { name: /search exercises/i }).fill('');
 
@@ -149,7 +162,10 @@ const sBefore = await page.evaluate(() => {
   const row = [...s.querySelectorAll('button.os-row')].find((b) =>
     /goals/i.test(b.textContent ?? ''),
   );
-  const y = row.getBoundingClientRect().top - s.getBoundingClientRect().top + s.scrollTop;
+  const y =
+    row.getBoundingClientRect().top -
+    s.getBoundingClientRect().top +
+    s.scrollTop;
   s.scrollTop = Math.max(0, y - 560);
   return Math.round(s.scrollTop);
 });
@@ -180,7 +196,11 @@ check(
 await page.goto(BASE + '#/library', { waitUntil: 'networkidle' });
 await page.waitForTimeout(600);
 const fresh = await libState();
-check('a fresh launch starts at the top', fresh && fresh.top === 0, JSON.stringify(fresh));
+check(
+  'a fresh launch starts at the top',
+  fresh && fresh.top === 0,
+  JSON.stringify(fresh),
+);
 
 check('no page errors', errors.length === 0, errors.join(' | '));
 await browser.close();
