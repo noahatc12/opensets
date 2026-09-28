@@ -172,3 +172,21 @@ export function canScrollLeft(
   }
   return false;
 }
+
+/** True when a vertical scroller between `from` and `stop` has more content than height. */
+export function hasVerticalScroller(
+  from: EventTarget | null,
+  stop: HTMLElement,
+): boolean {
+  let el = from instanceof HTMLElement ? from : null;
+  while (el && el !== stop) {
+    const oy = getComputedStyle(el).overflowY;
+    if (
+      (oy === 'auto' || oy === 'scroll') &&
+      el.scrollHeight > el.clientHeight + 1
+    )
+      return true;
+    el = el.parentElement;
+  }
+  return false;
+}

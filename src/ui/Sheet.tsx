@@ -1,5 +1,9 @@
 import { useCallback, useEffect, useRef, type ReactNode } from 'react';
-import { attachDrag, scrolledAwayFromTop } from './gesture';
+import {
+  attachDrag,
+  hasVerticalScroller,
+  scrolledAwayFromTop,
+} from './gesture';
 import { spring, rubberBand, reducedMotion } from '../lib/spring';
 
 /* Bottom sheet. Rises on the iOS curve; drags with the finger once its content is at the
@@ -87,9 +91,11 @@ export function Sheet({
     const detach = attachDrag(p, {
       onStart: (s) => {
         if (Math.abs(s.dy) < Math.abs(s.dx)) return false;
-        // A downward drag on scrolled content is a scroll, not a dismiss.
+        // Downward on content that is scrolled away from its top is a scroll. Upward is
+        // always a scroll when there is anything to scroll under the finger; only a
+        // header or a short sheet rubber-bands.
         if (s.dy > 0 && scrolledAwayFromTop(s.target, p)) return false;
-        if (s.dy < 0 && scrolledAwayFromTop(s.target, p)) return false;
+        if (s.dy < 0 && hasVerticalScroller(s.target, p)) return false;
         anim.current?.cancel();
         p.classList.add('os-sheet--dragging');
         return true;

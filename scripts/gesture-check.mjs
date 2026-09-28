@@ -127,6 +127,19 @@ check(
   (await hash()).startsWith('#/library/'),
   await hash(),
 );
+// The same drag, started on the image carousel, scrolls the carousel: pushed screens
+// must not block horizontal scrollers.
+const car = page.locator('.os-pushed [style*="scroll-snap-type"]').first();
+const cb = await car.boundingBox();
+if (cb) {
+  await drag(300, cb.y + cb.height / 2, 60, cb.y + cb.height / 2 + 2, {
+    ms: 200,
+    steps: 10,
+  });
+  await page.waitForTimeout(600);
+  const sl = await car.evaluate((el) => el.scrollLeft);
+  check('carousel scrolls sideways inside a pushed screen', sl > 0, String(sl));
+}
 // 4. A short edge drag springs back.
 await drag(6, 420, 60, 422);
 await page.waitForTimeout(700);
@@ -200,6 +213,37 @@ check(
   'scrim tap closes the keypad',
   (await page.locator('.os-sheet').count()) === 0,
 );
+
+// 7b. The picker sheet: an upward drag on the list scrolls it and keeps the sheet open.
+await page.getByRole('button', { name: 'Add' }).click();
+await page.waitForTimeout(700);
+const listBox = await page
+  .locator(
+    '.os-sheet [data-testid="virtuoso-scroller"], .os-sheet [data-virtuoso-scroller]',
+  )
+  .first()
+  .boundingBox()
+  .catch(() => null);
+const lb = listBox ?? (await page.locator('.os-sheet').boundingBox());
+await drag(195, lb.y + lb.height * 0.7, 195, lb.y + lb.height * 0.2);
+await page.waitForTimeout(500);
+const scrolled = await page.evaluate(() => {
+  const el = document.querySelector(
+    '.os-sheet [data-virtuoso-scroller], .os-sheet [data-testid="virtuoso-scroller"]',
+  );
+  return el ? el.scrollTop : -1;
+});
+check('upward drag scrolls the picker list', scrolled > 0, String(scrolled));
+check(
+  'picker stays open while its list scrolls',
+  (await page.locator('.os-sheet').count()) === 1,
+);
+check(
+  'keyboard is not forced open: search is not focused',
+  await page.evaluate(() => document.activeElement?.tagName !== 'INPUT'),
+);
+await page.locator('.os-scrim').click({ position: { x: 100, y: 60 } });
+await page.waitForTimeout(700);
 
 // 8. Onboarding: edge swipe on step 1 pops out.
 await page.evaluate(() => {

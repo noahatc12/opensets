@@ -68,7 +68,6 @@ export function ExercisePicker({ onPick, onClose }: Props) {
           <path d="M20 20l-4-4" />
         </svg>
         <input
-          autoFocus
           value={q}
           onChange={(e) => setQ(e.target.value)}
           placeholder={
