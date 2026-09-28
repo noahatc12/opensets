@@ -10,6 +10,7 @@ import { loadStepsOf } from '../../db/repositories';
 import { roundForLoad } from '../../engine/loading';
 import type { LoadType } from '../../engine/types';
 import { kgToLb, ftInToIn, fmtWeight } from '../../lib/units';
+import { ruleLabel } from '../../lib/format';
 import type { BiologicalSex, Muscle, SplitChoice } from '../../db/types';
 import { SPLITS, PRIORITY_MUSCLES } from './preferenceOptions';
 import { BackButton } from '../../ui/StatGrid';
@@ -84,6 +85,27 @@ const SUBS = [
 ];
 const STEPS = 5;
 const nowIso = () => new Date().toISOString();
+
+/** How the plan's lifts progress, read from the plan itself. The line used to be guessed
+ *  from the answers and said Linear for every novice while the generator gave them double
+ *  progression (persona check, 09-28). */
+function progressionLine(
+  days: { slots: { rule: { kind: string }; compound: boolean }[] }[],
+): string {
+  const commonest = (compound: boolean) => {
+    const n = new Map<string, number>();
+    for (const d of days)
+      for (const s of d.slots)
+        if (s.compound === compound && s.rule.kind !== 'repsOnly')
+          n.set(s.rule.kind, (n.get(s.rule.kind) ?? 0) + 1);
+    return [...n.entries()].sort((a, b) => b[1] - a[1])[0]?.[0];
+  };
+  const big = commonest(true);
+  const rest = commonest(false);
+  if (!big && !rest) return ruleLabel('repsOnly');
+  if (!big || !rest || big === rest) return ruleLabel((big ?? rest)!);
+  return `${ruleLabel(big)} on big lifts, ${ruleLabel(rest).toLowerCase()} on the rest`;
+}
 
 function OptionCard({
   selected,
@@ -374,13 +396,10 @@ export function OnboardingScreen() {
           {SUBS[step] && (
             <p className="os-t mt-2 font-medium leading-[1.4]">{SUBS[step]}</p>
           )}
-          {step === STEPS - 1 && (
+          {step === STEPS - 1 && plan && (
             <p className="os-t mt-2 font-medium leading-[1.4]">
-              {goal === 'Get stronger' || experience === 'Novice'
-                ? 'Linear'
-                : 'Double'}{' '}
-              progression · {equipment.toLowerCase()} · built for{' '}
-              {experience.toLowerCase()} lifters.
+              {progressionLine(plan.program.days)} · {equipment.toLowerCase()} ·
+              built for {experience.toLowerCase()} lifters.
             </p>
           )}
 

@@ -29,9 +29,13 @@ import {
   loadStepsOf,
   getExerciseState,
   represcribeAfterEdit,
+  getActiveProgram,
+  listTemplates,
 } from '../../db/repositories';
 
-/* The routine builder. At /routine/new it creates a new program with one day; at
+/* The routine builder. At /routine/new it adds a day, named as typed, to the active program
+   (or starts "My plan" when there is none: "+ New day" used to start a separate program and
+   hide the first, so a split could not be built by hand, persona check 09-28); at
    /routine/<day id> it edits a day that already exists (Noah, 09-28: "I couldn't go back
    and change how many sets"). The title is the 32px heading itself, typed in place; each
    exercise is a card with mini steppers; the day is saved from the button at the bottom.
@@ -183,6 +187,22 @@ export function RoutineBuilder() {
         }),
     );
   }
+  // New-day mode adds to the active program; its days number the new one, and its lifts'
+  // working weights prefill any exercise it already trains (their progress is kept).
+  const active = useLiveQuery(async () => {
+    if (editing) return null;
+    const program = await getActiveProgram();
+    if (!program) return null;
+    const days = await listTemplates(program.id);
+    const states = await db.exerciseState
+      .filter((r) => r.programId === program.id)
+      .toArray();
+    return {
+      program,
+      dayCount: days.length,
+      weightOf: new Map(states.map((r) => [r.exerciseId, r.workingWeightLb])),
+    };
+  }, [editing]);
   const settings = useSettings();
   const profile = useProfile();
   const bodyweightLb = useLiveQuery(() => latestBodyweightLb());
@@ -212,9 +232,23 @@ export function RoutineBuilder() {
   const addId = (location.state as { addExerciseId?: string } | null)
     ?.addExerciseId;
   const addEx = addId ? getCatalogExercise(addId) : undefined;
-  if (addEx && seededFrom !== addEx.id && drafts.length === 0) {
+  /** A new card. A lift the program already trains starts from its working weight and
+   *  remembers it, so saving leaves its progress alone unless the weight was changed. */
+  const draftStart = (ex: Exercise): SlotDraft => {
+    const prior = active?.weightOf.get(ex.id);
+    return prior === undefined
+      ? draftFor(ex, suggestedStartLb(ex))
+      : { ...draftFor(ex, prior), origWeightLb: prior };
+  };
+  // Wait for the active program to load (undefined), or the card would miss its weight.
+  if (
+    addEx &&
+    active !== undefined &&
+    seededFrom !== addEx.id &&
+    drafts.length === 0
+  ) {
     setSeededFrom(addEx.id);
-    setDrafts([draftFor(addEx, suggestedStartLb(addEx))]);
+    setDrafts([draftStart(addEx)]);
   }
   const shown = (lb: number) => displayWeight(lb, settings.units);
   const fromShown = (v: number) => (settings.units === 'kg' ? kgToLb(v) : v);
@@ -241,9 +275,12 @@ export function RoutineBuilder() {
     if (editing) return saveEdit();
     setSaving(true);
     const now = nowIso();
-    const program = await createProgram(name.trim(), now);
-    await setActiveProgram(program.id);
-    const tpl = await createTemplate(program.id, 'Day 1', 0);
+    // Re-read at save time: the live query may not have landed on a fast save.
+    const existing = await getActiveProgram();
+    const program = existing ?? (await createProgram('My plan', now));
+    if (!existing) await setActiveProgram(program.id);
+    const dayIndex = existing ? (await listTemplates(program.id)).length : 0;
+    const tpl = await createTemplate(program.id, name.trim(), dayIndex);
 
     const slots: ExerciseSlot[] = drafts.map((d, order) =>
       makeSlot(
@@ -259,12 +296,27 @@ export function RoutineBuilder() {
     );
     tpl.slots = slots;
     await saveTemplate(tpl);
-    await Promise.all(
-      slots.map((slot, i) =>
-        seedExerciseState(program.id, slot, drafts[i]!.startingWeightLb, now),
-      ),
-    );
-    nav.pop('/today');
+    // Progress is kept per program and exercise, so a lift another day already trains
+    // keeps its state; it starts clean only if its weight was changed here.
+    for (let i = 0; i < slots.length; i++) {
+      const slot = slots[i]!;
+      const d = drafts[i]!;
+      const prior = await getExerciseState(program.id, slot.exerciseId);
+      if (!prior)
+        await seedExerciseState(program.id, slot, d.startingWeightLb, now);
+      else if (
+        d.origWeightLb !== undefined &&
+        Math.abs(d.startingWeightLb - d.origWeightLb) > 0.001
+      )
+        await represcribeAfterEdit(
+          program.id,
+          slot,
+          d.startingWeightLb,
+          false,
+          now,
+        );
+    }
+    nav.pop(existing ? '/plan' : '/today');
   }
 
   /** Save an edited day in place: same day id, same program, history untouched. */
@@ -342,8 +394,12 @@ export function RoutineBuilder() {
         <div className="flex-1 overflow-auto px-[18px] pb-[120px] pt-[max(0.5rem,env(safe-area-inset-top))]">
           <BackButton onClick={() => nav.pop('/plan')} />
           <div className="os-t mt-3.5">
-            {editing ? editSource?.programName || 'Edit day' : 'Day 1'} ·{' '}
-            {drafts.length} {drafts.length === 1 ? 'exercise' : 'exercises'}
+            {editing
+              ? editSource?.programName || 'Edit day'
+              : active
+                ? `${active.program.name} · Day ${active.dayCount + 1}`
+                : 'Day 1'}{' '}
+            · {drafts.length} {drafts.length === 1 ? 'exercise' : 'exercises'}
             {drafts.length > 0 && ` · ${est} min`}
           </div>
           <input
@@ -586,7 +642,7 @@ export function RoutineBuilder() {
           <ExercisePicker
             onClose={() => setPicking(false)}
             onPick={(ex) => {
-              setDrafts((ds) => [...ds, draftFor(ex, suggestedStartLb(ex))]);
+              setDrafts((ds) => [...ds, draftStart(ex)]);
               setPicking(false);
             }}
           />
