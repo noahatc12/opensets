@@ -49,7 +49,7 @@ export function PlatesScreen() {
       }
     >
       <div className="h-full overflow-auto px-[18px] pb-[120px] pt-[max(0.5rem,env(safe-area-inset-top))]">
-        <BackButton onClick={() => nav.tab('/settings')} />
+        <BackButton onClick={() => nav.back('/settings')} />
         <div className="os-t mt-3.5">Training</div>
         <h1 className="os-h1 mt-0.5">Bar and plates</h1>
         <p className="os-t mt-2 leading-[1.4]">

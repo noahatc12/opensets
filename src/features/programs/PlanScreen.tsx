@@ -1,13 +1,15 @@
-import { useState } from 'react';
 import { useNav } from '../../ui/nav';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useCatalog } from '../library/useCatalog';
 import { getCatalogExercise } from '../../db/catalog';
-import { useProfile } from '../../db/hooks';
-import { useSessionStore } from '../../state/session';
+import { useProfile, useSettings } from '../../db/hooks';
+import { openWorkout } from '../log/workoutMotion';
+import { loadTypeFor } from '../../engine/loading';
+import { weightWithLoad } from '../../lib/units';
 import { shortName } from '../../lib/format';
 import {
   getActiveProgram,
+  getActiveWorkoutSession,
   listTemplates,
   nextTemplateForProgram,
   setActiveProgram,
@@ -16,11 +18,13 @@ import {
 import { db } from '../../db/db';
 import { ScreenTitle } from '../../ui/StatGrid';
 import type { WorkoutTemplate } from '../../db/types';
-import { useScrollMemory } from '../../ui/scrollMemory';
+import { useKeptState, useScrollMemory } from '../../ui/scrollMemory';
 
 /* Plan: the week card, then each day as a card. Tapping a day expands it to its exercises
    and collapses the open one (one open at a time). The next day is lifted with an accent
-   ring and a Next chip and starts from here. */
+   ring and a Next chip and starts from here. The open day is kept while you stay in this
+   tab, so coming back from Edit or a workout finds it still open (NAV.md, rule 2), and
+   an open day lists every exercise with its sets, reps and weight (rule 8). */
 
 const nameOf = (id: string) => getCatalogExercise(id)?.name ?? id;
 const nowIso = () => new Date().toISOString();
@@ -40,7 +44,7 @@ export function PlanScreen() {
   useCatalog();
   const nav = useNav();
   const profile = useProfile();
-  const beginSession = useSessionStore((s) => s.beginSession);
+  const { units } = useSettings();
   const programs = useLiveQuery(() => db.programs.toArray());
   const activeProgram = useLiveQuery(() => getActiveProgram());
   const templates = useLiveQuery(
@@ -57,13 +61,33 @@ export function PlanScreen() {
         : Promise.resolve(undefined),
     [activeProgram?.id],
   );
-  const [openId, setOpenId] = useState<string | null>(null);
+  const [openId, setOpenId] = useKeptState<string | null>(
+    'plan:open',
+    () => null,
+  );
   const open = openId ?? nextTpl?.id ?? null;
+  // One workout at a time: while one is in progress its day offers Resume and no other
+  // day offers Start, so a second session cannot be opened alongside it.
+  const inProgress = useLiveQuery(() => getActiveWorkoutSession());
+  // Each lift's next working weight in this program, for the open day's list.
+  const weightOf = useLiveQuery(async () => {
+    if (!activeProgram) return new Map<string, number>();
+    const rows = await db.exerciseState
+      .filter((r) => r.programId === activeProgram.id)
+      .toArray();
+    return new Map(
+      rows.map((r) => [
+        r.exerciseId,
+        r.pending?.sets.find((x) => x.type !== 'warmup')?.targetWeightLb ??
+          r.workingWeightLb,
+      ]),
+    );
+  }, [activeProgram?.id]);
 
+  // The workout rises over Plan and lowers back onto it (NAV.md, rule 5).
   async function start(t: WorkoutTemplate) {
     const s = await startSessionFromTemplate(t, nowIso());
-    beginSession(s.id);
-    nav.pop('/today');
+    openWorkout(s.id);
   }
 
   const meso = activeProgram?.mesocycle;
@@ -225,7 +249,9 @@ export function PlanScreen() {
                       {estMin(t)} min
                     </div>
                   )}
-                  <div className="mt-2.5 flex flex-wrap gap-1.5">
+                  <div
+                    className={`mt-2.5 flex-wrap gap-1.5 ${isOpen ? 'hidden' : 'flex'}`}
+                  >
                     {shown.map((n, i) => (
                       <span
                         key={i}
@@ -247,18 +273,82 @@ export function PlanScreen() {
                 </button>
                 <div className={`os-acc ${isOpen ? 'os-acc--open' : ''}`}>
                   <div>
-                    <div className="mt-3.5 flex gap-2">
-                      <button
-                        type="button"
-                        onClick={() => void start(t)}
-                        className={`os-btn os-btn--sm os-press flex-1 ${isNext ? 'os-btn--pri' : ''}`}
-                        tabIndex={isOpen ? 0 : -1}
-                        style={
-                          !isNext ? { background: 'var(--s2)' } : undefined
-                        }
-                      >
-                        {isNext ? 'Start' : 'Start this day instead'}
-                      </button>
+                    <div className="mt-1.5">
+                      {t.slots.map((sl, i) => {
+                        const ex = getCatalogExercise(sl.exerciseId);
+                        const lt =
+                          sl.loadType ??
+                          (ex
+                            ? loadTypeFor(ex.equipment, ex.isBodyweight)
+                            : undefined);
+                        const lb = weightOf?.get(sl.exerciseId);
+                        const reps =
+                          sl.scheme.repTarget ??
+                          (sl.scheme.repRange
+                            ? `${sl.scheme.repRange[0]}–${sl.scheme.repRange[1]}`
+                            : '');
+                        return (
+                          <div
+                            key={sl.slotId}
+                            className="os-row"
+                            style={{ padding: '9px 0' }}
+                          >
+                            <span
+                              className="os-t w-4"
+                              style={{ fontVariantNumeric: 'tabular-nums' }}
+                            >
+                              {i + 1}
+                            </span>
+                            <span className="min-w-0 flex-1">
+                              <span className="block truncate text-[14px] font-semibold">
+                                {nameOf(sl.exerciseId)}
+                              </span>
+                              <span
+                                className="os-t block text-[12px]"
+                                style={{ fontVariantNumeric: 'tabular-nums' }}
+                              >
+                                {sl.scheme.sets} × {reps}
+                              </span>
+                            </span>
+                            <span
+                              className="text-right text-[14px] font-bold"
+                              style={{ fontVariantNumeric: 'tabular-nums' }}
+                            >
+                              {lb === undefined
+                                ? ''
+                                : weightWithLoad(lb, units, lt)}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    <div className="mt-3.5 flex items-center gap-2">
+                      {inProgress?.templateId === t.id ? (
+                        <button
+                          type="button"
+                          onClick={() => openWorkout(inProgress.id)}
+                          className="os-btn os-btn--sm os-btn--pri os-press flex-1"
+                          tabIndex={isOpen ? 0 : -1}
+                        >
+                          Resume
+                        </button>
+                      ) : inProgress ? (
+                        <span className="os-t flex-1 leading-snug">
+                          Finish the workout in progress to start this day.
+                        </span>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => void start(t)}
+                          className={`os-btn os-btn--sm os-press flex-1 ${isNext ? 'os-btn--pri' : ''}`}
+                          tabIndex={isOpen ? 0 : -1}
+                          style={
+                            !isNext ? { background: 'var(--s2)' } : undefined
+                          }
+                        >
+                          {isNext ? 'Start' : 'Start this day instead'}
+                        </button>
+                      )}
                       <button
                         type="button"
                         onClick={() => nav.push(`/routine/${t.id}`)}

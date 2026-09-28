@@ -208,11 +208,15 @@ check(
 await page.getByRole('button', { name: 'Type weight' }).click();
 await page.waitForTimeout(600);
 await page.locator('.os-scrim').click({ position: { x: 100, y: 100 } });
-await page.waitForTimeout(700);
-check(
-  'scrim tap closes the keypad',
-  (await page.locator('.os-sheet').count()) === 0,
-);
+// Wait for the close, up to 1.5 s: the Soft close spring Noah picked takes about 760 ms,
+// and a fixed 700 ms wait failed on timing alone (plan item p24, measured 09-28).
+const keypadGone = await page
+  .locator('.os-sheet')
+  .first()
+  .waitFor({ state: 'detached', timeout: 1500 })
+  .then(() => true)
+  .catch(() => false);
+check('scrim tap closes the keypad', keypadGone);
 
 // 7b. The picker sheet: an upward drag on the list scrolls it and keeps the sheet open.
 await page.getByRole('button', { name: 'Add' }).click();
@@ -245,7 +249,10 @@ check(
 await page.locator('.os-scrim').click({ position: { x: 100, y: 60 } });
 await page.waitForTimeout(700);
 
-// 8. Onboarding: edge swipe on step 1 pops out.
+// 8. Onboarding: edge swipe on step 1 pops out. The workout is a cover over every screen
+// (NAV.md, rule 5), so tuck it away first, as a person would.
+await page.getByRole('button', { name: /Leave workout/ }).click();
+await page.waitForTimeout(600);
 await page.evaluate(() => {
   location.hash = '#/onboarding';
 });

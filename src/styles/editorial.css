@@ -1194,3 +1194,69 @@ html[data-kbd][data-ds='editorial'] .os-well:focus-within {
 [data-ds='editorial'] .os-chips:not([class*='mt-']) {
   margin-top: -6px;
 }
+
+/* The workout cover (docs/redesign/NAV.md, rule 5): it rises over the screen that started
+   it and tucks away downward to reveal that screen exactly as it was. */
+html[data-nav='up']::view-transition-old(root) {
+  animation: none;
+}
+html[data-nav='up']::view-transition-new(root) {
+  animation-name: os-cover-rise;
+  box-shadow: 0 -12px 40px rgba(0, 0, 0, 0.35);
+}
+html[data-nav='down']::view-transition-old(root) {
+  animation-name: os-cover-sink;
+  z-index: 1;
+  box-shadow: 0 -12px 40px rgba(0, 0, 0, 0.35);
+}
+html[data-nav='down']::view-transition-new(root) {
+  animation: none;
+}
+@keyframes os-cover-rise {
+  from {
+    transform: translate3d(0, 100%, 0);
+  }
+}
+@keyframes os-cover-sink {
+  to {
+    transform: translate3d(0, 100%, 0);
+  }
+}
+[data-ds='editorial'] .os-cover {
+  position: absolute;
+  inset: 0;
+  z-index: 40;
+  background: var(--bg);
+}
+/* Workout in progress: a bar above the tab island on every tab. */
+[data-ds='editorial'] .os-workout-bar {
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  bottom: calc(8px + 66px + 8px);
+  z-index: 31;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 52px;
+  padding: 0 8px 0 16px;
+  border-radius: 16px;
+  background: var(--s3);
+  color: var(--ink);
+  box-shadow:
+    inset 0 1px 0 var(--hl2),
+    var(--shadow-float);
+  text-align: left;
+}
+@media (display-mode: standalone), (display-mode: fullscreen) {
+  [data-ds='editorial'] .os-workout-bar {
+    bottom: calc(
+      8px + 66px + 8px +
+        var(--os-bottom-inset, env(safe-area-inset-bottom, 0px))
+    );
+  }
+}
+/* Screens scroll clear of the bar while it shows. */
+[data-ds='editorial'] .os-shell[data-workout='on'] main .pb-\[120px\] {
+  padding-bottom: 184px;
+}

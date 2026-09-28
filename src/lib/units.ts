@@ -65,3 +65,30 @@ export const inToFtIn = (inches: number): { ft: number; in: number } => ({
 
 /** feet + inches → total inches (canonical storage). */
 export const ftInToIn = (ft: number, inch: number): number => ft * 12 + inch;
+
+/** What a weight means for a load type, for labels (docs/redesign/NAV.md, rule 7). */
+export function loadWord(
+  loadType: 'barbell' | 'dumbbell' | 'stack' | 'bodyweight' | undefined,
+): string {
+  return loadType === 'dumbbell'
+    ? 'Per hand'
+    : loadType === 'barbell'
+      ? 'Total'
+      : loadType === 'stack'
+        ? 'Stack'
+        : loadType === 'bodyweight'
+          ? 'Added'
+          : 'Weight';
+}
+
+/** A weight with what it means: "55 lb per hand", "135 lb", "+25 lb", "BW". */
+export function weightWithLoad(
+  lb: number,
+  unit: WeightUnit,
+  loadType: 'barbell' | 'dumbbell' | 'stack' | 'bodyweight' | undefined,
+): string {
+  if (loadType === 'bodyweight')
+    return lb > 0 ? `+${fmtWeight(lb, unit)} ${unit}` : 'BW';
+  const w = `${fmtWeight(lb, unit)} ${unit}`;
+  return loadType === 'dumbbell' ? `${w} per hand` : w;
+}

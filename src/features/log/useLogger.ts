@@ -5,7 +5,7 @@
  * hook, not a rebuild). No JSX here: state, derived values, and actions only.
  */
 import { useEffect, useRef, useState } from 'react';
-import { useNav } from '../../ui/nav';
+import { closeWorkout, tuckWorkout } from './workoutMotion';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../db/db';
 import { useSettings } from '../../db/hooks';
@@ -164,10 +164,7 @@ export function useLogger(): LoggerVM | null {
   const adjustRest = useSessionStore((s) => s.adjustRest);
   const stopRest = useSessionStore((s) => s.stopRest);
   const rest = useSessionStore((s) => s.rest);
-  const endSession = useSessionStore((s) => s.endSession);
-  const leaveSession = useSessionStore((s) => s.leaveSession);
   const restoreUI = useSessionStore((s) => s.restoreUI);
-  const nav = useNav();
 
   const [finishing, setFinishing] = useState(false);
   const [whyOpen, setWhyOpen] = useState(false);
@@ -391,8 +388,8 @@ export function useLogger(): LoggerVM | null {
     stopRest();
     await completeSessionAndAdvance(session!.id, nowIso());
     await clearActiveSnapshot();
-    endSession();
-    nav.pop('/today');
+    // The cover lowers onto the screen that started the workout (NAV.md, rule 4).
+    closeWorkout();
   }
 
   /** Throw the session away: every logged set is soft-deleted (undoable in the data),
@@ -407,8 +404,7 @@ export function useLogger(): LoggerVM | null {
     for (const s of logged) await softDeleteSet(s.id, now);
     await db.sessions.update(session!.id, { status: 'partial', endedAt: now });
     await clearActiveSnapshot();
-    endSession();
-    nav.pop('/today');
+    closeWorkout();
   }
 
   /** Non-destructive leave: step out to Today without finalizing. The session stays
@@ -417,8 +413,7 @@ export function useLogger(): LoggerVM | null {
    *  misclick on Back can never finalize a workout. (Finish is the only finalize.) */
   function leave() {
     stopRest();
-    leaveSession();
-    nav.pop('/today');
+    tuckWorkout();
   }
 
   async function undoSet(setId: string) {

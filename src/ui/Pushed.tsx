@@ -2,7 +2,9 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { attachDrag, canScrollLeft } from './gesture';
 import { spring, reducedMotion } from '../lib/spring';
 import { backFeel } from '../lib/feel';
-import { useNav } from './nav';
+import { originOf, useNav } from './nav';
+import { useScreenAt } from './screenAt';
+import { useLocation } from 'react-router-dom';
 
 /* A pushed screen: swipe from the left edge to go back, the screen following the finger
    with the parent screen visible underneath, the way iOS does it. The parent is mounted
@@ -12,7 +14,12 @@ import { useNav } from './nav';
    carries the screen off with the finger's
    own velocity and the route switches to the real parent, which looks the same, so the
    hand-off is invisible; anything less springs it home and the copy unmounts. The edge is
-   24 px so chip rows and the image carousel keep their own horizontal scroll. */
+   24 px so chip rows and the image carousel keep their own horizontal scroll.
+
+   The swipe lands where the screen came from (docs/redesign/NAV.md, rule 1): the origin
+   the push recorded, rendered underneath from the app's route table; `to` and `parent`
+   are only the fallback for a screen opened cold. `canLeave` lets a screen with unsaved
+   edits refuse the swipe: the screen springs home and `onBlocked` asks the question. */
 
 const EDGE = 24;
 const PARALLAX = 0.24;
@@ -22,6 +29,8 @@ export function Pushed({
   to = -1,
   parent,
   className = '',
+  canLeave,
+  onBlocked,
 }: {
   children: ReactNode;
   /** Where the swipe lands; the screen the `parent` preview stands in for. */
@@ -29,16 +38,23 @@ export function Pushed({
   /** The screen under this one, rendered beneath the finger during the swipe. */
   parent?: ReactNode;
   className?: string;
+  canLeave?: () => boolean;
+  onBlocked?: () => void;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const under = useRef<HTMLDivElement>(null);
   const nav = useNav();
+  const origin = originOf(useLocation());
+  const screenAt = useScreenAt();
+  const below = origin && screenAt ? screenAt(origin) : parent;
   const navRef = useRef(nav);
   const toRef = useRef(to);
+  const guardRef = useRef({ canLeave, onBlocked });
   const [dragging, setDragging] = useState(false);
   useEffect(() => {
     navRef.current = nav;
     toRef.current = to;
+    guardRef.current = { canLeave, onBlocked };
   });
 
   useEffect(() => {
@@ -74,10 +90,14 @@ export function Pushed({
         const w = width();
         // Read at release so a change on the tuning panel applies to the next swipe.
         const feel = backFeel();
-        const shouldPop =
+        const wantsPop =
           !cancelled &&
           (x > w * feel.closeFraction || s.vx > feel.flick) &&
           s.vx > -feel.flick;
+        const guard = guardRef.current;
+        const blocked = wantsPop && guard.canLeave ? !guard.canLeave() : false;
+        const shouldPop = wantsPop && !blocked;
+        if (blocked) guard.onBlocked?.();
         if (shouldPop) {
           if (reducedMotion()) {
             navRef.current.swipe(toRef.current);
@@ -114,9 +134,9 @@ export function Pushed({
 
   return (
     <>
-      {dragging && parent !== undefined && (
+      {dragging && below !== undefined && (
         <div ref={under} className="os-pushed-parent" aria-hidden inert>
-          {parent}
+          {below}
         </div>
       )}
       <div ref={ref} className={`os-pushed ${className}`}>

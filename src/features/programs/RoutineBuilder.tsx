@@ -8,12 +8,13 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { useProfile, useSettings } from '../../db/hooks';
 import { startingWeightLb } from '../../engine/body';
 import { ageFromBirthDate } from '../../lib/age';
-import { displayWeight, kgToLb } from '../../lib/units';
+import { displayWeight, kgToLb, loadWord } from '../../lib/units';
 import { clock, titleCase } from '../../lib/format';
 import { ExercisePicker } from '../library/ExercisePicker';
 import { useCatalog } from '../library/useCatalog';
 import { getCatalogExercise } from '../../db/catalog';
 import { BackButton } from '../../ui/StatGrid';
+import { ConfirmSheet } from '../../ui/Sheet';
 import type { Exercise, ExerciseSlot } from '../../db/types';
 import { db } from '../../db/db';
 import type { ProgressionRule } from '../../engine/types';
@@ -157,6 +158,10 @@ export function RoutineBuilder() {
   const [seededFrom, setSeededFrom] = useState<string | null>(null);
   const [picking, setPicking] = useState(false);
   const [saving, setSaving] = useState(false);
+  // Any edit by the lifter (loading a saved day or a handed-over exercise is not one):
+  // leaving with edits asks first (NAV.md, rule 6).
+  const [touched, setTouched] = useState(false);
+  const [asking, setAsking] = useState(false);
   const catalog = useCatalog();
   // Edit mode: the saved day, its program, and each exercise's working weight.
   const editSource = useLiveQuery(async () => {
@@ -253,10 +258,16 @@ export function RoutineBuilder() {
   const shown = (lb: number) => displayWeight(lb, settings.units);
   const fromShown = (v: number) => (settings.units === 'kg' ? kgToLb(v) : v);
 
-  const update = (i: number, patch: Partial<SlotDraft>) =>
+  const update = (i: number, patch: Partial<SlotDraft>) => {
+    setTouched(true);
     setDrafts((ds) => ds.map((d, j) => (j === i ? { ...d, ...patch } : d)));
-  const remove = (i: number) => setDrafts((ds) => ds.filter((_, j) => j !== i));
-  const move = (i: number, dir: -1 | 1) =>
+  };
+  const remove = (i: number) => {
+    setTouched(true);
+    setDrafts((ds) => ds.filter((_, j) => j !== i));
+  };
+  const move = (i: number, dir: -1 | 1) => {
+    setTouched(true);
     setDrafts((ds) => {
       const j = i + dir;
       if (j < 0 || j >= ds.length) return ds;
@@ -264,6 +275,11 @@ export function RoutineBuilder() {
       [next[i], next[j]] = [next[j]!, next[i]!];
       return next;
     });
+  };
+  // Back and the edge swipe return to where the builder was opened from: Plan, Today, or
+  // the exercise whose Add to a day opened it (NAV.md, rule 1).
+  const leave = () => nav.back('/plan');
+  const tryLeave = () => (touched && !saving ? setAsking(true) : leave());
 
   const est = Math.round(
     drafts.reduce((m, d) => m + d.sets * (d.restWorkSec + 35), 0) / 60,
@@ -316,7 +332,7 @@ export function RoutineBuilder() {
           now,
         );
     }
-    nav.pop(existing ? '/plan' : '/today');
+    nav.back(existing ? '/plan' : '/today');
   }
 
   /** Save an edited day in place: same day id, same program, history untouched. */
@@ -377,12 +393,14 @@ export function RoutineBuilder() {
           now,
         );
     }
-    nav.pop('/plan');
+    nav.back('/plan');
   }
 
   return (
     <Pushed
       to="/plan"
+      canLeave={() => !touched || saving}
+      onBlocked={() => setAsking(true)}
       parent={
         <>
           <PlanScreen />
@@ -392,7 +410,7 @@ export function RoutineBuilder() {
     >
       <div className="relative flex h-full flex-col">
         <div className="flex-1 overflow-auto px-[18px] pb-[120px] pt-[max(0.5rem,env(safe-area-inset-top))]">
-          <BackButton onClick={() => nav.pop('/plan')} />
+          <BackButton onClick={tryLeave} />
           <div className="os-t mt-3.5">
             {editing
               ? editSource?.programName || 'Edit day'
@@ -404,7 +422,10 @@ export function RoutineBuilder() {
           </div>
           <input
             value={name}
-            onChange={(e) => setName(e.target.value)}
+            onChange={(e) => {
+              setTouched(true);
+              setName(e.target.value);
+            }}
             placeholder="Name this day"
             aria-label="Day name"
             className="os-input mt-0.5 w-full"
@@ -576,7 +597,7 @@ export function RoutineBuilder() {
                         />
                       )}
                       <Mini
-                        label={`${editing && d.slot ? 'Weight' : 'Start'} · ${settings.units}`}
+                        label={`${loadWord(loadTypeFor(d.exercise.equipment, d.exercise.isBodyweight))} · ${settings.units}`}
                         value={shown(d.startingWeightLb)}
                         onChange={(v) =>
                           update(i, { startingWeightLb: fromShown(v) })
@@ -638,10 +659,23 @@ export function RoutineBuilder() {
           </button>
         </div>
 
+        <ConfirmSheet
+          open={asking}
+          title="Discard changes?"
+          body="Your edits to this day are not saved."
+          cta="Discard"
+          onConfirm={() => {
+            setAsking(false);
+            leave();
+          }}
+          onClose={() => setAsking(false)}
+        />
+
         {picking && (
           <ExercisePicker
             onClose={() => setPicking(false)}
             onPick={(ex) => {
+              setTouched(true);
               setDrafts((ds) => [...ds, draftStart(ex)]);
               setPicking(false);
             }}

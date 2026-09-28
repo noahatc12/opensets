@@ -307,7 +307,7 @@ export function GoalsScreen() {
     >
       <div className="relative flex h-full flex-col">
         <div className="px-[18px] pt-[max(0.5rem,env(safe-area-inset-top))]">
-          <BackButton onClick={() => nav.tab('/settings')} />
+          <BackButton onClick={() => nav.back('/settings')} />
           <div className="os-t mt-3.5">You</div>
           <h1 className="os-h1 mt-0.5">Goals</h1>
         </div>

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { fmtWeight, kgToLb, toUnit } from '../../lib/units';
+import { fmtWeight, kgToLb, loadWord, toUnit } from '../../lib/units';
 import {
   clock,
   compact,
@@ -150,12 +150,9 @@ function Logger({ vm }: { vm: LoggerVM }) {
     return need > 0 && n >= need;
   };
 
+  // Every weight says what it is (docs/redesign/NAV.md, rule 7).
   const weightLabel =
-    loadType === 'bodyweight'
-      ? 'Added weight'
-      : loadType === 'dumbbell'
-        ? 'Per hand'
-        : 'Weight';
+    loadType === 'bodyweight' ? 'Added weight' : loadWord(loadType);
   const numeralSize = (s: string) =>
     s.length > 4 ? 52 : s.length > 3 ? 60 : 72;
   const ctaLabel = `Log set ${activeIndex + 1} · ${w(weight)} × ${reps}`;

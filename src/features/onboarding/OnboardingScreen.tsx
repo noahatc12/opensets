@@ -338,12 +338,13 @@ export function OnboardingScreen() {
     } catch {
       /* ignore */
     }
-    nav.pop('/today');
+    // Back to where the questions were opened: Today, or Plan's Regenerate (NAV.md 4).
+    nav.back('/today');
   }
 
   const next = () =>
     step >= STEPS - 1 ? void finish() : setStep((s) => s + 1);
-  const back = () => (step === 0 ? nav.pop('/today') : setStep((s) => s - 1));
+  const back = () => (step === 0 ? nav.back('/today') : setStep((s) => s - 1));
   const bodyDataGiven = Boolean(bodyweightLb || sex);
 
   return (
