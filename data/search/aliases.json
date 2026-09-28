@@ -1,0 +1,1230 @@
+{
+ "Barbell_Bench_Press_-_Medium_Grip": [
+  "bench press",
+  "bench",
+  "barbell bench press",
+  "flat bench",
+  "flat bench press",
+  "flat barbell bench press",
+  "bench press barbell",
+  "bp"
+ ],
+ "Bench_Press_-_Powerlifting": [
+  "bench press",
+  "bench press barbell"
+ ],
+ "Dumbbell_Bench_Press": [
+  "dumbbell press",
+  "db bench press",
+  "db bench",
+  "dumbbell chest press",
+  "flat dumbbell press",
+  "bench press dumbbell",
+  "dumbbell bench"
+ ],
+ "Barbell_Incline_Bench_Press_-_Medium_Grip": [
+  "incline bench press",
+  "incline bench",
+  "incline barbell press",
+  "incline press",
+  "incline bench press barbell"
+ ],
+ "Incline_Dumbbell_Press": [
+  "incline bench press dumbbell"
+ ],
+ "Decline_Barbell_Bench_Press": [
+  "decline bench press",
+  "decline bench",
+  "decline press",
+  "decline bench press barbell"
+ ],
+ "Decline_Dumbbell_Bench_Press": [
+  "decline bench press dumbbell"
+ ],
+ "Close-Grip_Barbell_Bench_Press": [
+  "close grip bench press",
+  "close grip bench",
+  "cgbp",
+  "narrow grip bench press",
+  "bench press close grip",
+  "bench press narrow grip"
+ ],
+ "Wide-Grip_Barbell_Bench_Press": [
+  "wide grip bench press",
+  "wide grip bench",
+  "bench press wide grip"
+ ],
+ "Floor_Press": [
+  "floor press barbell"
+ ],
+ "Dumbbell_Floor_Press": [
+  "floor press dumbbell"
+ ],
+ "Butterfly": [
+  "pec deck",
+  "pec dec",
+  "pec fly",
+  "pec deck fly",
+  "machine fly",
+  "chest fly machine",
+  "fly machine",
+  "machine chest fly",
+  "butterfly machine",
+  "seated lever fly",
+  "pec deck machine",
+  "pectoral fly",
+  "butterfly (pec deck)"
+ ],
+ "Cable_Crossover": [
+  "cable fly",
+  "cable flye",
+  "cable flyes",
+  "cable crossovers",
+  "cable chest fly",
+  "crossover"
+ ],
+ "Low_Cable_Crossover": [
+  "low cable fly"
+ ],
+ "Flat_Bench_Cable_Flyes": [
+  "cable flye"
+ ],
+ "Dumbbell_Flyes": [
+  "dumbbell fly",
+  "dumbbell flye",
+  "chest fly",
+  "chest fly dumbbell",
+  "dumbbell chest fly",
+  "flyes"
+ ],
+ "Incline_Dumbbell_Flyes": [
+  "incline dumbbell fly",
+  "incline fly",
+  "incline chest fly"
+ ],
+ "Decline_Dumbbell_Flyes": [
+  "decline dumbbell fly"
+ ],
+ "Machine_Bench_Press": [
+  "chest press machine",
+  "machine chest press",
+  "seated chest press",
+  "chest press",
+  "machine press"
+ ],
+ "Leverage_Chest_Press": [
+  "iso lateral chest press",
+  "iso-lateral bench press",
+  "iso lateral horizontal bench press",
+  "iso lateral wide chest press"
+ ],
+ "Leverage_Incline_Chest_Press": [
+  "iso lateral incline press"
+ ],
+ "Leverage_Decline_Chest_Press": [
+  "iso lateral decline chest press",
+  "hammerstrength decline chest press"
+ ],
+ "Cable_Chest_Press": [
+  "cable press"
+ ],
+ "Pushups": [
+  "push up",
+  "pushup",
+  "push ups",
+  "press up",
+  "press ups"
+ ],
+ "Push-Up_Wide": [
+  "wide push up",
+  "wide grip push up"
+ ],
+ "Decline_Push-Up": [
+  "decline pushup"
+ ],
+ "Push-Ups_With_Feet_Elevated": [
+  "decline push up",
+  "elevated push up"
+ ],
+ "Push-Ups_-_Close_Triceps_Position": [
+  "diamond push up",
+  "diamond press up",
+  "tricep push up",
+  "triceps push up",
+  "close grip press up"
+ ],
+ "Plyo_Push-up": [
+  "plyometric push up",
+  "clap push up",
+  "explosive push up"
+ ],
+ "Dips_-_Chest_Version": [
+  "chest dip",
+  "chest dips",
+  "dips",
+  "dip"
+ ],
+ "Straight-Arm_Dumbbell_Pullover": [
+  "dumbbell pullover",
+  "pullover"
+ ],
+ "Bent-Arm_Dumbbell_Pullover": [
+  "dumbbell pullover",
+  "pullover"
+ ],
+ "Barbell_Deadlift": [
+  "deadlift",
+  "conventional deadlift",
+  "dl",
+  "deadlift barbell",
+  "deadlifts"
+ ],
+ "Sumo_Deadlift": [
+  "sumo"
+ ],
+ "Romanian_Deadlift": [
+  "rdl",
+  "rdls",
+  "romanian dl"
+ ],
+ "Stiff-Legged_Barbell_Deadlift": [
+  "sldl",
+  "stiff leg deadlift",
+  "stiff legged deadlift",
+  "straight leg deadlift",
+  "stiff/straight leg deadlift"
+ ],
+ "Stiff-Legged_Dumbbell_Deadlift": [
+  "dumbbell romanian deadlift",
+  "romanian deadlift dumbbell"
+ ],
+ "Trap_Bar_Deadlift": [
+  "hex bar deadlift",
+  "trap bar",
+  "hex bar",
+  "hexagonal bar deadlift"
+ ],
+ "Rack_Pulls": [
+  "rack pull",
+  "partial deadlift"
+ ],
+ "Good_Morning": [
+  "good mornings",
+  "barbell good morning",
+  "good morning barbell",
+  "gm",
+  "hip hinge"
+ ],
+ "Hyperextensions_Back_Extensions": [
+  "back extension",
+  "back extensions",
+  "hyperextension",
+  "hyperextensions",
+  "roman chair"
+ ],
+ "Reverse_Hyperextension": [
+  "reverse hyperextensions"
+ ],
+ "Wide-Grip_Lat_Pulldown": [
+  "lat pulldown",
+  "lat pull down",
+  "pulldown",
+  "pull down",
+  "lat pulldown cable",
+  "wide grip pulldown",
+  "lat pulldown (wide grip)",
+  "lat pulldowns"
+ ],
+ "Close-Grip_Front_Lat_Pulldown": [
+  "close grip lat pulldown"
+ ],
+ "V-Bar_Pulldown": [
+  "close grip lat pulldown",
+  "neutral grip lat pulldown"
+ ],
+ "Underhand_Cable_Pulldowns": [
+  "reverse grip lat pulldown"
+ ],
+ "One_Arm_Lat_Pulldown": [
+  "single arm lat pulldown"
+ ],
+ "Pullups": [
+  "pull up",
+  "pullup",
+  "pull ups",
+  "chin up bar"
+ ],
+ "Chin-Up": [
+  "chinup",
+  "chin ups",
+  "chins",
+  "reverse grip pull up"
+ ],
+ "Weighted_Pull_Ups": [
+  "weighted pull up",
+  "weighted chin up"
+ ],
+ "Band_Assisted_Pull-Up": [
+  "assisted pull up"
+ ],
+ "Muscle_Up": [
+  "bar muscle up"
+ ],
+ "Seated_Cable_Rows": [
+  "seated row",
+  "seated cable row",
+  "cable row",
+  "low row",
+  "row machine",
+  "seated row machine",
+  "seated cable row - v grip (cable)",
+  "cable seated row"
+ ],
+ "Seated_One-arm_Cable_Pulley_Rows": [
+  "single arm cable row",
+  "unilateral cable row"
+ ],
+ "Bent_Over_Barbell_Row": [
+  "barbell row",
+  "bent over row",
+  "bor",
+  "barbell bent over row",
+  "bent over row barbell",
+  "pendlay row",
+  "barbell rows",
+  "yates row"
+ ],
+ "Reverse_Grip_Bent-Over_Rows": [
+  "yates row",
+  "underhand row"
+ ],
+ "One-Arm_Dumbbell_Row": [
+  "dumbbell row",
+  "db row",
+  "single arm dumbbell row",
+  "one arm db row",
+  "one arm db rows",
+  "bent over dumbbell row",
+  "kroc row",
+  "single arm row",
+  "dumbbell rows"
+ ],
+ "Bent_Over_Two-Dumbbell_Row": [
+  "dumbbell bent over row",
+  "bent over dumbbell row",
+  "bent over row dumbbell"
+ ],
+ "T-Bar_Row_with_Handle": [
+  "t bar row",
+  "landmine row",
+  "t bar rows"
+ ],
+ "Lying_T-Bar_Row": [
+  "chest supported t bar row",
+  "chest supported row",
+  "t bar row machine"
+ ],
+ "Dumbbell_Incline_Row": [
+  "chest supported row",
+  "chest supported dumbbell row",
+  "incline dumbbell row",
+  "incline row"
+ ],
+ "Lying_Cambered_Barbell_Row": [
+  "seal row"
+ ],
+ "Bent_Over_One-Arm_Long_Bar_Row": [
+  "meadows row",
+  "landmine row"
+ ],
+ "Leverage_Iso_Row": [
+  "iso lateral row",
+  "hammer strength row",
+  "lever row",
+  "iso row",
+  "iso lateral low row"
+ ],
+ "Leverage_High_Row": [
+  "high row",
+  "iso lateral high row"
+ ],
+ "Smith_Machine_Bent_Over_Row": [
+  "smith row"
+ ],
+ "Inverted_Row": [
+  "australian pull up",
+  "bodyweight row",
+  "inverted rows",
+  "horizontal pull up",
+  "horizontal pull-ups"
+ ],
+ "Suspended_Row": [
+  "trx row",
+  "ring row"
+ ],
+ "Straight-Arm_Pulldown": [
+  "straight arm lat pulldown",
+  "lat prayer"
+ ],
+ "Rope_Straight-Arm_Pulldown": [
+  "rope pullover"
+ ],
+ "Face_Pull": [
+  "face pulls",
+  "facepull"
+ ],
+ "Band_Pull_Apart": [
+  "pull aparts"
+ ],
+ "Barbell_Shrug": [
+  "shrug",
+  "shrugs",
+  "barbell shrugs",
+  "shrug barbell",
+  "trap shrug",
+  "shoulder shrug"
+ ],
+ "Dumbbell_Shrug": [
+  "dumbbell shrugs",
+  "shrug dumbbell",
+  "shrugs"
+ ],
+ "Cable_Shrugs": [
+  "cable shrug"
+ ],
+ "Rope_Climb": [
+  "rope climbing"
+ ],
+ "Standing_Military_Press": [
+  "ohp",
+  "overhead press",
+  "military press",
+  "strict press",
+  "overhead press barbell",
+  "ohp barbell",
+  "military press with barbell",
+  "strict military press"
+ ],
+ "Barbell_Shoulder_Press": [
+  "shoulder press",
+  "overhead press",
+  "ohp",
+  "overhead press barbell",
+  "ohp barbell"
+ ],
+ "Seated_Barbell_Military_Press": [
+  "seated overhead press"
+ ],
+ "Dumbbell_Shoulder_Press": [
+  "db press",
+  "shoulder press dumbbell",
+  "overhead press dumbbell",
+  "ohp dumbbells",
+  "shoulder press dumbbells",
+  "military press with dumbbells"
+ ],
+ "Seated_Dumbbell_Press": [
+  "seated shoulder press"
+ ],
+ "Arnold_Dumbbell_Press": [
+  "arnold press",
+  "arnold shoulder press",
+  "arnold press dumbbell",
+  "schwarzenegger press"
+ ],
+ "Machine_Shoulder_Military_Press": [
+  "shoulder press machine",
+  "machine shoulder press",
+  "seated shoulder press machine"
+ ],
+ "Leverage_Shoulder_Press": [
+  "iso lateral shoulder press",
+  "machine shoulder press"
+ ],
+ "Standing_Barbell_Press_Behind_Neck": [
+  "behind the neck press",
+  "btn"
+ ],
+ "Push_Press": [
+  "barbell push press"
+ ],
+ "Landmine_Linear_Jammer": [
+  "landmine press"
+ ],
+ "Single-Arm_Linear_Jammer": [
+  "single arm landmine press",
+  "landmine press"
+ ],
+ "Handstand_Push-Ups": [
+  "handstand push up",
+  "hspu"
+ ],
+ "Side_Lateral_Raise": [
+  "lateral raise",
+  "lateral raises",
+  "side raise",
+  "side raises",
+  "lat raise",
+  "lateral raise dumbbell",
+  "dumbbell lateral raise",
+  "shoulder fly"
+ ],
+ "Seated_Side_Lateral_Raise": [
+  "seated lateral raise",
+  "seated lateral raises"
+ ],
+ "Cable_Seated_Lateral_Raise": [
+  "cable lateral raise",
+  "cable lateral raises",
+  "lateral raise cable"
+ ],
+ "Front_Dumbbell_Raise": [
+  "front raise",
+  "front raises",
+  "dumbbell front raise",
+  "dumbbell front raises",
+  "db front raises",
+  "front raise dumbbell"
+ ],
+ "Front_Cable_Raise": [
+  "cable front raise",
+  "front raise cable"
+ ],
+ "Front_Plate_Raise": [
+  "plate front raise",
+  "front raise plate"
+ ],
+ "Reverse_Flyes": [
+  "reverse fly",
+  "rear delt fly",
+  "rear delt flye",
+  "rear delt raise",
+  "bent over reverse fly",
+  "bent over lateral raise"
+ ],
+ "Reverse_Machine_Flyes": [
+  "reverse pec deck",
+  "reverse pec deck fly",
+  "rear delt machine",
+  "reverse fly machine",
+  "machine reverse fly"
+ ],
+ "Upright_Barbell_Row": [
+  "upright row",
+  "upright rows",
+  "barbell upright row",
+  "upright row barbell"
+ ],
+ "Upright_Cable_Row": [
+  "cable upright row",
+  "upright row cable"
+ ],
+ "Standing_Dumbbell_Upright_Row": [
+  "dumbbell upright row"
+ ],
+ "External_Rotation_with_Cable": [
+  "cable external rotation",
+  "external rotation cable"
+ ],
+ "External_Rotation": [
+  "side lying external rotation",
+  "rotator cuff"
+ ],
+ "Barbell_Curl": [
+  "bicep curl",
+  "biceps curl",
+  "barbell bicep curl",
+  "curl",
+  "bicep curl barbell",
+  "barbell curls",
+  "standing barbell curl"
+ ],
+ "Dumbbell_Bicep_Curl": [
+  "dumbbell curl",
+  "bicep curl",
+  "dumbbell curls"
+ ],
+ "Dumbbell_Alternate_Bicep_Curl": [
+  "alternating dumbbell curl",
+  "alternating bicep curl"
+ ],
+ "Hammer_Curls": [
+  "hammer curl",
+  "dumbbell hammer curl",
+  "hammer curl dumbbell"
+ ],
+ "EZ-Bar_Curl": [
+  "ez curl"
+ ],
+ "Preacher_Curl": [
+  "preacher curls",
+  "barbell preacher curl",
+  "scott curl"
+ ],
+ "Machine_Preacher_Curls": [
+  "preacher curl machine"
+ ],
+ "One_Arm_Dumbbell_Preacher_Curl": [
+  "single arm preacher curl"
+ ],
+ "Concentration_Curls": [
+  "concentration curl"
+ ],
+ "Incline_Dumbbell_Curl": [
+  "incline curl",
+  "incline bicep curl",
+  "incline curls"
+ ],
+ "Standing_Biceps_Cable_Curl": [
+  "cable curl",
+  "cable bicep curl",
+  "cable curls",
+  "straight bar cable curl"
+ ],
+ "Overhead_Cable_Curl": [
+  "high cable curl"
+ ],
+ "Spider_Curl": [
+  "spider curls"
+ ],
+ "Drag_Curl": [
+  "drag curls"
+ ],
+ "Zottman_Curl": [
+  "zottman curls"
+ ],
+ "Reverse_Barbell_Curl": [
+  "reverse curl",
+  "reverse curls",
+  "reverse grip barbell curl"
+ ],
+ "Machine_Bicep_Curl": [
+  "bicep curl machine",
+  "biceps curl machine"
+ ],
+ "Triceps_Pushdown": [
+  "tricep pushdown",
+  "pushdown",
+  "tricep pressdown",
+  "pressdown",
+  "cable pushdown",
+  "triceps press-down",
+  "cable tricep pushdown",
+  "tricep pushdowns",
+  "triceps push down"
+ ],
+ "Triceps_Pushdown_-_Rope_Attachment": [
+  "rope pushdown",
+  "tricep rope pushdown",
+  "triceps rope pushdown",
+  "rope push down"
+ ],
+ "EZ-Bar_Skullcrusher": [
+  "skull crusher",
+  "skull crushers",
+  "skullcrusher",
+  "skullcrushers",
+  "lying tricep extension",
+  "lying triceps extension",
+  "french press",
+  "skullcrusher (barbell)",
+  "nose breaker",
+  "french press sz-bar"
+ ],
+ "Lying_Triceps_Press": [
+  "skull crusher",
+  "skullcrusher",
+  "skull crushers",
+  "lying triceps extension",
+  "lying tricep extension",
+  "french press",
+  "nose breaker"
+ ],
+ "Lying_Dumbbell_Tricep_Extension": [
+  "dumbbell skullcrusher",
+  "skullcrusher dumbbells",
+  "french press dumbbells"
+ ],
+ "Cable_Rope_Overhead_Triceps_Extension": [
+  "overhead triceps extension",
+  "overhead tricep extension"
+ ],
+ "Triceps_Overhead_Extension_with_Rope": [
+  "overhead triceps extension"
+ ],
+ "Standing_Dumbbell_Triceps_Extension": [
+  "overhead tricep extension",
+  "overhead triceps extension",
+  "french press",
+  "overhead extension",
+  "tricep extension"
+ ],
+ "Tricep_Dumbbell_Kickback": [
+  "tricep kickback",
+  "triceps kickback",
+  "kickback",
+  "kickbacks",
+  "dumbbell kickback",
+  "tricep kickbacks"
+ ],
+ "Machine_Triceps_Extension": [
+  "tricep extension machine",
+  "triceps extension machine",
+  "machine tricep extension"
+ ],
+ "Cable_One_Arm_Tricep_Extension": [
+  "one arm tricep extension"
+ ],
+ "Dip_Machine": [
+  "assisted dip",
+  "tricep dip machine"
+ ],
+ "Dips_-_Triceps_Version": [
+  "tricep dips",
+  "triceps dips",
+  "dips",
+  "dip",
+  "tricep dip",
+  "parallel bar dips"
+ ],
+ "Parallel_Bar_Dip": [
+  "dips",
+  "parallel bar dips",
+  "dip",
+  "bar dips"
+ ],
+ "Bench_Dips": [
+  "bench dip",
+  "tricep dips",
+  "chair dips"
+ ],
+ "Ring_Dips": [
+  "ring dip"
+ ],
+ "Palms-Up_Barbell_Wrist_Curl_Over_A_Bench": [
+  "wrist curl",
+  "wrist curls",
+  "barbell wrist curl",
+  "forearm curl",
+  "forearm curls"
+ ],
+ "Palms-Down_Wrist_Curl_Over_A_Bench": [
+  "reverse wrist curl",
+  "reverse wrist curls",
+  "wrist extension",
+  "barbell reverse wrist curl"
+ ],
+ "Farmers_Walk": [
+  "farmers carry",
+  "farmers walks"
+ ],
+ "Barbell_Squat": [
+  "squat",
+  "back squat",
+  "barbell back squat",
+  "squats",
+  "high bar squat",
+  "low bar squat",
+  "squat barbell",
+  "bs",
+  "back squats"
+ ],
+ "Barbell_Full_Squat": [
+  "full squat",
+  "deep squat",
+  "back squat",
+  "olympic squat"
+ ],
+ "Front_Barbell_Squat": [
+  "front squat",
+  "front squats",
+  "front squat barbell",
+  "fs"
+ ],
+ "Front_Squat_Clean_Grip": [
+  "front squat",
+  "front squat (barbell)"
+ ],
+ "Goblet_Squat": [
+  "goblet squats",
+  "kettlebell goblet squat",
+  "dumbbell goblet squat"
+ ],
+ "Box_Squat": [
+  "box squats"
+ ],
+ "Smith_Machine_Squat": [
+  "smith squat",
+  "smith machine squats"
+ ],
+ "Hack_Squat": [
+  "hack squat machine",
+  "machine hack squat",
+  "machine squat",
+  "hack squats"
+ ],
+ "Leg_Press": [
+  "leg press machine",
+  "45 degree leg press",
+  "sled leg press",
+  "seated leg press"
+ ],
+ "Bodyweight_Squat": [
+  "air squat",
+  "air squats",
+  "squat",
+  "bodyweight squats"
+ ],
+ "Wide_Stance_Barbell_Squat": [
+  "sumo squat barbell",
+  "wide squat"
+ ],
+ "Plie_Dumbbell_Squat": [
+  "sumo squat",
+  "plie squat",
+  "sumo squats"
+ ],
+ "Zercher_Squats": [
+  "zercher squat",
+  "zercher"
+ ],
+ "Overhead_Squat": [
+  "ohs",
+  "overhead squats",
+  "ohsq"
+ ],
+ "Weighted_Sissy_Squat": [
+  "sissy squat",
+  "sissy squats"
+ ],
+ "Kettlebell_Pistol_Squat": [
+  "pistol squat",
+  "pistol squats",
+  "single leg squat",
+  "pistol"
+ ],
+ "Weighted_Squat": [
+  "belt squat",
+  "belt squats"
+ ],
+ "Split_Squat_with_Dumbbells": [
+  "bulgarian split squat",
+  "bss",
+  "rear foot elevated split squat",
+  "rfess",
+  "split squat",
+  "bulgarian split squats",
+  "bulgarian squat",
+  "dumbbell split squat"
+ ],
+ "Smith_Single-Leg_Split_Squat": [
+  "smith machine split squat"
+ ],
+ "Barbell_Lunge": [
+  "lunge",
+  "lunges",
+  "barbell lunges",
+  "lunge barbell",
+  "forward lunge"
+ ],
+ "Dumbbell_Lunges": [
+  "dumbbell lunge",
+  "lunges",
+  "lunge",
+  "lunge dumbbell",
+  "forward lunge"
+ ],
+ "Barbell_Walking_Lunge": [
+  "walking lunge",
+  "walking lunges"
+ ],
+ "Bodyweight_Walking_Lunge": [
+  "walking lunge",
+  "walking lunges",
+  "bodyweight lunge"
+ ],
+ "Dumbbell_Rear_Lunge": [
+  "reverse lunge",
+  "reverse lunges",
+  "rear lunge",
+  "step back lunge"
+ ],
+ "Barbell_Step_Ups": [
+  "barbell step up",
+  "step up",
+  "step ups"
+ ],
+ "Dumbbell_Step_Ups": [
+  "dumbbell step up",
+  "step up",
+  "step ups",
+  "chair steps"
+ ],
+ "Leg_Extensions": [
+  "leg extension",
+  "knee extension",
+  "leg extension machine"
+ ],
+ "Single-Leg_Leg_Extension": [
+  "single leg extension"
+ ],
+ "Lying_Leg_Curls": [
+  "leg curl",
+  "leg curls",
+  "lying leg curl",
+  "hamstring curl",
+  "lying hamstring curl",
+  "leg curl machine",
+  "lying leg curl (machine)",
+  "hamstring curls"
+ ],
+ "Seated_Leg_Curl": [
+  "leg curl",
+  "hamstring curl",
+  "seated leg curls",
+  "leg curl machine"
+ ],
+ "Glute_Ham_Raise": [
+  "ghr",
+  "glute ham developer"
+ ],
+ "Natural_Glute_Ham_Raise": [
+  "nordic curl",
+  "nordic hamstring curl",
+  "nordic",
+  "nordics",
+  "nordic curls"
+ ],
+ "Floor_Glute-Ham_Raise": [
+  "nordic curl",
+  "nordic hamstring curl",
+  "nordics",
+  "nordic curls"
+ ],
+ "Barbell_Hip_Thrust": [
+  "hip thrust",
+  "hip thrusts",
+  "hip thrust barbell"
+ ],
+ "Barbell_Glute_Bridge": [
+  "glute bridge",
+  "glute bridges",
+  "hip bridge"
+ ],
+ "Butt_Lift_Bridge": [
+  "glute bridge",
+  "bridge",
+  "hip bridge",
+  "glute bridges"
+ ],
+ "Single_Leg_Glute_Bridge": [
+  "single leg bridge"
+ ],
+ "Pull_Through": [
+  "cable pull through",
+  "pull throughs"
+ ],
+ "One-Legged_Cable_Kickback": [
+  "cable kickback",
+  "cable kickbacks",
+  "kickback"
+ ],
+ "Glute_Kickback": [
+  "donkey kick",
+  "donkey kicks",
+  "glute kickbacks"
+ ],
+ "Thigh_Abductor": [
+  "hip abduction",
+  "hip abduction machine",
+  "abductor machine",
+  "abduction machine",
+  "outer thigh machine",
+  "hip abductor",
+  "abductors",
+  "seated hip abduction",
+  "outer thigh"
+ ],
+ "Thigh_Adductor": [
+  "hip adduction",
+  "hip adduction machine",
+  "adductor machine",
+  "adduction machine",
+  "inner thigh machine",
+  "hip adductor",
+  "adductors",
+  "seated hip adduction",
+  "inner thigh"
+ ],
+ "Monster_Walk": [
+  "monster walks",
+  "banded monster walk"
+ ],
+ "Kettlebell_One-Legged_Deadlift": [
+  "single leg deadlift",
+  "single leg rdl",
+  "single leg romanian deadlift",
+  "sldl"
+ ],
+ "Standing_Calf_Raises": [
+  "calf raise",
+  "calf raises",
+  "standing calf raise",
+  "standing calf raise machine",
+  "calf raise machine"
+ ],
+ "Seated_Calf_Raise": [
+  "seated calf raises",
+  "seated calf raise machine",
+  "seated calf"
+ ],
+ "Calf_Press_On_The_Leg_Press_Machine": [
+  "leg press calf raise",
+  "calf press",
+  "calf press on leg press"
+ ],
+ "Calf_Press": [
+  "calf press machine"
+ ],
+ "Donkey_Calf_Raises": [
+  "donkey calf raise"
+ ],
+ "Standing_Dumbbell_Calf_Raise": [
+  "dumbbell calf raise",
+  "single leg calf raise"
+ ],
+ "Plank": [
+  "planks",
+  "front plank",
+  "forearm plank",
+  "elbow plank"
+ ],
+ "Side_Bridge": [
+  "side plank",
+  "side planks"
+ ],
+ "Crunches": [
+  "crunch",
+  "ab crunch",
+  "abdominal crunch"
+ ],
+ "Cable_Crunch": [
+  "cable crunches"
+ ],
+ "Ab_Crunch_Machine": [
+  "ab machine",
+  "crunch machine",
+  "abdominal crunch machine",
+  "machine crunch"
+ ],
+ "Decline_Crunch": [
+  "decline crunches"
+ ],
+ "Reverse_Crunch": [
+  "reverse crunches"
+ ],
+ "Oblique_Crunches": [
+  "oblique crunch",
+  "side crunch"
+ ],
+ "Sit-Up": [
+  "sit ups"
+ ],
+ "Hanging_Leg_Raise": [
+  "hanging leg raises",
+  "leg raise",
+  "toes to bar",
+  "hanging straight leg raise"
+ ],
+ "Knee_Hip_Raise_On_Parallel_Bars": [
+  "captain's chair",
+  "captain's chair knee raise",
+  "vertical knee raise",
+  "knee raise",
+  "knee raises",
+  "hanging knee raise",
+  "power tower",
+  "vertical leg raise"
+ ],
+ "Flat_Bench_Lying_Leg_Raise": [
+  "lying leg raise",
+  "leg raise",
+  "lying leg raises",
+  "bench leg raise",
+  "leg raises"
+ ],
+ "Ab_Roller": [
+  "ab wheel",
+  "ab wheel rollout",
+  "ab rollout",
+  "rollout",
+  "ab wheel rollouts"
+ ],
+ "Barbell_Ab_Rollout": [
+  "ab rollout"
+ ],
+ "Russian_Twist": [
+  "russian twists"
+ ],
+ "Dead_Bug": [
+  "dead bugs",
+  "deadbug"
+ ],
+ "Pallof_Press": [
+  "pallof"
+ ],
+ "Standing_Cable_Wood_Chop": [
+  "wood chop",
+  "woodchop",
+  "woodchopper",
+  "cable woodchopper",
+  "wood chops"
+ ],
+ "Mountain_Climbers": [
+  "mountain climber"
+ ],
+ "Air_Bike": [
+  "bicycle crunch",
+  "bicycle crunches",
+  "bicycles",
+  "cross body crunch"
+ ],
+ "Flutter_Kicks": [
+  "flutter kick"
+ ],
+ "Jackknife_Sit-Up": [
+  "v up",
+  "v ups",
+  "jackknife"
+ ],
+ "Dumbbell_Side_Bend": [
+  "side bend",
+  "side bends"
+ ],
+ "Superman": [
+  "supermans"
+ ],
+ "Exercise_Ball_Crunch": [
+  "swiss ball crunch",
+  "ball crunch"
+ ],
+ "Running_Treadmill": [
+  "treadmill",
+  "running",
+  "run",
+  "treadmill running",
+  "jogging"
+ ],
+ "Walking_Treadmill": [
+  "walking",
+  "treadmill walking",
+  "walk"
+ ],
+ "Bicycling_Stationary": [
+  "stationary bike",
+  "exercise bike",
+  "bike",
+  "cycling",
+  "spin bike",
+  "indoor cycling",
+  "stationary bicycle",
+  "cycle"
+ ],
+ "Rowing_Stationary": [
+  "rowing machine",
+  "rower",
+  "rowing",
+  "row machine",
+  "erg",
+  "ergometer",
+  "indoor rower",
+  "indoor rowing",
+  "concept2",
+  "rowing ergometer"
+ ],
+ "Elliptical_Trainer": [
+  "elliptical",
+  "cross trainer",
+  "elliptical machine"
+ ],
+ "Stairmaster": [
+  "stair climber",
+  "stair master",
+  "stepper",
+  "stair climbing",
+  "stairclimber",
+  "stepmill"
+ ],
+ "Rope_Jumping": [
+  "jump rope",
+  "skipping",
+  "skipping rope",
+  "jumping rope",
+  "rope skipping",
+  "double unders"
+ ],
+ "Battling_Ropes": [
+  "battle ropes",
+  "battle rope",
+  "rope waves",
+  "ropes"
+ ],
+ "Sled_Push": [
+  "prowler",
+  "sled"
+ ],
+ "Star_Jump": [
+  "jumping jack",
+  "jumping jacks",
+  "star jumps"
+ ],
+ "Front_Box_Jump": [
+  "box jump",
+  "box jumps"
+ ],
+ "Power_Clean": [
+  "power cleans",
+  "pc",
+  "clean"
+ ],
+ "Clean_and_Jerk": [
+  "clean jerk"
+ ],
+ "Snatch": [
+  "full snatch",
+  "squat snatch"
+ ],
+ "Hang_Clean": [
+  "hang cleans",
+  "hang power clean"
+ ],
+ "Clean_and_Press": [
+  "barbell clean and press"
+ ],
+ "One-Arm_Kettlebell_Swings": [
+  "kettlebell swing",
+  "kettlebell swings",
+  "kbs",
+  "russian swing",
+  "one arm kettlebell swing"
+ ],
+ "Kettlebell_Turkish_Get-Up_Squat_style": [
+  "turkish get up",
+  "tgu",
+  "get up",
+  "kettlebell turkish get up"
+ ],
+ "Kettlebell_Thruster": [
+  "thruster",
+  "thrusters"
+ ],
+ "Overhead_Slam": [
+  "ball slam",
+  "slam ball",
+  "ball slams",
+  "slams"
+ ],
+ "Atlas_Stones": [
+  "atlas stone"
+ ]
+}

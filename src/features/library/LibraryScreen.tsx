@@ -7,11 +7,11 @@ import {
 } from 'react';
 import { useNav } from '../../ui/nav';
 import { Virtuoso } from 'react-virtuoso';
-import { useCatalog, useSearchIndex } from './useCatalog';
+import { useCatalog } from './useCatalog';
 import { useBestE1rm } from './useBestE1rm';
 import { MUSCLE_GROUPS } from './muscleGroups';
-import { searchCatalog, getCatalogExercise } from '../../db/catalog';
-import { searchIds } from '../../db/searchIndex';
+import { getCatalogExercise } from '../../db/catalog';
+import { searchExercises } from '../../db/exerciseSearch';
 import { useSettings } from '../../db/hooks';
 import { roundDisplay, toUnit } from '../../lib/units';
 import { titleCase } from '../../lib/format';
@@ -139,7 +139,6 @@ const kept: { query: string; facets: FacetState } = {
 export function LibraryScreen() {
   const nav = useNav();
   const catalog = useCatalog();
-  const index = useSearchIndex();
   const { units } = useSettings();
   const { best, sessions } = useBestE1rm();
   const [query, setQuery] = useState(kept.query);
@@ -188,16 +187,32 @@ export function LibraryScreen() {
     };
   }, [catalog]);
 
+  // Search by name, alias, muscle and equipment (db/exerciseSearch.ts); an alias hit is
+  // shown on the row so "pec fly" landing on Butterfly explains itself.
+  const hits = useMemo(
+    () =>
+      catalog && query.trim()
+        ? searchExercises(catalog, query, { limit: 100 })
+        : null,
+    [catalog, query],
+  );
+  const aliasOf = useMemo(
+    () =>
+      new Map(
+        (hits ?? []).flatMap((h) =>
+          h.matchedAlias ? [[h.id, h.matchedAlias] as const] : [],
+        ),
+      ),
+    [hits],
+  );
+
   const results = useMemo(() => {
     if (!catalog) return [];
-    const q = query.trim();
-    let base: Exercise[];
-    if (!q) base = catalog;
-    else if (index)
-      base = searchIds(index, q, 100)
-        .map((id) => getCatalogExercise(id))
-        .filter((e): e is Exercise => Boolean(e));
-    else base = searchCatalog(catalog, q, catalog.length);
+    const base: Exercise[] = hits
+      ? hits
+          .map((h) => getCatalogExercise(h.id))
+          .filter((e): e is Exercise => Boolean(e))
+      : catalog;
 
     const selMuscles = new Set<Muscle>();
     for (const key of facets.muscles)
@@ -232,7 +247,7 @@ export function LibraryScreen() {
         return false;
       return true;
     });
-  }, [catalog, index, query, facets]);
+  }, [catalog, hits, facets]);
 
   // The lifter's own exercises, best e1RM first, within the same search and filters.
   const yours = useMemo(
@@ -247,7 +262,11 @@ export function LibraryScreen() {
   const open = (ex: Exercise) =>
     nav.push(`/library/${encodeURIComponent(ex.id)}`);
   const meta = (ex: Exercise) =>
-    [titleCase(ex.primaryMuscles[0]), titleCase(ex.equipment)]
+    [
+      aliasOf.has(ex.id) ? `matches “${aliasOf.get(ex.id)}”` : null,
+      titleCase(ex.primaryMuscles[0]),
+      titleCase(ex.equipment),
+    ]
       .filter(Boolean)
       .join(' · ');
 

@@ -1,0 +1,3643 @@
+[
+ {
+  "query": "pec fly",
+  "expect": [
+   "Butterfly",
+   "Dumbbell_Flyes",
+   "Cable_Crossover",
+   "Flat_Bench_Cable_Flyes"
+  ],
+  "category": "vernacular",
+  "split": "dev"
+ },
+ {
+  "query": "pec fly machine",
+  "expect": [
+   "Butterfly"
+  ],
+  "category": "vernacular",
+  "split": "dev"
+ },
+ {
+  "query": "pec deck",
+  "expect": [
+   "Butterfly"
+  ],
+  "category": "vernacular",
+  "split": "dev"
+ },
+ {
+  "query": "pec dec",
+  "expect": [
+   "Butterfly"
+  ],
+  "category": "vernacular",
+  "split": "holdout"
+ },
+ {
+  "query": "peck deck",
+  "expect": [
+   "Butterfly"
+  ],
+  "category": "vernacular",
+  "split": "dev"
+ },
+ {
+  "query": "chest fly machine",
+  "expect": [
+   "Butterfly"
+  ],
+  "category": "vernacular",
+  "split": "dev"
+ },
+ {
+  "query": "machine fly",
+  "expect": [
+   "Butterfly"
+  ],
+  "category": "vernacular",
+  "split": "dev"
+ },
+ {
+  "query": "reverse pec deck",
+  "expect": [
+   "Reverse_Machine_Flyes"
+  ],
+  "category": "vernacular",
+  "split": "holdout"
+ },
+ {
+  "query": "rear delt machine",
+  "expect": [
+   "Reverse_Machine_Flyes"
+  ],
+  "category": "vernacular",
+  "split": "dev"
+ },
+ {
+  "query": "rear delt fly",
+  "expect": [
+   "Reverse_Flyes",
+   "Reverse_Machine_Flyes",
+   "Cable_Rear_Delt_Fly",
+   "Seated_Bent-Over_Rear_Delt_Raise",
+   "Bent_Over_Dumbbell_Rear_Delt_Raise_With_Head_On_Bench",
+   "Lying_Rear_Delt_Raise"
+  ],
+  "category": "vernacular",
+  "split": "dev"
+ },
+ {
+  "query": "lat pulldown",
+  "expect": [
+   "Wide-Grip_Lat_Pulldown",
+   "Close-Grip_Front_Lat_Pulldown",
+   "V-Bar_Pulldown",
+   "Full_Range-Of-Motion_Lat_Pulldown",
+   "Underhand_Cable_Pulldowns",
+   "One_Arm_Lat_Pulldown"
+  ],
+  "category": "vernacular",
+  "split": "dev"
+ },
+ {
+  "query": "seated row",
+  "expect": [
+   "Seated_Cable_Rows",
+   "Seated_One-arm_Cable_Pulley_Rows"
+  ],
+  "category": "vernacular",
+  "split": "holdout"
+ },
+ {
+  "query": "cable row",
+  "expect": [
+   "Seated_Cable_Rows",
+   "Seated_One-arm_Cable_Pulley_Rows"
+  ],
+  "category": "vernacular",
+  "split": "dev"
+ },
+ {
+  "query": "skull crusher",
+  "expect": [
+   "EZ-Bar_Skullcrusher",
+   "Lying_Triceps_Press",
+   "Lying_Dumbbell_Tricep_Extension",
+   "Band_Skull_Crusher"
+  ],
+  "category": "vernacular",
+  "split": "dev"
+ },
+ {
+  "query": "french press",
+  "expect": [
+   "EZ-Bar_Skullcrusher",
+   "Lying_Triceps_Press",
+   "Lying_Dumbbell_Tricep_Extension",
+   "Band_Skull_Crusher",
+   "Cable_Rope_Overhead_Triceps_Extension",
+   "Triceps_Overhead_Extension_with_Rope",
+   "Standing_Dumbbell_Triceps_Extension",
+   "Seated_Triceps_Press",
+   "Standing_Overhead_Barbell_Triceps_Extension"
+  ],
+  "category": "vernacular",
+  "split": "dev"
+ },
+ {
+  "query": "tricep pushdown",
+  "expect": [
+   "Triceps_Pushdown",
+   "Triceps_Pushdown_-_Rope_Attachment",
+   "Triceps_Pushdown_-_V-Bar_Attachment"
+  ],
+  "category": "vernacular",
+  "split": "holdout"
+ },
+ {
+  "query": "rope pushdown",
+  "expect": [
+   "Triceps_Pushdown_-_Rope_Attachment"
+  ],
+  "category": "vernacular",
+  "split": "dev"
+ },
+ {
+  "query": "overhead tricep extension",
+  "expect": [
+   "Cable_Rope_Overhead_Triceps_Extension",
+   "Triceps_Overhead_Extension_with_Rope",
+   "Standing_Dumbbell_Triceps_Extension",
+   "Seated_Triceps_Press",
+   "Standing_Overhead_Barbell_Triceps_Extension"
+  ],
+  "category": "vernacular",
+  "split": "dev"
+ },
+ {
+  "query": "hip abduction machine",
+  "expect": [
+   "Thigh_Abductor"
+  ],
+  "category": "vernacular",
+  "split": "dev"
+ },
+ {
+  "query": "abductor machine",
+  "expect": [
+   "Thigh_Abductor"
+  ],
+  "category": "vernacular",
+  "split": "holdout"
+ },
+ {
+  "query": "adductor machine",
+  "expect": [
+   "Thigh_Adductor"
+  ],
+  "category": "vernacular",
+  "split": "dev"
+ },
+ {
+  "query": "inner thigh machine",
+  "expect": [
+   "Thigh_Adductor"
+  ],
+  "category": "vernacular",
+  "split": "dev"
+ },
+ {
+  "query": "outer thigh machine",
+  "expect": [
+   "Thigh_Abductor"
+  ],
+  "category": "vernacular",
+  "split": "dev"
+ },
+ {
+  "query": "hamstring curl",
+  "expect": [
+   "Lying_Leg_Curls",
+   "Seated_Leg_Curl",
+   "Standing_Leg_Curl"
+  ],
+  "category": "vernacular",
+  "split": "holdout"
+ },
+ {
+  "query": "quad extension",
+  "expect": [
+   "Leg_Extensions",
+   "Single-Leg_Leg_Extension"
+  ],
+  "category": "vernacular",
+  "split": "dev"
+ },
+ {
+  "query": "hip thrust",
+  "expect": [
+   "Barbell_Hip_Thrust"
+  ],
+  "category": "vernacular",
+  "split": "dev"
+ },
+ {
+  "query": "glute bridge",
+  "expect": [
+   "Barbell_Glute_Bridge",
+   "Butt_Lift_Bridge",
+   "Single_Leg_Glute_Bridge"
+  ],
+  "category": "vernacular",
+  "split": "dev"
+ },
+ {
+  "query": "back extension",
+  "expect": [
+   "Hyperextensions_Back_Extensions",
+   "Hyperextensions_With_No_Hyperextension_Bench"
+  ],
+  "category": "vernacular",
+  "split": "holdout"
+ },
+ {
+  "query": "roman chair",
+  "expect": [
+   "Hyperextensions_Back_Extensions",
+   "Hyperextensions_With_No_Hyperextension_Bench",
+   "Knee_Hip_Raise_On_Parallel_Bars"
+  ],
+  "category": "vernacular",
+  "split": "dev"
+ },
+ {
+  "query": "captain's chair",
+  "expect": [
+   "Knee_Hip_Raise_On_Parallel_Bars"
+  ],
+  "category": "vernacular",
+  "split": "dev"
+ },
+ {
+  "query": "ab wheel",
+  "expect": [
+   "Ab_Roller",
+   "Barbell_Ab_Rollout",
+   "Barbell_Ab_Rollout_-_On_Knees"
+  ],
+  "category": "vernacular",
+  "split": "dev"
+ },
+ {
+  "query": "bicycle crunch",
+  "expect": [
+   "Air_Bike"
+  ],
+  "category": "vernacular",
+  "split": "holdout"
+ },
+ {
+  "query": "side plank",
+  "expect": [
+   "Side_Bridge"
+  ],
+  "category": "vernacular",
+  "split": "dev"
+ },
+ {
+  "query": "jumping jacks",
+  "expect": [
+   "Star_Jump"
+  ],
+  "category": "vernacular",
+  "split": "dev"
+ },
+ {
+  "query": "chest supported row",
+  "expect": [
+   "Dumbbell_Incline_Row",
+   "Lying_T-Bar_Row",
+   "Lying_Cambered_Barbell_Row"
+  ],
+  "category": "vernacular",
+  "split": "dev"
+ },
+ {
+  "query": "seal row",
+  "expect": [
+   "Lying_Cambered_Barbell_Row"
+  ],
+  "category": "vernacular",
+  "split": "holdout"
+ },
+ {
+  "query": "meadows row",
+  "expect": [
+   "Bent_Over_One-Arm_Long_Bar_Row"
+  ],
+  "category": "vernacular",
+  "split": "dev"
+ },
+ {
+  "query": "landmine press",
+  "expect": [
+   "Landmine_Linear_Jammer",
+   "Single-Arm_Linear_Jammer"
+  ],
+  "category": "vernacular",
+  "split": "dev"
+ },
+ {
+  "query": "landmine row",
+  "expect": [
+   "T-Bar_Row_with_Handle",
+   "Bent_Over_One-Arm_Long_Bar_Row",
+   "One-Arm_Long_Bar_Row"
+  ],
+  "category": "vernacular",
+  "split": "dev"
+ },
+ {
+  "query": "hex bar deadlift",
+  "expect": [
+   "Trap_Bar_Deadlift"
+  ],
+  "category": "vernacular",
+  "split": "holdout"
+ },
+ {
+  "query": "farmers carry",
+  "expect": [
+   "Farmers_Walk"
+  ],
+  "category": "vernacular",
+  "split": "dev"
+ },
+ {
+  "query": "belt squat",
+  "expect": [
+   "Weighted_Squat"
+  ],
+  "category": "vernacular",
+  "split": "dev"
+ },
+ {
+  "query": "bulgarian split squat",
+  "expect": [
+   "Split_Squat_with_Dumbbells",
+   "Smith_Single-Leg_Split_Squat"
+  ],
+  "category": "vernacular",
+  "split": "dev"
+ },
+ {
+  "query": "nordic curl",
+  "expect": [
+   "Natural_Glute_Ham_Raise",
+   "Floor_Glute-Ham_Raise"
+  ],
+  "category": "vernacular",
+  "split": "holdout"
+ },
+ {
+  "query": "australian pull up",
+  "expect": [
+   "Inverted_Row",
+   "Inverted_Row_with_Straps",
+   "Suspended_Row"
+  ],
+  "category": "vernacular",
+  "split": "dev"
+ },
+ {
+  "query": "bodyweight row",
+  "expect": [
+   "Inverted_Row",
+   "Inverted_Row_with_Straps",
+   "Suspended_Row"
+  ],
+  "category": "vernacular",
+  "split": "dev"
+ },
+ {
+  "query": "lat prayer",
+  "expect": [
+   "Straight-Arm_Pulldown",
+   "Rope_Straight-Arm_Pulldown"
+  ],
+  "category": "vernacular",
+  "split": "dev"
+ },
+ {
+  "query": "military press",
+  "expect": [
+   "Standing_Military_Press",
+   "Barbell_Shoulder_Press",
+   "Seated_Barbell_Military_Press"
+  ],
+  "category": "vernacular",
+  "split": "holdout"
+ },
+ {
+  "query": "overhead press",
+  "expect": [
+   "Standing_Military_Press",
+   "Barbell_Shoulder_Press",
+   "Seated_Barbell_Military_Press",
+   "Dumbbell_Shoulder_Press",
+   "Seated_Dumbbell_Press",
+   "Standing_Dumbbell_Press"
+  ],
+  "category": "vernacular",
+  "split": "dev"
+ },
+ {
+  "query": "shoulder press machine",
+  "expect": [
+   "Machine_Shoulder_Military_Press",
+   "Leverage_Shoulder_Press"
+  ],
+  "category": "vernacular",
+  "split": "dev"
+ },
+ {
+  "query": "chest press machine",
+  "expect": [
+   "Machine_Bench_Press",
+   "Leverage_Chest_Press"
+  ],
+  "category": "vernacular",
+  "split": "dev"
+ },
+ {
+  "query": "assisted dip",
+  "expect": [
+   "Dip_Machine"
+  ],
+  "category": "vernacular",
+  "split": "holdout"
+ },
+ {
+  "query": "assisted pull up",
+  "expect": [
+   "Band_Assisted_Pull-Up"
+  ],
+  "category": "vernacular",
+  "split": "dev"
+ },
+ {
+  "query": "dumbbell pullover",
+  "expect": [
+   "Straight-Arm_Dumbbell_Pullover",
+   "Bent-Arm_Dumbbell_Pullover",
+   "Bent-Arm_Barbell_Pullover"
+  ],
+  "category": "vernacular",
+  "split": "dev"
+ },
+ {
+  "query": "air squat",
+  "expect": [
+   "Bodyweight_Squat"
+  ],
+  "category": "vernacular",
+  "split": "dev"
+ },
+ {
+  "query": "sumo squat",
+  "expect": [
+   "Plie_Dumbbell_Squat",
+   "Wide_Stance_Barbell_Squat"
+  ],
+  "category": "vernacular",
+  "split": "holdout"
+ },
+ {
+  "query": "kettlebell swing",
+  "expect": [
+   "One-Arm_Kettlebell_Swings"
+  ],
+  "category": "vernacular",
+  "split": "dev"
+ },
+ {
+  "query": "turkish get up",
+  "expect": [
+   "Kettlebell_Turkish_Get-Up_Squat_style",
+   "Kettlebell_Turkish_Get-Up_Lunge_style"
+  ],
+  "category": "vernacular",
+  "split": "dev"
+ },
+ {
+  "query": "med ball slam",
+  "expect": [
+   "Overhead_Slam",
+   "One-Arm_Medicine_Ball_Slam"
+  ],
+  "category": "vernacular",
+  "split": "dev"
+ },
+ {
+  "query": "slam ball",
+  "expect": [
+   "Overhead_Slam",
+   "One-Arm_Medicine_Ball_Slam"
+  ],
+  "category": "vernacular",
+  "split": "holdout"
+ },
+ {
+  "query": "rower",
+  "expect": [
+   "Rowing_Stationary"
+  ],
+  "category": "vernacular",
+  "split": "dev"
+ },
+ {
+  "query": "stair climber",
+  "expect": [
+   "Stairmaster",
+   "Step_Mill"
+  ],
+  "category": "vernacular",
+  "split": "dev"
+ },
+ {
+  "query": "spin bike",
+  "expect": [
+   "Bicycling_Stationary",
+   "Recumbent_Bike"
+  ],
+  "category": "vernacular",
+  "split": "dev"
+ },
+ {
+  "query": "scott curl",
+  "expect": [
+   "Preacher_Curl",
+   "Machine_Preacher_Curls",
+   "One_Arm_Dumbbell_Preacher_Curl",
+   "Cable_Preacher_Curl",
+   "Two-Arm_Dumbbell_Preacher_Curl"
+  ],
+  "category": "vernacular",
+  "split": "holdout"
+ },
+ {
+  "query": "cable fly",
+  "expect": [
+   "Cable_Crossover",
+   "Flat_Bench_Cable_Flyes",
+   "Low_Cable_Crossover",
+   "Single-Arm_Cable_Crossover",
+   "Incline_Cable_Flye"
+  ],
+  "category": "vernacular",
+  "split": "dev"
+ },
+ {
+  "query": "low to high cable fly",
+  "expect": [
+   "Low_Cable_Crossover"
+  ],
+  "category": "vernacular",
+  "split": "dev"
+ },
+ {
+  "query": "side raise",
+  "expect": [
+   "Side_Lateral_Raise",
+   "Seated_Side_Lateral_Raise",
+   "One-Arm_Side_Laterals",
+   "Cable_Seated_Lateral_Raise",
+   "Lateral_Raise_-_With_Bands"
+  ],
+  "category": "vernacular",
+  "split": "dev"
+ },
+ {
+  "query": "crunch machine",
+  "expect": [
+   "Ab_Crunch_Machine"
+  ],
+  "category": "vernacular",
+  "split": "holdout"
+ },
+ {
+  "query": "woodchop",
+  "expect": [
+   "Standing_Cable_Wood_Chop"
+  ],
+  "category": "vernacular",
+  "split": "dev"
+ },
+ {
+  "query": "donkey kicks",
+  "expect": [
+   "Glute_Kickback"
+  ],
+  "category": "vernacular",
+  "split": "dev"
+ },
+ {
+  "query": "stiff leg deadlift",
+  "expect": [
+   "Stiff-Legged_Barbell_Deadlift",
+   "Stiff-Legged_Dumbbell_Deadlift",
+   "Smith_Machine_Stiff-Legged_Deadlift",
+   "Kettlebell_One-Legged_Deadlift"
+  ],
+  "category": "vernacular",
+  "split": "dev"
+ },
+ {
+  "query": "single leg rdl",
+  "expect": [
+   "Kettlebell_One-Legged_Deadlift"
+  ],
+  "category": "vernacular",
+  "split": "holdout"
+ },
+ {
+  "query": "nose breaker",
+  "expect": [
+   "EZ-Bar_Skullcrusher",
+   "Lying_Triceps_Press",
+   "Lying_Dumbbell_Tricep_Extension",
+   "Band_Skull_Crusher"
+  ],
+  "category": "vernacular",
+  "split": "dev"
+ },
+ {
+  "query": "straight arm pushdown",
+  "expect": [
+   "Straight-Arm_Pulldown",
+   "Rope_Straight-Arm_Pulldown"
+  ],
+  "category": "vernacular",
+  "split": "dev"
+ },
+ {
+  "query": "bench",
+  "expect": [
+   "Barbell_Bench_Press_-_Medium_Grip",
+   "Bench_Press_-_Powerlifting"
+  ],
+  "category": "vernacular",
+  "split": "dev"
+ },
+ {
+  "query": "back squat",
+  "expect": [
+   "Barbell_Squat",
+   "Barbell_Full_Squat"
+  ],
+  "category": "vernacular",
+  "split": "holdout"
+ },
+ {
+  "query": "reverse hyper",
+  "expect": [
+   "Reverse_Hyperextension"
+  ],
+  "category": "vernacular",
+  "split": "dev"
+ },
+ {
+  "query": "chin ups",
+  "expect": [
+   "Chin-Up"
+  ],
+  "category": "vernacular",
+  "split": "dev"
+ },
+ {
+  "query": "rear delt raise",
+  "expect": [
+   "Reverse_Flyes",
+   "Reverse_Machine_Flyes",
+   "Cable_Rear_Delt_Fly",
+   "Seated_Bent-Over_Rear_Delt_Raise",
+   "Bent_Over_Dumbbell_Rear_Delt_Raise_With_Head_On_Bench",
+   "Lying_Rear_Delt_Raise"
+  ],
+  "category": "vernacular",
+  "split": "dev"
+ },
+ {
+  "query": "rdl",
+  "expect": [
+   "Romanian_Deadlift",
+   "Romanian_Deadlift_from_Deficit"
+  ],
+  "category": "abbreviation",
+  "split": "dev"
+ },
+ {
+  "query": "sldl",
+  "expect": [
+   "Stiff-Legged_Barbell_Deadlift",
+   "Stiff-Legged_Dumbbell_Deadlift",
+   "Smith_Machine_Stiff-Legged_Deadlift",
+   "Kettlebell_One-Legged_Deadlift"
+  ],
+  "category": "abbreviation",
+  "split": "dev"
+ },
+ {
+  "query": "ohp",
+  "expect": [
+   "Standing_Military_Press",
+   "Barbell_Shoulder_Press",
+   "Seated_Barbell_Military_Press"
+  ],
+  "category": "abbreviation",
+  "split": "dev"
+ },
+ {
+  "query": "bss",
+  "expect": [
+   "Split_Squat_with_Dumbbells",
+   "Smith_Single-Leg_Split_Squat"
+  ],
+  "category": "abbreviation",
+  "split": "holdout"
+ },
+ {
+  "query": "db bench",
+  "expect": [
+   "Dumbbell_Bench_Press"
+  ],
+  "category": "abbreviation",
+  "split": "dev"
+ },
+ {
+  "query": "db row",
+  "expect": [
+   "One-Arm_Dumbbell_Row",
+   "Bent_Over_Two-Dumbbell_Row"
+  ],
+  "category": "abbreviation",
+  "split": "dev"
+ },
+ {
+  "query": "db curl",
+  "expect": [
+   "Dumbbell_Bicep_Curl",
+   "Dumbbell_Alternate_Bicep_Curl",
+   "Seated_Dumbbell_Curl"
+  ],
+  "category": "abbreviation",
+  "split": "dev"
+ },
+ {
+  "query": "bb row",
+  "expect": [
+   "Bent_Over_Barbell_Row",
+   "Reverse_Grip_Bent-Over_Rows"
+  ],
+  "category": "abbreviation",
+  "split": "holdout"
+ },
+ {
+  "query": "bb curl",
+  "expect": [
+   "Barbell_Curl",
+   "Wide-Grip_Standing_Barbell_Curl",
+   "Close-Grip_Standing_Barbell_Curl"
+  ],
+  "category": "abbreviation",
+  "split": "dev"
+ },
+ {
+  "query": "ez bar curl",
+  "expect": [
+   "EZ-Bar_Curl",
+   "Close-Grip_EZ_Bar_Curl"
+  ],
+  "category": "abbreviation",
+  "split": "dev"
+ },
+ {
+  "query": "ez curl",
+  "expect": [
+   "EZ-Bar_Curl",
+   "Close-Grip_EZ_Bar_Curl"
+  ],
+  "category": "abbreviation",
+  "split": "dev"
+ },
+ {
+  "query": "jm press",
+  "expect": [
+   "JM_Press"
+  ],
+  "category": "abbreviation",
+  "split": "holdout"
+ },
+ {
+  "query": "cgbp",
+  "expect": [
+   "Close-Grip_Barbell_Bench_Press"
+  ],
+  "category": "abbreviation",
+  "split": "dev"
+ },
+ {
+  "query": "ghr",
+  "expect": [
+   "Glute_Ham_Raise",
+   "Natural_Glute_Ham_Raise",
+   "Floor_Glute-Ham_Raise"
+  ],
+  "category": "abbreviation",
+  "split": "dev"
+ },
+ {
+  "query": "kb swing",
+  "expect": [
+   "One-Arm_Kettlebell_Swings"
+  ],
+  "category": "abbreviation",
+  "split": "dev"
+ },
+ {
+  "query": "tgu",
+  "expect": [
+   "Kettlebell_Turkish_Get-Up_Squat_style",
+   "Kettlebell_Turkish_Get-Up_Lunge_style"
+  ],
+  "category": "abbreviation",
+  "split": "holdout"
+ },
+ {
+  "query": "hspu",
+  "expect": [
+   "Handstand_Push-Ups"
+  ],
+  "category": "abbreviation",
+  "split": "dev"
+ },
+ {
+  "query": "ohs",
+  "expect": [
+   "Overhead_Squat"
+  ],
+  "category": "abbreviation",
+  "split": "dev"
+ },
+ {
+  "query": "dl",
+  "expect": [
+   "Barbell_Deadlift"
+  ],
+  "category": "abbreviation",
+  "split": "dev"
+ },
+ {
+  "query": "btn press",
+  "expect": [
+   "Standing_Barbell_Press_Behind_Neck"
+  ],
+  "category": "abbreviation",
+  "split": "holdout"
+ },
+ {
+  "query": "c&j",
+  "expect": [
+   "Clean_and_Jerk"
+  ],
+  "category": "abbreviation",
+  "split": "dev"
+ },
+ {
+  "query": "rfess",
+  "expect": [
+   "Split_Squat_with_Dumbbells",
+   "Smith_Single-Leg_Split_Squat"
+  ],
+  "category": "abbreviation",
+  "split": "dev"
+ },
+ {
+  "query": "db rdl",
+  "expect": [
+   "Stiff-Legged_Dumbbell_Deadlift"
+  ],
+  "category": "abbreviation",
+  "split": "dev"
+ },
+ {
+  "query": "db shoulder press",
+  "expect": [
+   "Dumbbell_Shoulder_Press",
+   "Seated_Dumbbell_Press",
+   "Standing_Dumbbell_Press"
+  ],
+  "category": "abbreviation",
+  "split": "holdout"
+ },
+ {
+  "query": "db lunges",
+  "expect": [
+   "Dumbbell_Lunges",
+   "Dumbbell_Rear_Lunge"
+  ],
+  "category": "abbreviation",
+  "split": "dev"
+ },
+ {
+  "query": "bb hip thrust",
+  "expect": [
+   "Barbell_Hip_Thrust"
+  ],
+  "category": "abbreviation",
+  "split": "dev"
+ },
+ {
+  "query": "db fly",
+  "expect": [
+   "Dumbbell_Flyes"
+  ],
+  "category": "abbreviation",
+  "split": "dev"
+ },
+ {
+  "query": "kb goblet squat",
+  "expect": [
+   "Goblet_Squat"
+  ],
+  "category": "abbreviation",
+  "split": "holdout"
+ },
+ {
+  "query": "incline db press",
+  "expect": [
+   "Incline_Dumbbell_Press",
+   "Hammer_Grip_Incline_DB_Bench_Press"
+  ],
+  "category": "abbreviation",
+  "split": "dev"
+ },
+ {
+  "query": "sl rdl",
+  "expect": [
+   "Kettlebell_One-Legged_Deadlift"
+  ],
+  "category": "abbreviation",
+  "split": "dev"
+ },
+ {
+  "query": "benhc press",
+  "expect": [
+   "Barbell_Bench_Press_-_Medium_Grip",
+   "Bench_Press_-_Powerlifting"
+  ],
+  "category": "typo",
+  "split": "dev"
+ },
+ {
+  "query": "bench pres",
+  "expect": [
+   "Barbell_Bench_Press_-_Medium_Grip",
+   "Bench_Press_-_Powerlifting"
+  ],
+  "category": "typo",
+  "split": "dev"
+ },
+ {
+  "query": "tricep pushdwon",
+  "expect": [
+   "Triceps_Pushdown",
+   "Triceps_Pushdown_-_Rope_Attachment",
+   "Triceps_Pushdown_-_V-Bar_Attachment"
+  ],
+  "category": "typo",
+  "split": "dev"
+ },
+ {
+  "query": "squqt",
+  "expect": [
+   "Barbell_Squat",
+   "Barbell_Full_Squat"
+  ],
+  "category": "typo",
+  "split": "holdout"
+ },
+ {
+  "query": "deadlfit",
+  "expect": [
+   "Barbell_Deadlift"
+  ],
+  "category": "typo",
+  "split": "dev"
+ },
+ {
+  "query": "romainian deadlift",
+  "expect": [
+   "Romanian_Deadlift",
+   "Romanian_Deadlift_from_Deficit"
+  ],
+  "category": "typo",
+  "split": "dev"
+ },
+ {
+  "query": "lateral rasie",
+  "expect": [
+   "Side_Lateral_Raise",
+   "Seated_Side_Lateral_Raise",
+   "One-Arm_Side_Laterals",
+   "Cable_Seated_Lateral_Raise",
+   "Lateral_Raise_-_With_Bands"
+  ],
+  "category": "typo",
+  "split": "dev"
+ },
+ {
+  "query": "hamer curl",
+  "expect": [
+   "Hammer_Curls",
+   "Alternate_Hammer_Curl",
+   "Cable_Hammer_Curls_-_Rope_Attachment",
+   "Cross_Body_Hammer_Curl",
+   "Incline_Hammer_Curls"
+  ],
+  "category": "typo",
+  "split": "holdout"
+ },
+ {
+  "query": "leg exension",
+  "expect": [
+   "Leg_Extensions",
+   "Single-Leg_Leg_Extension"
+  ],
+  "category": "typo",
+  "split": "dev"
+ },
+ {
+  "query": "calf rasie",
+  "expect": [
+   "Standing_Calf_Raises",
+   "Seated_Calf_Raise",
+   "Smith_Machine_Calf_Raise",
+   "Standing_Dumbbell_Calf_Raise",
+   "Standing_Barbell_Calf_Raise",
+   "Calf_Press_On_The_Leg_Press_Machine",
+   "Donkey_Calf_Raises"
+  ],
+  "category": "typo",
+  "split": "dev"
+ },
+ {
+  "query": "seated rwo",
+  "expect": [
+   "Seated_Cable_Rows",
+   "Seated_One-arm_Cable_Pulley_Rows"
+  ],
+  "category": "typo",
+  "split": "dev"
+ },
+ {
+  "query": "face pul",
+  "expect": [
+   "Face_Pull"
+  ],
+  "category": "typo",
+  "split": "holdout"
+ },
+ {
+  "query": "goblet sqaut",
+  "expect": [
+   "Goblet_Squat"
+  ],
+  "category": "typo",
+  "split": "dev"
+ },
+ {
+  "query": "bulgarian split sqaut",
+  "expect": [
+   "Split_Squat_with_Dumbbells",
+   "Smith_Single-Leg_Split_Squat"
+  ],
+  "category": "typo",
+  "split": "dev"
+ },
+ {
+  "query": "hip thurst",
+  "expect": [
+   "Barbell_Hip_Thrust"
+  ],
+  "category": "typo",
+  "split": "dev"
+ },
+ {
+  "query": "skull cruser",
+  "expect": [
+   "EZ-Bar_Skullcrusher",
+   "Lying_Triceps_Press",
+   "Lying_Dumbbell_Tricep_Extension",
+   "Band_Skull_Crusher"
+  ],
+  "category": "typo",
+  "split": "holdout"
+ },
+ {
+  "query": "preacher crul",
+  "expect": [
+   "Preacher_Curl",
+   "Machine_Preacher_Curls",
+   "One_Arm_Dumbbell_Preacher_Curl",
+   "Cable_Preacher_Curl",
+   "Two-Arm_Dumbbell_Preacher_Curl"
+  ],
+  "category": "typo",
+  "split": "dev"
+ },
+ {
+  "query": "incline dumbell press",
+  "expect": [
+   "Incline_Dumbbell_Press",
+   "Hammer_Grip_Incline_DB_Bench_Press"
+  ],
+  "category": "typo",
+  "split": "dev"
+ },
+ {
+  "query": "dumbell curl",
+  "expect": [
+   "Dumbbell_Bicep_Curl",
+   "Dumbbell_Alternate_Bicep_Curl",
+   "Seated_Dumbbell_Curl"
+  ],
+  "category": "typo",
+  "split": "dev"
+ },
+ {
+  "query": "dumbel row",
+  "expect": [
+   "One-Arm_Dumbbell_Row",
+   "Bent_Over_Two-Dumbbell_Row"
+  ],
+  "category": "typo",
+  "split": "holdout"
+ },
+ {
+  "query": "barbel row",
+  "expect": [
+   "Bent_Over_Barbell_Row",
+   "Reverse_Grip_Bent-Over_Rows"
+  ],
+  "category": "typo",
+  "split": "dev"
+ },
+ {
+  "query": "kettlebel swing",
+  "expect": [
+   "One-Arm_Kettlebell_Swings"
+  ],
+  "category": "typo",
+  "split": "dev"
+ },
+ {
+  "query": "kettle bell swing",
+  "expect": [
+   "One-Arm_Kettlebell_Swings"
+  ],
+  "category": "typo",
+  "split": "dev"
+ },
+ {
+  "query": "plannk",
+  "expect": [
+   "Plank"
+  ],
+  "category": "typo",
+  "split": "holdout"
+ },
+ {
+  "query": "tricep extention",
+  "expect": [
+   "Cable_Rope_Overhead_Triceps_Extension",
+   "Triceps_Overhead_Extension_with_Rope",
+   "Standing_Dumbbell_Triceps_Extension",
+   "Seated_Triceps_Press",
+   "Standing_Overhead_Barbell_Triceps_Extension",
+   "Machine_Triceps_Extension",
+   "Lying_Dumbbell_Tricep_Extension"
+  ],
+  "category": "typo",
+  "split": "dev"
+ },
+ {
+  "query": "militery press",
+  "expect": [
+   "Standing_Military_Press",
+   "Barbell_Shoulder_Press",
+   "Seated_Barbell_Military_Press"
+  ],
+  "category": "typo",
+  "split": "dev"
+ },
+ {
+  "query": "arnold pres",
+  "expect": [
+   "Arnold_Dumbbell_Press",
+   "Kettlebell_Arnold_Press"
+  ],
+  "category": "typo",
+  "split": "dev"
+ },
+ {
+  "query": "uprite row",
+  "expect": [
+   "Upright_Barbell_Row",
+   "Upright_Cable_Row",
+   "Standing_Dumbbell_Upright_Row",
+   "Smith_Machine_Upright_Row",
+   "Upright_Row_-_With_Bands"
+  ],
+  "category": "typo",
+  "split": "holdout"
+ },
+ {
+  "query": "shurg",
+  "expect": [
+   "Barbell_Shrug",
+   "Dumbbell_Shrug",
+   "Cable_Shrugs",
+   "Leverage_Shrug",
+   "Smith_Machine_Behind_the_Back_Shrug",
+   "Barbell_Shrug_Behind_The_Back"
+  ],
+  "category": "typo",
+  "split": "dev"
+ },
+ {
+  "query": "cabel crossover",
+  "expect": [
+   "Cable_Crossover",
+   "Low_Cable_Crossover"
+  ],
+  "category": "typo",
+  "split": "dev"
+ },
+ {
+  "query": "pec dek",
+  "expect": [
+   "Butterfly"
+  ],
+  "category": "typo",
+  "split": "dev"
+ },
+ {
+  "query": "treadmil",
+  "expect": [
+   "Running_Treadmill",
+   "Walking_Treadmill",
+   "Jogging_Treadmill"
+  ],
+  "category": "typo",
+  "split": "holdout"
+ },
+ {
+  "query": "eliptical",
+  "expect": [
+   "Elliptical_Trainer"
+  ],
+  "category": "typo",
+  "split": "dev"
+ },
+ {
+  "query": "rowing machien",
+  "expect": [
+   "Rowing_Stationary"
+  ],
+  "category": "typo",
+  "split": "dev"
+ },
+ {
+  "query": "zercher sqaut",
+  "expect": [
+   "Zercher_Squats"
+  ],
+  "category": "typo",
+  "split": "dev"
+ },
+ {
+  "query": "sumo dealift",
+  "expect": [
+   "Sumo_Deadlift",
+   "Sumo_Deadlift_with_Bands",
+   "Sumo_Deadlift_with_Chains",
+   "Reverse_Band_Sumo_Deadlift"
+  ],
+  "category": "typo",
+  "split": "holdout"
+ },
+ {
+  "query": "good mornig",
+  "expect": [
+   "Good_Morning",
+   "Seated_Good_Mornings",
+   "Stiff_Leg_Barbell_Good_Morning",
+   "Band_Good_Morning"
+  ],
+  "category": "typo",
+  "split": "dev"
+ },
+ {
+  "query": "hyperextention",
+  "expect": [
+   "Hyperextensions_Back_Extensions",
+   "Hyperextensions_With_No_Hyperextension_Bench"
+  ],
+  "category": "typo",
+  "split": "dev"
+ },
+ {
+  "query": "abducter machine",
+  "expect": [
+   "Thigh_Abductor"
+  ],
+  "category": "typo",
+  "split": "dev"
+ },
+ {
+  "query": "lat pulldwon",
+  "expect": [
+   "Wide-Grip_Lat_Pulldown",
+   "Close-Grip_Front_Lat_Pulldown",
+   "V-Bar_Pulldown",
+   "Full_Range-Of-Motion_Lat_Pulldown",
+   "Underhand_Cable_Pulldowns",
+   "One_Arm_Lat_Pulldown"
+  ],
+  "category": "typo",
+  "split": "holdout"
+ },
+ {
+  "query": "chin upp",
+  "expect": [
+   "Chin-Up"
+  ],
+  "category": "typo",
+  "split": "dev"
+ },
+ {
+  "query": "dumbbell flys",
+  "expect": [
+   "Dumbbell_Flyes"
+  ],
+  "category": "typo",
+  "split": "dev"
+ },
+ {
+  "query": "incline bench pres",
+  "expect": [
+   "Barbell_Incline_Bench_Press_-_Medium_Grip"
+  ],
+  "category": "typo",
+  "split": "dev"
+ },
+ {
+  "query": "overhed press",
+  "expect": [
+   "Standing_Military_Press",
+   "Barbell_Shoulder_Press",
+   "Seated_Barbell_Military_Press"
+  ],
+  "category": "typo",
+  "split": "holdout"
+ },
+ {
+  "query": "frnt squat",
+  "expect": [
+   "Front_Barbell_Squat",
+   "Front_Squat_Clean_Grip"
+  ],
+  "category": "typo",
+  "split": "dev"
+ },
+ {
+  "query": "romanain deadlift",
+  "expect": [
+   "Romanian_Deadlift",
+   "Romanian_Deadlift_from_Deficit"
+  ],
+  "category": "typo",
+  "split": "dev"
+ },
+ {
+  "query": "dumbell bench press",
+  "expect": [
+   "Dumbbell_Bench_Press"
+  ],
+  "category": "typo",
+  "split": "dev"
+ },
+ {
+  "query": "bulga",
+  "expect": [
+   "Split_Squat_with_Dumbbells",
+   "Smith_Single-Leg_Split_Squat"
+  ],
+  "category": "partial word",
+  "split": "dev"
+ },
+ {
+  "query": "skull",
+  "expect": [
+   "EZ-Bar_Skullcrusher",
+   "Lying_Triceps_Press",
+   "Lying_Dumbbell_Tricep_Extension",
+   "Band_Skull_Crusher"
+  ],
+  "category": "partial word",
+  "split": "dev"
+ },
+ {
+  "query": "prea",
+  "expect": [
+   "Preacher_Curl",
+   "Machine_Preacher_Curls",
+   "One_Arm_Dumbbell_Preacher_Curl",
+   "Cable_Preacher_Curl",
+   "Two-Arm_Dumbbell_Preacher_Curl"
+  ],
+  "category": "partial word",
+  "split": "dev"
+ },
+ {
+  "query": "farm",
+  "expect": [
+   "Farmers_Walk"
+  ],
+  "category": "partial word",
+  "split": "holdout"
+ },
+ {
+  "query": "hip thr",
+  "expect": [
+   "Barbell_Hip_Thrust"
+  ],
+  "category": "partial word",
+  "split": "dev"
+ },
+ {
+  "query": "lat pull",
+  "expect": [
+   "Wide-Grip_Lat_Pulldown",
+   "Close-Grip_Front_Lat_Pulldown",
+   "V-Bar_Pulldown",
+   "Full_Range-Of-Motion_Lat_Pulldown",
+   "Underhand_Cable_Pulldowns",
+   "One_Arm_Lat_Pulldown"
+  ],
+  "category": "partial word",
+  "split": "dev"
+ },
+ {
+  "query": "romani",
+  "expect": [
+   "Romanian_Deadlift",
+   "Romanian_Deadlift_from_Deficit"
+  ],
+  "category": "partial word",
+  "split": "dev"
+ },
+ {
+  "query": "tricep push",
+  "expect": [
+   "Triceps_Pushdown",
+   "Triceps_Pushdown_-_Rope_Attachment",
+   "Triceps_Pushdown_-_V-Bar_Attachment"
+  ],
+  "category": "partial word",
+  "split": "holdout"
+ },
+ {
+  "query": "incl dumb",
+  "expect": [
+   "Incline_Dumbbell_Press",
+   "Hammer_Grip_Incline_DB_Bench_Press",
+   "Incline_Dumbbell_Flyes",
+   "Incline_Dumbbell_Curl"
+  ],
+  "category": "partial word",
+  "split": "dev"
+ },
+ {
+  "query": "zerch",
+  "expect": [
+   "Zercher_Squats"
+  ],
+  "category": "partial word",
+  "split": "dev"
+ },
+ {
+  "query": "hyperex",
+  "expect": [
+   "Hyperextensions_Back_Extensions",
+   "Hyperextensions_With_No_Hyperextension_Bench",
+   "Reverse_Hyperextension"
+  ],
+  "category": "partial word",
+  "split": "dev"
+ },
+ {
+  "query": "butterf",
+  "expect": [
+   "Butterfly"
+  ],
+  "category": "partial word",
+  "split": "holdout"
+ },
+ {
+  "query": "leg ext",
+  "expect": [
+   "Leg_Extensions",
+   "Single-Leg_Leg_Extension"
+  ],
+  "category": "partial word",
+  "split": "dev"
+ },
+ {
+  "query": "calf r",
+  "expect": [
+   "Standing_Calf_Raises",
+   "Seated_Calf_Raise",
+   "Smith_Machine_Calf_Raise",
+   "Standing_Dumbbell_Calf_Raise",
+   "Standing_Barbell_Calf_Raise",
+   "Calf_Press_On_The_Leg_Press_Machine",
+   "Donkey_Calf_Raises"
+  ],
+  "category": "partial word",
+  "split": "dev"
+ },
+ {
+  "query": "face p",
+  "expect": [
+   "Face_Pull"
+  ],
+  "category": "partial word",
+  "split": "dev"
+ },
+ {
+  "query": "hammer c",
+  "expect": [
+   "Hammer_Curls",
+   "Alternate_Hammer_Curl",
+   "Cable_Hammer_Curls_-_Rope_Attachment",
+   "Cross_Body_Hammer_Curl",
+   "Incline_Hammer_Curls"
+  ],
+  "category": "partial word",
+  "split": "holdout"
+ },
+ {
+  "query": "arnold",
+  "expect": [
+   "Arnold_Dumbbell_Press",
+   "Kettlebell_Arnold_Press"
+  ],
+  "category": "partial word",
+  "split": "dev"
+ },
+ {
+  "query": "overhead pr",
+  "expect": [
+   "Standing_Military_Press",
+   "Barbell_Shoulder_Press",
+   "Seated_Barbell_Military_Press",
+   "Dumbbell_Shoulder_Press",
+   "Seated_Dumbbell_Press",
+   "Standing_Dumbbell_Press"
+  ],
+  "category": "partial word",
+  "split": "dev"
+ },
+ {
+  "query": "sumo dead",
+  "expect": [
+   "Sumo_Deadlift",
+   "Sumo_Deadlift_with_Bands",
+   "Sumo_Deadlift_with_Chains",
+   "Reverse_Band_Sumo_Deadlift"
+  ],
+  "category": "partial word",
+  "split": "dev"
+ },
+ {
+  "query": "front squ",
+  "expect": [
+   "Front_Barbell_Squat",
+   "Front_Squat_Clean_Grip"
+  ],
+  "category": "partial word",
+  "split": "holdout"
+ },
+ {
+  "query": "bent over r",
+  "expect": [
+   "Bent_Over_Barbell_Row",
+   "Reverse_Grip_Bent-Over_Rows",
+   "Bent_Over_Two-Dumbbell_Row"
+  ],
+  "category": "partial word",
+  "split": "dev"
+ },
+ {
+  "query": "seated ca",
+  "expect": [
+   "Seated_Calf_Raise",
+   "Barbell_Seated_Calf_Raise"
+  ],
+  "category": "partial word",
+  "split": "dev"
+ },
+ {
+  "query": "cable cro",
+  "expect": [
+   "Cable_Crossover",
+   "Low_Cable_Crossover",
+   "Single-Arm_Cable_Crossover"
+  ],
+  "category": "partial word",
+  "split": "dev"
+ },
+ {
+  "query": "kettlebell sw",
+  "expect": [
+   "One-Arm_Kettlebell_Swings"
+  ],
+  "category": "partial word",
+  "split": "holdout"
+ },
+ {
+  "query": "pull u",
+  "expect": [
+   "Pullups",
+   "V-Bar_Pullup",
+   "Wide-Grip_Rear_Pull-Up",
+   "Weighted_Pull_Ups"
+  ],
+  "category": "partial word",
+  "split": "dev"
+ },
+ {
+  "query": "plan",
+  "expect": [
+   "Plank"
+  ],
+  "category": "partial word",
+  "split": "dev"
+ },
+ {
+  "query": "goblet",
+  "expect": [
+   "Goblet_Squat"
+  ],
+  "category": "partial word",
+  "split": "dev"
+ },
+ {
+  "query": "pec",
+  "expect": [
+   "Butterfly",
+   "Butterfly",
+   "Dumbbell_Flyes",
+   "Cable_Crossover",
+   "Flat_Bench_Cable_Flyes"
+  ],
+  "category": "partial word",
+  "split": "holdout"
+ },
+ {
+  "query": "ab wh",
+  "expect": [
+   "Ab_Roller",
+   "Barbell_Ab_Rollout",
+   "Barbell_Ab_Rollout_-_On_Knees"
+  ],
+  "category": "partial word",
+  "split": "dev"
+ },
+ {
+  "query": "leg pre",
+  "expect": [
+   "Leg_Press",
+   "Narrow_Stance_Leg_Press"
+  ],
+  "category": "partial word",
+  "split": "dev"
+ },
+ {
+  "query": "cable chest",
+  "expect": [
+   "Cable_Chest_Press",
+   "Cable_Crossover",
+   "Cable_Iron_Cross",
+   "Flat_Bench_Cable_Flyes",
+   "Incline_Cable_Chest_Press",
+   "Incline_Cable_Flye",
+   "Low_Cable_Crossover",
+   "Single-Arm_Cable_Crossover",
+   "Standing_Cable_Chest_Press"
+  ],
+  "category": "muscle plus equipment",
+  "split": "dev"
+ },
+ {
+  "query": "dumbbell shoulders",
+  "expect": [
+   "Alternating_Deltoid_Raise",
+   "Arnold_Dumbbell_Press",
+   "Bent_Over_Dumbbell_Rear_Delt_Raise_With_Head_On_Bench",
+   "Cuban_Press",
+   "Dumbbell_Incline_Shoulder_Raise",
+   "Dumbbell_Lying_One-Arm_Rear_Lateral_Raise",
+   "Dumbbell_Lying_Rear_Lateral_Raise",
+   "Dumbbell_One-Arm_Shoulder_Press",
+   "Dumbbell_One-Arm_Upright_Row",
+   "Dumbbell_Raise",
+   "Dumbbell_Scaption",
+   "Dumbbell_Shoulder_Press",
+   "External_Rotation",
+   "Front_Dumbbell_Raise",
+   "Front_Incline_Dumbbell_Raise",
+   "Front_Two-Dumbbell_Raise",
+   "Iron_Cross",
+   "Lying_One-Arm_Lateral_Raise",
+   "Lying_Rear_Delt_Raise",
+   "One-Arm_Incline_Lateral_Raise",
+   "One-Arm_Side_Laterals",
+   "Power_Partials",
+   "Reverse_Flyes",
+   "Reverse_Flyes_With_External_Rotation",
+   "Seated_Bent-Over_Rear_Delt_Raise",
+   "Seated_Dumbbell_Press",
+   "Seated_Side_Lateral_Raise",
+   "See-Saw_Press_Alternating_Side_Press",
+   "Side_Lateral_Raise",
+   "Side_Laterals_to_Front_Raise",
+   "Single_Dumbbell_Raise",
+   "Standing_Alternating_Dumbbell_Press",
+   "Standing_Dumbbell_Press",
+   "Standing_Dumbbell_Straight-Arm_Front_Delt_Raise_Above_Head",
+   "Standing_Palm-In_One-Arm_Dumbbell_Press",
+   "Standing_Palms-In_Dumbbell_Press"
+  ],
+  "category": "muscle plus equipment",
+  "split": "dev"
+ },
+ {
+  "query": "barbell back",
+  "expect": [
+   "Barbell_Deadlift",
+   "Bent_Over_Barbell_Row",
+   "Bent_Over_One-Arm_Long_Bar_Row",
+   "Bent_Over_Two-Arm_Long_Bar_Row",
+   "Bent-Arm_Barbell_Pullover",
+   "Deadlift_with_Bands",
+   "Deadlift_with_Chains",
+   "Deficit_Deadlift",
+   "Incline_Bench_Pull",
+   "Lying_Cambered_Barbell_Row",
+   "One-Arm_Long_Bar_Row",
+   "Rack_Pull_with_Bands",
+   "Rack_Pulls",
+   "Reverse_Band_Deadlift",
+   "Reverse_Grip_Bent-Over_Rows",
+   "Seated_Good_Mornings",
+   "Stiff_Leg_Barbell_Good_Morning",
+   "Straight_Bar_Bench_Mid_Rows",
+   "T-Bar_Row_with_Handle"
+  ],
+  "category": "muscle plus equipment",
+  "split": "dev"
+ },
+ {
+  "query": "machine quads",
+  "expect": [
+   "Bicycling_Stationary",
+   "Chair_Squat",
+   "Elliptical_Trainer",
+   "Hack_Squat",
+   "Jogging_Treadmill",
+   "Leg_Extensions",
+   "Leg_Press",
+   "Leverage_Deadlift",
+   "Lunge_Sprint",
+   "Lying_Machine_Squat",
+   "Narrow_Stance_Hack_Squats",
+   "Narrow_Stance_Leg_Press",
+   "Recumbent_Bike",
+   "Rowing_Stationary",
+   "Running_Treadmill",
+   "Single-Leg_Leg_Extension",
+   "Smith_Machine_Leg_Press",
+   "Smith_Machine_Pistol_Squat",
+   "Smith_Machine_Squat",
+   "Smith_Single-Leg_Split_Squat",
+   "Stairmaster",
+   "Step_Mill",
+   "Walking_Treadmill"
+  ],
+  "category": "muscle plus equipment",
+  "split": "holdout"
+ },
+ {
+  "query": "cable triceps",
+  "expect": [
+   "Cable_Incline_Triceps_Extension",
+   "Cable_Lying_Triceps_Extension",
+   "Cable_One_Arm_Tricep_Extension",
+   "Cable_Rope_Overhead_Triceps_Extension",
+   "Kneeling_Cable_Triceps_Extension",
+   "Low_Cable_Triceps_Extension",
+   "Reverse_Grip_Triceps_Pushdown",
+   "Standing_Low-Pulley_One-Arm_Triceps_Extension",
+   "Triceps_Overhead_Extension_with_Rope",
+   "Triceps_Pushdown",
+   "Triceps_Pushdown_-_Rope_Attachment",
+   "Triceps_Pushdown_-_V-Bar_Attachment"
+  ],
+  "category": "muscle plus equipment",
+  "split": "dev"
+ },
+ {
+  "query": "dumbbell biceps",
+  "expect": [
+   "Alternate_Hammer_Curl",
+   "Alternate_Incline_Dumbbell_Curl",
+   "Concentration_Curls",
+   "Cross_Body_Hammer_Curl",
+   "Dumbbell_Alternate_Bicep_Curl",
+   "Dumbbell_Bicep_Curl",
+   "Dumbbell_Prone_Incline_Curl",
+   "Flexor_Incline_Dumbbell_Curls",
+   "Hammer_Curls",
+   "Incline_Dumbbell_Curl",
+   "Incline_Hammer_Curls",
+   "Incline_Inner_Biceps_Curl",
+   "Lying_Supine_Dumbbell_Curl",
+   "One_Arm_Dumbbell_Preacher_Curl",
+   "Preacher_Hammer_Dumbbell_Curl",
+   "Seated_Dumbbell_Curl",
+   "Seated_Dumbbell_Inner_Biceps_Curl",
+   "Standing_Concentration_Curl",
+   "Standing_Dumbbell_Reverse_Curl",
+   "Standing_Inner-Biceps_Curl",
+   "Standing_One-Arm_Dumbbell_Curl_Over_Incline_Bench",
+   "Two-Arm_Dumbbell_Preacher_Curl",
+   "Zottman_Curl",
+   "Zottman_Preacher_Curl"
+  ],
+  "category": "muscle plus equipment",
+  "split": "dev"
+ },
+ {
+  "query": "barbell hamstrings",
+  "expect": [
+   "Clean",
+   "Clean_Deadlift",
+   "Good_Morning",
+   "Good_Morning_off_Pins",
+   "Hang_Snatch",
+   "Hang_Snatch_-_Below_Knees",
+   "Hanging_Bar_Good_Morning",
+   "Muscle_Snatch",
+   "Power_Clean",
+   "Power_Clean_from_Blocks",
+   "Power_Snatch",
+   "Reverse_Band_Sumo_Deadlift",
+   "Romanian_Deadlift",
+   "Romanian_Deadlift_from_Deficit",
+   "Snatch_Deadlift",
+   "Snatch_Pull",
+   "Split_Snatch",
+   "Stiff-Legged_Barbell_Deadlift",
+   "Sumo_Deadlift",
+   "Sumo_Deadlift_with_Bands",
+   "Sumo_Deadlift_with_Chains",
+   "Wide_Stance_Stiff_Legs"
+  ],
+  "category": "muscle plus equipment",
+  "split": "dev"
+ },
+ {
+  "query": "cable abs",
+  "expect": [
+   "Bosu_Ball_Cable_Crunch_With_Side_Bends",
+   "Cable_Crunch",
+   "Cable_Judo_Flip",
+   "Cable_Reverse_Crunch",
+   "Cable_Russian_Twists",
+   "Cable_Seated_Crunch",
+   "Kneeling_Cable_Crunch_With_Alternating_Oblique_Twists",
+   "One-Arm_High-Pulley_Cable_Side_Bends",
+   "Pallof_Press",
+   "Pallof_Press_With_Rotation",
+   "Rope_Crunch",
+   "Standing_Cable_Lift",
+   "Standing_Cable_Wood_Chop",
+   "Standing_Rope_Crunch"
+  ],
+  "category": "muscle plus equipment",
+  "split": "holdout"
+ },
+ {
+  "query": "machine chest",
+  "expect": [
+   "Butterfly",
+   "Decline_Smith_Press",
+   "Leverage_Chest_Press",
+   "Leverage_Decline_Chest_Press",
+   "Leverage_Incline_Chest_Press",
+   "Machine_Bench_Press",
+   "Smith_Machine_Bench_Press",
+   "Smith_Machine_Decline_Press",
+   "Smith_Machine_Incline_Bench_Press"
+  ],
+  "category": "muscle plus equipment",
+  "split": "dev"
+ },
+ {
+  "query": "dumbbell chest",
+  "expect": [
+   "Around_The_Worlds",
+   "Bent-Arm_Dumbbell_Pullover",
+   "Decline_Dumbbell_Bench_Press",
+   "Decline_Dumbbell_Flyes",
+   "Dumbbell_Bench_Press",
+   "Dumbbell_Bench_Press_with_Neutral_Grip",
+   "Dumbbell_Flyes",
+   "Hammer_Grip_Incline_DB_Bench_Press",
+   "Incline_Dumbbell_Bench_With_Palms_Facing_In",
+   "Incline_Dumbbell_Flyes",
+   "Incline_Dumbbell_Flyes_-_With_A_Twist",
+   "Incline_Dumbbell_Press",
+   "One_Arm_Dumbbell_Bench_Press",
+   "One-Arm_Flat_Bench_Dumbbell_Flye",
+   "Straight-Arm_Dumbbell_Pullover"
+  ],
+  "category": "muscle plus equipment",
+  "split": "dev"
+ },
+ {
+  "query": "bodyweight chest",
+  "expect": [
+   "Clock_Push-Up",
+   "Incline_Push-Up",
+   "Incline_Push-Up_Medium",
+   "Incline_Push-Up_Reverse_Grip",
+   "Incline_Push-Up_Wide",
+   "Isometric_Chest_Squeezes",
+   "Isometric_Wipers",
+   "Plyo_Push-up",
+   "Push_Up_to_Side_Plank",
+   "Push-Up_Wide",
+   "Push-Ups_With_Feet_Elevated",
+   "Pushups",
+   "Pushups_Close_and_Wide_Hand_Positions",
+   "Single-Arm_Push-Up"
+  ],
+  "category": "muscle plus equipment",
+  "split": "dev"
+ },
+ {
+  "query": "cable back",
+  "expect": [
+   "Cable_Incline_Pushdown",
+   "Close-Grip_Front_Lat_Pulldown",
+   "Elevated_Cable_Rows",
+   "Full_Range-Of-Motion_Lat_Pulldown",
+   "Kneeling_High_Pulley_Row",
+   "Kneeling_Single-Arm_High_Pulley_Row",
+   "One_Arm_Lat_Pulldown",
+   "Rope_Straight-Arm_Pulldown",
+   "Seated_Cable_Rows",
+   "Seated_One-arm_Cable_Pulley_Rows",
+   "Shotgun_Row",
+   "Straight-Arm_Pulldown",
+   "Underhand_Cable_Pulldowns",
+   "V-Bar_Pulldown",
+   "Wide-Grip_Lat_Pulldown",
+   "Wide-Grip_Pulldown_Behind_The_Neck"
+  ],
+  "category": "muscle plus equipment",
+  "split": "holdout"
+ },
+ {
+  "query": "machine back",
+  "expect": [
+   "Leverage_High_Row",
+   "Leverage_Iso_Row",
+   "Lying_T-Bar_Row",
+   "Smith_Machine_Bent_Over_Row"
+  ],
+  "category": "muscle plus equipment",
+  "split": "dev"
+ },
+ {
+  "query": "band shoulders",
+  "expect": [
+   "Back_Flyes_-_With_Bands",
+   "Band_Pull_Apart",
+   "External_Rotation_with_Band",
+   "Internal_Rotation_with_Band",
+   "Lateral_Raise_-_With_Bands",
+   "Shoulder_Press_-_With_Bands"
+  ],
+  "category": "muscle plus equipment",
+  "split": "dev"
+ },
+ {
+  "query": "barbell shoulders",
+  "expect": [
+   "Anti-Gravity_Press",
+   "Barbell_Incline_Shoulder_Raise",
+   "Barbell_Rear_Delt_Row",
+   "Barbell_Shoulder_Press",
+   "Bradford_Rocky_Presses",
+   "Car_Drivers",
+   "Clean_and_Jerk",
+   "Clean_and_Press",
+   "Jerk_Balance",
+   "Landmine_Linear_Jammer",
+   "Push_Press",
+   "Push_Press_-_Behind_the_Neck",
+   "Rack_Delivery",
+   "Seated_Barbell_Military_Press",
+   "Single-Arm_Linear_Jammer",
+   "Smith_Incline_Shoulder_Raise",
+   "Standing_Barbell_Press_Behind_Neck",
+   "Standing_Bradford_Press",
+   "Standing_Front_Barbell_Raise_Over_Head",
+   "Standing_Military_Press",
+   "Straight_Raises_on_Incline_Bench",
+   "Upright_Barbell_Row"
+  ],
+  "category": "muscle plus equipment",
+  "split": "dev"
+ },
+ {
+  "query": "dumbbell triceps",
+  "expect": [
+   "Close-Grip_Dumbbell_Press",
+   "Decline_Dumbbell_Triceps_Extension",
+   "Dumbbell_Floor_Press",
+   "Dumbbell_One-Arm_Triceps_Extension",
+   "Dumbbell_Tricep_Extension_-Pronated_Grip",
+   "Lying_Dumbbell_Tricep_Extension",
+   "One_Arm_Pronated_Dumbbell_Triceps_Extension",
+   "One_Arm_Supinated_Dumbbell_Triceps_Extension",
+   "Seated_Bent-Over_One-Arm_Dumbbell_Triceps_Extension",
+   "Seated_Bent-Over_Two-Arm_Dumbbell_Triceps_Extension",
+   "Seated_Triceps_Press",
+   "Standing_Bent-Over_One-Arm_Dumbbell_Triceps_Extension",
+   "Standing_Bent-Over_Two-Arm_Dumbbell_Triceps_Extension",
+   "Standing_Dumbbell_Triceps_Extension",
+   "Standing_One-Arm_Dumbbell_Triceps_Extension",
+   "Tate_Press",
+   "Tricep_Dumbbell_Kickback"
+  ],
+  "category": "muscle plus equipment",
+  "split": "holdout"
+ },
+ {
+  "query": "machine hamstrings",
+  "expect": [
+   "Glute_Ham_Raise",
+   "Lying_Leg_Curls",
+   "Reverse_Hyperextension",
+   "Seated_Leg_Curl",
+   "Smith_Machine_Hang_Power_Clean",
+   "Smith_Machine_Stiff-Legged_Deadlift",
+   "Standing_Leg_Curl"
+  ],
+  "category": "muscle plus equipment",
+  "split": "dev"
+ },
+ {
+  "query": "cable glutes",
+  "expect": [
+   "One-Legged_Cable_Kickback",
+   "Pull_Through"
+  ],
+  "category": "muscle plus equipment",
+  "split": "dev"
+ },
+ {
+  "query": "dumbbell calves",
+  "expect": [
+   "Calf_Raise_On_A_Dumbbell",
+   "Dumbbell_Seated_One-Leg_Calf_Raise",
+   "Standing_Dumbbell_Calf_Raise"
+  ],
+  "category": "muscle plus equipment",
+  "split": "dev"
+ },
+ {
+  "query": "machine calves",
+  "expect": [
+   "Calf_Press",
+   "Calf_Press_On_The_Leg_Press_Machine",
+   "Seated_Calf_Raise",
+   "Smith_Machine_Calf_Raise",
+   "Smith_Machine_Reverse_Calf_Raises",
+   "Standing_Calf_Raises"
+  ],
+  "category": "muscle plus equipment",
+  "split": "holdout"
+ },
+ {
+  "query": "barbell glutes",
+  "expect": [
+   "Barbell_Glute_Bridge",
+   "Barbell_Hip_Thrust",
+   "Kneeling_Jump_Squat",
+   "Kneeling_Squat"
+  ],
+  "category": "muscle plus equipment",
+  "split": "dev"
+ },
+ {
+  "query": "cable biceps",
+  "expect": [
+   "Cable_Hammer_Curls_-_Rope_Attachment",
+   "Cable_Preacher_Curl",
+   "High_Cable_Curls",
+   "Lying_Cable_Curl",
+   "Lying_Close-Grip_Bar_Curl_On_High_Pulley",
+   "Overhead_Cable_Curl",
+   "Reverse_Cable_Curl",
+   "Standing_Biceps_Cable_Curl",
+   "Standing_One-Arm_Cable_Curl"
+  ],
+  "category": "muscle plus equipment",
+  "split": "dev"
+ },
+ {
+  "query": "ez bar triceps",
+  "expect": [
+   "Close-Grip_EZ-Bar_Press",
+   "EZ-Bar_Skullcrusher",
+   "Lying_Close-Grip_Barbell_Triceps_Press_To_Chin",
+   "Lying_Triceps_Press"
+  ],
+  "category": "muscle plus equipment",
+  "split": "dev"
+ },
+ {
+  "query": "dumbbell back",
+  "expect": [
+   "Bent_Over_Two-Dumbbell_Row",
+   "Bent_Over_Two-Dumbbell_Row_With_Palms_In",
+   "Dumbbell_Incline_Row",
+   "Middle_Back_Shrug",
+   "One-Arm_Dumbbell_Row"
+  ],
+  "category": "muscle plus equipment",
+  "split": "holdout"
+ },
+ {
+  "query": "barbell quads",
+  "expect": [
+   "Barbell_Full_Squat",
+   "Barbell_Hack_Squat",
+   "Barbell_Lunge",
+   "Barbell_Side_Split_Squat",
+   "Barbell_Squat",
+   "Barbell_Squat_To_A_Bench",
+   "Barbell_Step_Ups",
+   "Barbell_Walking_Lunge",
+   "Box_Squat",
+   "Box_Squat_with_Bands",
+   "Box_Squat_with_Chains",
+   "Clean_from_Blocks",
+   "Clean_Pull",
+   "Elevated_Back_Lunge",
+   "Frankenstein_Squat",
+   "Front_Barbell_Squat",
+   "Front_Barbell_Squat_To_A_Bench",
+   "Front_Squat_Clean_Grip",
+   "Hang_Clean",
+   "Hang_Clean_-_Below_the_Knees",
+   "Heaving_Snatch_Balance",
+   "Jefferson_Squats",
+   "Jerk_Dip_Squat",
+   "Narrow_Stance_Squats",
+   "Olympic_Squat",
+   "One_Leg_Barbell_Squat",
+   "One-Arm_Side_Deadlift",
+   "Overhead_Squat",
+   "Power_Jerk",
+   "Power_Snatch_from_Blocks",
+   "Reverse_Band_Box_Squat",
+   "Reverse_Band_Power_Squat",
+   "Snatch",
+   "Snatch_Balance",
+   "Snatch_from_Blocks",
+   "Speed_Box_Squat",
+   "Speed_Squats",
+   "Split_Clean",
+   "Split_Jerk",
+   "Squat_Jerk",
+   "Squat_with_Bands",
+   "Squat_with_Chains",
+   "Squat_with_Plate_Movers",
+   "Weighted_Jump_Squat",
+   "Weighted_Sissy_Squat",
+   "Wide_Stance_Barbell_Squat",
+   "Zercher_Squats"
+  ],
+  "category": "muscle plus equipment",
+  "split": "dev"
+ },
+ {
+  "query": "bodyweight abs",
+  "expect": [
+   "3_4_Sit-Up",
+   "Air_Bike",
+   "Alternate_Heel_Touchers",
+   "Bent-Knee_Hip_Raise",
+   "Bottoms_Up",
+   "Butt-Ups",
+   "Cocoons",
+   "Cross-Body_Crunch",
+   "Crunch_-_Hands_Overhead",
+   "Crunch_-_Legs_On_Exercise_Ball",
+   "Crunches",
+   "Dead_Bug",
+   "Decline_Crunch",
+   "Decline_Oblique_Crunch",
+   "Decline_Reverse_Crunch",
+   "Elbow_to_Knee",
+   "Flat_Bench_Leg_Pull-In",
+   "Flat_Bench_Lying_Leg_Raise",
+   "Frog_Sit-Ups",
+   "Gorilla_Chin_Crunch",
+   "Hanging_Leg_Raise",
+   "Hanging_Pike",
+   "Jackknife_Sit-Up",
+   "Janda_Sit-Up",
+   "Leg_Pull-In",
+   "Oblique_Crunches",
+   "Oblique_Crunches_-_On_The_Floor",
+   "Plank",
+   "Reverse_Crunch",
+   "Russian_Twist",
+   "Seated_Flat_Bench_Leg_Pull-In",
+   "Seated_Leg_Tucks",
+   "Side_Bridge",
+   "Side_Jackknife",
+   "Sit-Up",
+   "Spider_Crawl",
+   "Tuck_Crunch",
+   "Wind_Sprints"
+  ],
+  "category": "muscle plus equipment",
+  "split": "dev"
+ },
+ {
+  "query": "kettlebell shoulders",
+  "expect": [
+   "Alternating_Kettlebell_Press",
+   "Double_Kettlebell_Jerk",
+   "Double_Kettlebell_Push_Press",
+   "Double_Kettlebell_Snatch",
+   "Kettlebell_Arnold_Press",
+   "Kettlebell_Pirate_Ships",
+   "Kettlebell_Seated_Press",
+   "Kettlebell_Seesaw_Press",
+   "Kettlebell_Thruster",
+   "Kettlebell_Turkish_Get-Up_Lunge_style",
+   "Kettlebell_Turkish_Get-Up_Squat_style",
+   "One-Arm_Kettlebell_Clean_and_Jerk",
+   "One-Arm_Kettlebell_Jerk",
+   "One-Arm_Kettlebell_Military_Press_To_The_Side",
+   "One-Arm_Kettlebell_Para_Press",
+   "One-Arm_Kettlebell_Push_Press",
+   "One-Arm_Kettlebell_Snatch",
+   "One-Arm_Kettlebell_Split_Jerk",
+   "One-Arm_Kettlebell_Split_Snatch",
+   "Two-Arm_Kettlebell_Clean",
+   "Two-Arm_Kettlebell_Jerk",
+   "Two-Arm_Kettlebell_Military_Press"
+  ],
+  "category": "muscle plus equipment",
+  "split": "dev"
+ },
+ {
+  "query": "machine shoulders",
+  "expect": [
+   "Leverage_Shoulder_Press",
+   "Machine_Shoulder_Military_Press",
+   "Reverse_Machine_Flyes",
+   "Smith_Machine_One-Arm_Upright_Row",
+   "Smith_Machine_Overhead_Shoulder_Press"
+  ],
+  "category": "muscle plus equipment",
+  "split": "holdout"
+ },
+ {
+  "query": "cable shoulders",
+  "expect": [
+   "Alternating_Cable_Shoulder_Press",
+   "Bent_Over_Low-Pulley_Side_Lateral",
+   "Cable_Internal_Rotation",
+   "Cable_Rear_Delt_Fly",
+   "Cable_Rope_Rear-Delt_Rows",
+   "Cable_Seated_Lateral_Raise",
+   "Cable_Shoulder_Press",
+   "External_Rotation_with_Cable",
+   "Face_Pull",
+   "Front_Cable_Raise",
+   "Low_Pulley_Row_To_Neck",
+   "Seated_Cable_Shoulder_Press",
+   "Standing_Low-Pulley_Deltoid_Raise"
+  ],
+  "category": "muscle plus equipment",
+  "split": "dev"
+ },
+ {
+  "query": "dumbbell legs",
+  "expect": [
+   "Calf_Raise_On_A_Dumbbell",
+   "Dumbbell_Clean",
+   "Dumbbell_Lunges",
+   "Dumbbell_Rear_Lunge",
+   "Dumbbell_Seated_Box_Jump",
+   "Dumbbell_Seated_One-Leg_Calf_Raise",
+   "Dumbbell_Squat",
+   "Dumbbell_Squat_To_A_Bench",
+   "Dumbbell_Step_Ups",
+   "Plie_Dumbbell_Squat",
+   "Split_Squat_with_Dumbbells",
+   "Standing_Dumbbell_Calf_Raise",
+   "Stiff-Legged_Dumbbell_Deadlift",
+   "Vertical_Swing"
+  ],
+  "category": "muscle plus equipment",
+  "split": "dev"
+ },
+ {
+  "query": "machine legs",
+  "expect": [
+   "Bicycling_Stationary",
+   "Calf_Press",
+   "Calf_Press_On_The_Leg_Press_Machine",
+   "Chair_Squat",
+   "Elliptical_Trainer",
+   "Glute_Ham_Raise",
+   "Hack_Squat",
+   "Jogging_Treadmill",
+   "Leg_Extensions",
+   "Leg_Press",
+   "Leverage_Deadlift",
+   "Lunge_Sprint",
+   "Lying_Leg_Curls",
+   "Lying_Machine_Squat",
+   "Narrow_Stance_Hack_Squats",
+   "Narrow_Stance_Leg_Press",
+   "Recumbent_Bike",
+   "Reverse_Hyperextension",
+   "Rowing_Stationary",
+   "Running_Treadmill",
+   "Seated_Calf_Raise",
+   "Seated_Leg_Curl",
+   "Single-Leg_Leg_Extension",
+   "Smith_Machine_Calf_Raise",
+   "Smith_Machine_Hang_Power_Clean",
+   "Smith_Machine_Leg_Press",
+   "Smith_Machine_Pistol_Squat",
+   "Smith_Machine_Reverse_Calf_Raises",
+   "Smith_Machine_Squat",
+   "Smith_Machine_Stiff-Legged_Deadlift",
+   "Smith_Single-Leg_Split_Squat",
+   "Stairmaster",
+   "Standing_Calf_Raises",
+   "Standing_Leg_Curl",
+   "Step_Mill",
+   "Walking_Treadmill"
+  ],
+  "category": "muscle plus equipment",
+  "split": "dev"
+ },
+ {
+  "query": "cable delts",
+  "expect": [
+   "Alternating_Cable_Shoulder_Press",
+   "Bent_Over_Low-Pulley_Side_Lateral",
+   "Cable_Internal_Rotation",
+   "Cable_Rear_Delt_Fly",
+   "Cable_Rope_Rear-Delt_Rows",
+   "Cable_Seated_Lateral_Raise",
+   "Cable_Shoulder_Press",
+   "External_Rotation_with_Cable",
+   "Face_Pull",
+   "Front_Cable_Raise",
+   "Low_Pulley_Row_To_Neck",
+   "Seated_Cable_Shoulder_Press",
+   "Standing_Low-Pulley_Deltoid_Raise"
+  ],
+  "category": "muscle plus equipment",
+  "split": "holdout"
+ },
+ {
+  "query": "dumbbell traps",
+  "expect": [
+   "Dumbbell_Shrug",
+   "Standing_Dumbbell_Upright_Row"
+  ],
+  "category": "muscle plus equipment",
+  "split": "dev"
+ },
+ {
+  "query": "barbell forearms",
+  "expect": [
+   "Finger_Curls",
+   "Palms-Down_Wrist_Curl_Over_A_Bench",
+   "Palms-Up_Barbell_Wrist_Curl_Over_A_Bench",
+   "Seated_Palm-Up_Barbell_Wrist_Curl",
+   "Seated_Palms-Down_Barbell_Wrist_Curl",
+   "Standing_Palms-Up_Barbell_Behind_The_Back_Wrist_Curl",
+   "Wrist_Rotations_with_Straight_Bar"
+  ],
+  "category": "muscle plus equipment",
+  "split": "dev"
+ },
+ {
+  "query": "chest dumbbell",
+  "expect": [
+   "Around_The_Worlds",
+   "Bent-Arm_Dumbbell_Pullover",
+   "Decline_Dumbbell_Bench_Press",
+   "Decline_Dumbbell_Flyes",
+   "Dumbbell_Bench_Press",
+   "Dumbbell_Bench_Press_with_Neutral_Grip",
+   "Dumbbell_Flyes",
+   "Hammer_Grip_Incline_DB_Bench_Press",
+   "Incline_Dumbbell_Bench_With_Palms_Facing_In",
+   "Incline_Dumbbell_Flyes",
+   "Incline_Dumbbell_Flyes_-_With_A_Twist",
+   "Incline_Dumbbell_Press",
+   "One_Arm_Dumbbell_Bench_Press",
+   "One-Arm_Flat_Bench_Dumbbell_Flye",
+   "Straight-Arm_Dumbbell_Pullover"
+  ],
+  "category": "muscle plus equipment",
+  "split": "dev"
+ },
+ {
+  "query": "back machine",
+  "expect": [
+   "Leverage_High_Row",
+   "Leverage_Iso_Row",
+   "Lying_T-Bar_Row",
+   "Smith_Machine_Bent_Over_Row"
+  ],
+  "category": "muscle plus equipment",
+  "split": "holdout"
+ },
+ {
+  "query": "squats",
+  "expect": [
+   "Barbell_Squat",
+   "Barbell_Full_Squat"
+  ],
+  "category": "plural or singular",
+  "split": "dev"
+ },
+ {
+  "query": "lunge",
+  "expect": [
+   "Barbell_Lunge",
+   "Dumbbell_Lunges",
+   "Barbell_Walking_Lunge",
+   "Bodyweight_Walking_Lunge",
+   "Dumbbell_Rear_Lunge"
+  ],
+  "category": "plural or singular",
+  "split": "dev"
+ },
+ {
+  "query": "pullup",
+  "expect": [
+   "Pullups",
+   "V-Bar_Pullup",
+   "Wide-Grip_Rear_Pull-Up",
+   "Weighted_Pull_Ups"
+  ],
+  "category": "plural or singular",
+  "split": "dev"
+ },
+ {
+  "query": "dip",
+  "expect": [
+   "Dips_-_Triceps_Version",
+   "Dips_-_Chest_Version",
+   "Parallel_Bar_Dip"
+  ],
+  "category": "plural or singular",
+  "split": "holdout"
+ },
+ {
+  "query": "crunch",
+  "expect": [
+   "Crunches",
+   "Cable_Crunch",
+   "Weighted_Crunches"
+  ],
+  "category": "plural or singular",
+  "split": "dev"
+ },
+ {
+  "query": "hammer curl",
+  "expect": [
+   "Hammer_Curls",
+   "Alternate_Hammer_Curl",
+   "Cable_Hammer_Curls_-_Rope_Attachment",
+   "Cross_Body_Hammer_Curl",
+   "Incline_Hammer_Curls"
+  ],
+  "category": "plural or singular",
+  "split": "dev"
+ },
+ {
+  "query": "leg extension",
+  "expect": [
+   "Leg_Extensions",
+   "Single-Leg_Leg_Extension"
+  ],
+  "category": "plural or singular",
+  "split": "dev"
+ },
+ {
+  "query": "lying leg curl",
+  "expect": [
+   "Lying_Leg_Curls"
+  ],
+  "category": "plural or singular",
+  "split": "holdout"
+ },
+ {
+  "query": "calf raise",
+  "expect": [
+   "Standing_Calf_Raises",
+   "Seated_Calf_Raise",
+   "Smith_Machine_Calf_Raise",
+   "Standing_Dumbbell_Calf_Raise",
+   "Standing_Barbell_Calf_Raise",
+   "Calf_Press_On_The_Leg_Press_Machine",
+   "Donkey_Calf_Raises"
+  ],
+  "category": "plural or singular",
+  "split": "dev"
+ },
+ {
+  "query": "shrugs",
+  "expect": [
+   "Barbell_Shrug",
+   "Dumbbell_Shrug",
+   "Cable_Shrugs",
+   "Leverage_Shrug",
+   "Smith_Machine_Behind_the_Back_Shrug",
+   "Barbell_Shrug_Behind_The_Back"
+  ],
+  "category": "plural or singular",
+  "split": "dev"
+ },
+ {
+  "query": "step up",
+  "expect": [
+   "Dumbbell_Step_Ups",
+   "Barbell_Step_Ups"
+  ],
+  "category": "plural or singular",
+  "split": "dev"
+ },
+ {
+  "query": "box jumps",
+  "expect": [
+   "Front_Box_Jump",
+   "Box_Jump_Multiple_Response",
+   "Lateral_Box_Jump"
+  ],
+  "category": "plural or singular",
+  "split": "holdout"
+ },
+ {
+  "query": "kettlebell swings",
+  "expect": [
+   "One-Arm_Kettlebell_Swings"
+  ],
+  "category": "plural or singular",
+  "split": "dev"
+ },
+ {
+  "query": "push ups",
+  "expect": [
+   "Pushups",
+   "Push-Up_Wide",
+   "Pushups_Close_and_Wide_Hand_Positions"
+  ],
+  "category": "plural or singular",
+  "split": "dev"
+ },
+ {
+  "query": "concentration curl",
+  "expect": [
+   "Concentration_Curls"
+  ],
+  "category": "plural or singular",
+  "split": "dev"
+ },
+ {
+  "query": "dumbbell fly",
+  "expect": [
+   "Dumbbell_Flyes"
+  ],
+  "category": "plural or singular",
+  "split": "holdout"
+ },
+ {
+  "query": "incline dumbbell fly",
+  "expect": [
+   "Incline_Dumbbell_Flyes"
+  ],
+  "category": "plural or singular",
+  "split": "dev"
+ },
+ {
+  "query": "rack pull",
+  "expect": [
+   "Rack_Pulls",
+   "Rack_Pull_with_Bands"
+  ],
+  "category": "plural or singular",
+  "split": "dev"
+ },
+ {
+  "query": "hip thrusts",
+  "expect": [
+   "Barbell_Hip_Thrust"
+  ],
+  "category": "plural or singular",
+  "split": "dev"
+ },
+ {
+  "query": "front squats",
+  "expect": [
+   "Front_Barbell_Squat",
+   "Front_Squat_Clean_Grip"
+  ],
+  "category": "plural or singular",
+  "split": "holdout"
+ },
+ {
+  "query": "zercher squat",
+  "expect": [
+   "Zercher_Squats"
+  ],
+  "category": "plural or singular",
+  "split": "dev"
+ },
+ {
+  "query": "bench dip",
+  "expect": [
+   "Bench_Dips"
+  ],
+  "category": "plural or singular",
+  "split": "dev"
+ },
+ {
+  "query": "cable crunches",
+  "expect": [
+   "Cable_Crunch",
+   "Rope_Crunch",
+   "Standing_Rope_Crunch",
+   "Cable_Seated_Crunch"
+  ],
+  "category": "plural or singular",
+  "split": "dev"
+ },
+ {
+  "query": "sit ups",
+  "expect": [
+   "Sit-Up",
+   "3_4_Sit-Up"
+  ],
+  "category": "plural or singular",
+  "split": "holdout"
+ },
+ {
+  "query": "mountain climber",
+  "expect": [
+   "Mountain_Climbers"
+  ],
+  "category": "plural or singular",
+  "split": "dev"
+ },
+ {
+  "query": "flutter kick",
+  "expect": [
+   "Flutter_Kicks"
+  ],
+  "category": "plural or singular",
+  "split": "dev"
+ },
+ {
+  "query": "atlas stone",
+  "expect": [
+   "Atlas_Stones"
+  ],
+  "category": "plural or singular",
+  "split": "dev"
+ },
+ {
+  "query": "lateral raises",
+  "expect": [
+   "Side_Lateral_Raise",
+   "Seated_Side_Lateral_Raise",
+   "One-Arm_Side_Laterals",
+   "Cable_Seated_Lateral_Raise",
+   "Lateral_Raise_-_With_Bands"
+  ],
+  "category": "plural or singular",
+  "split": "holdout"
+ },
+ {
+  "query": "preacher curls",
+  "expect": [
+   "Preacher_Curl",
+   "Machine_Preacher_Curls",
+   "One_Arm_Dumbbell_Preacher_Curl",
+   "Cable_Preacher_Curl",
+   "Two-Arm_Dumbbell_Preacher_Curl"
+  ],
+  "category": "plural or singular",
+  "split": "dev"
+ },
+ {
+  "query": "face pulls",
+  "expect": [
+   "Face_Pull"
+  ],
+  "category": "plural or singular",
+  "split": "dev"
+ },
+ {
+  "query": "good mornings",
+  "expect": [
+   "Good_Morning",
+   "Seated_Good_Mornings",
+   "Stiff_Leg_Barbell_Good_Morning",
+   "Band_Good_Morning"
+  ],
+  "category": "plural or singular",
+  "split": "dev"
+ },
+ {
+  "query": "walking lunges",
+  "expect": [
+   "Barbell_Walking_Lunge",
+   "Bodyweight_Walking_Lunge"
+  ],
+  "category": "plural or singular",
+  "split": "holdout"
+ },
+ {
+  "query": "hack squats",
+  "expect": [
+   "Hack_Squat",
+   "Narrow_Stance_Hack_Squats",
+   "Barbell_Hack_Squat"
+  ],
+  "category": "plural or singular",
+  "split": "dev"
+ },
+ {
+  "query": "chin up",
+  "expect": [
+   "Chin-Up"
+  ],
+  "category": "plural or singular",
+  "split": "dev"
+ },
+ {
+  "query": "press bench",
+  "expect": [
+   "Barbell_Bench_Press_-_Medium_Grip",
+   "Bench_Press_-_Powerlifting"
+  ],
+  "category": "word order",
+  "split": "dev"
+ },
+ {
+  "query": "curl barbell",
+  "expect": [
+   "Barbell_Curl",
+   "Wide-Grip_Standing_Barbell_Curl",
+   "Close-Grip_Standing_Barbell_Curl"
+  ],
+  "category": "word order",
+  "split": "dev"
+ },
+ {
+  "query": "bench press dumbbell",
+  "expect": [
+   "Dumbbell_Bench_Press"
+  ],
+  "category": "word order",
+  "split": "dev"
+ },
+ {
+  "query": "row barbell",
+  "expect": [
+   "Bent_Over_Barbell_Row",
+   "Reverse_Grip_Bent-Over_Rows"
+  ],
+  "category": "word order",
+  "split": "holdout"
+ },
+ {
+  "query": "curl hammer",
+  "expect": [
+   "Hammer_Curls",
+   "Alternate_Hammer_Curl",
+   "Cable_Hammer_Curls_-_Rope_Attachment",
+   "Cross_Body_Hammer_Curl",
+   "Incline_Hammer_Curls"
+  ],
+  "category": "word order",
+  "split": "dev"
+ },
+ {
+  "query": "raise lateral",
+  "expect": [
+   "Side_Lateral_Raise",
+   "Seated_Side_Lateral_Raise",
+   "One-Arm_Side_Laterals",
+   "Cable_Seated_Lateral_Raise",
+   "Lateral_Raise_-_With_Bands"
+  ],
+  "category": "word order",
+  "split": "dev"
+ },
+ {
+  "query": "squat front",
+  "expect": [
+   "Front_Barbell_Squat",
+   "Front_Squat_Clean_Grip"
+  ],
+  "category": "word order",
+  "split": "dev"
+ },
+ {
+  "query": "lunge walking",
+  "expect": [
+   "Barbell_Walking_Lunge",
+   "Bodyweight_Walking_Lunge"
+  ],
+  "category": "word order",
+  "split": "holdout"
+ },
+ {
+  "query": "deadlift romanian",
+  "expect": [
+   "Romanian_Deadlift",
+   "Romanian_Deadlift_from_Deficit"
+  ],
+  "category": "word order",
+  "split": "dev"
+ },
+ {
+  "query": "extension leg",
+  "expect": [
+   "Leg_Extensions",
+   "Single-Leg_Leg_Extension"
+  ],
+  "category": "word order",
+  "split": "dev"
+ },
+ {
+  "query": "curl leg lying",
+  "expect": [
+   "Lying_Leg_Curls"
+  ],
+  "category": "word order",
+  "split": "dev"
+ },
+ {
+  "query": "pulldown lat",
+  "expect": [
+   "Wide-Grip_Lat_Pulldown",
+   "Close-Grip_Front_Lat_Pulldown",
+   "V-Bar_Pulldown",
+   "Full_Range-Of-Motion_Lat_Pulldown",
+   "Underhand_Cable_Pulldowns",
+   "One_Arm_Lat_Pulldown"
+  ],
+  "category": "word order",
+  "split": "holdout"
+ },
+ {
+  "query": "press shoulder dumbbell",
+  "expect": [
+   "Dumbbell_Shoulder_Press",
+   "Seated_Dumbbell_Press",
+   "Standing_Dumbbell_Press"
+  ],
+  "category": "word order",
+  "split": "dev"
+ },
+ {
+  "query": "fly cable",
+  "expect": [
+   "Cable_Crossover",
+   "Flat_Bench_Cable_Flyes",
+   "Low_Cable_Crossover",
+   "Single-Arm_Cable_Crossover",
+   "Incline_Cable_Flye"
+  ],
+  "category": "word order",
+  "split": "dev"
+ },
+ {
+  "query": "row seated cable",
+  "expect": [
+   "Seated_Cable_Rows",
+   "Seated_One-arm_Cable_Pulley_Rows"
+  ],
+  "category": "word order",
+  "split": "dev"
+ },
+ {
+  "query": "raise calf seated",
+  "expect": [
+   "Seated_Calf_Raise",
+   "Barbell_Seated_Calf_Raise"
+  ],
+  "category": "word order",
+  "split": "holdout"
+ },
+ {
+  "query": "press leg",
+  "expect": [
+   "Leg_Press",
+   "Narrow_Stance_Leg_Press"
+  ],
+  "category": "word order",
+  "split": "dev"
+ },
+ {
+  "query": "fly dumbbell incline",
+  "expect": [
+   "Incline_Dumbbell_Flyes"
+  ],
+  "category": "word order",
+  "split": "dev"
+ },
+ {
+  "query": "extension triceps overhead",
+  "expect": [
+   "Cable_Rope_Overhead_Triceps_Extension",
+   "Triceps_Overhead_Extension_with_Rope",
+   "Standing_Dumbbell_Triceps_Extension",
+   "Seated_Triceps_Press",
+   "Standing_Overhead_Barbell_Triceps_Extension"
+  ],
+  "category": "word order",
+  "split": "dev"
+ },
+ {
+  "query": "curl preacher",
+  "expect": [
+   "Preacher_Curl",
+   "Machine_Preacher_Curls",
+   "One_Arm_Dumbbell_Preacher_Curl",
+   "Cable_Preacher_Curl",
+   "Two-Arm_Dumbbell_Preacher_Curl"
+  ],
+  "category": "word order",
+  "split": "holdout"
+ },
+ {
+  "query": "press incline dumbbell",
+  "expect": [
+   "Incline_Dumbbell_Press",
+   "Hammer_Grip_Incline_DB_Bench_Press"
+  ],
+  "category": "word order",
+  "split": "dev"
+ },
+ {
+  "query": "squat goblet",
+  "expect": [
+   "Goblet_Squat"
+  ],
+  "category": "word order",
+  "split": "dev"
+ },
+ {
+  "query": "row one arm dumbbell",
+  "expect": [
+   "One-Arm_Dumbbell_Row"
+  ],
+  "category": "word order",
+  "split": "dev"
+ },
+ {
+  "query": "thrust hip barbell",
+  "expect": [
+   "Barbell_Hip_Thrust"
+  ],
+  "category": "word order",
+  "split": "holdout"
+ },
+ {
+  "query": "raise front dumbbell",
+  "expect": [
+   "Front_Dumbbell_Raise",
+   "Front_Two-Dumbbell_Raise",
+   "Front_Cable_Raise",
+   "Front_Plate_Raise"
+  ],
+  "category": "word order",
+  "split": "dev"
+ },
+ {
+  "query": "bench press (barbell)",
+  "expect": [
+   "Barbell_Bench_Press_-_Medium_Grip",
+   "Bench_Press_-_Powerlifting"
+  ],
+  "category": "word order",
+  "split": "dev"
+ },
+ {
+  "query": "lat pulldown (cable)",
+  "expect": [
+   "Wide-Grip_Lat_Pulldown",
+   "Close-Grip_Front_Lat_Pulldown",
+   "V-Bar_Pulldown",
+   "Full_Range-Of-Motion_Lat_Pulldown",
+   "Underhand_Cable_Pulldowns",
+   "One_Arm_Lat_Pulldown"
+  ],
+  "category": "word order",
+  "split": "dev"
+ },
+ {
+  "query": "leg press (machine)",
+  "expect": [
+   "Leg_Press",
+   "Narrow_Stance_Leg_Press"
+  ],
+  "category": "word order",
+  "split": "holdout"
+ },
+ {
+  "query": "shoulder press (dumbbell)",
+  "expect": [
+   "Dumbbell_Shoulder_Press",
+   "Seated_Dumbbell_Press",
+   "Standing_Dumbbell_Press"
+  ],
+  "category": "word order",
+  "split": "dev"
+ },
+ {
+  "query": "lateral raise (dumbbell)",
+  "expect": [
+   "Side_Lateral_Raise",
+   "Seated_Side_Lateral_Raise",
+   "One-Arm_Side_Laterals",
+   "Cable_Seated_Lateral_Raise",
+   "Lateral_Raise_-_With_Bands"
+  ],
+  "category": "word order",
+  "split": "dev"
+ },
+ {
+  "query": "lying leg curl (machine)",
+  "expect": [
+   "Lying_Leg_Curls"
+  ],
+  "category": "word order",
+  "split": "dev"
+ },
+ {
+  "query": "bicep curl (barbell)",
+  "expect": [
+   "Barbell_Curl",
+   "Wide-Grip_Standing_Barbell_Curl",
+   "Close-Grip_Standing_Barbell_Curl"
+  ],
+  "category": "word order",
+  "split": "holdout"
+ },
+ {
+  "query": "squat (barbell)",
+  "expect": [
+   "Barbell_Squat",
+   "Barbell_Full_Squat"
+  ],
+  "category": "word order",
+  "split": "dev"
+ },
+ {
+  "query": "press up",
+  "expect": [
+   "Pushups",
+   "Push-Up_Wide",
+   "Pushups_Close_and_Wide_Hand_Positions"
+  ],
+  "category": "British English",
+  "split": "dev"
+ },
+ {
+  "query": "press ups",
+  "expect": [
+   "Pushups",
+   "Push-Up_Wide",
+   "Pushups_Close_and_Wide_Hand_Positions"
+  ],
+  "category": "British English",
+  "split": "dev"
+ },
+ {
+  "query": "press-ups",
+  "expect": [
+   "Pushups",
+   "Push-Up_Wide",
+   "Pushups_Close_and_Wide_Hand_Positions"
+  ],
+  "category": "British English",
+  "split": "dev"
+ },
+ {
+  "query": "incline press up",
+  "expect": [
+   "Incline_Push-Up",
+   "Incline_Push-Up_Medium"
+  ],
+  "category": "British English",
+  "split": "holdout"
+ },
+ {
+  "query": "decline press up",
+  "expect": [
+   "Decline_Push-Up",
+   "Push-Ups_With_Feet_Elevated"
+  ],
+  "category": "British English",
+  "split": "dev"
+ },
+ {
+  "query": "wide press up",
+  "expect": [
+   "Push-Up_Wide"
+  ],
+  "category": "British English",
+  "split": "dev"
+ },
+ {
+  "query": "diamond press up",
+  "expect": [
+   "Push-Ups_-_Close_Triceps_Position"
+  ],
+  "category": "British English",
+  "split": "dev"
+ },
+ {
+  "query": "close grip press up",
+  "expect": [
+   "Push-Ups_-_Close_Triceps_Position",
+   "Incline_Push-Up_Close-Grip"
+  ],
+  "category": "British English",
+  "split": "holdout"
+ },
+ {
+  "query": "cross trainer",
+  "expect": [
+   "Elliptical_Trainer"
+  ],
+  "category": "British English",
+  "split": "dev"
+ },
+ {
+  "query": "skipping",
+  "expect": [
+   "Rope_Jumping"
+  ],
+  "category": "British English",
+  "split": "dev"
+ },
+ {
+  "query": "skipping rope",
+  "expect": [
+   "Rope_Jumping"
+  ],
+  "category": "British English",
+  "split": "dev"
+ },
+ {
+  "query": "tyre flip",
+  "expect": [
+   "Tire_Flip"
+  ],
+  "category": "British English",
+  "split": "holdout"
+ },
+ {
+  "query": "exercise bike",
+  "expect": [
+   "Bicycling_Stationary",
+   "Recumbent_Bike"
+  ],
+  "category": "British English",
+  "split": "dev"
+ },
+ {
+  "query": "tricep press-down",
+  "expect": [
+   "Triceps_Pushdown",
+   "Triceps_Pushdown_-_Rope_Attachment",
+   "Triceps_Pushdown_-_V-Bar_Attachment"
+  ],
+  "category": "British English",
+  "split": "dev"
+ },
+ {
+  "query": "star jumps",
+  "expect": [
+   "Star_Jump"
+  ],
+  "category": "British English",
+  "split": "dev"
+ },
+ {
+  "query": "rowing machine",
+  "expect": [
+   "Rowing_Stationary"
+  ],
+  "category": "British English",
+  "split": "holdout"
+ },
+ {
+  "query": "hammer strength chest press",
+  "expect": [
+   "Leverage_Chest_Press",
+   "Leverage_Incline_Chest_Press",
+   "Leverage_Decline_Chest_Press"
+  ],
+  "category": "brand",
+  "split": "dev"
+ },
+ {
+  "query": "hammer strength row",
+  "expect": [
+   "Leverage_Iso_Row",
+   "Leverage_High_Row"
+  ],
+  "category": "brand",
+  "split": "dev"
+ },
+ {
+  "query": "hammer strength high row",
+  "expect": [
+   "Leverage_High_Row"
+  ],
+  "category": "brand",
+  "split": "dev"
+ },
+ {
+  "query": "hammer strength shoulder press",
+  "expect": [
+   "Leverage_Shoulder_Press"
+  ],
+  "category": "brand",
+  "split": "holdout"
+ },
+ {
+  "query": "hammer strength incline press",
+  "expect": [
+   "Leverage_Incline_Chest_Press"
+  ],
+  "category": "brand",
+  "split": "dev"
+ },
+ {
+  "query": "hammer strength decline press",
+  "expect": [
+   "Leverage_Decline_Chest_Press"
+  ],
+  "category": "brand",
+  "split": "dev"
+ },
+ {
+  "query": "iso lateral row",
+  "expect": [
+   "Leverage_Iso_Row",
+   "Leverage_High_Row"
+  ],
+  "category": "brand",
+  "split": "dev"
+ },
+ {
+  "query": "smith machine squat",
+  "expect": [
+   "Smith_Machine_Squat"
+  ],
+  "category": "brand",
+  "split": "holdout"
+ },
+ {
+  "query": "smith bench",
+  "expect": [
+   "Smith_Machine_Bench_Press",
+   "Smith_Machine_Incline_Bench_Press",
+   "Smith_Machine_Close-Grip_Bench_Press"
+  ],
+  "category": "brand",
+  "split": "dev"
+ },
+ {
+  "query": "smith calf raise",
+  "expect": [
+   "Smith_Machine_Calf_Raise",
+   "Smith_Machine_Reverse_Calf_Raises"
+  ],
+  "category": "brand",
+  "split": "dev"
+ },
+ {
+  "query": "concept2",
+  "expect": [
+   "Rowing_Stationary"
+  ],
+  "category": "brand",
+  "split": "dev"
+ },
+ {
+  "query": "concept 2 rower",
+  "expect": [
+   "Rowing_Stationary"
+  ],
+  "category": "brand",
+  "split": "holdout"
+ },
+ {
+  "query": "stairmaster",
+  "expect": [
+   "Stairmaster",
+   "Step_Mill"
+  ],
+  "category": "brand",
+  "split": "dev"
+ },
+ {
+  "query": "trx row",
+  "expect": [
+   "Suspended_Row",
+   "Inverted_Row_with_Straps"
+  ],
+  "category": "brand",
+  "split": "dev"
+ },
+ {
+  "query": "trx push up",
+  "expect": [
+   "Suspended_Push-Up"
+  ],
+  "category": "brand",
+  "split": "dev"
+ },
+ {
+  "query": "bosu crunch",
+  "expect": [
+   "Bosu_Ball_Cable_Crunch_With_Side_Bends"
+  ],
+  "category": "brand",
+  "split": "holdout"
+ },
+ {
+  "query": "prowler push",
+  "expect": [
+   "Sled_Push",
+   "Prowler_Sprint"
+  ],
+  "category": "brand",
+  "split": "dev"
+ },
+ {
+  "query": "swiss ball crunch",
+  "expect": [
+   "Exercise_Ball_Crunch"
+  ],
+  "category": "brand",
+  "split": "dev"
+ },
+ {
+  "query": "peloton",
+  "expect": [
+   "Bicycling_Stationary",
+   "Recumbent_Bike"
+  ],
+  "category": "brand",
+  "split": "dev"
+ },
+ {
+  "query": "smith squat",
+  "expect": [
+   "Smith_Machine_Squat"
+  ],
+  "category": "brand",
+  "split": "holdout"
+ },
+ {
+  "query": "Barbell Bench Press - Medium Grip",
+  "expect": [
+   "Barbell_Bench_Press_-_Medium_Grip"
+  ],
+  "category": "canonical",
+  "split": "dev"
+ },
+ {
+  "query": "Leg Press",
+  "expect": [
+   "Leg_Press"
+  ],
+  "category": "canonical",
+  "split": "dev"
+ },
+ {
+  "query": "Hack Squat",
+  "expect": [
+   "Hack_Squat"
+  ],
+  "category": "canonical",
+  "split": "dev"
+ },
+ {
+  "query": "Face Pull",
+  "expect": [
+   "Face_Pull"
+  ],
+  "category": "canonical",
+  "split": "holdout"
+ },
+ {
+  "query": "Romanian Deadlift",
+  "expect": [
+   "Romanian_Deadlift"
+  ],
+  "category": "canonical",
+  "split": "dev"
+ },
+ {
+  "query": "Goblet Squat",
+  "expect": [
+   "Goblet_Squat"
+  ],
+  "category": "canonical",
+  "split": "dev"
+ },
+ {
+  "query": "Preacher Curl",
+  "expect": [
+   "Preacher_Curl"
+  ],
+  "category": "canonical",
+  "split": "dev"
+ },
+ {
+  "query": "Hammer Curls",
+  "expect": [
+   "Hammer_Curls"
+  ],
+  "category": "canonical",
+  "split": "holdout"
+ },
+ {
+  "query": "Seated Calf Raise",
+  "expect": [
+   "Seated_Calf_Raise"
+  ],
+  "category": "canonical",
+  "split": "dev"
+ },
+ {
+  "query": "Cable Crossover",
+  "expect": [
+   "Cable_Crossover"
+  ],
+  "category": "canonical",
+  "split": "dev"
+ },
+ {
+  "query": "Butterfly",
+  "expect": [
+   "Butterfly"
+  ],
+  "category": "canonical",
+  "split": "dev"
+ },
+ {
+  "query": "Barbell Hip Thrust",
+  "expect": [
+   "Barbell_Hip_Thrust"
+  ],
+  "category": "canonical",
+  "split": "holdout"
+ },
+ {
+  "query": "Leg Extensions",
+  "expect": [
+   "Leg_Extensions"
+  ],
+  "category": "canonical",
+  "split": "dev"
+ },
+ {
+  "query": "Lying Leg Curls",
+  "expect": [
+   "Lying_Leg_Curls"
+  ],
+  "category": "canonical",
+  "split": "dev"
+ },
+ {
+  "query": "Arnold Dumbbell Press",
+  "expect": [
+   "Arnold_Dumbbell_Press"
+  ],
+  "category": "canonical",
+  "split": "dev"
+ },
+ {
+  "query": "Front Barbell Squat",
+  "expect": [
+   "Front_Barbell_Squat"
+  ],
+  "category": "canonical",
+  "split": "holdout"
+ },
+ {
+  "query": "Sumo Deadlift",
+  "expect": [
+   "Sumo_Deadlift"
+  ],
+  "category": "canonical",
+  "split": "dev"
+ },
+ {
+  "query": "Good Morning",
+  "expect": [
+   "Good_Morning"
+  ],
+  "category": "canonical",
+  "split": "dev"
+ },
+ {
+  "query": "Dead Bug",
+  "expect": [
+   "Dead_Bug"
+  ],
+  "category": "canonical",
+  "split": "dev"
+ },
+ {
+  "query": "Plank",
+  "expect": [
+   "Plank"
+  ],
+  "category": "canonical",
+  "split": "holdout"
+ },
+ {
+  "query": "Pullups",
+  "expect": [
+   "Pullups"
+  ],
+  "category": "canonical",
+  "split": "dev"
+ },
+ {
+  "query": "Chin-Up",
+  "expect": [
+   "Chin-Up"
+  ],
+  "category": "canonical",
+  "split": "dev"
+ }
+]
