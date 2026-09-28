@@ -100,7 +100,9 @@ function FilterSection({
   return (
     <div className="mb-3.5">
       <div className="os-t mb-2">{title}</div>
-      <div className="flex flex-wrap gap-1.5">
+      {/* Rows 44 pt apart (32 pt chip, 12 pt gap), so each chip owns a full tap area:
+          Noah approved the 6 px on the review page (f04, 09-28). */}
+      <div className="flex flex-wrap gap-x-1.5 gap-y-3">
         {options.map((o) => (
           <Chip
             key={o}
