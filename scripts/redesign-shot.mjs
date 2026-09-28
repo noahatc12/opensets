@@ -12,7 +12,9 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 
 const BASE = process.env.SHOT_BASE ?? 'http://localhost:4173/opensets/';
 const OUT = process.env.SHOT_OUT ?? 'design/redesign-shots';
-const ONLY = process.env.SHOT_ONLY ? new Set(process.env.SHOT_ONLY.split(',')) : null;
+const ONLY = process.env.SHOT_ONLY
+  ? new Set(process.env.SHOT_ONLY.split(','))
+  : null;
 const MODES = (process.env.SHOT_MODES ?? 'dark,light').split(',');
 mkdirSync(OUT, { recursive: true });
 
@@ -20,18 +22,27 @@ const browser = await chromium.launch();
 const report = { shots: [], errors: [], overflow: [] };
 
 async function run(mode) {
-  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 });
-  await ctx.addInitScript((t) => {
-    try {
-      localStorage.setItem('opensets-theme', t);
-    } catch {
-      /* ignore */
-    }
-  }, JSON.stringify({ mode, theme: 'signal', ds: 'editorial' }));
+  const ctx = await browser.newContext({
+    viewport: { width: 390, height: 844 },
+    deviceScaleFactor: 2,
+  });
+  await ctx.addInitScript(
+    (t) => {
+      try {
+        localStorage.setItem('opensets-theme', t);
+      } catch {
+        /* ignore */
+      }
+    },
+    JSON.stringify({ mode, theme: 'signal', ds: 'editorial' }),
+  );
   const page = await ctx.newPage();
-  page.on('pageerror', (e) => report.errors.push(`${mode} PAGEERROR ${e.message}`));
+  page.on('pageerror', (e) =>
+    report.errors.push(`${mode} PAGEERROR ${e.message}`),
+  );
   page.on('console', (m) => {
-    if (m.type() === 'error' && !/favicon|jsdelivr|net::ERR/i.test(m.text())) report.errors.push(`${mode} console ${m.text()}`);
+    if (m.type() === 'error' && !/favicon|jsdelivr|net::ERR/i.test(m.text()))
+      report.errors.push(`${mode} console ${m.text()}`);
   });
 
   const shot = async (name) => {
@@ -44,7 +55,10 @@ async function run(mode) {
         shell: shell ? shell.scrollWidth - shell.clientWidth : 0,
       };
     });
-    if (over.doc > 0 || over.shell > 0) report.overflow.push(`${mode}-${name}: doc ${over.doc}px shell ${over.shell}px`);
+    if (over.doc > 0 || over.shell > 0)
+      report.overflow.push(
+        `${mode}-${name}: doc ${over.doc}px shell ${over.shell}px`,
+      );
     const path = `${OUT}/${mode}-${name}.png`;
     await page.screenshot({ path });
     report.shots.push(path);
@@ -56,17 +70,28 @@ async function run(mode) {
     await page.waitForTimeout(500);
   };
   const click = async (name, opts = {}) => {
-    const loc = opts.exact === false ? page.getByRole('button', { name }) : page.getByRole('button', { name, exact: true });
+    const loc =
+      opts.exact === false
+        ? page.getByRole('button', { name })
+        : page.getByRole('button', { name, exact: true });
     await (opts.last ? loc.last() : loc.first()).click({ timeout: 8000 });
     await page.waitForTimeout(opts.wait ?? 350);
   };
   // Buttons inside the open sheet or dialog, so a keypad "9" never resolves to the RPE "9" behind the scrim.
   const clickIn = async (name, wait = 300) => {
-    await page.getByRole('dialog').last().getByRole('button', { name, exact: true }).first().click({ timeout: 8000 });
+    await page
+      .locator('[role="dialog"], [role="alertdialog"]')
+      .last()
+      .getByRole('button', { name, exact: true })
+      .first()
+      .click({ timeout: 8000 });
     await page.waitForTimeout(wait);
   };
   const clickText = async (text, wait = 350) => {
-    await page.getByText(text, { exact: true }).first().click({ timeout: 8000 });
+    await page
+      .getByText(text, { exact: true })
+      .first()
+      .click({ timeout: 8000 });
     await page.waitForTimeout(wait);
   };
   const scrollMain = async (y) => {
@@ -82,7 +107,9 @@ async function run(mode) {
     try {
       await fn();
     } catch (e) {
-      report.errors.push(`${mode} step ${name} FAILED ${e.message.split('\n')[0]}`);
+      report.errors.push(
+        `${mode} step ${name} FAILED ${e.message.split('\n')[0]}`,
+      );
     }
   };
 
@@ -93,7 +120,9 @@ async function run(mode) {
   // Fresh install, then the app's own sample data (every later step needs it).
   if (!ONLY || ONLY.has('today')) await shot('today-empty');
   await click('Load sample data');
-  await page.getByRole('button', { name: /Start workout/ }).waitFor({ timeout: 15000 });
+  await page
+    .getByRole('button', { name: /Start workout/ })
+    .waitFor({ timeout: 15000 });
   await page.waitForTimeout(600);
 
   await step('today', async () => {
@@ -122,7 +151,9 @@ async function run(mode) {
     await shot('sheet-picker');
     await page.getByRole('textbox', { name: /Search/ }).fill('bench');
     await page.waitForTimeout(500);
-    await click('Add Barbell Bench Press - Medium Grip', { exact: false }).catch(async () => {
+    await click('Add Barbell Bench Press - Medium Grip', {
+      exact: false,
+    }).catch(async () => {
       await page.getByRole('button', { name: /^Add / }).first().click();
     });
     await page.waitForTimeout(400);
@@ -183,9 +214,9 @@ async function run(mode) {
   await step('onboarding', async () => {
     await go('onboarding');
     await page.waitForTimeout(400);
-    for (let i = 1; i <= 6; i++) {
+    for (let i = 1; i <= 5; i++) {
       await shot(`onboarding-${i}`);
-      if (i < 6) await click('Continue');
+      if (i < 5) await click('Continue');
       await page.waitForTimeout(400);
     }
     await go('today');
@@ -246,7 +277,9 @@ for (const mode of MODES) {
 }
 await browser.close();
 writeFileSync(`${OUT}/report.json`, JSON.stringify(report, null, 2));
-console.log(`${report.shots.length} shots, ${report.errors.length} errors, ${report.overflow.length} overflow`);
+console.log(
+  `${report.shots.length} shots, ${report.errors.length} errors, ${report.overflow.length} overflow`,
+);
 for (const e of report.errors) console.log('  ERR ' + e);
 for (const o of report.overflow) console.log('  OVERFLOW ' + o);
 process.exitCode = report.overflow.length ? 1 : 0;
