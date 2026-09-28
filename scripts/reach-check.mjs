@@ -21,10 +21,30 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 const BASE = process.env.SHOT_BASE ?? 'http://localhost:4173/opensets/';
 const OUT = process.env.SHOT_OUT ?? 'design/reach';
 mkdirSync(OUT, { recursive: true });
-const SAFE = { top: 47, bottom: 34 };
+// Safe areas per profile. 'iphone14-ios18' is Noah's phone as measured on 09-28 with the
+// black-translucent status bar (window 797 of 844, content under the status bar);
+// 'iphone14-black' is the same phone with an opaque status bar (window below it).
 const PROFILES = [
-  { name: 'home', viewport: { width: 390, height: 844 } },
-  { name: 'home-short', viewport: { width: 390, height: 810 } },
+  {
+    name: 'home',
+    viewport: { width: 390, height: 844 },
+    safe: { top: 47, bottom: 34 },
+  },
+  {
+    name: 'home-short',
+    viewport: { width: 390, height: 810 },
+    safe: { top: 47, bottom: 34 },
+  },
+  {
+    name: 'iphone14-ios18',
+    viewport: { width: 390, height: 797 },
+    safe: { top: 47, bottom: 34 },
+  },
+  {
+    name: 'iphone14-black',
+    viewport: { width: 390, height: 797 },
+    safe: { top: 0, bottom: 34 },
+  },
 ].filter(
   (p) =>
     !process.env.REACH_PROFILES ||
@@ -75,10 +95,10 @@ async function run(profile) {
   const cdp = await ctx.newCDPSession(page);
   await cdp.send('Emulation.setSafeAreaInsetsOverride', {
     insets: {
-      top: SAFE.top,
-      topMax: SAFE.top,
-      bottom: SAFE.bottom,
-      bottomMax: SAFE.bottom,
+      top: profile.safe.top,
+      topMax: profile.safe.top,
+      bottom: profile.safe.bottom,
+      bottomMax: profile.safe.bottom,
       left: 0,
       leftMax: 0,
       right: 0,
@@ -247,7 +267,7 @@ async function run(profile) {
         for (const [p, t] of scrollers) p.scrollTop = t;
         return out;
       },
-      { safe: SAFE },
+      { safe: profile.safe },
     );
     for (const f of res.fail)
       failures.push({ profile: profile.name, state, ...f });
