@@ -1,110 +1,121 @@
-/* Ported from the OpenSets prototype PR celebration overlay
-   (reference/OpenSets.dc.html, "PR CELEBRATION" block ~L1124).
-   Full-screen centered overlay, tappable to dismiss, --pr accent + glow.
-   Pure presentational — reads only the kg/lb units setting for display. */
+/* The record screen: full-bleed gold, the number that was just set, one way out.
+   Presentational; reads only the kg/lb setting for display. */
 
 import { useSettings } from '../../db/hooks';
-import { roundDisplay, toUnit } from '../../lib/units';
+import { fmtWeight, roundDisplay, toUnit } from '../../lib/units';
 
 type PrKind = 'weight' | 'reps' | 'e1rm';
-
-const KIND_LABEL: Record<PrKind, string> = {
-  weight: 'weight',
-  reps: 'reps',
-  e1rm: 'e1RM',
-};
-
-const numFont = {
-  fontFamily: 'var(--font-num)',
-  fontWeight: 'var(--num-weight)' as unknown as number,
-  fontVariantNumeric: 'tabular-nums' as const,
-};
-
-function badgeLabel(kinds: PrKind[]): string {
-  if (kinds.length === 0) return 'NEW PR';
-  if (kinds.length === 1) return `NEW ${KIND_LABEL[kinds[0]!]} PR`;
-  return 'NEW PR';
-}
 
 export function PrCelebration({
   kinds,
   e1rm,
+  exerciseName,
+  weightLb,
+  reps,
+  previousBestE1rm,
   onDismiss,
 }: {
   kinds: PrKind[];
   e1rm?: number | null;
+  exerciseName?: string;
+  weightLb?: number;
+  reps?: number;
+  previousBestE1rm?: number | null;
   onDismiss: () => void;
 }) {
   const { units } = useSettings();
   const e1rmDisplay =
     e1rm != null ? roundDisplay(toUnit(e1rm, units), units) : null;
+  const prevDisplay =
+    previousBestE1rm != null
+      ? roundDisplay(toUnit(previousBestE1rm, units), units)
+      : null;
+  // A rep record on a lift with no eligible e1RM (very high reps, bodyweight) shows the
+  // reps as the number instead.
+  const weightRecord =
+    e1rmDisplay == null &&
+    kinds.includes('weight') &&
+    weightLb !== undefined &&
+    weightLb > 0;
+  const numeral =
+    e1rmDisplay ?? (weightRecord ? fmtWeight(weightLb, units) : (reps ?? ''));
+  const what =
+    e1rmDisplay != null
+      ? `e1RM ${units}`
+      : weightRecord
+        ? `heaviest, ${units}`
+        : kinds.includes('reps')
+          ? 'rep record'
+          : 'record';
+  const setLine =
+    weightLb !== undefined && reps !== undefined
+      ? `${weightLb > 0 ? fmtWeight(weightLb, units) : 'BW'} × ${reps}`
+      : null;
+  // The previous best is an e1RM, so it only makes sense next to an e1RM numeral.
+  const detail = [
+    setLine,
+    e1rmDisplay != null && prevDisplay != null
+      ? `previous best ${prevDisplay}`
+      : null,
+    e1rmDisplay == null &&
+    !weightRecord &&
+    kinds.includes('reps') &&
+    weightLb !== undefined
+      ? `most reps at ${weightLb > 0 ? fmtWeight(weightLb, units) : 'bodyweight'}`
+      : null,
+  ]
+    .filter(Boolean)
+    .join(' · ');
 
   return (
     <div
-      onClick={onDismiss}
       role="dialog"
       aria-modal="true"
-      aria-label="Personal record"
-      className="absolute inset-0 z-[5] flex cursor-pointer items-center justify-center"
-      style={{
-        background: 'color-mix(in oklab, var(--bg) 78%, transparent)',
-        backdropFilter: 'blur(3px)',
-      }}
+      aria-label="New record"
+      className="os-gold absolute inset-0 z-50 flex flex-col items-center justify-center px-6 text-center"
     >
       <div
-        className="max-w-[280px] text-center"
+        className="text-[13px] font-extrabold uppercase"
+        style={{ letterSpacing: '.08em', opacity: 0.75 }}
+      >
+        New record
+      </div>
+      <div
+        className="os-num os-pr-pulse mt-1.5"
         style={{
-          padding: '34px 30px',
-          background: 'var(--elevated)',
-          borderRadius: 'var(--r-2xl)',
-          animation:
-            'os-cel-in var(--dur-slow) var(--ease-spring), os-cel-glow 2s var(--ease-in-out) infinite',
+          fontSize: String(numeral).length > 3 ? 120 : 150,
+          letterSpacing: '-.06em',
+          textShadow: '0 12px 30px rgba(120,80,0,.25)',
         }}
       >
-        <div
-          className="inline-flex items-center gap-[7px] rounded-[var(--r-pill)] px-[14px] py-[7px] text-[12px] font-bold"
-          style={{
-            background: 'var(--pr)',
-            color: 'var(--accent-ink)',
-            letterSpacing: '0.06em',
-          }}
-        >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-            <path d="M13 2L4 14h7l-1 8 9-12h-7z" fill="currentColor" />
-          </svg>
-          {badgeLabel(kinds)}
-        </div>
-
-        {e1rmDisplay != null && (
-          <div className="mt-[18px] flex items-baseline justify-center gap-2">
-            <span
-              className="font-bold"
-              style={{
-                fontSize: 'var(--num-lg)',
-                letterSpacing: 'var(--tracking-tight)',
-                ...numFont,
-              }}
-            >
-              {e1rmDisplay}
-            </span>
-            <span className="text-[18px] font-semibold text-muted">{units}</span>
-          </div>
-        )}
-
-        <div className="mt-[6px] text-[13px] text-muted">
-          {e1rmDisplay != null
-            ? 'A new estimated one-rep max.'
-            : 'You beat your previous best.'}
-        </div>
-
-        <button
-          onClick={onDismiss}
-          className="mt-[22px] h-12 w-full rounded-[var(--r-md)] text-[14px] font-bold"
-          style={{ background: 'var(--accent)', color: 'var(--accent-ink)' }}
-        >
-          Keep going
-        </button>
+        {numeral}
       </div>
+      <div
+        className="mt-0.5 text-[22px] font-extrabold"
+        style={{ letterSpacing: '-.03em' }}
+      >
+        {exerciseName ? `${exerciseName} · ${what}` : what}
+      </div>
+      {detail && (
+        <div
+          className="mt-3 text-[14px] font-semibold"
+          style={{ opacity: 0.75, fontVariantNumeric: 'tabular-nums' }}
+        >
+          {detail}
+        </div>
+      )}
+      <button
+        type="button"
+        onClick={onDismiss}
+        className="os-press mt-10 flex h-[54px] items-center rounded-[18px] px-[26px] text-[15px] font-extrabold"
+        style={{
+          background: 'rgba(26,18,4,.92)',
+          color: '#ffe7a8',
+          boxShadow: '0 12px 30px -10px rgba(60,40,0,.6)',
+        }}
+      >
+        Keep going
+      </button>
     </div>
   );
 }

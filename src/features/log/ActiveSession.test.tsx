@@ -7,7 +7,13 @@
  * the safety net for the logger UI the gate never covered.
  */
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { render, screen, waitFor, cleanup, fireEvent } from '@testing-library/react';
+import {
+  render,
+  screen,
+  waitFor,
+  cleanup,
+  fireEvent,
+} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { db, DEFAULT_SETTINGS } from '../../db/db';
@@ -44,10 +50,17 @@ async function seedActiveSession(
   await setActiveProgram(program.id);
   const tpl = await createTemplate(program.id, 'Day 1', 0);
   tpl.slots = exerciseIds.map((id, i) =>
-    makeSlot(id, i, LINEAR, { sets: 3, repTarget: 5 }, { warmupSec: 60, workSec: 120 }),
+    makeSlot(
+      id,
+      i,
+      LINEAR,
+      { sets: 3, repTarget: 5 },
+      { warmupSec: 60, workSec: 120 },
+    ),
   );
   await saveTemplate(tpl);
-  for (const slot of tpl.slots) await seedExerciseState(program.id, slot, 60, now);
+  for (const slot of tpl.slots)
+    await seedExerciseState(program.id, slot, 60, now);
   const session = await startSessionFromTemplate(tpl, now);
   useSessionStore.getState().beginSession(session.id);
   return { session, programId: program.id };
@@ -63,7 +76,7 @@ function renderLogger() {
 
 /** Wait for the prescription to load and the active set's Log CTA to render. */
 async function logButton() {
-  return waitFor(() => screen.getByRole('button', { name: /Log Set/ }));
+  return waitFor(() => screen.getByRole('button', { name: /Log set/i }));
 }
 
 beforeEach(async () => {
@@ -80,7 +93,7 @@ afterEach(() => {
   useSessionStore.getState().endSession();
 });
 
-describe('Readout logger — core flow (pinned pre-extraction)', () => {
+describe('Logger core flow (pinned pre-extraction)', () => {
   it('logs a prescribed set to the session', async () => {
     const { session } = await seedActiveSession();
     const user = userEvent.setup();
@@ -96,7 +109,8 @@ describe('Readout logger — core flow (pinned pre-extraction)', () => {
 
   it('persists edited weight and reps when logging', async () => {
     const { session, programId } = await seedActiveSession();
-    const target = (await getExerciseState(programId, 'bench'))!.pending!.sets[0]!;
+    const target = (await getExerciseState(programId, 'bench'))!.pending!
+      .sets[0]!;
     const user = userEvent.setup();
     renderLogger();
     await logButton();
@@ -159,7 +173,20 @@ describe('Readout logger — core flow (pinned pre-extraction)', () => {
     await setActiveProgram(program.id);
     const tpl = await createTemplate(program.id, 'Day 1', 0);
     tpl.slots = [
-      makeSlot('db_curl', 0, { kind: 'double', repMin: 10, repMax: 14, incrementLb: 1.25, perSet: false }, { sets: 3, repRange: [10, 14] }, { warmupSec: 45, workSec: 90 }, { loadType: 'dumbbell' }),
+      makeSlot(
+        'db_curl',
+        0,
+        {
+          kind: 'double',
+          repMin: 10,
+          repMax: 14,
+          incrementLb: 1.25,
+          perSet: false,
+        },
+        { sets: 3, repRange: [10, 14] },
+        { warmupSec: 45, workSec: 90 },
+        { loadType: 'dumbbell' },
+      ),
     ];
     await saveTemplate(tpl);
     await seedExerciseState(program.id, tpl.slots[0]!, 15, now);
@@ -183,8 +210,28 @@ describe('Readout logger — core flow (pinned pre-extraction)', () => {
     await setActiveProgram(program.id);
     const tpl = await createTemplate(program.id, 'Day 1', 0);
     tpl.slots = [
-      makeSlot('pushup', 0, { kind: 'repsOnly', repIncrement: 1 }, { sets: 3, repTarget: 10 }, { warmupSec: 45, workSec: 90 }, { loadType: 'bodyweight' }),
-      makeSlot('db_curl', 1, { kind: 'double', repMin: 10, repMax: 14, incrementLb: 1.25, perSet: false }, { sets: 3, repRange: [10, 14] }, { warmupSec: 45, workSec: 90 }, { loadType: 'dumbbell' }),
+      makeSlot(
+        'pushup',
+        0,
+        { kind: 'repsOnly', repIncrement: 1 },
+        { sets: 3, repTarget: 10 },
+        { warmupSec: 45, workSec: 90 },
+        { loadType: 'bodyweight' },
+      ),
+      makeSlot(
+        'db_curl',
+        1,
+        {
+          kind: 'double',
+          repMin: 10,
+          repMax: 14,
+          incrementLb: 1.25,
+          perSet: false,
+        },
+        { sets: 3, repRange: [10, 14] },
+        { warmupSec: 45, workSec: 90 },
+        { loadType: 'dumbbell' },
+      ),
     ];
     await saveTemplate(tpl);
     await seedExerciseState(program.id, tpl.slots[0]!, 0, now);
@@ -193,7 +240,9 @@ describe('Readout logger — core flow (pinned pre-extraction)', () => {
     useSessionStore.getState().beginSession(session.id);
     const user = userEvent.setup();
     renderLogger();
-    expect(await screen.findByRole('button', { name: /Log Set 1 · BW × 10/ })).toBeTruthy();
+    expect(
+      await screen.findByRole('button', { name: /Log set 1 · BW × 10/i }),
+    ).toBeTruthy();
     expect(screen.queryByText(/^0$/)).toBeNull();
     await user.click(screen.getByRole('button', { name: 'Next exercise' }));
     expect(await screen.findByText('Per hand')).toBeTruthy();
@@ -212,12 +261,15 @@ describe('Readout logger — core flow (pinned pre-extraction)', () => {
     expect(await getSessionSets(session.id)).toHaveLength(1);
   });
 
-  it('finish completes the session', async () => {
+  it('finish opens the summary, and Save workout completes the session', async () => {
     const { session } = await seedActiveSession();
     const user = userEvent.setup();
     renderLogger();
     await logButton();
     await user.click(screen.getByRole('button', { name: 'Finish' }));
+    await user.click(
+      await screen.findByRole('button', { name: 'Save workout' }),
+    );
     await waitFor(async () => {
       const s = await db.sessions.get(session.id);
       expect(s!.status).toBe('completed');
@@ -225,11 +277,38 @@ describe('Readout logger — core flow (pinned pre-extraction)', () => {
   });
 });
 
+describe('Summary: Discard', () => {
+  it('removes the logged sets and closes the session without advancing progression', async () => {
+    const { session, programId } = await seedActiveSession();
+    const before = await getExerciseState(programId, 'bench');
+    const user = userEvent.setup();
+    renderLogger();
+    await user.click(await logButton());
+    await user.click(screen.getByRole('button', { name: 'Finish' }));
+    await user.click(await screen.findByRole('button', { name: 'Discard' }));
+    await user.click(
+      await screen.findByRole('button', { name: 'Discard workout' }),
+    );
+    await waitFor(async () => {
+      expect((await db.sessions.get(session.id))!.status).toBe('partial');
+    });
+    expect(await getSessionSets(session.id)).toHaveLength(0); // soft-deleted
+    expect((await getExerciseState(programId, 'bench'))!.updatedAt).toBe(
+      before!.updatedAt,
+    ); // NOT advanced
+    expect(await db.activeSession.get('current')).toBeFalsy();
+  });
+});
+
 describe('Session resume on reload', () => {
   it('TodayScreen resumes an in-flight session', async () => {
     const { session } = await seedActiveSession();
     // Simulate a fresh load: the ephemeral store is empty, the session is in Dexie.
-    useSessionStore.setState({ activeSessionId: null, currentExercise: 0, rest: null });
+    useSessionStore.setState({
+      activeSessionId: null,
+      currentExercise: 0,
+      rest: null,
+    });
     render(
       <MemoryRouter>
         <TodayScreen />
@@ -278,7 +357,11 @@ describe('Crash recovery snapshot', () => {
     });
     // Simulate a reload: unmount, clear ephemeral store, resume the session fresh.
     view.unmount();
-    useSessionStore.setState({ activeSessionId: null, currentExercise: 0, rest: null });
+    useSessionStore.setState({
+      activeSessionId: null,
+      currentExercise: 0,
+      rest: null,
+    });
     useSessionStore.getState().beginSession(session.id);
     renderLogger();
     await waitFor(() => {
@@ -302,18 +385,26 @@ describe('Back is a non-destructive leave (#2)', () => {
     renderToday(); // activeSessionId set → renders the active session
     await user.click(await logButton()); // log one set
     // Wait for the debounced recovery snapshot so "snapshot kept" is a real assertion.
-    await waitFor(async () => expect(await db.activeSession.get('current')).toBeTruthy());
+    await waitFor(async () =>
+      expect(await db.activeSession.get('current')).toBeTruthy(),
+    );
     const before = await getExerciseState(programId, 'bench');
 
-    await user.click(await screen.findByRole('button', { name: /Leave workout/ }));
+    await user.click(
+      await screen.findByRole('button', { name: /Leave workout/ }),
+    );
 
     await waitFor(async () => {
       expect((await db.sessions.get(session.id))!.status).toBe('active'); // NOT completed
     });
     expect(await db.activeSession.get('current')).toBeTruthy(); // snapshot NOT cleared
-    expect((await getExerciseState(programId, 'bench'))!.updatedAt).toBe(before!.updatedAt); // NOT advanced
+    expect((await getExerciseState(programId, 'bench'))!.updatedAt).toBe(
+      before!.updatedAt,
+    ); // NOT advanced
     expect(await getSessionSets(session.id)).toHaveLength(1); // logged work intact
-    expect(await screen.findByRole('button', { name: /Resume workout/ })).toBeTruthy();
+    expect(
+      await screen.findByRole('button', { name: /Resume workout/ }),
+    ).toBeTruthy();
   });
 
   it('Resume from the hub returns to the live in-progress session with the logged set', async () => {
@@ -321,13 +412,17 @@ describe('Back is a non-destructive leave (#2)', () => {
     const user = userEvent.setup();
     renderToday();
     await user.click(await logButton());
-    await user.click(await screen.findByRole('button', { name: /Leave workout/ }));
-    await user.click(await screen.findByRole('button', { name: /Resume workout/ }));
+    await user.click(
+      await screen.findByRole('button', { name: /Leave workout/ }),
+    );
+    await user.click(
+      await screen.findByRole('button', { name: /Resume workout/ }),
+    );
     await waitFor(() =>
       expect(useSessionStore.getState().activeSessionId).toBe(session.id),
     );
     expect(await getSessionSets(session.id)).toHaveLength(1);
-    await waitFor(() => screen.getByRole('button', { name: /Log Set/ }));
+    await waitFor(() => screen.getByRole('button', { name: /Log set/i }));
   });
 
   it('Finish (not Back) still finalizes: completes, advances progression, clears the snapshot', async () => {
@@ -336,12 +431,19 @@ describe('Back is a non-destructive leave (#2)', () => {
     const user = userEvent.setup();
     renderLogger();
     await user.click(await logButton());
-    await waitFor(async () => expect(await db.activeSession.get('current')).toBeTruthy());
+    await waitFor(async () =>
+      expect(await db.activeSession.get('current')).toBeTruthy(),
+    );
     await user.click(screen.getByRole('button', { name: 'Finish' }));
+    await user.click(
+      await screen.findByRole('button', { name: 'Save workout' }),
+    );
     await waitFor(async () => {
       expect((await db.sessions.get(session.id))!.status).toBe('completed');
     });
     expect(await db.activeSession.get('current')).toBeFalsy(); // snapshot cleared
-    expect((await getExerciseState(programId, 'bench'))!.updatedAt).not.toBe(before!.updatedAt); // advanced
+    expect((await getExerciseState(programId, 'bench'))!.updatedAt).not.toBe(
+      before!.updatedAt,
+    ); // advanced
   });
 });

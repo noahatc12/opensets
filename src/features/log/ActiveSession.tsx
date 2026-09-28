@@ -1,60 +1,56 @@
-import { fmtWeight } from '../../lib/units';
+import { useEffect, useState } from 'react';
+import { fmtWeight, kgToLb, toUnit } from '../../lib/units';
+import {
+  clock,
+  compact,
+  humanReason,
+  shortName,
+  titleCase,
+  weekdayLong,
+} from '../../lib/format';
 import { getCatalogExercise } from '../../db/catalog';
-import { useLogger } from './useLogger';
+import { useSettings } from '../../db/hooks';
+import { platesForWeight, roundToLoadable } from '../../engine';
+import { plateList } from '../../lib/plates';
+import { useLogger, type LoggerVM } from './useLogger';
 import { PrCelebration } from './PrCelebration';
 import { ExercisePicker } from '../library/ExercisePicker';
-import {
-  ChevronLeftIcon,
-  ChevronRightIcon,
-  ChevronDownIcon,
-  ChevronUpIcon,
-  MinusIcon,
-  PlusIcon,
-} from '../../components/icons';
+import { Sheet, SheetHeader, ConfirmSheet } from '../../ui/Sheet';
+import { KeypadSheet } from '../../ui/Keypad';
+import { Toast } from '../../ui/Toast';
+import { Ring } from '../../ui/Ring';
+import { StatTiles, BackButton } from '../../ui/StatGrid';
+import { PlateMarks, BarDiagram } from '../../ui/Plates';
+import type { LoggedSet } from '../../db/types';
 
-/* Readout logger — the single active logger for the build. It is a PRESENTATIONAL
-   shell over useLogger(): every value and action comes from the hook, so a future
-   Tempo skin is a second component over the same logic, not a rebuild. Ported from
-   the Claude Design prototype (reference/OpenSets.dc.html): columnar set-list —
-   header + per-set rows, the active set a columnar hero card with Weight │ Reps. */
+/* The logger. A presentational shell over useLogger(): every value and action comes from
+   the hook. Layout follows the premium reference: top bar, exercise strip, exercise head
+   with the WHY strip, the active-set card with two numerals, the set rows, the CTA. Rest
+   turns the bottom into a panel with a draining ring; Finish opens the summary. */
 
 const nameOf = (id: string) => getCatalogExercise(id)?.name ?? id;
-const fmt = (n: number) => String(n);
-
-function clock(totalSec: number): string {
-  const m = Math.floor(totalSec / 60);
-  const s = totalSec % 60;
-  return `${m}:${String(s).padStart(2, '0')}`;
-}
-
-/** "3-1-1-0" → "3·1·1·0" for a tidier tempo chip (decoded in the S11 education layer). */
+/** "3-1-1-0" reads as "3·1·1·0". */
 const fmtTempo = (t: string) => t.replace(/-/g, '·');
-/** Title-case a rest-tier key for display, e.g. "compound" → "Compound". */
-const titleTier = (t: string) => t.charAt(0).toUpperCase() + t.slice(1);
-/** Reps-in-reserve from a target RPE (RIR = 10 − RPE), floored at 0. §3.5. */
-const rirFromRpe = (rpe: number) => Math.max(0, Math.round((10 - rpe) * 10) / 10);
-
-const numFont = {
-  fontFamily: 'var(--font-num)',
-  fontWeight: 'var(--num-weight)' as unknown as number,
-  fontVariantNumeric: 'tabular-nums' as const,
-};
 
 export function ActiveSession() {
   const vm = useLogger();
   if (!vm) return null;
+  if (vm.summaryOpen) return <Summary vm={vm} />;
+  return <Logger vm={vm} />;
+}
+
+function Logger({ vm }: { vm: LoggerVM }) {
+  const settings = useSettings();
   const loadType = vm.loadType;
   const pureBodyweight = loadType === 'bodyweight' && vm.weight === 0;
   const suggested = vm.pres?.flags.includes('suggested') ?? false;
   // A pure bodyweight load reads "BW" everywhere it is shown, never "0".
   const isBw = (lb: number) => loadType === 'bodyweight' && lb === 0;
-  const w = (lb: number, u: 'kg' | 'lb') => (isBw(lb) ? 'BW' : fmtWeight(lb, u));
+  const w = (lb: number) => (isBw(lb) ? 'BW' : fmtWeight(lb, units));
   const {
-    sessionTitle,
+    templateName,
     elapsed,
     exId,
-    metaLine,
-    lastWeights,
     totalSets,
     activeIndex,
     exerciseComplete,
@@ -70,6 +66,7 @@ export function ActiveSession() {
     weight,
     reps,
     rpe,
+    setWeight,
     setReps,
     setRpe,
     rest,
@@ -85,8 +82,9 @@ export function ActiveSession() {
     finishing,
     multiTabConflict,
     pickerMode,
+    loggedAll,
+    setSummaryOpen,
     log,
-    finish,
     leave,
     undoSet,
     skip,
@@ -96,7 +94,69 @@ export function ActiveSession() {
     onPickExercise,
   } = vm;
 
-  const totalForGrid = Math.max(totalSets, 1);
+  const [keypad, setKeypad] = useState<'weight' | 'reps' | null>(null);
+  const [platesOpen, setPlatesOpen] = useState(false);
+
+  // Buzz at zero, then the panel goes away on its own.
+  useEffect(() => {
+    if (!rest || restRemain > 0) return;
+    if (
+      typeof navigator !== 'undefined' &&
+      typeof navigator.vibrate === 'function'
+    )
+      navigator.vibrate([120, 60, 120]);
+    stopRest();
+  }, [rest, restRemain, stopRest]);
+
+  const ex = getCatalogExercise(exId);
+  const scheme = activeSlot.scheme;
+  const repsLabel =
+    scheme.repTarget ??
+    (scheme.repRange ? `${scheme.repRange[0]}–${scheme.repRange[1]}` : '');
+  const eyebrow = [
+    `${current + 1} of ${slots.length}`,
+    ex?.primaryMuscles[0] ? titleCase(ex.primaryMuscles[0]) : null,
+    `${scheme.sets} × ${repsLabel}`,
+  ]
+    .filter(Boolean)
+    .join(' · ');
+  const coaching = [
+    activeSlot.tempo ? `Tempo ${fmtTempo(activeSlot.tempo)}` : null,
+    activeSlot.restTier
+      ? `${titleCase(activeSlot.restTier)} rest ${clock(activeSlot.restWorkSec)}`
+      : null,
+  ]
+    .filter(Boolean)
+    .join(' · ');
+
+  // Per-side plates follow the draft weight as the steppers move (barbell only).
+  const barbell = loadType === 'barbell';
+  const plates = barbell
+    ? platesForWeight(weight, settings.barLb, settings.plateInventoryLb)
+    : null;
+  const nearest =
+    barbell && plates === null
+      ? roundToLoadable(weight, settings.barLb, settings.plateInventoryLb)
+      : null;
+
+  const perExercise = new Map<string, number>();
+  for (const s of loggedAll)
+    perExercise.set(s.exerciseId, (perExercise.get(s.exerciseId) ?? 0) + 1);
+  const slotDone = (exerciseId: string, i: number) => {
+    const n = perExercise.get(exerciseId) ?? 0;
+    const need = slots[i]?.scheme.sets ?? 0;
+    return need > 0 && n >= need;
+  };
+
+  const weightLabel =
+    loadType === 'bodyweight'
+      ? 'Added weight'
+      : loadType === 'dumbbell'
+        ? 'Per hand'
+        : 'Weight';
+  const numeralSize = (s: string) =>
+    s.length > 4 ? 52 : s.length > 3 ? 60 : 72;
+  const ctaLabel = `Log set ${activeIndex + 1} · ${w(weight)} × ${reps}`;
 
   return (
     <div className="relative flex h-full flex-col">
@@ -104,538 +164,831 @@ export function ActiveSession() {
         <PrCelebration
           kinds={celebrate.kinds}
           e1rm={celebrate.e1rm}
+          exerciseName={nameOf(celebrate.exerciseId)}
+          weightLb={celebrate.weightLb}
+          reps={celebrate.reps}
+          previousBestE1rm={celebrate.previousBestE1rm}
           onDismiss={() => setCelebrate(null)}
         />
       )}
-      {/* Top bar */}
-      <div className="flex flex-none items-center justify-between px-[22px] pb-3 pt-[max(0.625rem,env(safe-area-inset-top))]">
+
+      {/* top bar */}
+      <div className="flex flex-none items-center justify-between px-[18px] pt-[max(0.375rem,env(safe-area-inset-top))]">
         <button
+          type="button"
           onClick={leave}
-          className="grid size-[42px] place-items-center border-none bg-transparent text-muted"
+          className="os-icon-btn os-press"
           aria-label="Leave workout (keeps it resumable)"
         >
-          <ChevronLeftIcon className="size-[22px]" />
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden
+          >
+            <path d="M6 9l6 6 6-6" />
+          </svg>
         </button>
-        <div className="text-center">
-          <div className="whitespace-nowrap text-[13px] font-semibold text-text">
-            {sessionTitle}
+        <div className="min-w-0 text-center">
+          <div className="truncate text-[14px] font-extrabold">
+            {templateName}
           </div>
-          <div className="mt-0.5 text-[11.5px] text-accent" style={numFont}>
-            {elapsed} elapsed
+          <div className="os-t" style={{ fontVariantNumeric: 'tabular-nums' }}>
+            {elapsed} · {loggedAll.length}{' '}
+            {loggedAll.length === 1 ? 'set' : 'sets'}
           </div>
         </div>
         <button
-          onClick={() => void finish()}
+          type="button"
+          onClick={() => setSummaryOpen(true)}
           disabled={finishing}
-          className="h-[42px] border-none bg-transparent px-2.5 text-[14px] font-semibold text-muted"
+          className="os-chip os-press"
+          style={{ height: 40, borderRadius: 13, fontSize: 14 }}
         >
-          {finishing ? '…' : 'Finish'}
+          Finish
+        </button>
+      </div>
+
+      {/* exercise strip */}
+      <div className="flex flex-none items-center gap-1.5 px-[18px] pt-3">
+        <button
+          type="button"
+          onClick={() => setCurrent(Math.max(0, current - 1))}
+          className="os-icon-btn os-press"
+          style={{ width: 32, height: 32, borderRadius: 10 }}
+          aria-label="Previous exercise"
+        >
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden
+          >
+            <path d="M15 6l-6 6 6 6" />
+          </svg>
+        </button>
+        <div className="os-chips min-w-0 flex-1">
+          {slots.map((s, i) => {
+            const done = slotDone(s.exerciseId, i);
+            const on = i === current;
+            return (
+              <button
+                key={s.slotId}
+                type="button"
+                onClick={() => setCurrent(i)}
+                className={`os-chip os-press ${on ? 'os-chip--on' : ''}`}
+                style={!on && done ? { color: 'var(--pos)' } : undefined}
+                aria-current={on ? 'step' : undefined}
+              >
+                {done && !on ? '✓' : i + 1}{' '}
+                {shortName(nameOf(s.exerciseId), 14)}
+              </button>
+            );
+          })}
+        </div>
+        <button
+          type="button"
+          onClick={() => setCurrent(Math.min(slots.length - 1, current + 1))}
+          className="os-icon-btn os-press"
+          style={{ width: 32, height: 32, borderRadius: 10 }}
+          aria-label="Next exercise"
+        >
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden
+          >
+            <path d="M9 6l6 6-6 6" />
+          </svg>
         </button>
       </div>
 
       {multiTabConflict && (
         <div
-          className="mx-[22px] mb-2 flex-none rounded-[var(--r-md)] px-3.5 py-2.5 text-[12px] font-medium"
+          className="mx-[18px] mt-3 flex-none rounded-[14px] px-3.5 py-2.5 text-[12.5px] font-semibold"
           style={{
-            background: 'color-mix(in oklab, var(--danger) 12%, var(--surface))',
-            border: '1px solid color-mix(in oklab, var(--danger) 32%, transparent)',
+            background: 'color-mix(in oklab, var(--danger) 12%, transparent)',
             color: 'var(--danger)',
           }}
         >
-          This workout is open in another tab. Logging is paused here to protect your
-          data — finish in the original tab.
+          This workout is open in another tab. Logging is paused here to protect
+          your data. Finish in the original tab.
         </div>
       )}
 
-      {/* Scroll area — Readout columnar set-list */}
-      <div className="os-scroll flex-1 overflow-auto px-[22px] pb-2 pt-1">
-        {/* exercise header */}
-        <div className="pb-3.5">
-          <div className="flex items-baseline justify-between gap-2.5">
-            <div
-              className="min-w-0 flex-1 truncate text-[25px] font-extrabold text-text"
-              style={{ letterSpacing: 'var(--tracking-snug)' }}
-            >
-              {nameOf(exId)}
-            </div>
-            <div
-              className="flex-none whitespace-nowrap text-[12px] text-muted"
-              style={{ fontFamily: 'var(--font-num)' }}
-            >
-              {Math.min(activeIndex + 1, totalForGrid)} / {totalForGrid}
-            </div>
+      {/* scroll area */}
+      <div className="flex-1 overflow-auto px-[18px] pb-3 pt-3.5">
+        <div className="os-t">{eyebrow}</div>
+        <h1 className="os-h1 mt-0.5" style={{ fontSize: 28 }}>
+          {nameOf(exId)}
+        </h1>
+        {(coaching || activeSlot.coachingCue) && (
+          <div className="os-t mt-1.5 leading-snug">
+            {coaching}
+            {coaching && activeSlot.coachingCue ? ' · ' : ''}
+            {activeSlot.coachingCue}
           </div>
-          {/* Coaching strip (§3.3/§3.4/§3.7): tempo · rest tier+duration · cue —
-              the generated per-exercise prescription detail, surfaced in the logger. */}
-          {(activeSlot.tempo || activeSlot.restTier || activeSlot.coachingCue) && (
-            <div className="mt-2 flex flex-col gap-1.5">
-              <div className="flex flex-wrap items-center gap-1.5">
-                {activeSlot.tempo && (
-                  <span
-                    className="rounded-[var(--r-pill)] px-2 py-[3px] text-[10.5px] font-semibold uppercase text-muted"
-                    style={{ fontFamily: 'var(--font-label)', letterSpacing: '.06em', background: 'var(--surface-2)' }}
-                  >
-                    Tempo {fmtTempo(activeSlot.tempo)}
-                  </span>
-                )}
-                {activeSlot.restTier && (
-                  <span
-                    className="rounded-[var(--r-pill)] px-2 py-[3px] text-[10.5px] font-semibold uppercase text-muted"
-                    style={{ fontFamily: 'var(--font-label)', letterSpacing: '.06em', background: 'var(--surface-2)' }}
-                  >
-                    {titleTier(activeSlot.restTier)} rest {clock(activeSlot.restWorkSec)}
-                  </span>
+        )}
+
+        {pres?.reason && (
+          <>
+            <button
+              type="button"
+              onClick={() => setWhyOpen((v) => !v)}
+              className="os-why os-press mt-2.5"
+              aria-expanded={whyOpen}
+            >
+              <span
+                className="mt-px text-[12px] font-extrabold"
+                style={{ color: 'var(--acc-tx)' }}
+              >
+                WHY
+              </span>
+              <span
+                className="flex-1 text-[13px] leading-[1.4]"
+                style={{ color: 'var(--ink2)' }}
+              >
+                {humanReason(pres.reason)}
+              </span>
+            </button>
+            {whyOpen && (
+              <div
+                className="os-card mt-2 text-[12.5px] leading-[1.55]"
+                style={{ padding: '10px 14px', color: 'var(--mute)' }}
+              >
+                <Row k="Rule" v={activeSlot.progressionRule.kind} />
+                <Row
+                  k="Last session"
+                  v={
+                    last.length
+                      ? `${fmtWeight(last[0]!.weightLb, units)} ${units} · ${last.map((s) => s.reps).join('/')} reps`
+                      : 'none yet'
+                  }
+                />
+                {pres.flags.length > 0 && (
+                  <Row k="Flags" v={pres.flags.join(', ')} accent />
                 )}
               </div>
-              {activeSlot.coachingCue && (
-                <span className="text-[12px] leading-snug text-muted">{activeSlot.coachingCue}</span>
-              )}
-            </div>
-          )}
-          <div className="mt-2 flex items-center gap-2.5">
-            {metaLine && <span className="text-[12.5px] text-muted">{metaLine}</span>}
-            {metaLine && lastWeights && <span className="size-[3px] rounded-full bg-faint" />}
-            {lastWeights && (
-              <span
-                className="text-[12px] text-muted"
-                style={{ fontFamily: 'var(--font-num)', letterSpacing: '.02em' }}
-              >
-                LAST {lastWeights}
-              </span>
             )}
-          </div>
-          <div className="mt-3 flex gap-1">
-            {Array.from({ length: totalForGrid }).map((_, i) => (
-              <div
-                key={i}
-                className="h-[3px] flex-1 rounded-[2px]"
-                style={{ background: i < activeIndex ? 'var(--accent)' : 'var(--surface-2)' }}
-              />
-            ))}
-          </div>
-        </div>
+          </>
+        )}
 
-        {/* set rows */}
-        <div className="flex flex-col gap-2.5">
-          {Array.from({ length: totalForGrid }).map((_, i) => {
-            const prescribed = pres?.sets[i];
-            const done = doneSets[i];
-
-            // Logged set: render done / missed row.
-            if (done) {
-              const target = pres?.sets[i]?.targetReps;
-              const missed = target !== undefined && done.reps < target;
-              const isPr = (done.isPR?.length ?? 0) > 0;
-              return (
-                <div
-                  key={done.id}
-                  className="flex items-center gap-3.5 rounded-[var(--r-md)] border bg-surface px-4 py-[11px]"
-                  style={{
-                    borderColor: missed
-                      ? 'color-mix(in oklab, var(--danger) 28%, var(--border-card))'
-                      : 'var(--border-card)',
-                  }}
-                >
-                  <span className="w-3.5 text-[13px] text-faint" style={{ fontFamily: 'var(--font-num)' }}>
-                    {done.order + 1}
-                  </span>
-                  <span className="text-[17px] font-semibold text-muted" style={numFont}>
-                    {w(done.weightLb, units)}
-                    {!isBw(done.weightLb) && <span className="text-[11px] text-faint">{units}</span>} × {done.reps}
-                  </span>
-                  {isPr ? (
+        {/* set rows: done above, the active card, upcoming below. During rest the card
+            collapses and every row sits in one card, the staged set highlighted, so the
+            Done and Next tags share one right edge. */}
+        {(() => {
+          const from = doneSets.length + (exerciseComplete ? 0 : 1);
+          const upcoming = (pres?.sets ?? []).slice(from);
+          const doneRows = doneSets.map((d) => (
+            <SetRow
+              key={d.id}
+              n={d.order + 1}
+              done={d}
+              target={pres?.sets[d.order]?.targetReps}
+              w={w}
+            />
+          ));
+          const upRows = upcoming.map((p, j) => (
+            <div key={`up-${j}`} className="os-row">
+              <span className="os-t w-4">{from + j + 1}</span>
+              <span
+                className="os-num text-[18px]"
+                style={{ color: 'var(--faint)' }}
+              >
+                {w(p.targetWeightLb)} × {p.targetReps}
+                {p.amrap ? '+' : ''}
+              </span>
+              <span className="os-t ml-auto">
+                {p.amrap ? 'AMRAP' : 'Up next'}
+              </span>
+            </div>
+          ));
+          const staged = !exerciseComplete && activePrescribed;
+          if (rest) {
+            if (!doneRows.length && !staged && !upRows.length) return null;
+            return (
+              <div className="os-card mt-3" style={{ padding: '6px 16px' }}>
+                {doneRows}
+                {staged && (
+                  <div
+                    className="os-row"
+                    style={{
+                      background: 'var(--acc-soft)',
+                      margin: '0 -16px',
+                      width: 'calc(100% + 32px)',
+                      padding: '12px 16px',
+                      borderTop: 0,
+                      borderRadius: 14,
+                    }}
+                  >
                     <span
-                      className="ml-auto rounded-[var(--r-pill)] px-[7px] py-0.5 text-[10px] uppercase text-pr"
-                      style={{
-                        fontFamily: 'var(--font-label)',
-                        letterSpacing: '.1em',
-                        border: '1px solid color-mix(in oklab, var(--pr) 40%, transparent)',
-                      }}
+                      className="os-t w-4"
+                      style={{ color: 'var(--acc-tx)' }}
                     >
-                      PR
+                      {activeIndex + 1}
                     </span>
-                  ) : missed ? (
+                    <span className="os-num text-[18px]">
+                      {w(weight)} × {reps}
+                    </span>
                     <span
-                      className="ml-auto flex items-center gap-1.5 text-[11px] uppercase text-danger"
-                      style={{ fontFamily: 'var(--font-label)', letterSpacing: '.1em' }}
+                      className="os-t ml-auto"
+                      style={{ color: 'var(--acc-tx)' }}
                     >
-                      <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
-                        <path d="M4 4l6 6M10 4l-6 6" stroke="var(--danger)" strokeWidth="2" strokeLinecap="round" />
-                      </svg>
-                      Missed
+                      Next
                     </span>
-                  ) : (
-                    <span
-                      className="ml-auto flex items-center gap-1.5 text-[11px] uppercase text-accent"
-                      style={{ fontFamily: 'var(--font-label)', letterSpacing: '.1em' }}
-                    >
-                      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                        <path d="M2.5 7.5L5.5 10.5L11.5 3.5" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
-                      Done
-                    </span>
-                  )}
-                </div>
-              );
-            }
-
-            // Active set: columnar hero card.
-            if (i === activeIndex && !exerciseComplete && activePrescribed) {
-              return (
-                <div
-                  key={`active-${i}`}
-                  className="rounded-[var(--r-lg)] bg-surface px-4 pb-[18px] pt-4"
-                  style={{
-                    border: '1.5px solid var(--accent)',
-                    boxShadow: '0 0 0 4px color-mix(in oklab, var(--accent) 7%, transparent)',
-                  }}
-                >
-                  <div className="mb-3 flex items-center justify-between">
-                    <span
-                      className="text-[11px] uppercase text-accent"
-                      style={{ fontFamily: 'var(--font-label)', letterSpacing: '.16em' }}
-                    >
-                      Set {activeIndex + 1} · Now
-                    </span>
-                    {activePrescribed.targetRpe !== undefined && (
-                      <span
-                        className="rounded-[var(--r-pill)] px-2 py-[3px] text-[10px] uppercase text-muted"
-                        style={{
-                          fontFamily: 'var(--font-label)',
-                          letterSpacing: '.08em',
-                          background: 'color-mix(in oklab, var(--accent) 10%, transparent)',
-                        }}
-                      >
-                        Target RPE {activePrescribed.targetRpe} · {rirFromRpe(activePrescribed.targetRpe)} RIR
-                      </span>
-                    )}
                   </div>
-                  <div className="flex items-stretch gap-2.5">
-                    {/* Weight column */}
-                    <div className="flex flex-1 flex-col items-center gap-2">
-                      <span
-                        className="text-[10px] uppercase text-muted"
-                        style={{ fontFamily: 'var(--font-label)', letterSpacing: '.16em' }}
-                      >
-                        {loadType === 'bodyweight' ? 'Added weight' : loadType === 'dumbbell' ? 'Per hand' : 'Weight'}
-                      </span>
-                      <div className="flex items-baseline gap-[3px]">
-                        <span
-                          className="text-[52px] leading-none text-text"
-                          style={{ letterSpacing: 'var(--tracking-snug)', ...numFont }}
-                        >
-                          {pureBodyweight ? 'BW' : fmtWeight(weight, units)}
-                        </span>
-                        {!pureBodyweight && (
-                          <span className="text-[14px] font-semibold text-muted">{units}</span>
-                        )}
+                )}
+                {upRows}
+              </div>
+            );
+          }
+          return (
+            <>
+              {doneRows.length > 0 && (
+                <div className="os-card mt-3" style={{ padding: '6px 16px' }}>
+                  {doneRows}
+                </div>
+              )}
+              {/* active set */}
+              {staged && (
+                <div
+                  className="os-card os-card--lift mt-3"
+                  style={{ padding: '14px 16px 16px' }}
+                >
+                  <div className="flex justify-between">
+                    <span className="os-t" style={{ color: 'var(--acc-tx)' }}>
+                      Set {activeIndex + 1} of {totalSets}
+                    </span>
+                    <span className="os-t">
+                      {activePrescribed.targetRpe !== undefined
+                        ? `Target RPE ${activePrescribed.targetRpe}`
+                        : `Target ${activePrescribed.targetReps}${activePrescribed.amrap ? '+' : ''} reps`}
+                    </span>
+                  </div>
+                  <div className="mt-2 grid grid-cols-2 gap-3.5 text-center">
+                    <div>
+                      <div className="os-t">
+                        {weightLabel}
+                        {!pureBodyweight && <span> · {units}</span>}
                       </div>
-                      <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setKeypad('weight')}
+                        aria-label="Type weight"
+                        className="os-num os-press mt-1 w-full"
+                        style={{ fontSize: numeralSize(w(weight)) }}
+                      >
+                        {pureBodyweight ? 'BW' : fmtWeight(weight, units)}
+                      </button>
+                      <div className="mt-2.5 flex justify-center gap-2">
                         <button
+                          type="button"
                           onClick={() => vm.stepWeight(-1)}
-                          className="grid size-[46px] place-items-center rounded-[var(--r-sm)] border bg-surface-2 text-text"
-                          style={{ borderColor: 'var(--border-strong)' }}
+                          className="os-step os-press"
                           aria-label="decrease weight"
                         >
-                          <MinusIcon className="size-6" />
+                          <Minus />
                         </button>
                         <button
+                          type="button"
                           onClick={() => vm.stepWeight(1)}
-                          className="grid size-[46px] place-items-center rounded-[var(--r-sm)] border bg-surface-2 text-text"
-                          style={{ borderColor: 'var(--border-strong)' }}
+                          className="os-step os-press"
                           aria-label="increase weight"
                         >
-                          <PlusIcon className="size-6" />
+                          <Plus />
                         </button>
                       </div>
                     </div>
-                    <div className="w-px" style={{ background: 'var(--border)' }} />
-                    {/* Reps column */}
-                    <div className="flex flex-1 flex-col items-center gap-2">
-                      <span
-                        className="text-[10px] uppercase text-muted"
-                        style={{ fontFamily: 'var(--font-label)', letterSpacing: '.16em' }}
+                    <div>
+                      <div className="os-t">Reps</div>
+                      <button
+                        type="button"
+                        onClick={() => setKeypad('reps')}
+                        aria-label="Type reps"
+                        className="os-num os-press mt-1 w-full"
+                        style={{ fontSize: numeralSize(String(reps)) }}
                       >
-                        Reps
-                      </span>
-                      <div className="flex items-baseline">
-                        <span
-                          className="text-[52px] leading-none text-text"
-                          style={{ letterSpacing: 'var(--tracking-snug)', ...numFont }}
-                        >
-                          {fmt(reps)}
-                        </span>
-                      </div>
-                      <div className="flex gap-2">
+                        {reps}
+                      </button>
+                      <div className="mt-2.5 flex justify-center gap-2">
                         <button
+                          type="button"
                           onClick={() => setReps((r) => Math.max(0, r - 1))}
-                          className="grid size-[46px] place-items-center rounded-[var(--r-sm)] border bg-surface-2 text-text"
-                          style={{ borderColor: 'var(--border-strong)' }}
+                          className="os-step os-press"
                           aria-label="decrease reps"
                         >
-                          <MinusIcon className="size-6" />
+                          <Minus />
                         </button>
                         <button
+                          type="button"
                           onClick={() => setReps((r) => r + 1)}
-                          className="grid size-[46px] place-items-center rounded-[var(--r-sm)] border bg-surface-2 text-text"
-                          style={{ borderColor: 'var(--border-strong)' }}
+                          className="os-step os-press"
                           aria-label="increase reps"
                         >
-                          <PlusIcon className="size-6" />
+                          <Plus />
                         </button>
                       </div>
                     </div>
                   </div>
+
+                  {barbell && (
+                    <button
+                      type="button"
+                      onClick={() => setPlatesOpen(true)}
+                      className="os-press mt-3.5 flex h-11 w-full items-center gap-2.5 rounded-[13px] px-3 text-left"
+                      style={{
+                        background: 'var(--s1)',
+                        boxShadow: 'inset 0 1px 0 var(--hl)',
+                      }}
+                    >
+                      <span className="os-t">Per side</span>
+                      {plates && plates.length > 0 && (
+                        <PlateMarks platesLb={plates} units={units} />
+                      )}
+                      <span
+                        className="text-[14px] font-extrabold"
+                        style={{ fontVariantNumeric: 'tabular-nums' }}
+                      >
+                        {plates
+                          ? plateList(plates, units)
+                          : `not loadable, nearest ${fmtWeight(nearest ?? settings.barLb, units)}`}
+                      </span>
+                      <span className="os-chev ml-auto" />
+                    </button>
+                  )}
+
                   {/* A weight nobody has lifted yet: say so, and say how to calibrate it. */}
                   {suggested && (
-                    <p className="mt-3 text-center text-[12px] leading-snug text-muted">
-                      <span className="font-semibold text-text">Suggested start.</span> Pick a
-                      weight you could lift 2 to 3 more times. Your log sets the next one.
+                    <p
+                      className="mt-3 text-center text-[12px] font-medium leading-snug"
+                      style={{ color: 'var(--mute)' }}
+                    >
+                      <span
+                        className="font-bold"
+                        style={{ color: 'var(--ink)' }}
+                      >
+                        Suggested start.
+                      </span>{' '}
+                      Pick a weight you could lift 2 to 3 more times. Your log
+                      sets the next one.
                     </p>
                   )}
-                  {/* RPE */}
-                  <div className="mt-3.5 flex items-center gap-[7px]">
-                    <span
-                      className="text-[10px] uppercase text-muted"
-                      style={{ fontFamily: 'var(--font-label)', letterSpacing: '.12em' }}
+
+                  <div className="mt-2.5 flex items-center gap-2.5">
+                    <span className="os-t w-[34px]">RPE</span>
+                    <div
+                      className="os-seg flex-1"
+                      role="group"
+                      aria-label="RPE"
                     >
-                      RPE
-                    </span>
-                    {[7, 8, 9].map((n) => {
-                      const sel = rpe === n;
-                      return (
+                      {[6, 7, 8, 9, 10].map((n) => (
                         <button
                           key={n}
-                          onClick={() => setRpe(sel ? undefined : n)}
-                          className="rounded-[var(--r-sm)] px-[11px] py-1.5 text-[12px]"
-                          style={{
-                            fontFamily: 'var(--font-num)',
-                            background: sel ? 'var(--accent)' : 'var(--bg)',
-                            color: sel ? 'var(--accent-ink)' : 'var(--muted)',
-                            fontWeight: sel ? 700 : 400,
-                          }}
+                          type="button"
+                          onClick={() => setRpe(rpe === n ? undefined : n)}
+                          aria-pressed={rpe === n}
+                          style={{ fontVariantNumeric: 'tabular-nums' }}
                         >
                           {n}
                         </button>
-                      );
-                    })}
-                    <span className="ml-auto text-[10px] text-faint">optional</span>
+                      ))}
+                    </div>
                   </div>
-                  {/* why this weight */}
-                  {pres?.reason && (
-                    <>
-                      <button
-                        onClick={() => setWhyOpen((v) => !v)}
-                        className="mt-3.5 flex w-full items-start gap-2.5 rounded-[var(--r-sm)] px-3 py-2.5 text-left"
-                        style={{
-                          background: 'color-mix(in oklab, var(--accent) 6%, transparent)',
-                          border: '1px solid color-mix(in oklab, var(--accent) 16%, transparent)',
-                        }}
-                      >
-                        <svg width="15" height="15" viewBox="0 0 16 16" fill="none" className="mt-px flex-none">
-                          <circle cx="8" cy="8" r="7" stroke="var(--accent)" strokeWidth="1.3" />
-                          <path d="M8 7.2v4M8 4.8h.01" stroke="var(--accent)" strokeWidth="1.5" strokeLinecap="round" />
-                        </svg>
-                        <span className="flex-1 text-[12.5px] leading-[1.45] text-muted">{pres.reason}</span>
-                        {whyOpen ? (
-                          <ChevronUpIcon className="size-4 flex-none text-faint" />
-                        ) : (
-                          <ChevronDownIcon className="size-4 flex-none text-faint" />
-                        )}
-                      </button>
-                      {whyOpen && (
-                        <div className="mt-2 rounded-[var(--r-sm)] bg-bg px-3 py-3 text-[12.5px] leading-[1.55] text-muted">
-                          <Row k="Rule" v={activeSlot.progressionRule.kind} />
-                          <Row
-                            k="Last session"
-                            v={last.length ? `${fmtWeight(last[0]!.weightLb, units)} ${units} · ${last.map((s) => s.reps).join('/')} reps` : '—'}
-                          />
-                          {pres.flags.length > 0 && <Row k="Flags" v={pres.flags.join(', ')} accent />}
-                        </div>
-                      )}
-                    </>
-                  )}
                 </div>
-              );
-            }
+              )}
 
-            // Upcoming set (or, when complete, the active-index row): plain row.
-            const isAmrapSet = prescribed?.amrap ?? false;
-            return (
+              {upRows.length > 0 && (
+                <div className="os-card mt-3" style={{ padding: '6px 16px' }}>
+                  {upRows}
+                </div>
+              )}
+            </>
+          );
+        })()}
+
+        <div className="mt-3 flex gap-2">
+          <button
+            type="button"
+            onClick={openSwap}
+            className="os-btn os-btn--sm os-press flex-1"
+          >
+            Swap
+          </button>
+          <button
+            type="button"
+            onClick={() => void skip()}
+            className="os-btn os-btn--sm os-press flex-1"
+          >
+            Skip
+          </button>
+          <button
+            type="button"
+            onClick={openAdd}
+            className="os-btn os-btn--sm os-press flex-1"
+          >
+            Add
+          </button>
+        </div>
+      </div>
+
+      {/* bottom: rest panel or the CTA */}
+      {rest ? (
+        <div
+          className="os-sheet flex-none"
+          style={{
+            position: 'relative',
+            paddingBottom: 'calc(20px + env(safe-area-inset-bottom, 0px))',
+            animation: 'none',
+            maxHeight: 'none',
+          }}
+        >
+          <div className="os-grab" />
+          <div className="flex items-center gap-[18px]">
+            <Ring
+              size={112}
+              stroke={9}
+              value={restRemain / rest.durationSec}
+              animate
+              label={`${clock(restRemain)} of ${clock(rest.durationSec)} rest`}
+            >
+              <div className="os-num text-[30px]">{clock(restRemain)}</div>
+              <div className="os-t" style={{ fontSize: 11 }}>
+                of {clock(rest.durationSec)}
+              </div>
+            </Ring>
+            <div className="min-w-0 flex-1">
               <div
-                key={`up-${i}`}
-                className="flex items-center gap-3.5 rounded-[var(--r-md)] border bg-surface px-4 py-[11px]"
-                style={{ borderColor: 'var(--border-card)' }}
+                className="text-[18px] font-extrabold"
+                style={{ letterSpacing: '-.02em' }}
               >
-                <span className="w-3.5 text-[13px] text-faint" style={{ fontFamily: 'var(--font-num)' }}>
-                  {i + 1}
-                </span>
-                <span className="text-[17px] font-semibold text-text" style={numFont}>
-                  {prescribed ? w(prescribed.targetWeightLb, units) : '—'}
-                  {!(prescribed && isBw(prescribed.targetWeightLb)) && (
-                    <span className="text-[11px] text-faint">{units}</span>
-                  )}{' '}
-                  ×{' '}
-                  {prescribed ? `${prescribed.targetReps}${isAmrapSet ? '+' : ''}` : '—'}
-                </span>
-                {isAmrapSet ? (
+                Rest
+              </div>
+              <div className="os-t mt-0.5 leading-[1.4]">
+                {!exerciseComplete && activePrescribed
+                  ? `Set ${activeIndex + 1} is staged at ${w(weight)} × ${reps}. The phone buzzes at zero.`
+                  : 'The phone buzzes at zero.'}
+              </div>
+              <div className="mt-3 flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => adjustRest(-15)}
+                  className="os-chip os-press flex-1 justify-center"
+                  style={{ height: 40, borderRadius: 13 }}
+                >
+                  −15
+                </button>
+                <button
+                  type="button"
+                  onClick={() => adjustRest(15)}
+                  className="os-chip os-press flex-1 justify-center"
+                  style={{ height: 40, borderRadius: 13 }}
+                >
+                  +15
+                </button>
+                <button
+                  type="button"
+                  onClick={stopRest}
+                  aria-label="Skip rest"
+                  className="os-chip os-chip--on os-press justify-center"
+                  style={{ height: 40, borderRadius: 13, flex: 1.3 }}
+                >
+                  Skip
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="os-fade-under flex-none px-[18px] pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-2.5">
+          {!exerciseComplete && activePrescribed ? (
+            <button
+              type="button"
+              onClick={() => void log()}
+              disabled={multiTabConflict}
+              className="os-btn os-btn--pri os-press"
+              style={{ height: 60, fontSize: 18 }}
+            >
+              {ctaLabel}
+            </button>
+          ) : current < slots.length - 1 ? (
+            <button
+              type="button"
+              onClick={() => setCurrent(current + 1)}
+              className="os-btn os-btn--ink os-press"
+              style={{ height: 60, fontSize: 17 }}
+            >
+              Next: {shortName(nameOf(slots[current + 1]!.exerciseId), 22)} →
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setSummaryOpen(true)}
+              disabled={finishing}
+              className="os-btn os-btn--pri os-press"
+              style={{ height: 60, fontSize: 17 }}
+            >
+              Finish workout
+            </button>
+          )}
+        </div>
+      )}
+
+      {toast && (
+        <Toast
+          bottom={rest ? 190 : 100}
+          action="Undo"
+          onAction={() => {
+            void undoSet(toast.setId);
+            setToast(null);
+          }}
+        >
+          Set logged
+        </Toast>
+      )}
+
+      <KeypadSheet
+        open={keypad === 'weight'}
+        label={`${weightLabel}, ${units}`}
+        current={pureBodyweight ? '0' : fmtWeight(weight, units)}
+        decimal
+        onDone={(v) => setWeight(Math.max(0, units === 'kg' ? kgToLb(v) : v))}
+        onClose={() => setKeypad(null)}
+      />
+      <KeypadSheet
+        open={keypad === 'reps'}
+        label="Reps"
+        current={String(reps)}
+        decimal={false}
+        onDone={(v) => setReps(Math.max(0, Math.round(v)))}
+        onClose={() => setKeypad(null)}
+      />
+
+      <Sheet
+        open={platesOpen}
+        onClose={() => setPlatesOpen(false)}
+        label="Plate math"
+      >
+        <SheetHeader
+          title="Plate math"
+          action="Done"
+          onAction={() => setPlatesOpen(false)}
+        />
+        <div className="mt-1.5 flex items-baseline gap-2">
+          <span className="os-num text-[64px]">{fmtWeight(weight, units)}</span>
+          <span className="os-t text-[14px]">{units} on the bar</span>
+        </div>
+        <div className="mt-3.5">
+          <BarDiagram platesLb={plates ?? []} units={units} />
+        </div>
+        <div
+          className="os-card mt-3"
+          style={{ padding: '4px 16px', background: 'var(--s2)' }}
+        >
+          <div className="os-row">
+            <span className="os-t flex-1 text-[15px]">Each side</span>
+            <span
+              className="os-num text-[17px]"
+              style={{ letterSpacing: '-.02em' }}
+            >
+              {plates ? plateList(plates, units) : 'not loadable'}
+            </span>
+          </div>
+          <div className="os-row">
+            <span className="os-t flex-1 text-[15px]">Bar</span>
+            <span
+              className="os-num text-[17px]"
+              style={{ letterSpacing: '-.02em' }}
+            >
+              {fmtWeight(settings.barLb, units)}
+              <small className="os-t ml-1 text-[11.5px]">{units}</small>
+            </span>
+          </div>
+          <div className="os-row">
+            <span className="os-t flex-1 text-[15px]">Your plates</span>
+            <PlateMarks
+              platesLb={settings.plateInventoryLb}
+              units={units}
+              sleeve={false}
+              label={`${settings.plateInventoryLb.length} plate sizes`}
+            />
+          </div>
+        </div>
+        {plates === null && nearest !== null && (
+          <div className="os-t mt-3 text-center">
+            {fmtWeight(weight, units)} cannot be loaded exactly. Nearest is{' '}
+            {fmtWeight(nearest, units)} {units},{' '}
+            {fmtWeight(Math.abs(weight - nearest), units)} {units}{' '}
+            {nearest < weight ? 'under' : 'over'}.
+          </div>
+        )}
+        <div className="os-t mt-3 text-center">
+          Change bar and plates in You, then Training
+        </div>
+      </Sheet>
+
+      {pickerMode && (
+        <ExercisePicker
+          onPick={(e) => void onPickExercise(e)}
+          onClose={closePicker}
+        />
+      )}
+    </div>
+  );
+}
+
+function SetRow({
+  n,
+  done,
+  target,
+  w,
+}: {
+  n: number;
+  done: LoggedSet;
+  target: number | undefined;
+  w: (lb: number) => string;
+}) {
+  const missed = target !== undefined && done.reps < target;
+  const isPr = (done.isPR?.length ?? 0) > 0;
+  return (
+    <div className="os-row">
+      <span className="os-t w-4">{n}</span>
+      <span className="os-num text-[18px]">
+        {w(done.weightLb)} × {done.reps}
+      </span>
+      {done.rpe !== undefined && (
+        <span className="os-t ml-1.5">@{done.rpe}</span>
+      )}
+      {isPr ? (
+        <span className="os-tag os-tag--pr ml-auto">PR</span>
+      ) : missed ? (
+        <span
+          className="os-tag ml-auto"
+          style={{
+            background: 'color-mix(in oklab, var(--danger) 14%, transparent)',
+            color: 'var(--danger)',
+          }}
+        >
+          Missed
+        </span>
+      ) : (
+        <span className="os-tag os-tag--pos ml-auto">Done</span>
+      )}
+    </div>
+  );
+}
+
+function Summary({ vm }: { vm: LoggerVM }) {
+  const {
+    session,
+    templateName,
+    elapsed,
+    slots,
+    loggedAll,
+    units,
+    finish,
+    discard,
+    finishing,
+    setSummaryOpen,
+  } = vm;
+  const [confirm, setConfirm] = useState(false);
+  // elapsed is the hook's ticking m:ss clock; the summary reads whole minutes off it.
+  const mins = Math.max(
+    1,
+    Math.round(
+      parseInt(elapsed.split(':')[0] ?? '0', 10) +
+        parseInt(elapsed.split(':')[1] ?? '0', 10) / 60,
+    ),
+  );
+  const volume = loggedAll.reduce(
+    (s, x) => s + Math.max(0, x.weightLb) * x.reps,
+    0,
+  );
+  const records = loggedAll.filter((x) => x.isPR?.length).length;
+  const byEx = new Map<string, LoggedSet[]>();
+  for (const s of loggedAll) {
+    const arr = byEx.get(s.exerciseId) ?? [];
+    arr.push(s);
+    byEx.set(s.exerciseId, arr);
+  }
+  const wr = (s: LoggedSet) =>
+    `${s.weightLb > 0 ? fmtWeight(s.weightLb, units) : 'BW'}×${s.reps}`;
+
+  return (
+    <div className="relative flex h-full flex-col">
+      <div className="flex-1 overflow-auto px-[18px] pb-[150px] pt-[max(0.5rem,env(safe-area-inset-top))]">
+        <BackButton
+          onClick={() => setSummaryOpen(false)}
+          label="Back to the workout"
+        />
+        <div className="os-t mt-3.5" style={{ color: 'var(--acc-tx)' }}>
+          {templateName} · {weekdayLong(session.startedAt)}
+        </div>
+        <h1 className="os-h1 mt-0.5" style={{ fontSize: 36 }}>
+          Nice work.
+        </h1>
+        <div className="mt-4">
+          <StatTiles
+            stats={[
+              { label: 'Time', value: mins, unit: 'min' },
+              { label: 'Sets', value: loggedAll.length },
+              {
+                label: 'Volume',
+                value: compact(toUnit(volume, units)),
+                unit: units,
+              },
+              {
+                label: 'Records',
+                value: records,
+                color: records > 0 ? 'var(--pr)' : undefined,
+              },
+            ]}
+          />
+        </div>
+        <div className="os-card mt-3" style={{ padding: '4px 16px' }}>
+          {slots.map((s) => {
+            const sets = byEx.get(s.exerciseId) ?? [];
+            const pr = sets.some((x) => x.isPR?.length);
+            return (
+              <div key={s.slotId} className="os-row">
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-[15px] font-semibold">
+                    {nameOf(s.exerciseId)}
+                  </span>
                   <span
-                    className="ml-auto rounded-[var(--r-pill)] px-[7px] py-0.5 text-[10px] uppercase text-pr"
+                    className="mt-0.5 block text-[12px] font-medium"
                     style={{
-                      fontFamily: 'var(--font-label)',
-                      letterSpacing: '.1em',
-                      border: '1px solid color-mix(in oklab, var(--pr) 40%, transparent)',
+                      color: 'var(--mute)',
+                      fontVariantNumeric: 'tabular-nums',
                     }}
                   >
-                    AMRAP
+                    {sets.length
+                      ? sets
+                          .sort((a, b) => a.order - b.order)
+                          .map(wr)
+                          .join(' · ')
+                      : 'no sets logged'}
                   </span>
-                ) : (
-                  <span
-                    className="ml-auto text-[10px] uppercase text-faint"
-                    style={{ fontFamily: 'var(--font-label)', letterSpacing: '.12em' }}
-                  >
-                    Up next
-                  </span>
-                )}
+                </span>
+                {pr && <span className="os-tag os-tag--pr">PR</span>}
               </div>
             );
           })}
         </div>
-
-        {exerciseComplete && current < slots.length - 1 && (
-          <button
-            onClick={() => setCurrent(current + 1)}
-            className="mt-5 w-full rounded-[var(--r-lg)] bg-surface-2 py-3.5 text-[14px] font-semibold text-text"
-          >
-            Next: {nameOf(slots[current + 1]!.exerciseId)} →
-          </button>
-        )}
-
-        <div className="h-2" />
       </div>
-
-      {/* mid-session actions */}
-      <div className="flex flex-none items-center gap-[7px] px-[22px] pb-2 pt-0.5">
+      <div className="os-dock">
         <button
-          onClick={() => setCurrent(Math.max(0, current - 1))}
-          className="grid size-[42px] flex-none place-items-center rounded-[var(--r-sm)] bg-surface text-muted"
-          aria-label="Previous exercise"
+          type="button"
+          onClick={() => void finish()}
+          disabled={finishing}
+          className="os-btn os-btn--pri os-press"
+          style={{ height: 58, fontSize: 17 }}
         >
-          <ChevronLeftIcon className="size-[18px]" />
+          {finishing ? 'Saving…' : 'Save workout'}
         </button>
-        <button
-          onClick={openSwap}
-          className="h-[42px] flex-1 rounded-[var(--r-sm)] bg-surface text-[13px] font-semibold text-text"
-        >
-          Swap
-        </button>
-        <button
-          onClick={() => void skip()}
-          className="h-[42px] flex-1 rounded-[var(--r-sm)] bg-surface text-[13px] font-semibold text-text"
-        >
-          Skip
-        </button>
-        <button
-          onClick={openAdd}
-          className="h-[42px] flex-1 rounded-[var(--r-sm)] bg-surface text-[13px] font-semibold text-text"
-        >
-          Add
-        </button>
-        <button
-          onClick={() => setCurrent(Math.min(slots.length - 1, current + 1))}
-          className="grid size-[42px] flex-none place-items-center rounded-[var(--r-sm)] bg-surface text-muted"
-          aria-label="Next exercise"
-        >
-          <ChevronRightIcon className="size-[18px]" />
-        </button>
-      </div>
-
-      {/* bottom thumb zone */}
-      <div
-        className="flex-none px-[22px] pb-[max(1.75rem,env(safe-area-inset-bottom))] pt-3"
-        style={{ background: 'linear-gradient(180deg,transparent,var(--bg) 22%)' }}
-      >
-        {rest && (
-          <div className="mb-3 flex items-center gap-3.5 rounded-[var(--r-lg)] bg-surface px-4 py-[11px]">
-            <span className="text-[11px] font-bold uppercase tracking-wide text-muted">Rest</span>
-            <span className="text-[26px] leading-none text-text" style={numFont}>
-              {clock(restRemain)}
-            </span>
-            <div className="ml-auto flex gap-2">
-              <button
-                onClick={() => adjustRest(-15)}
-                className="size-11 rounded-[var(--r-md)] bg-surface-2 text-[12px] font-semibold text-muted"
-              >
-                −15
-              </button>
-              <button
-                onClick={() => adjustRest(15)}
-                className="size-11 rounded-[var(--r-md)] bg-surface-2 text-[12px] font-semibold text-muted"
-              >
-                +15
-              </button>
-              <button
-                onClick={stopRest}
-                className="h-11 rounded-[var(--r-md)] bg-surface-2 px-4 text-[13px] font-semibold text-text"
-              >
-                Skip
-              </button>
-            </div>
-          </div>
-        )}
-        {!exerciseComplete && activePrescribed ? (
+        <div className="mt-2 grid grid-cols-2 gap-2">
           <button
-            onClick={() => void log()}
-            disabled={multiTabConflict}
-            className="flex h-[60px] w-full items-center justify-center gap-2.5 rounded-[var(--r-lg)] bg-accent text-[16px] font-bold text-accent-ink disabled:opacity-50"
-            style={{ letterSpacing: '.01em' }}
+            type="button"
+            onClick={() => setSummaryOpen(false)}
+            className="os-btn os-btn--sm os-press"
           >
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-              <path d="M4 10.5L8 14.5L16 5.5" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-            Log Set {activeIndex + 1} ·{' '}
-            <span style={{ fontFamily: 'var(--font-num)', fontVariantNumeric: 'tabular-nums' }}>
-              {w(weight, units)} × {fmt(reps)}
-            </span>
+            Keep training
           </button>
-        ) : (
           <button
-            onClick={() => void finish()}
-            disabled={finishing}
-            className="h-[62px] w-full rounded-[var(--r-xl)] bg-accent text-[17px] font-bold text-accent-ink"
+            type="button"
+            onClick={() => setConfirm(true)}
+            className="os-btn os-btn--sm os-btn--danger os-press"
           >
-            {finishing ? 'Saving…' : 'Finish workout'}
-          </button>
-        )}
-      </div>
-
-      {/* set-logged undo toast: above the Log CTA / rest bar */}
-      {toast && (
-        <div
-          className="absolute left-[18px] right-[18px] bottom-[calc(96px+env(safe-area-inset-bottom))] z-10 flex items-center gap-3 rounded-[var(--r-md)] px-4 py-3.5"
-          style={{
-            background: 'var(--elevated)',
-            border: '1px solid var(--border)',
-            boxShadow: 'var(--shadow-lg)',
-            animation: 'os-toast-in var(--dur-base) var(--ease-out)',
-          }}
-        >
-          <span className="flex-1 text-[13px] font-medium text-text">Set logged</span>
-          <button
-            onClick={() => {
-              void undoSet(toast.setId);
-              setToast(null);
-            }}
-            className="border-none bg-transparent text-[13px] font-bold text-accent"
-          >
-            Undo
+            Discard
           </button>
         </div>
-      )}
-
-      {pickerMode && (
-        <ExercisePicker onPick={(ex) => void onPickExercise(ex)} onClose={closePicker} />
-      )}
+      </div>
+      <ConfirmSheet
+        open={confirm}
+        title="Discard this workout?"
+        body={`${loggedAll.length} logged ${loggedAll.length === 1 ? 'set' : 'sets'} will be removed and nothing will progress. This cannot be undone.`}
+        cta="Discard workout"
+        onConfirm={() => {
+          setConfirm(false);
+          void discard();
+        }}
+        onClose={() => setConfirm(false)}
+      />
     </div>
   );
 }
@@ -644,7 +997,45 @@ function Row({ k, v, accent }: { k: string; v: string; accent?: boolean }) {
   return (
     <div className="flex justify-between py-[3px]">
       <span>{k}</span>
-      <span className={accent ? 'font-semibold text-success' : 'font-semibold text-text'}>{v}</span>
+      <span
+        className="font-semibold"
+        style={{ color: accent ? 'var(--pos)' : 'var(--ink)' }}
+      >
+        {v}
+      </span>
     </div>
+  );
+}
+
+function Minus() {
+  return (
+    <svg
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      aria-hidden
+    >
+      <path d="M5 12h14" />
+    </svg>
+  );
+}
+function Plus() {
+  return (
+    <svg
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      aria-hidden
+    >
+      <path d="M12 5v14M5 12h14" />
+    </svg>
   );
 }

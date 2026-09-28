@@ -1,5 +1,5 @@
 /**
- * useLogger — all functional logic for the active-session logger, extracted from
+ * useLogger: all functional logic for the active-session logger, extracted from
  * ActiveSession so the Readout screen is a pure presentational shell over it
  * (and a future Tempo skin is a second presentational component over the same
  * hook, not a rebuild). No JSX here: state, derived values, and actions only.
@@ -29,6 +29,7 @@ import {
 } from '../../db/recovery';
 import { guardActiveSession } from '../../db/multiTab';
 import { loadTypeFor, roundForLoad } from '../../engine/loading';
+import { e1rm, isE1rmEligible } from '../../engine/e1rm';
 import { loadStepsOf } from '../../db/repositories';
 import type { LoadType } from '../../engine/types';
 import type {
@@ -47,6 +48,16 @@ import type {
 } from '../../engine/types';
 
 export type PickerMode = 'swap' | 'add' | null;
+
+/** What the record screen shows: the set that set it and the best it beat. */
+export interface Celebration {
+  kinds: PRKind[];
+  e1rm: number | null;
+  exerciseId: string;
+  weightLb: number;
+  reps: number;
+  previousBestE1rm: number | null;
+}
 
 /** Default progression for an ad-hoc exercise added mid-workout (hypertrophy double). */
 const ADD_RULE: ProgressionRule = {
@@ -75,6 +86,8 @@ function clock(totalSec: number): string {
 export interface LoggerVM {
   // identity / header
   sessionTitle: string;
+  /** The day's name alone, for the logger's top bar. */
+  templateName: string;
   elapsed: string;
   exId: string;
   metaLine: string;
@@ -112,18 +125,23 @@ export interface LoggerVM {
   // overlays / transient
   whyOpen: boolean;
   setWhyOpen: React.Dispatch<React.SetStateAction<boolean>>;
-  celebrate: { kinds: PRKind[]; e1rm: number | null } | null;
-  setCelebrate: React.Dispatch<
-    React.SetStateAction<{ kinds: PRKind[]; e1rm: number | null } | null>
-  >;
+  celebrate: Celebration | null;
+  setCelebrate: React.Dispatch<React.SetStateAction<Celebration | null>>;
   toast: { setId: string } | null;
   setToast: React.Dispatch<React.SetStateAction<{ setId: string } | null>>;
   finishing: boolean;
   multiTabConflict: boolean;
   pickerMode: PickerMode;
+  /** Every set logged this session (all exercises), for the strip and the summary. */
+  loggedAll: LoggedSet[];
+  summaryOpen: boolean;
+  setSummaryOpen: React.Dispatch<React.SetStateAction<boolean>>;
   // actions
   log: () => Promise<void>;
+  /** Save: complete the session and advance progression. */
   finish: () => Promise<void>;
+  /** Discard: soft-delete the logged sets and close the session without advancing. */
+  discard: () => Promise<void>;
   leave: () => void;
   undoSet: (setId: string) => Promise<void>;
   skip: () => Promise<void>;
@@ -137,7 +155,8 @@ export interface LoggerVM {
 export function useLogger(): LoggerVM | null {
   useCatalog();
   const settings = useSettings();
-  const { units, restAutoStart, defaultRestWarmupSec, defaultRestWorkSec } = settings;
+  const { units, restAutoStart, defaultRestWarmupSec, defaultRestWorkSec } =
+    settings;
   const { session, prescriptions, lastByExercise, logged } = useActiveWorkout();
   const current = useSessionStore((s) => s.currentExercise);
   const setCurrent = useSessionStore((s) => s.setCurrentExercise);
@@ -153,10 +172,8 @@ export function useLogger(): LoggerVM | null {
   const [finishing, setFinishing] = useState(false);
   const [whyOpen, setWhyOpen] = useState(false);
   const [now, setNow] = useState(() => Date.now());
-  const [celebrate, setCelebrate] = useState<{
-    kinds: PRKind[];
-    e1rm: number | null;
-  } | null>(null);
+  const [celebrate, setCelebrate] = useState<Celebration | null>(null);
+  const [summaryOpen, setSummaryOpen] = useState(false);
   const [toast, setToast] = useState<{ setId: string } | null>(null);
   const [pickerMode, setPickerMode] = useState<PickerMode>(null);
   const [multiTabConflict, setMultiTabConflict] = useState(false);
@@ -179,11 +196,13 @@ export function useLogger(): LoggerVM | null {
     [session?.programId],
   );
   const template = useLiveQuery(
-    () => (session?.templateId ? db.templates.get(session.templateId) : undefined),
+    () =>
+      session?.templateId ? db.templates.get(session.templateId) : undefined,
     [session?.templateId],
   );
   const sessionTitle =
     program && template ? `${program.name} · ${template.name}` : 'Workout';
+  const templateName = template?.name ?? program?.name ?? 'Workout';
 
   const [weight, setWeight] = useState(0);
   const [reps, setReps] = useState(0);
@@ -212,9 +231,10 @@ export function useLogger(): LoggerVM | null {
     void getActiveSnapshot().then((snap) => {
       if (!live) return;
       if (snap && snap.sessionId === session.id) {
-        const p = snap.payload as
-          | { currentExercise?: number; rest?: RestTimer | null }
-          | null;
+        const p = snap.payload as {
+          currentExercise?: number;
+          rest?: RestTimer | null;
+        } | null;
         if (p) restoreUI(p.currentExercise ?? 0, p.rest ?? null);
       }
       setReadyToSave(true);
@@ -269,7 +289,9 @@ export function useLogger(): LoggerVM | null {
   );
   const isAmrap = activePrescribed?.amrap ?? false;
 
-  const restRemain = rest ? Math.max(0, Math.ceil((rest.endsAt - now) / 1000)) : 0;
+  const restRemain = rest
+    ? Math.max(0, Math.ceil((rest.endsAt - now) / 1000))
+    : 0;
   const ex = exId ? getCatalogExercise(exId) : undefined;
   const metaLine = ex
     ? [
@@ -286,15 +308,25 @@ export function useLogger(): LoggerVM | null {
   const wStepLabel = weightStepLabel(units);
   // How this exercise is loaded (older slots lack the field: derive it from the catalog).
   const loadType: LoadType | undefined =
-    activeSlot.loadType ?? (ex ? loadTypeFor(ex.equipment, ex.isBodyweight) : undefined);
+    activeSlot.loadType ??
+    (ex ? loadTypeFor(ex.equipment, ex.isBodyweight) : undefined);
 
   /** The +/- weight buttons. Dumbbells and stacks step along what the gym actually has
    *  (15 -> 17.5 -> 20 -> 25 on a dumbbell rack); barbell and bodyweight keep the flat
    *  step. */
   function stepWeight(dir: 1 | -1) {
     if (loadType === 'dumbbell' || loadType === 'stack') {
-      const args = [loadType, settings.barLb, settings.plateInventoryLb, loadStepsOf(settings)] as const;
-      setWeight((w) => (dir > 0 ? roundForLoad(w + 0.01, ...args, 'up') : Math.max(0, roundForLoad(w - 0.01, ...args, 'down'))));
+      const args = [
+        loadType,
+        settings.barLb,
+        settings.plateInventoryLb,
+        loadStepsOf(settings),
+      ] as const;
+      setWeight((w) =>
+        dir > 0
+          ? roundForLoad(w + 0.01, ...args, 'up')
+          : Math.max(0, roundForLoad(w - 0.01, ...args, 'down')),
+      );
       return;
     }
     setWeight((w) => Math.max(0, Math.round((w + dir * wStep) * 100) / 100));
@@ -317,7 +349,27 @@ export function useLogger(): LoggerVM | null {
       });
       const pr = await detectAndMarkPRs(loggedRow);
       if (pr.kinds.length > 0) {
-        setCelebrate({ kinds: pr.kinds, e1rm: pr.e1rm });
+        // The best this set beat, for the record screen's "previous best" line.
+        const prior = (
+          await db.sets.where('exerciseId').equals(exId).toArray()
+        ).filter(
+          (s) =>
+            s.id !== loggedRow.id &&
+            !s.deletedAt &&
+            s.completed &&
+            isE1rmEligible(s),
+        );
+        const previousBestE1rm = prior.length
+          ? Math.max(...prior.map((s) => e1rm(s.weightLb, s.reps)))
+          : null;
+        setCelebrate({
+          kinds: pr.kinds,
+          e1rm: pr.e1rm,
+          exerciseId: exId,
+          weightLb: weight,
+          reps,
+          previousBestE1rm,
+        });
       }
       setToast({ setId: loggedRow.id });
       setWhyOpen(false);
@@ -333,6 +385,22 @@ export function useLogger(): LoggerVM | null {
     setFinishing(true);
     stopRest();
     await completeSessionAndAdvance(session!.id, nowIso());
+    await clearActiveSnapshot();
+    endSession();
+    navigate('/today');
+  }
+
+  /** Throw the session away: every logged set is soft-deleted (undoable in the data),
+   *  the session is closed as partial so it neither resumes nor counts as done, and no
+   *  progression state moves. */
+  async function discard() {
+    if (finishingRef.current) return;
+    finishingRef.current = true;
+    setFinishing(true);
+    stopRest();
+    const now = nowIso();
+    for (const s of logged) await softDeleteSet(s.id, now);
+    await db.sessions.update(session!.id, { status: 'partial', endedAt: now });
     await clearActiveSnapshot();
     endSession();
     navigate('/today');
@@ -386,14 +454,21 @@ export function useLogger(): LoggerVM | null {
             : s.progressionRule.kind === 'repsOnly'
               ? ADD_RULE
               : s.progressionRule;
-        return { ...rest, exerciseId: exercise.id, loadType, progressionRule: rule };
+        return {
+          ...rest,
+          exerciseId: exercise.id,
+          loadType,
+          progressionRule: rule,
+        };
       });
       await setSessionSlots(session!.id, next);
     } else if (mode === 'add') {
       const slot = makeSlot(
         exercise.id,
         slots.length,
-        loadType === 'bodyweight' ? { kind: 'repsOnly', repIncrement: 1 } : ADD_RULE,
+        loadType === 'bodyweight'
+          ? { kind: 'repsOnly', repIncrement: 1 }
+          : ADD_RULE,
         ADD_SCHEME,
         { warmupSec: defaultRestWarmupSec, workSec: defaultRestWorkSec },
         { loadType },
@@ -405,6 +480,7 @@ export function useLogger(): LoggerVM | null {
 
   return {
     sessionTitle,
+    templateName,
     elapsed,
     exId,
     metaLine,
@@ -444,8 +520,12 @@ export function useLogger(): LoggerVM | null {
     finishing,
     multiTabConflict,
     pickerMode,
+    loggedAll: logged,
+    summaryOpen,
+    setSummaryOpen,
     log,
     finish,
+    discard,
     leave,
     undoSet,
     skip,
