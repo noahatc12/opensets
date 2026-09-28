@@ -159,3 +159,61 @@ describe('editing a saved day', () => {
     });
   });
 });
+
+/** /routine/new with one exercise handed over, as Exercise detail's "Add to a day" does. */
+function renderNew(exerciseId = BENCH.id) {
+  return render(
+    <MemoryRouter
+      initialEntries={[
+        { pathname: '/routine/new', state: { addExerciseId: exerciseId } },
+      ]}
+    >
+      <Routes>
+        <Route path="/routine/new" element={<RoutineBuilder />} />
+        <Route path="/plan" element={<div>plan</div>} />
+        <Route path="/today" element={<div>today</div>} />
+      </Routes>
+    </MemoryRouter>,
+  );
+}
+
+// Persona check, 09-28: "+ New day" started a separate program and hid the first, so a
+// Push and Pull split could not be built by hand, and the typed name went on the program.
+describe('a new day', () => {
+  it('joins the active program under the name typed, and keeps the lift progress', async () => {
+    const { programId, tpl } = await seedDay();
+    const user = userEvent.setup();
+    renderNew();
+    await screen.findByText(/Bench Press/i, undefined, { timeout: 3000 });
+    // The lift is already trained on Day 1: its working weight is prefilled.
+    await screen.findByText('Upper · Day 2', { exact: false });
+    await user.type(screen.getByRole('textbox', { name: 'Day name' }), 'Pull');
+    await user.click(screen.getByRole('button', { name: 'Save day' }));
+    await screen.findByText('plan');
+    const days = await db.templates
+      .where('programId')
+      .equals(programId)
+      .toArray();
+    expect(days.map((d) => d.name).sort()).toEqual(['Day 1', 'Pull']);
+    expect(days.find((d) => d.name === 'Pull')!.dayIndex).toBe(1);
+    expect(await db.programs.count()).toBe(1);
+    const st = (await getExerciseState(programId, tpl.slots[0]!.exerciseId))!;
+    expect(st.workingWeightLb).toBe(135);
+    expect(st.consecutiveFails).toBe(1);
+  });
+
+  it('starts My plan when there is no program, with the day under the name typed', async () => {
+    await db.settings.put({ key: 'user', ...DEFAULT_SETTINGS });
+    const user = userEvent.setup();
+    renderNew();
+    await screen.findByText(/Bench Press/i, undefined, { timeout: 3000 });
+    await user.type(screen.getByRole('textbox', { name: 'Day name' }), 'Push');
+    await user.click(screen.getByRole('button', { name: 'Save day' }));
+    await screen.findByText('today');
+    const programs = await db.programs.toArray();
+    expect(programs.map((p) => p.name)).toEqual(['My plan']);
+    const days = await db.templates.toArray();
+    expect(days.map((d) => d.name)).toEqual(['Push']);
+    expect(await getExerciseState(programs[0]!.id, BENCH.id)).toBeDefined();
+  });
+});

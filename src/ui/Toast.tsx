@@ -1,7 +1,8 @@
 import type { ReactNode } from 'react';
 
-/* Toast: elevated surface, optional action. `bottom` is set by the caller because the
-   tab bar, a sheet or the logger's CTA each push it up a different amount. */
+/* Toast: elevated surface, optional action. With `bottom` it floats that far above the
+   container's bottom edge. Without it, it sits in the layout flow, so the controls it would
+   have floated over stay reachable (the logger renders it above its CTA or rest panel). */
 export function Toast({
   children,
   bottom,
@@ -9,12 +10,20 @@ export function Toast({
   onAction,
 }: {
   children: ReactNode;
-  bottom: number;
+  bottom?: number;
   action?: string;
   onAction?: () => void;
 }) {
   return (
-    <div role="status" className="os-toast" style={{ bottom }}>
+    <div
+      role="status"
+      className="os-toast"
+      style={
+        bottom === undefined
+          ? { position: 'relative', left: 'auto', right: 'auto' }
+          : { bottom }
+      }
+    >
       <span className="flex-1">{children}</span>
       {action && onAction && (
         <button

@@ -3,7 +3,9 @@ import { fmtWeight, kgToLb, toUnit } from '../../lib/units';
 import {
   clock,
   compact,
+  flagLabel,
   humanReason,
+  ruleLabel,
   shortName,
   titleCase,
   weekdayLong,
@@ -157,6 +159,12 @@ function Logger({ vm }: { vm: LoggerVM }) {
   const numeralSize = (s: string) =>
     s.length > 4 ? 52 : s.length > 3 ? 60 : 72;
   const ctaLabel = `Log set ${activeIndex + 1} · ${w(weight)} × ${reps}`;
+  // Only promise a buzz where the browser can vibrate; WebKit on iPhone has had no
+  // navigator.vibrate since 2017, so there the panel just ends.
+  const zeroLine =
+    typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function'
+      ? 'The phone buzzes at zero.'
+      : 'Rest ends at zero.';
 
   return (
     <div className="relative flex h-full flex-col">
@@ -332,7 +340,10 @@ function Logger({ vm }: { vm: LoggerVM }) {
                 className="os-card mt-2 text-[12.5px] leading-[1.55]"
                 style={{ padding: '10px 14px', color: 'var(--mute)' }}
               >
-                <Row k="Rule" v={activeSlot.progressionRule.kind} />
+                <Row
+                  k="How it grows"
+                  v={ruleLabel(activeSlot.progressionRule.kind)}
+                />
                 <Row
                   k="Last session"
                   v={
@@ -342,7 +353,11 @@ function Logger({ vm }: { vm: LoggerVM }) {
                   }
                 />
                 {pres.flags.length > 0 && (
-                  <Row k="Flags" v={pres.flags.join(', ')} accent />
+                  <Row
+                    k="Note"
+                    v={pres.flags.map(flagLabel).join(', ')}
+                    accent
+                  />
                 )}
               </div>
             )}
@@ -607,6 +622,22 @@ function Logger({ vm }: { vm: LoggerVM }) {
         </div>
       </div>
 
+      {/* The undo toast sits in the flow above the bottom panel: floating, it covered
+          Swap, Skip and Add for its whole 10 seconds (persona check, 09-28). */}
+      {toast && (
+        <div className="flex-none px-4 pb-2 pt-1">
+          <Toast
+            action="Undo"
+            onAction={() => {
+              void undoSet(toast.setId);
+              setToast(null);
+            }}
+          >
+            Set logged
+          </Toast>
+        </div>
+      )}
+
       {/* bottom: rest panel or the CTA */}
       {rest ? (
         <div
@@ -641,8 +672,8 @@ function Logger({ vm }: { vm: LoggerVM }) {
               </div>
               <div className="os-t mt-0.5 leading-[1.4]">
                 {!exerciseComplete && activePrescribed
-                  ? `Set ${activeIndex + 1} is staged at ${w(weight)} × ${reps}. The phone buzzes at zero.`
-                  : 'The phone buzzes at zero.'}
+                  ? `Set ${activeIndex + 1} is staged at ${w(weight)} × ${reps}. ${zeroLine}`
+                  : zeroLine}
               </div>
               <div className="mt-3 flex gap-2">
                 <button
@@ -707,19 +738,6 @@ function Logger({ vm }: { vm: LoggerVM }) {
             </button>
           )}
         </div>
-      )}
-
-      {toast && (
-        <Toast
-          bottom={rest ? 190 : 100}
-          action="Undo"
-          onAction={() => {
-            void undoSet(toast.setId);
-            setToast(null);
-          }}
-        >
-          Set logged
-        </Toast>
       )}
 
       <KeypadSheet
@@ -886,6 +904,15 @@ function Summary({ vm }: { vm: LoggerVM }) {
     arr.push(s);
     byEx.set(s.exerciseId, arr);
   }
+  // Every exercise in the session, then any with logged sets that left it (skipped after
+  // a set was logged): the Sets tile counts those sets, so the list shows them too.
+  const inSlots = new Set(slots.map((s) => s.exerciseId));
+  const rows = [
+    ...slots.map((s) => ({ key: s.slotId, exerciseId: s.exerciseId })),
+    ...[...byEx.keys()]
+      .filter((id) => !inSlots.has(id))
+      .map((id) => ({ key: `left-${id}`, exerciseId: id })),
+  ];
   const wr = (s: LoggedSet) =>
     `${s.weightLb > 0 ? fmtWeight(s.weightLb, units) : 'BW'}×${s.reps}`;
 
@@ -921,11 +948,11 @@ function Summary({ vm }: { vm: LoggerVM }) {
           />
         </div>
         <div className="os-card mt-3" style={{ padding: '4px 16px' }}>
-          {slots.map((s) => {
+          {rows.map((s) => {
             const sets = byEx.get(s.exerciseId) ?? [];
             const pr = sets.some((x) => x.isPR?.length);
             return (
-              <div key={s.slotId} className="os-row">
+              <div key={s.key} className="os-row">
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-[15px] font-semibold">
                     {nameOf(s.exerciseId)}

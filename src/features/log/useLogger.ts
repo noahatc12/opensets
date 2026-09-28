@@ -373,7 +373,12 @@ export function useLogger(): LoggerVM | null {
       }
       setToast({ setId: loggedRow.id });
       setWhyOpen(false);
-      if (restAutoStart ?? true) startRest(slot!.restWorkSec);
+      if (restAutoStart ?? true) {
+        startRest(slot!.restWorkSec);
+        // The ticking clock can be up to a second old; without this the ring opens at
+        // 3:01 of 3:00.
+        setNow(Date.now());
+      }
     } finally {
       loggingRef.current = false;
     }

@@ -22,7 +22,8 @@
     "design:gestures": "node scripts/gesture-check.mjs",
     "design:reach": "node scripts/reach-check.mjs",
     "design:scroll": "node scripts/scroll-check.mjs",
-    "design:feel": "node scripts/feel-check.mjs"
+    "design:feel": "node scripts/feel-check.mjs",
+    "design:personas": "node scripts/persona-check.mjs"
   },
   "dependencies": {
     "@fontsource-variable/hanken-grotesk": "^5.2.8",

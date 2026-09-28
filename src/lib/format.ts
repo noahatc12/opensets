@@ -28,6 +28,34 @@ export function humanReason(reason: string): string {
   return reason.replace(/\s+—\s+/g, ': ').replace(/—/g, ',');
 }
 
+/** A progression rule in the lifter's words; the engine's kind names never reach the UI. */
+export function ruleLabel(kind: string): string {
+  const names: Record<string, string> = {
+    linear: 'Add weight each session',
+    double: 'Add reps, then weight',
+    manual: 'You set the weight',
+    repsOnly: 'Add reps',
+    durationLinear: 'Add time',
+    rpeTarget: 'Set by effort',
+    gzclp: 'GZCLP stages',
+    percent531: '5/3/1 cycle',
+    apre: 'Set by your reps (APRE)',
+  };
+  return names[kind] ?? kind;
+}
+
+/** A prescription flag in the lifter's words. */
+export function flagLabel(flag: string): string {
+  const names: Record<string, string> = {
+    deload: 'Lighter week',
+    stageChange: 'New rep scheme',
+    tmIncrease: 'Training max up',
+    plateauSuspected: 'Progress has stalled',
+    suggested: 'Suggested start',
+  };
+  return names[flag] ?? flag;
+}
+
 /** "Fri" for an ISO date or timestamp. */
 export function weekdayShort(iso: string): string {
   return new Date(iso).toLocaleDateString(undefined, { weekday: 'short' });
