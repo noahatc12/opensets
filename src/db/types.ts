@@ -60,6 +60,10 @@ export interface Exercise {
   youtubeT?: number;
   userNotes?: string;
   category?: string;
+  /** Other names lifters use ("pec deck"), joined at build from data/search/. */
+  aliases?: string[];
+  /** In the common commercial-gym set: a small search tie-break. */
+  common?: boolean;
 }
 
 export interface Mesocycle {

@@ -4,18 +4,21 @@
  * Ingests yuhonas/free-exercise-db at a PINNED commit, normalizes names, maps the
  * muscle/equipment vocabulary to the app's canonical taxonomy, points images at
  * jsDelivr (pinned to the same commit), and emits:
- *   - public/data/exercises.json        the normalized library
- *   - public/data/exercises-index.json  a prebuilt FlexSearch index (when exportable)
+ *   - public/data/exercises.json        the normalized library, with each exercise's
+ *                                       search aliases and common-lift flag joined in
+ *                                       from data/search/ (2026-09-28)
  *   - public/data/exercises-meta.json   provenance (sha, counts, license)
+ *
+ * Search runs over exercises.json itself (src/db/exerciseSearch.ts); the prebuilt
+ * FlexSearch index it replaced was 1.9 MB of precache and scored 40.9% top 3.
  *
  * Pure build tool: runs in CI (and locally via `npm run build:exercises`). Node 24
  * runs this TypeScript directly (type-stripping). Includes a hard-fail sanity gate
  * so a bad fetch / wrong shape can never silently ship an empty library.
  */
-import { writeFileSync, mkdirSync } from 'node:fs';
+import { writeFileSync, mkdirSync, readFileSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { Document } from 'flexsearch';
 import type { Exercise, Muscle, Equipment } from '../src/db/types.ts';
 
 // Pinned commit — images + data come from exactly this SHA (immutable, cached).
@@ -159,55 +162,38 @@ function assertSane(exercises: Exercise[]): void {
   );
 }
 
-/** Build a FlexSearch index and serialize it (no runtime indexing in the app). */
-async function buildIndex(
-  exercises: Exercise[],
-): Promise<Record<string, unknown> | null> {
-  const index = new Document({
-    document: {
-      id: 'id',
-      index: [
-        'name',
-        'nameNorm',
-        'primaryMuscles',
-        'secondaryMuscles',
-        'equipment',
-        'category',
-      ],
-    },
-    tokenize: 'forward',
-  });
-  for (const ex of exercises)
-    index.add(ex as unknown as Record<string, unknown>);
-
-  // Spike validation (§18 #3): a known query must return its exercise.
-  const hits = index.search('bench', { index: 'nameNorm', limit: 5 });
-  const flat = hits.flatMap((r) =>
-    typeof r === 'object' && 'result' in r ? r.result : [],
+/** Join the search aliases and the common-lift set (data/search/) onto the library,
+ *  failing the build on an id that does not exist, so a renamed exercise cannot
+ *  silently drop its aliases. */
+function joinSearchData(exercises: Exercise[]): number {
+  const dir = resolve(
+    dirname(fileURLToPath(import.meta.url)),
+    '../data/search',
   );
-  if (flat.length === 0) {
-    console.warn(
-      '  WARN: FlexSearch spike returned 0 hits for "bench" — investigate before relying on search in P1.',
+  const aliases = JSON.parse(
+    readFileSync(resolve(dir, 'aliases.json'), 'utf8'),
+  ) as Record<string, string[]>;
+  const common = new Set(
+    JSON.parse(readFileSync(resolve(dir, 'common.json'), 'utf8')) as string[],
+  );
+  const ids = new Set(exercises.map((e) => e.id));
+  const unknown = [...Object.keys(aliases), ...common].filter(
+    (id) => !ids.has(id),
+  );
+  if (unknown.length)
+    throw new Error(
+      `data/search names unknown exercise ids: ${unknown.slice(0, 5).join(', ')}`,
     );
-  } else {
-    console.log(`  flexsearch spike: "bench" → ${flat.length} hits (ok)`);
+  let count = 0;
+  for (const ex of exercises) {
+    const a = aliases[ex.id];
+    if (a?.length) {
+      ex.aliases = a;
+      count += a.length;
+    }
+    if (common.has(ex.id)) ex.common = true;
   }
-
-  // Serialize. FlexSearch 0.8 export streams keys to a callback; collect them.
-  try {
-    const exported: Record<string, unknown> = {};
-    await index.export((key: string | number, data: unknown) => {
-      exported[String(key)] = data;
-    });
-    if (Object.keys(exported).length === 0) return null;
-    return exported;
-  } catch (err) {
-    console.warn(
-      `  WARN: FlexSearch export failed (${(err as Error).message}); shipping exercises.json only. ` +
-        `App can build the index at load from the compact docs (<50ms / 870 items). Revisit in P1.`,
-    );
-    return null;
-  }
+  return count;
 }
 
 async function main(): Promise<void> {
@@ -247,17 +233,11 @@ async function main(): Promise<void> {
     );
   }
 
+  const aliasCount = joinSearchData(exercises);
+  console.log(`  search: ${aliasCount} aliases joined`);
+
   mkdirSync(OUT_DIR, { recursive: true });
   writeFileSync(resolve(OUT_DIR, 'exercises.json'), JSON.stringify(exercises));
-
-  const indexData = await buildIndex(exercises);
-  if (indexData) {
-    writeFileSync(
-      resolve(OUT_DIR, 'exercises-index.json'),
-      JSON.stringify(indexData),
-    );
-    console.log('  wrote exercises-index.json (prebuilt FlexSearch index)');
-  }
 
   writeFileSync(
     resolve(OUT_DIR, 'exercises-meta.json'),
@@ -267,7 +247,7 @@ async function main(): Promise<void> {
         sha: SHA,
         license: 'unlicense',
         count: exercises.length,
-        hasPrebuiltIndex: Boolean(indexData),
+        aliases: aliasCount,
       },
       null,
       2,

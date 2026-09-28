@@ -1,10 +1,10 @@
 import { useMemo, useState } from 'react';
 import { Virtuoso } from 'react-virtuoso';
-import { useCatalog, useSearchIndex } from './useCatalog';
+import { useCatalog } from './useCatalog';
 import { useBestE1rm } from './useBestE1rm';
 import { MUSCLE_GROUPS, inGroup } from './muscleGroups';
-import { searchCatalog, getCatalogExercise } from '../../db/catalog';
-import { searchIds } from '../../db/searchIndex';
+import { getCatalogExercise } from '../../db/catalog';
+import { searchExercises } from '../../db/exerciseSearch';
 import { useSettings } from '../../db/hooks';
 import { roundDisplay, toUnit } from '../../lib/units';
 import { titleCase } from '../../lib/format';
@@ -16,33 +16,44 @@ interface Props {
   onClose: () => void;
 }
 
-/** The Add exercise sheet (spec §7): index-backed muscle-aware search with a name
- *  substring fallback while the index loads, muscle chips, a list virtualized across the
- *  full catalog, each row with the lifter's best e1RM when one is logged. */
+/** The Add exercise sheet (spec §7): search by name, alias, muscle and equipment
+ *  (db/exerciseSearch.ts), muscle chips, a list virtualized across the full catalog,
+ *  each row with the lifter's best e1RM when one is logged and the alias that matched. */
 export function ExercisePicker({ onPick, onClose }: Props) {
   const catalog = useCatalog();
-  const index = useSearchIndex();
   const { units } = useSettings();
   const { best } = useBestE1rm();
   const [q, setQ] = useState('');
   const [group, setGroup] = useState('all');
 
+  const hits = useMemo(
+    () =>
+      catalog && q.trim() ? searchExercises(catalog, q, { limit: 100 }) : null,
+    [catalog, q],
+  );
+  const aliasOf = useMemo(
+    () =>
+      new Map(
+        (hits ?? []).flatMap((h) =>
+          h.matchedAlias ? [[h.id, h.matchedAlias] as const] : [],
+        ),
+      ),
+    [hits],
+  );
+
   const results = useMemo(() => {
     if (!catalog) return [];
-    const query = q.trim();
-    let base: Exercise[];
-    if (!query) base = catalog;
-    else if (index)
-      base = searchIds(index, query, 100)
-        .map((id) => getCatalogExercise(id))
-        .filter((e): e is Exercise => Boolean(e));
-    else base = searchCatalog(catalog, query, catalog.length);
+    const base: Exercise[] = hits
+      ? hits
+          .map((h) => getCatalogExercise(h.id))
+          .filter((e): e is Exercise => Boolean(e))
+      : catalog;
     return group === 'all'
       ? base
       : base.filter((e) =>
           inGroup(group, e.primaryMuscles, e.secondaryMuscles),
         );
-  }, [catalog, index, q, group]);
+  }, [catalog, hits, group]);
 
   return (
     <Sheet open onClose={onClose} label="Add exercise" height="78%">
@@ -130,6 +141,9 @@ export function ExercisePicker({ onPick, onClose }: Props) {
                       style={{ color: 'var(--mute)' }}
                     >
                       {[
+                        aliasOf.has(e.id)
+                          ? `matches “${aliasOf.get(e.id)}”`
+                          : null,
                         titleCase(e.primaryMuscles[0]),
                         titleCase(e.equipment),
                         b
