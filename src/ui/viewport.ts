@@ -1,15 +1,18 @@
 /**
- * The Home Screen viewport. In the iOS 26 web-app container the layout viewport can stop
- * short of the screen by the bottom safe area (810 of 844 pt on an iPhone 14), so a
- * 100dvh shell ends above the home indicator, the OS paints black under it, and anything
- * placed `env(safe-area-inset-bottom)` above the shell's edge floats twice as high as it
- * should. The zone below the short edge is the container's own and cannot be painted, so
- * the fix is the other way round: when the viewport is short by the inset, the inset is
- * already reserved and --os-bottom-inset becomes 0, which drops the island and every dock
- * to the edge. In a browser tab, and in a container that does extend under the indicator,
- * the inset stays env(safe-area-inset-bottom).
+ * The Home Screen viewport. Measured on Noah's iPhone 14, iOS 18.7, 2026-09-28 (the tune
+ * panel's Screen readout): with the black-translucent status bar WebKit sizes the app's
+ * window to the screen minus the TOP safe area, anchored at the top (797 of 844 pt), and
+ * iOS paints the 47 pt below it itself (the 09-27 build that stretched the shell there had
+ * its island covered by that bar). Content under the status bar (safe top > 0) plus a
+ * short window therefore means the bottom strip is not ours: --os-bottom-inset becomes 0
+ * and the island and every dock sit just above the window's edge.
  *
- * `?probe` (or `#/route?probe`) in the URL shows the numbers on screen for device QA.
+ * With an opaque status bar ("black" or "default", tried from 09-28) the window starts
+ * below the status bar and reaches the true bottom, so safe top is 0 and the island clears
+ * the home indicator with env(safe-area-inset-bottom), as in a browser tab.
+ *
+ * `?probe` (or `#/route?probe`) in the URL, or the tune panel's Screen section, shows the
+ * numbers on screen for device QA.
  */
 export function installViewportFix(): () => void {
   if (typeof window === 'undefined') return () => {};
@@ -28,9 +31,10 @@ export function installViewportFix(): () => void {
       ? Math.max(0, Math.min(60, screenH - window.innerHeight))
       : 0;
     root.style.setProperty('--os-vgap', `${gap}px`);
+    const bottomIsTheOs = standalone() && gap >= 20 && safeTop() > 0;
     root.style.setProperty(
       '--os-bottom-inset',
-      standalone() && gap >= 20 ? '0px' : 'env(safe-area-inset-bottom, 0px)',
+      bottomIsTheOs ? '0px' : 'env(safe-area-inset-bottom, 0px)',
     );
     if (probeWanted()) paintProbe();
   };
@@ -43,6 +47,17 @@ export function installViewportFix(): () => void {
     window.removeEventListener('orientationchange', measure);
     window.visualViewport?.removeEventListener('resize', measure);
   };
+}
+
+/** env(safe-area-inset-top) in px: above 0 when the page draws under the status bar. */
+function safeTop(): number {
+  const d = document.createElement('div');
+  d.style.cssText =
+    'position:fixed;left:-9999px;top:0;visibility:hidden;padding-top:env(safe-area-inset-top)';
+  document.body.appendChild(d);
+  const v = parseFloat(getComputedStyle(d).paddingTop) || 0;
+  d.remove();
+  return v;
 }
 
 function probeWanted(): boolean {
