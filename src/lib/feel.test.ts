@@ -19,20 +19,28 @@ const choice = (
 
 describe('feel', () => {
   // The numbers are written out, not read from SHIPPED, so drift in either place fails.
-  it('"now" on both axes is exactly what shipped on 2026-09-27', () => {
+  // They are the 09-27 numbers at Soft and Easy, Noah's pick in the hand on 09-28.
+  it('"now" on both axes is what Noah picked on 2026-09-28', () => {
     expect(backFeel(DEFAULT_CHOICE)).toEqual({
-      release: { stiffness: 260, damping: 30 },
-      home: { stiffness: 420, damping: 38 },
-      closeFraction: 0.33,
-      flick: 0.45,
+      release: { stiffness: 166.4, damping: 24 },
+      home: { stiffness: 268.8, damping: 30.4 },
+      closeFraction: 0.2475,
+      flick: 0.3375,
     });
     expect(sheetFeel(DEFAULT_CHOICE)).toEqual({
-      close: { stiffness: 300, damping: 34 },
-      home: { stiffness: 420, damping: 38 },
-      flickHome: { stiffness: 320, damping: 26 },
-      closeFraction: 0.35,
-      flick: 0.4,
+      close: { stiffness: 192, damping: 27.2 },
+      home: { stiffness: 268.8, damping: 30.4 },
+      flickHome: { stiffness: 204.8, damping: 20.8 },
+      closeFraction: 0.2625,
+      flick: 0.3,
     });
+  });
+
+  it('the 09-28 numbers are the 09-27 ones at Soft and Easy, damping ratio kept', () => {
+    const old = { stiffness: 260, damping: 30 };
+    expect(scaleSpring(old, 'soft').stiffness).toBeCloseTo(166.4, 10);
+    expect(scaleSpring(old, 'soft').damping).toBeCloseTo(24, 10);
+    expect(ratio(backFeel(DEFAULT_CHOICE).release)).toBeCloseTo(ratio(old), 10);
   });
 
   it('speed changes the response time and never the damping ratio', () => {
@@ -52,12 +60,12 @@ describe('feel', () => {
   it('trigger moves how far and how fast a gesture must go to commit', () => {
     const easy = backFeel(choice({ speed: 'now', trigger: 'easy' }));
     const firm = backFeel(choice({ speed: 'now', trigger: 'firm' }));
-    expect(easy.closeFraction).toBeLessThan(0.33);
-    expect(firm.closeFraction).toBeGreaterThan(0.33);
-    expect(easy.flick).toBeLessThan(0.45);
-    expect(firm.flick).toBeGreaterThan(0.45);
+    expect(easy.closeFraction).toBeLessThan(0.2475);
+    expect(firm.closeFraction).toBeGreaterThan(0.2475);
+    expect(easy.flick).toBeLessThan(0.3375);
+    expect(firm.flick).toBeGreaterThan(0.3375);
     // Trigger leaves the springs alone.
-    expect(firm.release).toEqual({ stiffness: 260, damping: 30 });
+    expect(firm.release).toEqual({ stiffness: 166.4, damping: 24 });
   });
 
   it('each gesture reads only its own setting', () => {
@@ -87,11 +95,21 @@ describe('feel store', () => {
     a.subscribeFeel(() => calls++);
     a.setFeel('back', { trigger: 'firm' });
     expect(calls).toBe(1);
-    expect(a.backFeel().closeFraction).toBeCloseTo(0.429, 10);
+    expect(a.backFeel().closeFraction).toBeCloseTo(0.2475 * 1.3, 10);
 
     vi.resetModules();
     const b = await import('./feel');
     expect(b.getFeel().back).toEqual({ speed: 'now', trigger: 'firm' });
+  });
+
+  it('a choice stored against the 09-27 numbers is dropped, not applied twice', async () => {
+    localStorage.setItem(
+      'opensets-feel',
+      JSON.stringify({ back: { speed: 'soft', trigger: 'easy' } }),
+    );
+    const a = await import('./feel');
+    expect(a.getFeel()).toEqual(a.DEFAULT_CHOICE);
+    expect(localStorage.getItem('opensets-feel')).toBeNull();
   });
 
   it('reset and turning tune mode off leave nothing stored', async () => {
@@ -101,7 +119,7 @@ describe('feel store', () => {
     expect(localStorage.getItem('opensets-tune')).toBe('1');
     a.resetFeel();
     a.setTuning(false);
-    expect(localStorage.getItem('opensets-feel')).toBeNull();
+    expect(localStorage.getItem('opensets-feel-v2')).toBeNull();
     expect(localStorage.getItem('opensets-tune')).toBeNull();
     expect(a.sheetFeel()).toEqual(a.sheetFeel(a.DEFAULT_CHOICE));
   });
