@@ -7,7 +7,6 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../db/db';
 import { newId } from '../../db/ids';
 import type { Goal, GoalType, Measurement } from '../../db/types';
-import { PlusIcon } from '../../components/icons';
 import { BackButton } from '../../ui/StatGrid';
 import { useSettings } from '../../db/hooks';
 import { e1rm, isE1rmEligible } from '../../engine';
@@ -313,7 +312,7 @@ export function GoalsScreen() {
           <h1 className="os-h1 mt-0.5">Goals</h1>
         </div>
 
-        <div className="os-scroll flex-1 overflow-auto px-[22px] pb-7 pt-1.5">
+        <div className="os-scroll flex-1 overflow-auto px-[18px] pb-7 pt-1.5">
           {active.length > 0 ? (
             <div className="flex flex-col gap-3">
               {active.map((g) => (
@@ -321,22 +320,21 @@ export function GoalsScreen() {
               ))}
             </div>
           ) : (
-            <p className="mt-8 text-center text-[12.5px] leading-snug text-faint">
-              No goals yet. Set a target to track progress against your
-              training.
-            </p>
+            <div className="os-card mt-3 text-center">
+              <div className="text-[15px] font-extrabold">No goals yet</div>
+              <p className="os-t mt-1 leading-snug">
+                Set a target for a lift, your bodyweight or a measurement, and
+                track progress against your training.
+              </p>
+            </div>
           )}
 
           <button
+            type="button"
             onClick={() => setAdding(true)}
-            className="mt-4 flex h-12 w-full items-center justify-center gap-1.5 rounded-[var(--r-md)] text-[14px] font-semibold text-accent"
-            style={{
-              border: '1px dashed var(--border-strong)',
-              background: 'transparent',
-            }}
+            className={`os-btn os-press mt-3 ${active.length === 0 ? 'os-btn--pri' : ''}`}
           >
-            <PlusIcon className="size-[18px]" />
-            New goal
+            + New goal
           </button>
         </div>
 

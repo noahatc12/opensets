@@ -472,7 +472,7 @@ export function MeasurementsScreen() {
           <h1 className="os-h1 mt-0.5">Measurements</h1>
         </div>
 
-        <div className="os-scroll flex-1 overflow-auto px-[22px] pb-7 pt-1.5">
+        <div className="os-scroll flex-1 overflow-auto px-[18px] pb-7 pt-1.5">
           <div className="flex gap-2.5">
             <StatCard
               label="Bodyweight"
@@ -493,15 +493,21 @@ export function MeasurementsScreen() {
               ))}
             </div>
           ) : (
-            <p className="mt-6 text-center text-[12.5px] leading-snug text-faint">
-              No measurements yet. Log your bodyweight or a tape measurement to
-              track change over time.
-            </p>
+            <div className="os-card text-center">
+              <div className="text-[15px] font-extrabold">
+                No measurements yet
+              </div>
+              <p className="os-t mt-1 leading-snug">
+                Log your bodyweight or a tape measurement to see change over
+                time.
+              </p>
+            </div>
           )}
 
           <button
+            type="button"
             onClick={() => setLogging(true)}
-            className="os-btn os-btn--pri os-press mt-4"
+            className="os-btn os-btn--pri os-press mt-3"
           >
             Log measurement
           </button>
