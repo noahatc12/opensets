@@ -382,6 +382,66 @@ export async function seedExerciseState(
   return row;
 }
 
+/**
+ * Re-prescribe a slot after its day is edited (sets, reps, rule or weight changed), from
+ * the lifter's current state rather than from scratch, so an edit never costs progress.
+ * `keepCounters` keeps the working weight, miss count and stage; pass false when the rule
+ * kind or the weight changed, which starts clean at `weightLb`. An exercise with no state
+ * yet in this program is seeded instead. The engine sees an empty session, which holds
+ * the weight (it never counts as a miss).
+ */
+export async function represcribeAfterEdit(
+  programId: string,
+  slot: ExerciseSlot,
+  weightLb: number,
+  keepCounters: boolean,
+  now: string,
+): Promise<void> {
+  const existing = await getExerciseState(programId, slot.exerciseId);
+  if (!existing) {
+    await seedExerciseState(programId, slot, weightLb, now);
+    return;
+  }
+  const settings = engineSettings(await getSettings(), await loadTypeOf(slot));
+  const meso = (await db.programs.get(programId))?.mesocycle;
+  const ramp = rampCtxForSlot(slot, meso, await baseSetsByMuscle(programId));
+  const base: ExerciseState = keepCounters
+    ? {
+        workingWeightLb: existing.workingWeightLb,
+        consecutiveFails: existing.consecutiveFails,
+        stage: existing.stage,
+        cyclePos: existing.cyclePos,
+        ...(existing.trainingMaxLb !== undefined
+          ? { trainingMaxLb: existing.trainingMaxLb }
+          : {}),
+        ...(existing.anchorLb !== undefined
+          ? { anchorLb: existing.anchorLb }
+          : {}),
+      }
+    : { workingWeightLb: weightLb, consecutiveFails: 0, stage: 0, cyclePos: 0 };
+  const { prescription, nextState } = nextPrescription(
+    slot.progressionRule,
+    base,
+    [],
+    settings,
+    schemeOf(slot),
+  );
+  const top = prescription.sets.find((s) => s.type !== 'warmup');
+  const row: ExerciseStateRow = {
+    ...nextState,
+    programId,
+    exerciseId: slot.exerciseId,
+    updatedAt: now,
+    pending: {
+      ...periodize(prescription, meso, ramp),
+      reason: top
+        ? `Plan edited. ${top.targetWeightLb} lb for ${prescription.sets.filter((s) => s.type !== 'warmup').length} sets.`
+        : 'Plan edited.',
+    },
+  };
+  await db.exerciseState.put(row);
+}
+
 function withFlag(
   p: Prescription,
   flag: Prescription['flags'][number],

@@ -78,6 +78,7 @@ export default function App() {
           <Route path="/today" element={<TodayScreen />} />
           <Route path="/plan" element={<PlanScreen />} />
           <Route path="/routine/new" element={<RoutineBuilder />} />
+          <Route path="/routine/:templateId" element={<RoutineBuilder />} />
           <Route path="/library" element={<LibraryScreen />} />
           <Route path="/library/:id" element={<ExerciseDetailScreen />} />
           <Route path="/history" element={<HistoryScreen />} />
