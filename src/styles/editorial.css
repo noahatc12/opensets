@@ -868,12 +868,13 @@ html[data-nav='pop']::view-transition-old(root) {
 html[data-nav='pop']::view-transition-new(root) {
   animation-name: os-nav-return;
 }
-/* After a swipe the leaving screen is already off; only the parent settles in. */
+/* After a swipe the parent is already in place under the finger; the route switch to
+   the real parent is a short crossfade so the hand-off cannot be seen. */
 html[data-nav='swipe']::view-transition-old(root) {
-  animation: os-fade-out 160ms ease-out;
+  animation: os-fade-out 120ms ease-out;
 }
 html[data-nav='swipe']::view-transition-new(root) {
-  animation: os-nav-return 300ms cubic-bezier(0.32, 0.72, 0, 1);
+  animation: none;
 }
 html[data-nav='tab']::view-transition-old(root) {
   animation: os-fade-out 120ms ease-out;
@@ -960,13 +961,20 @@ html[data-nav='tab']::view-transition-new(root) {
 [data-ds='editorial'] .os-pushed--dragging {
   box-shadow: -10px 0 30px rgba(0, 0, 0, 0.35);
 }
-[data-ds='editorial'] .os-pushed--dragging::before {
-  content: '';
-  position: fixed;
+[data-ds='editorial'] .os-pushed {
+  z-index: 1;
+}
+/* The parent screen mounted under a swipe: inert, parked 24 percent left and dimmed,
+   driven to rest by the finger. */
+[data-ds='editorial'] .os-pushed-parent {
+  position: absolute;
   inset: 0;
-  z-index: -1;
-  background: rgba(0, 0, 0, calc(0.5 * (1 - var(--os-back-dim, 0))));
+  overflow: hidden;
+  background: var(--bg);
   pointer-events: none;
+  transform: translate3d(-24%, 0, 0);
+  filter: brightness(0.72);
+  will-change: transform, filter;
 }
 
 /* Sheets rise on the iOS curve and follow the finger without a transition fighting it. */
@@ -1032,4 +1040,17 @@ html[data-nav='tab']::view-transition-new(root) {
   ::view-transition-group(os-tab-pill) {
     animation: none !important;
   }
+}
+
+/* The app shell reaches the true bottom of the screen even when the container's layout
+   viewport stops short of it (measured into --os-vgap by ui/viewport.ts). The island and
+   every dock measure their safe-area clearance from this edge. */
+[data-ds='editorial'] .os-shell {
+  bottom: calc(-1 * var(--os-vgap, 0px));
+  --os-probe-inset: env(safe-area-inset-bottom, 0px);
+  --os-probe-dvh: 100dvh;
+}
+html,
+body {
+  background: var(--bg);
 }

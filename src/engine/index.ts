@@ -14,7 +14,12 @@ export {
   type WarmupSet,
 } from './rounding';
 export { loadTypeFor, roundForLoad, DEFAULT_LOAD_STEPS } from './loading';
-export { startingWeightLb, proteinTarget, type ProteinTarget, type StartInput } from './body';
+export {
+  startingWeightLb,
+  proteinTarget,
+  type ProteinTarget,
+  type StartInput,
+} from './body';
 export { detectPRs, type PRResult } from './prs';
 export {
   e1rm,

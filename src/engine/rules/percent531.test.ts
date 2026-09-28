@@ -9,8 +9,18 @@ const settings: EngineSettings = {
   rounding: 'nearest',
   units: 'lb',
 };
-const rule = (over: Partial<{ variant: 'base' | 'bbb' | 'fsl'; tmIncrementLb: number }> = {}) =>
-  ({ kind: 'percent531', variant: 'base', tmIncrementLb: 2.5, ...over }) as const;
+const rule = (
+  over: Partial<{
+    variant: 'base' | 'bbb' | 'fsl';
+    tmIncrementLb: number;
+  }> = {},
+) =>
+  ({
+    kind: 'percent531',
+    variant: 'base',
+    tmIncrementLb: 2.5,
+    ...over,
+  }) as const;
 const state = (over: Partial<ExerciseState> = {}): ExerciseState => ({
   workingWeightLb: 100,
   trainingMaxLb: 100,
@@ -39,28 +49,39 @@ describe('5/3/1', () => {
   it('seeds Week 1 from the TM when there is no history', () => {
     const r = percent531Next(rule(), state(), [], settings);
     expect(r.prescription.reason).toMatch(/Week 1/);
-    expect(r.prescription.sets.slice(0, 3).map((s) => s.targetReps)).toEqual([5, 5, 5]);
+    expect(r.prescription.sets.slice(0, 3).map((s) => s.targetReps)).toEqual([
+      5, 5, 5,
+    ]);
     expect(r.prescription.sets[2]!.amrap).toBe(true);
     expect(r.nextState.cyclePos).toBe(0);
     expect(allLoadable(r)).toBe(true);
   });
 
   it('initialises the TM from workingWeightLb when none is set', () => {
-    const r = percent531Next(rule(), state({ trainingMaxLb: undefined, workingWeightLb: 90 }), [], settings);
+    const r = percent531Next(
+      rule(),
+      state({ trainingMaxLb: undefined, workingWeightLb: 90 }),
+      [],
+      settings,
+    );
     expect(r.nextState.trainingMaxLb).toBe(90);
   });
 
   it('advances W1 → W2 (3/3/3) on completion', () => {
     const r = percent531Next(rule(), state({ cyclePos: 0 }), work(7), settings);
     expect(r.nextState.cyclePos).toBe(1);
-    expect(r.prescription.sets.slice(0, 3).map((s) => s.targetReps)).toEqual([3, 3, 3]);
+    expect(r.prescription.sets.slice(0, 3).map((s) => s.targetReps)).toEqual([
+      3, 3, 3,
+    ]);
     expect(r.prescription.flags).toEqual([]);
   });
 
   it('advances W2 → W3 (5/3/1)', () => {
     const r = percent531Next(rule(), state({ cyclePos: 1 }), work(5), settings);
     expect(r.nextState.cyclePos).toBe(2);
-    expect(r.prescription.sets.slice(0, 3).map((s) => s.targetReps)).toEqual([5, 3, 1]);
+    expect(r.prescription.sets.slice(0, 3).map((s) => s.targetReps)).toEqual([
+      5, 3, 1,
+    ]);
   });
 
   it('W3 completed normally → W4 deload, no flags', () => {
@@ -79,7 +100,12 @@ describe('5/3/1', () => {
   });
 
   it('W3 top set not completed also triggers the reset', () => {
-    const r = percent531Next(rule(), state({ cyclePos: 2 }), work(1, false), settings);
+    const r = percent531Next(
+      rule(),
+      state({ cyclePos: 2 }),
+      work(1, false),
+      settings,
+    );
     expect(r.prescription.flags).toContain('deload');
   });
 
@@ -99,7 +125,12 @@ describe('5/3/1', () => {
       { weightLb: 50, reps: 5, type: 'working', completed: true },
       { weightLb: 60, reps: 5, type: 'working', completed: true },
     ];
-    const r = percent531Next(rule(), state({ cyclePos: 3 }), deloadWork, settings);
+    const r = percent531Next(
+      rule(),
+      state({ cyclePos: 3 }),
+      deloadWork,
+      settings,
+    );
     expect(r.nextState.cyclePos).toBe(0);
     expect(r.prescription.flags).toContain('tmIncrease');
     expect(r.nextState.trainingMaxLb).toBe(102.5);
@@ -107,14 +138,24 @@ describe('5/3/1', () => {
   });
 
   it('BBB variant adds 5×10 supplemental on work weeks', () => {
-    const r = percent531Next(rule({ variant: 'bbb' }), state({ cyclePos: 0 }), [], settings);
+    const r = percent531Next(
+      rule({ variant: 'bbb' }),
+      state({ cyclePos: 0 }),
+      [],
+      settings,
+    );
     const supplemental = r.prescription.sets.filter((s) => s.targetReps === 10);
     expect(supplemental).toHaveLength(5);
     expect(allLoadable(r)).toBe(true);
   });
 
   it('FSL variant adds 5×5 @ the first-set weight', () => {
-    const r = percent531Next(rule({ variant: 'fsl' }), state({ cyclePos: 0 }), [], settings);
+    const r = percent531Next(
+      rule({ variant: 'fsl' }),
+      state({ cyclePos: 0 }),
+      [],
+      settings,
+    );
     const fsl = r.prescription.sets.filter((s) => s.targetReps === 5);
     // 3 main + 5 FSL = 8 sets of 5 reps on W1 (reps 5/5/5 + 5×5).
     expect(fsl.length).toBeGreaterThanOrEqual(5);
@@ -122,7 +163,12 @@ describe('5/3/1', () => {
   });
 
   it('no supplemental volume on the deload week even with a variant', () => {
-    const r = percent531Next(rule({ variant: 'bbb' }), state({ cyclePos: 2 }), work(2), settings);
+    const r = percent531Next(
+      rule({ variant: 'bbb' }),
+      state({ cyclePos: 2 }),
+      work(2),
+      settings,
+    );
     expect(r.nextState.cyclePos).toBe(3); // deload
     expect(r.prescription.sets).toHaveLength(3);
   });

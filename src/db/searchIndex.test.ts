@@ -23,10 +23,42 @@ describe('expandQuery (synonym layer)', () => {
 
 /** Minimal fixtures shaped like the indexed Exercise fields. */
 const FIXTURES = [
-  { id: 'crunch', name: 'Cable Crunch', nameNorm: 'cable crunch', primaryMuscles: ['abdominals'], secondaryMuscles: [], equipment: 'cable', category: 'strength' },
-  { id: 'bbsquat', name: 'Barbell Squat', nameNorm: 'barbell squat', primaryMuscles: ['quadriceps'], secondaryMuscles: ['glutes'], equipment: 'barbell', category: 'strength' },
-  { id: 'bench', name: 'Barbell Bench Press', nameNorm: 'barbell bench press', primaryMuscles: ['chest'], secondaryMuscles: ['triceps'], equipment: 'barbell', category: 'strength' },
-  { id: 'curl', name: 'Dumbbell Curl', nameNorm: 'dumbbell curl', primaryMuscles: ['biceps'], secondaryMuscles: ['forearms'], equipment: 'dumbbell', category: 'strength' },
+  {
+    id: 'crunch',
+    name: 'Cable Crunch',
+    nameNorm: 'cable crunch',
+    primaryMuscles: ['abdominals'],
+    secondaryMuscles: [],
+    equipment: 'cable',
+    category: 'strength',
+  },
+  {
+    id: 'bbsquat',
+    name: 'Barbell Squat',
+    nameNorm: 'barbell squat',
+    primaryMuscles: ['quadriceps'],
+    secondaryMuscles: ['glutes'],
+    equipment: 'barbell',
+    category: 'strength',
+  },
+  {
+    id: 'bench',
+    name: 'Barbell Bench Press',
+    nameNorm: 'barbell bench press',
+    primaryMuscles: ['chest'],
+    secondaryMuscles: ['triceps'],
+    equipment: 'barbell',
+    category: 'strength',
+  },
+  {
+    id: 'curl',
+    name: 'Dumbbell Curl',
+    nameNorm: 'dumbbell curl',
+    primaryMuscles: ['biceps'],
+    secondaryMuscles: ['forearms'],
+    equipment: 'dumbbell',
+    category: 'strength',
+  },
 ];
 
 function fixtureIndex() {

@@ -84,7 +84,11 @@ interface FieldResult {
  * de-duplicated across fields. Empty (or whitespace) query → []. Pure given
  * `doc`; tested with an in-memory fixture index.
  */
-export function searchIds(doc: SearchIndex, query: string, limit = 50): string[] {
+export function searchIds(
+  doc: SearchIndex,
+  query: string,
+  limit = 50,
+): string[] {
   const q = expandQuery(query);
   if (!q) return [];
   // Non-enriched Document.search → Array<{ field, result: Id[] }>.

@@ -1,5 +1,7 @@
 import { useNav } from '../../ui/nav';
 import { Pushed } from '../../ui/Pushed';
+import { SettingsScreen } from './SettingsScreen';
+import { TabBar } from '../../components/TabBar';
 import { useSettings, updateSettings } from '../../db/hooks';
 import { kgToLb } from '../../lib/units';
 import { plateLook } from '../../lib/plates';
@@ -37,7 +39,15 @@ export function PlatesScreen() {
   }
 
   return (
-    <Pushed to={'/settings'}>
+    <Pushed
+      to="/settings"
+      parent={
+        <>
+          <SettingsScreen />
+          <TabBar activePath="/settings" />
+        </>
+      }
+    >
       <div className="h-full overflow-auto px-[18px] pb-[120px] pt-[max(0.5rem,env(safe-area-inset-top))]">
         <BackButton onClick={() => nav.tab('/settings')} />
         <div className="os-t mt-3.5">Training</div>

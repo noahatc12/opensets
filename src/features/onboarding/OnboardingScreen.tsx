@@ -1,6 +1,8 @@
 import { useMemo, useState, type ReactNode } from 'react';
 import { useNav } from '../../ui/nav';
 import { Pushed } from '../../ui/Pushed';
+import { TodayScreen } from '../log/TodayScreen';
+import { TabBar } from '../../components/TabBar';
 import { useCatalog } from '../library/useCatalog';
 import { generatePlan } from '../../engine';
 import { useSettings } from '../../db/hooks';
@@ -319,11 +321,19 @@ export function OnboardingScreen() {
 
   const next = () =>
     step >= STEPS - 1 ? void finish() : setStep((s) => s + 1);
-  const back = () => (step === 0 ? nav.pop() : setStep((s) => s - 1));
+  const back = () => (step === 0 ? nav.pop('/today') : setStep((s) => s - 1));
   const bodyDataGiven = Boolean(bodyweightLb || sex);
 
   return (
-    <Pushed to={-1}>
+    <Pushed
+      to="/today"
+      parent={
+        <>
+          <TodayScreen />
+          <TabBar activePath="/today" />
+        </>
+      }
+    >
       <div className="relative flex h-full flex-col">
         <div className="flex-1 overflow-auto px-[18px] pb-[120px] pt-[max(0.5rem,env(safe-area-inset-top))]">
           <div className="flex items-center gap-3">

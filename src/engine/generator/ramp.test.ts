@@ -18,11 +18,30 @@ import {
   type GenPreferences,
   type GeneratedProgram,
 } from './index';
-import { buildMesocyclePlan, landmarksFor, weeklyRampFactor, type MesocyclePlan } from '../mesocycle';
+import {
+  buildMesocyclePlan,
+  landmarksFor,
+  weeklyRampFactor,
+  type MesocyclePlan,
+} from '../mesocycle';
 import type { Muscle } from '../types';
 
-const ex = (id: string, name: string, pm: GenExercise['primaryMuscles'], eq: string, mech: 'compound' | 'isolation', bw = false): GenExercise =>
-  ({ id, name, nameNorm: name.toLowerCase(), primaryMuscles: pm, equipment: eq, mechanic: mech, isBodyweight: bw });
+const ex = (
+  id: string,
+  name: string,
+  pm: GenExercise['primaryMuscles'],
+  eq: string,
+  mech: 'compound' | 'isolation',
+  bw = false,
+): GenExercise => ({
+  id,
+  name,
+  nameNorm: name.toLowerCase(),
+  primaryMuscles: pm,
+  equipment: eq,
+  mechanic: mech,
+  isBodyweight: bw,
+});
 
 const CATALOG: GenExercise[] = [
   ex('bb-bench', 'Barbell Bench Press', ['chest'], 'barbell', 'compound'),
@@ -30,7 +49,13 @@ const CATALOG: GenExercise[] = [
   ex('incl-db', 'Incline Dumbbell Press', ['chest'], 'dumbbell', 'compound'),
   ex('mach-press', 'Machine Chest Press', ['chest'], 'machine', 'compound'),
   ex('ohp', 'Standing Military Press', ['shoulders'], 'barbell', 'compound'),
-  ex('db-press', 'Seated Dumbbell Press', ['shoulders'], 'dumbbell', 'compound'),
+  ex(
+    'db-press',
+    'Seated Dumbbell Press',
+    ['shoulders'],
+    'dumbbell',
+    'compound',
+  ),
   ex('lat-raise', 'Side Lateral Raise', ['shoulders'], 'dumbbell', 'isolation'),
   ex('face-pull', 'Face Pull', ['shoulders'], 'cable', 'isolation'),
   ex('pushdown', 'Triceps Pushdown', ['triceps'], 'cable', 'isolation'),
@@ -40,14 +65,39 @@ const CATALOG: GenExercise[] = [
   ex('squat', 'Barbell Squat', ['quadriceps'], 'barbell', 'compound'),
   ex('leg-press', 'Leg Press', ['quadriceps'], 'machine', 'compound'),
   ex('leg-ext', 'Leg Extensions', ['quadriceps'], 'machine', 'isolation'),
-  ex('rdl', 'Romanian Deadlift', ['hamstrings', 'glutes'], 'barbell', 'compound'),
+  ex(
+    'rdl',
+    'Romanian Deadlift',
+    ['hamstrings', 'glutes'],
+    'barbell',
+    'compound',
+  ),
   ex('leg-curl', 'Lying Leg Curls', ['hamstrings'], 'machine', 'isolation'),
   ex('calf', 'Standing Calf Raises', ['calves'], 'machine', 'isolation'),
   ex('pulldown', 'Wide-Grip Lat Pulldown', ['lats'], 'cable', 'compound'),
   ex('pullup', 'Pullups', ['lats'], 'bodyweight', 'compound', true),
-  ex('bb-row', 'Bent Over Barbell Row', ['middleBack', 'lats'], 'barbell', 'compound'),
-  ex('cable-row', 'Seated Cable Rows', ['middleBack', 'lats'], 'cable', 'compound'),
-  ex('hlr', 'Hanging Leg Raise', ['abdominals'], 'bodyweight', 'isolation', true),
+  ex(
+    'bb-row',
+    'Bent Over Barbell Row',
+    ['middleBack', 'lats'],
+    'barbell',
+    'compound',
+  ),
+  ex(
+    'cable-row',
+    'Seated Cable Rows',
+    ['middleBack', 'lats'],
+    'cable',
+    'compound',
+  ),
+  ex(
+    'hlr',
+    'Hanging Leg Raise',
+    ['abdominals'],
+    'bodyweight',
+    'isolation',
+    true,
+  ),
   ex('cable-crunch', 'Cable Crunch', ['abdominals'], 'cable', 'isolation'),
 ];
 
@@ -57,7 +107,11 @@ const gen = (p: GenProfile, q: GenPreferences) => generatePlan(CATALOG, p, q);
 function baseByMuscle(program: GeneratedProgram): Map<Muscle, number> {
   const base = new Map<Muscle, number>();
   for (const day of program.days)
-    for (const s of day.slots) base.set(s.primaryMuscle, (base.get(s.primaryMuscle) ?? 0) + s.scheme.sets);
+    for (const s of day.slots)
+      base.set(
+        s.primaryMuscle,
+        (base.get(s.primaryMuscle) ?? 0) + s.scheme.sets,
+      );
   return base;
 }
 
@@ -72,7 +126,12 @@ function rampedByMuscle(
   for (const day of program.days)
     for (const s of day.slots) {
       const m = s.primaryMuscle;
-      const factor = weeklyRampFactor(base.get(m) ?? 0, landmarksFor(m).mrv, plan, week);
+      const factor = weeklyRampFactor(
+        base.get(m) ?? 0,
+        landmarksFor(m).mrv,
+        plan,
+        week,
+      );
       out.set(m, (out.get(m) ?? 0) + Math.round(s.scheme.sets * factor));
     }
   return out;
@@ -80,20 +139,47 @@ function rampedByMuscle(
 
 describe('R3.5 gate — only volume-model goals ramp; slots carry their muscle', () => {
   it('hypertrophy + recomp set rampsVolume; strength + fat-loss do not', () => {
-    expect(gen({ goal: 'Build muscle' }, { days: 5, equipment: 'Full gym', experience: 'Intermediate' }).mesocycle!.rampsVolume).toBe(true);
-    expect(gen({ goal: 'Recomposition' }, { days: 4, equipment: 'Full gym', experience: 'Intermediate' }).mesocycle!.rampsVolume).toBe(true);
-    expect(gen({ goal: 'Get stronger' }, { days: 4, equipment: 'Full gym', experience: 'Intermediate' }).mesocycle!.rampsVolume).toBe(false);
-    expect(gen({ goal: 'Lose fat' }, { days: 4, equipment: 'Full gym', experience: 'Intermediate' }).mesocycle!.rampsVolume).toBe(false);
+    expect(
+      gen(
+        { goal: 'Build muscle' },
+        { days: 5, equipment: 'Full gym', experience: 'Intermediate' },
+      ).mesocycle!.rampsVolume,
+    ).toBe(true);
+    expect(
+      gen(
+        { goal: 'Recomposition' },
+        { days: 4, equipment: 'Full gym', experience: 'Intermediate' },
+      ).mesocycle!.rampsVolume,
+    ).toBe(true);
+    expect(
+      gen(
+        { goal: 'Get stronger' },
+        { days: 4, equipment: 'Full gym', experience: 'Intermediate' },
+      ).mesocycle!.rampsVolume,
+    ).toBe(false);
+    expect(
+      gen(
+        { goal: 'Lose fat' },
+        { days: 4, equipment: 'Full gym', experience: 'Intermediate' },
+      ).mesocycle!.rampsVolume,
+    ).toBe(false);
   });
 
   it('every generated slot carries its primaryMuscle (the ramp key)', () => {
-    const r = gen({ goal: 'Build muscle' }, { days: 5, equipment: 'Full gym', experience: 'Intermediate' });
-    for (const day of r.program.days) for (const s of day.slots) expect(s.primaryMuscle).toBeTruthy();
+    const r = gen(
+      { goal: 'Build muscle' },
+      { days: 5, equipment: 'Full gym', experience: 'Intermediate' },
+    );
+    for (const day of r.program.days)
+      for (const s of day.slots) expect(s.primaryMuscle).toBeTruthy();
   });
 });
 
 describe('R3.5 ramp across the block (hypertrophy, 5-day intermediate)', () => {
-  const r = gen({ goal: 'Build muscle' }, { days: 5, equipment: 'Full gym', experience: 'Intermediate' });
+  const r = gen(
+    { goal: 'Build muscle' },
+    { days: 5, equipment: 'Full gym', experience: 'Intermediate' },
+  );
   const plan = buildMesocyclePlan(r.mesocycle!.totalWeeks);
   const base = baseByMuscle(r.program);
   const weeks = [...Array(plan.totalWeeks).keys()];
@@ -110,14 +196,20 @@ describe('R3.5 ramp across the block (hypertrophy, 5-day intermediate)', () => {
     for (const w of weeks) {
       const v = rampedByMuscle(r.program, base, plan, w);
       for (const m of muscles) {
-        expect(v.get(m)!, `${m} wk${w + 1}=${v.get(m)} < base ${base.get(m)}`).toBeGreaterThanOrEqual(base.get(m)!);
+        expect(
+          v.get(m)!,
+          `${m} wk${w + 1}=${v.get(m)} < base ${base.get(m)}`,
+        ).toBeGreaterThanOrEqual(base.get(m)!);
       }
     }
   });
 
   it("R3's effective floor (the ramp's week-1 anchor) is ≥ MEV for every muscle", () => {
     for (const m of muscles) {
-      expect(r.weeklyVolumeByMuscle[m]!, `${m} effective ${r.weeklyVolumeByMuscle[m]} < MEV`).toBeGreaterThanOrEqual(
+      expect(
+        r.weeklyVolumeByMuscle[m]!,
+        `${m} effective ${r.weeklyVolumeByMuscle[m]} < MEV`,
+      ).toBeGreaterThanOrEqual(
         landmarksFor(m).mev - 0.01, // effective volume is fractional
       );
     }
@@ -163,9 +255,16 @@ describe('R3.5 ramp across the block (hypertrophy, 5-day intermediate)', () => {
 
 describe('R3.5 priority — a higher base ramps a shallower ratio (same muscle, base-dependent)', () => {
   it('priority chest has a higher week-1 base but a shallower peak/base ratio than non-priority', () => {
-    const q: GenPreferences = { days: 5, equipment: 'Full gym', experience: 'Intermediate' };
+    const q: GenPreferences = {
+      days: 5,
+      equipment: 'Full gym',
+      experience: 'Intermediate',
+    };
     const nonPri = gen({ goal: 'Build muscle' }, q);
-    const pri = gen({ goal: 'Build muscle' }, { ...q, priorityMuscles: ['chest'] });
+    const pri = gen(
+      { goal: 'Build muscle' },
+      { ...q, priorityMuscles: ['chest'] },
+    );
 
     const planN = buildMesocyclePlan(nonPri.mesocycle!.totalWeeks);
     const baseN = baseByMuscle(nonPri.program);
@@ -174,8 +273,12 @@ describe('R3.5 priority — a higher base ramps a shallower ratio (same muscle, 
 
     expect(baseP.get('chest')!).toBeGreaterThan(baseN.get('chest')!); // priority protects base volume
 
-    const peakN = rampedByMuscle(nonPri.program, baseN, planN, peakWeek).get('chest')! / baseN.get('chest')!;
-    const peakP = rampedByMuscle(pri.program, baseP, planN, peakWeek).get('chest')! / baseP.get('chest')!;
+    const peakN =
+      rampedByMuscle(nonPri.program, baseN, planN, peakWeek).get('chest')! /
+      baseN.get('chest')!;
+    const peakP =
+      rampedByMuscle(pri.program, baseP, planN, peakWeek).get('chest')! /
+      baseP.get('chest')!;
     expect(peakP).toBeLessThan(peakN); // higher base ⇒ less headroom to MRV ⇒ shallower ratio
   });
 });

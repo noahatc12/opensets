@@ -46,7 +46,11 @@ const T2: StageSpec[] = [
 ];
 const T3: StageSpec = { sets: 3, reps: 15 };
 
-function buildStage(spec: StageSpec, weightLb: number, amrapLast: boolean): PrescribedSet[] {
+function buildStage(
+  spec: StageSpec,
+  weightLb: number,
+  amrapLast: boolean,
+): PrescribedSet[] {
   const out: PrescribedSet[] = [];
   for (let i = 0; i < spec.sets; i++) {
     const amrap = amrapLast && i === spec.sets - 1;
@@ -95,7 +99,12 @@ function tier12(
         reason: `${label} — starting at ${fmt(w)} lb.`,
         flags,
       },
-      nextState: { ...state, workingWeightLb: w, stage, anchorLb: state.anchorLb ?? w },
+      nextState: {
+        ...state,
+        workingWeightLb: w,
+        stage,
+        anchorLb: state.anchorLb ?? w,
+      },
     };
   }
 
@@ -115,7 +124,10 @@ function tier12(
     flags.push('stageChange');
     reason = `Missed — drop to ${table[nextStage]!.sets}×${table[nextStage]!.reps}, same weight.`;
   } else if (label === 'T1') {
-    nextWeight = roundLoad(0.85 * (bestSessionE1rm(work) ?? state.workingWeightLb), settings);
+    nextWeight = roundLoad(
+      0.85 * (bestSessionE1rm(work) ?? state.workingWeightLb),
+      settings,
+    );
     nextStage = 0;
     flags.push('stageChange');
     reason = `${label} stall — recalibrate to ${fmt(roundLoad(nextWeight, settings))} lb (≈85%), restart stage 1.`;
@@ -129,8 +141,17 @@ function tier12(
 
   const rw = roundLoad(nextWeight, settings);
   return {
-    prescription: { sets: buildStage(table[nextStage]!, rw, amrapLast), reason, flags },
-    nextState: { ...state, workingWeightLb: rw, stage: nextStage, anchorLb: anchor },
+    prescription: {
+      sets: buildStage(table[nextStage]!, rw, amrapLast),
+      reason,
+      flags,
+    },
+    nextState: {
+      ...state,
+      workingWeightLb: rw,
+      stage: nextStage,
+      anchorLb: anchor,
+    },
   };
 }
 

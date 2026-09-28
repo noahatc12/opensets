@@ -47,7 +47,7 @@ const TABS = [
   },
 ] as const;
 
-export function TabBar() {
+export function TabBar({ activePath }: { activePath?: string } = {}) {
   const nav = useNav();
   const { pathname } = useLocation();
   return (
@@ -57,6 +57,9 @@ export function TabBar() {
           key={t.to}
           to={t.to}
           className="os-tab os-press"
+          aria-current={
+            activePath ? (activePath === t.to ? 'page' : undefined) : undefined
+          }
           onClick={(e) => {
             if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
             e.preventDefault();

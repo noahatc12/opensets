@@ -1,7 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import { apreNext } from './apre';
 import { isLoadable } from '../rounding';
-import type { EngineSettings, ExerciseState, ProgressionRule, SetResult } from '../types';
+import type {
+  EngineSettings,
+  ExerciseState,
+  ProgressionRule,
+  SetResult,
+} from '../types';
 
 const settings: EngineSettings = {
   barLb: 45,
@@ -9,7 +14,8 @@ const settings: EngineSettings = {
   rounding: 'nearest',
   units: 'lb',
 };
-const rule = (rm: 3 | 6 | 10) => ({ kind: 'apre', rm }) as Extract<ProgressionRule, { kind: 'apre' }>;
+const rule = (rm: 3 | 6 | 10) =>
+  ({ kind: 'apre', rm }) as Extract<ProgressionRule, { kind: 'apre' }>;
 const state = (w = 100): ExerciseState => ({
   workingWeightLb: w,
   consecutiveFails: 0,
@@ -22,7 +28,9 @@ const amrap = (reps: number, completed = true): SetResult[] => [
   { weightLb: 100, reps, type: 'amrap', completed },
 ];
 const loadable = (r: ReturnType<typeof apreNext>) =>
-  r.prescription.sets.every((s) => isLoadable(s.targetWeightLb, settings.barLb, settings.plateInventoryLb));
+  r.prescription.sets.every((s) =>
+    isLoadable(s.targetWeightLb, settings.barLb, settings.plateInventoryLb),
+  );
 
 describe('APRE', () => {
   it('seeds a 4-set protocol with no history', () => {

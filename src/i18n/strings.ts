@@ -52,8 +52,7 @@ export const strings = {
     about: 'About',
     privacy:
       'Your data never leaves your device. No accounts, no servers, no tracking.',
-    disclaimer:
-      'Educational tool, not medical advice. Consult a professional.',
+    disclaimer: 'Educational tool, not medical advice. Consult a professional.',
   },
 } as const;
 

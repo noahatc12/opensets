@@ -80,7 +80,12 @@ export interface GenPreferences {
 }
 
 /** Rest-tier buckets (§3.7) — re-declared engine-local (engine may not import db). */
-export type RestTier = 'heavy' | 'compound' | 'accessory' | 'isolation' | 'pump';
+export type RestTier =
+  | 'heavy'
+  | 'compound'
+  | 'accessory'
+  | 'isolation'
+  | 'pump';
 
 export interface GeneratedSlot {
   exerciseId: string;
@@ -167,9 +172,23 @@ const DEFAULT_REST = { compoundSec: 180, isolationSec: 90 } as const;
 /** Equipment usable per gym profile. */
 const EQUIPMENT_POOL: Record<EquipmentProfile, ReadonlySet<string>> = {
   'Full gym': new Set([
-    'barbell', 'dumbbell', 'machine', 'cable', 'bodyweight', 'kettlebell', 'bands', 'ezBar',
+    'barbell',
+    'dumbbell',
+    'machine',
+    'cable',
+    'bodyweight',
+    'kettlebell',
+    'bands',
+    'ezBar',
   ]),
-  'Home rack': new Set(['barbell', 'dumbbell', 'bodyweight', 'kettlebell', 'bands', 'ezBar']),
+  'Home rack': new Set([
+    'barbell',
+    'dumbbell',
+    'bodyweight',
+    'kettlebell',
+    'bands',
+    'ezBar',
+  ]),
   Minimal: new Set(['dumbbell', 'bodyweight', 'kettlebell', 'bands']),
 };
 
@@ -187,47 +206,250 @@ interface Pattern {
 /* Movement patterns. `prefer` is the curated shortlist; `includes` is the broader
    eligibility net; `muscles` is the fallback. */
 const P: Record<string, Pattern> = {
-  horizPress: { key: 'horizPress', compound: true, muscles: ['chest'], prefer: ['barbell bench press', 'flat bench press', 'dumbbell bench press'], includes: ['bench press', 'push-up', 'push up', 'chest press', 'dip', 'chest dip'] },
-  inclPress: { key: 'inclPress', compound: true, muscles: ['chest'], prefer: ['incline dumbbell press', 'incline barbell bench press'], includes: ['incline'] },
-  vertPress: { key: 'vertPress', compound: true, muscles: ['shoulders'], prefer: ['standing military press', 'overhead press', 'seated dumbbell press', 'arnold dumbbell press'], includes: ['overhead press', 'shoulder press', 'military', 'push press', 'arnold'] },
-  lateralRaise: { key: 'lateralRaise', compound: false, muscles: ['shoulders'], prefer: ['side lateral raise', 'cable seated lateral raise'], includes: ['lateral raise', 'side lateral', 'side raise'] },
-  rearDelt: { key: 'rearDelt', compound: false, muscles: ['shoulders'], prefer: ['face pull', 'cable rear delt fly'], includes: ['rear delt', 'reverse fly', 'face pull', 'rear lateral'] },
-  tricep: { key: 'tricep', compound: false, muscles: ['triceps'], prefer: ['triceps pushdown', 'cable rope overhead triceps extension'], includes: ['pushdown', 'triceps extension', 'skullcrusher', 'kickback', 'triceps'] },
-  biceps: { key: 'biceps', compound: false, muscles: ['biceps'], prefer: ['barbell curl', 'incline dumbbell curl', 'hammer curls'], includes: ['curl'], excludes: ['leg curl', 'wrist'] },
-  squat: { key: 'squat', compound: true, muscles: ['quadriceps'], prefer: ['barbell squat', 'barbell full squat', 'front barbell squat'], includes: ['squat'], excludes: ['sissy', 'jump'] },
-  legPress: { key: 'legPress', compound: true, muscles: ['quadriceps'], prefer: ['leg press', 'dumbbell lunges', 'barbell walking lunge'], includes: ['leg press', 'lunge', 'split squat', 'hack squat', 'bulgarian'] },
-  legExt: { key: 'legExt', compound: false, muscles: ['quadriceps'], prefer: ['leg extensions'], includes: ['leg extension'] },
-  hinge: { key: 'hinge', compound: true, muscles: ['hamstrings', 'glutes'], prefer: ['romanian deadlift', 'barbell deadlift', 'hip thrust'], includes: ['deadlift', 'romanian', 'good morning', 'hip thrust'] },
-  legCurl: { key: 'legCurl', compound: false, muscles: ['hamstrings'], prefer: ['lying leg curls', 'seated leg curl'], includes: ['leg curl', 'lying leg curl', 'seated leg curl'] },
-  calf: { key: 'calf', compound: false, muscles: ['calves'], prefer: ['standing calf raises', 'seated calf raise'], includes: ['calf raise', 'calf press', 'calf'] },
-  vertPull: { key: 'vertPull', compound: true, muscles: ['lats'], prefer: ['pullups', 'wide-grip lat pulldown', 'chin-up'], includes: ['pulldown', 'pull-up', 'pull up', 'pullup', 'chin up', 'chin-up'] },
-  horizRow: { key: 'horizRow', compound: true, muscles: ['middleBack', 'lats'], prefer: ['bent over barbell row', 'seated cable rows', 'one-arm dumbbell row'], includes: ['row'], excludes: ['upright'] },
-  abs: { key: 'abs', compound: false, muscles: ['abdominals'], prefer: ['hanging leg raise', 'cable crunch', 'plank'], includes: ['crunch', 'plank', 'leg raise', 'sit-up', 'situp', 'hanging'] },
+  horizPress: {
+    key: 'horizPress',
+    compound: true,
+    muscles: ['chest'],
+    prefer: ['barbell bench press', 'flat bench press', 'dumbbell bench press'],
+    includes: [
+      'bench press',
+      'push-up',
+      'push up',
+      'chest press',
+      'dip',
+      'chest dip',
+    ],
+  },
+  inclPress: {
+    key: 'inclPress',
+    compound: true,
+    muscles: ['chest'],
+    prefer: ['incline dumbbell press', 'incline barbell bench press'],
+    includes: ['incline'],
+  },
+  vertPress: {
+    key: 'vertPress',
+    compound: true,
+    muscles: ['shoulders'],
+    prefer: [
+      'standing military press',
+      'overhead press',
+      'seated dumbbell press',
+      'arnold dumbbell press',
+    ],
+    includes: [
+      'overhead press',
+      'shoulder press',
+      'military',
+      'push press',
+      'arnold',
+    ],
+  },
+  lateralRaise: {
+    key: 'lateralRaise',
+    compound: false,
+    muscles: ['shoulders'],
+    prefer: ['side lateral raise', 'cable seated lateral raise'],
+    includes: ['lateral raise', 'side lateral', 'side raise'],
+  },
+  rearDelt: {
+    key: 'rearDelt',
+    compound: false,
+    muscles: ['shoulders'],
+    prefer: ['face pull', 'cable rear delt fly'],
+    includes: ['rear delt', 'reverse fly', 'face pull', 'rear lateral'],
+  },
+  tricep: {
+    key: 'tricep',
+    compound: false,
+    muscles: ['triceps'],
+    prefer: ['triceps pushdown', 'cable rope overhead triceps extension'],
+    includes: [
+      'pushdown',
+      'triceps extension',
+      'skullcrusher',
+      'kickback',
+      'triceps',
+    ],
+  },
+  biceps: {
+    key: 'biceps',
+    compound: false,
+    muscles: ['biceps'],
+    prefer: ['barbell curl', 'incline dumbbell curl', 'hammer curls'],
+    includes: ['curl'],
+    excludes: ['leg curl', 'wrist'],
+  },
+  squat: {
+    key: 'squat',
+    compound: true,
+    muscles: ['quadriceps'],
+    prefer: ['barbell squat', 'barbell full squat', 'front barbell squat'],
+    includes: ['squat'],
+    excludes: ['sissy', 'jump'],
+  },
+  legPress: {
+    key: 'legPress',
+    compound: true,
+    muscles: ['quadriceps'],
+    prefer: ['leg press', 'dumbbell lunges', 'barbell walking lunge'],
+    includes: ['leg press', 'lunge', 'split squat', 'hack squat', 'bulgarian'],
+  },
+  legExt: {
+    key: 'legExt',
+    compound: false,
+    muscles: ['quadriceps'],
+    prefer: ['leg extensions'],
+    includes: ['leg extension'],
+  },
+  hinge: {
+    key: 'hinge',
+    compound: true,
+    muscles: ['hamstrings', 'glutes'],
+    prefer: ['romanian deadlift', 'barbell deadlift', 'hip thrust'],
+    includes: ['deadlift', 'romanian', 'good morning', 'hip thrust'],
+  },
+  legCurl: {
+    key: 'legCurl',
+    compound: false,
+    muscles: ['hamstrings'],
+    prefer: ['lying leg curls', 'seated leg curl'],
+    includes: ['leg curl', 'lying leg curl', 'seated leg curl'],
+  },
+  calf: {
+    key: 'calf',
+    compound: false,
+    muscles: ['calves'],
+    prefer: ['standing calf raises', 'seated calf raise'],
+    includes: ['calf raise', 'calf press', 'calf'],
+  },
+  vertPull: {
+    key: 'vertPull',
+    compound: true,
+    muscles: ['lats'],
+    prefer: ['pullups', 'wide-grip lat pulldown', 'chin-up'],
+    includes: [
+      'pulldown',
+      'pull-up',
+      'pull up',
+      'pullup',
+      'chin up',
+      'chin-up',
+    ],
+  },
+  horizRow: {
+    key: 'horizRow',
+    compound: true,
+    muscles: ['middleBack', 'lats'],
+    prefer: [
+      'bent over barbell row',
+      'seated cable rows',
+      'one-arm dumbbell row',
+    ],
+    includes: ['row'],
+    excludes: ['upright'],
+  },
+  abs: {
+    key: 'abs',
+    compound: false,
+    muscles: ['abdominals'],
+    prefer: ['hanging leg raise', 'cable crunch', 'plank'],
+    includes: ['crunch', 'plank', 'leg raise', 'sit-up', 'situp', 'hanging'],
+  },
 };
 
 /** Per-pattern coaching data (§3.3/§3.4/§3.7): tempo string, one-line cue, rest tier.
  *  Keyed by pattern key so each generated slot gets per-exercise values, not one
  *  hardcoded default. Tempos follow the blueprints (compounds controlled-eccentric +
  *  pause; isolations a touch faster with a squeeze). */
-const COACHING: Record<string, { tempo: string; cue: string; tier: RestTier }> = {
-  horizPress: { tempo: '3-1-1-0', cue: 'Tuck elbows ~45°; touch the chest, drive up.', tier: 'heavy' },
-  inclPress: { tempo: '3-1-1-0', cue: 'Full stretch at the bottom, squeeze at the top.', tier: 'accessory' },
-  vertPress: { tempo: '2-1-1-0', cue: 'Brace hard; press in a straight line past the forehead.', tier: 'heavy' },
-  lateralRaise: { tempo: '2-1-1-0', cue: 'Lead with the elbows; pinky-high, no swing.', tier: 'pump' },
-  rearDelt: { tempo: '2-1-1-0', cue: 'Elbows slightly bent; squeeze the rear delts, not the traps.', tier: 'pump' },
-  tricep: { tempo: '2-1-1-0', cue: 'Pin the elbows; lock out hard and squeeze.', tier: 'isolation' },
-  biceps: { tempo: '2-0-1-0', cue: 'No swing; control the negative, squeeze at the top.', tier: 'isolation' },
-  squat: { tempo: '3-1-1-0', cue: 'Brace, sit between the hips, knees track over toes.', tier: 'heavy' },
-  legPress: { tempo: '2-1-1-0', cue: 'Full ROM; don’t let the knees cave or the low back round.', tier: 'accessory' },
-  legExt: { tempo: '2-1-1-0', cue: 'Pause and squeeze the quad at the top.', tier: 'isolation' },
-  hinge: { tempo: '3-1-1-0', cue: 'Hips back, flat back, feel the hamstring stretch.', tier: 'heavy' },
-  legCurl: { tempo: '2-1-1-0', cue: 'Squeeze the hamstrings; slow the negative.', tier: 'isolation' },
-  calf: { tempo: '2-1-1-1', cue: 'Full stretch at the bottom, pause at the top.', tier: 'pump' },
-  vertPull: { tempo: '2-1-1-0', cue: 'Drive the elbows down; lead with the lats, not the arms.', tier: 'compound' },
-  horizRow: { tempo: '2-1-1-0', cue: 'Pull to the lower ribs; retract the shoulder blades.', tier: 'compound' },
-  abs: { tempo: '2-1-2-0', cue: 'Move slowly; brace and exhale through the crunch.', tier: 'pump' },
+const COACHING: Record<string, { tempo: string; cue: string; tier: RestTier }> =
+  {
+    horizPress: {
+      tempo: '3-1-1-0',
+      cue: 'Tuck elbows ~45°; touch the chest, drive up.',
+      tier: 'heavy',
+    },
+    inclPress: {
+      tempo: '3-1-1-0',
+      cue: 'Full stretch at the bottom, squeeze at the top.',
+      tier: 'accessory',
+    },
+    vertPress: {
+      tempo: '2-1-1-0',
+      cue: 'Brace hard; press in a straight line past the forehead.',
+      tier: 'heavy',
+    },
+    lateralRaise: {
+      tempo: '2-1-1-0',
+      cue: 'Lead with the elbows; pinky-high, no swing.',
+      tier: 'pump',
+    },
+    rearDelt: {
+      tempo: '2-1-1-0',
+      cue: 'Elbows slightly bent; squeeze the rear delts, not the traps.',
+      tier: 'pump',
+    },
+    tricep: {
+      tempo: '2-1-1-0',
+      cue: 'Pin the elbows; lock out hard and squeeze.',
+      tier: 'isolation',
+    },
+    biceps: {
+      tempo: '2-0-1-0',
+      cue: 'No swing; control the negative, squeeze at the top.',
+      tier: 'isolation',
+    },
+    squat: {
+      tempo: '3-1-1-0',
+      cue: 'Brace, sit between the hips, knees track over toes.',
+      tier: 'heavy',
+    },
+    legPress: {
+      tempo: '2-1-1-0',
+      cue: 'Full ROM; don’t let the knees cave or the low back round.',
+      tier: 'accessory',
+    },
+    legExt: {
+      tempo: '2-1-1-0',
+      cue: 'Pause and squeeze the quad at the top.',
+      tier: 'isolation',
+    },
+    hinge: {
+      tempo: '3-1-1-0',
+      cue: 'Hips back, flat back, feel the hamstring stretch.',
+      tier: 'heavy',
+    },
+    legCurl: {
+      tempo: '2-1-1-0',
+      cue: 'Squeeze the hamstrings; slow the negative.',
+      tier: 'isolation',
+    },
+    calf: {
+      tempo: '2-1-1-1',
+      cue: 'Full stretch at the bottom, pause at the top.',
+      tier: 'pump',
+    },
+    vertPull: {
+      tempo: '2-1-1-0',
+      cue: 'Drive the elbows down; lead with the lats, not the arms.',
+      tier: 'compound',
+    },
+    horizRow: {
+      tempo: '2-1-1-0',
+      cue: 'Pull to the lower ribs; retract the shoulder blades.',
+      tier: 'compound',
+    },
+    abs: {
+      tempo: '2-1-2-0',
+      cue: 'Move slowly; brace and exhale through the crunch.',
+      tier: 'pump',
+    },
+  };
+const DEFAULT_COACHING = {
+  tempo: '2-0-1-0',
+  cue: 'Control the weight through a full range of motion.',
+  tier: 'accessory' as RestTier,
 };
-const DEFAULT_COACHING = { tempo: '2-0-1-0', cue: 'Control the weight through a full range of motion.', tier: 'accessory' as RestTier };
 
 /* Day archetypes — each an ordered Pattern[] the per-pattern fill consumes (repeating a
    pattern is fine: the `used` set makes the 2nd pick a different exercise for that pattern,
@@ -235,25 +457,68 @@ const DEFAULT_COACHING = { tempo: '2-0-1-0', cue: 'Control the weight through a 
    are the base set; Arms + the body-part days (Chest/Back/Shoulders) power pplArms /
    bodyPart splits and priority arm-specialization. */
 const DAY_TEMPLATES: Record<string, Pattern[]> = {
-  Push: [P.horizPress!, P.vertPress!, P.inclPress!, P.lateralRaise!, P.tricep!, P.rearDelt!],
+  Push: [
+    P.horizPress!,
+    P.vertPress!,
+    P.inclPress!,
+    P.lateralRaise!,
+    P.tricep!,
+    P.rearDelt!,
+  ],
   Pull: [P.vertPull!, P.horizRow!, P.hinge!, P.biceps!, P.rearDelt!, P.abs!],
   Legs: [P.squat!, P.hinge!, P.legPress!, P.legCurl!, P.calf!, P.legExt!],
-  Upper: [P.horizPress!, P.vertPull!, P.vertPress!, P.horizRow!, P.biceps!, P.tricep!],
+  Upper: [
+    P.horizPress!,
+    P.vertPull!,
+    P.vertPress!,
+    P.horizRow!,
+    P.biceps!,
+    P.tricep!,
+  ],
   Lower: [P.squat!, P.hinge!, P.legPress!, P.legCurl!, P.calf!, P.abs!],
   Full: [P.squat!, P.horizPress!, P.horizRow!, P.vertPress!, P.hinge!, P.abs!],
   Arms: [P.tricep!, P.biceps!, P.tricep!, P.biceps!, P.tricep!, P.biceps!],
-  Chest: [P.horizPress!, P.inclPress!, P.horizPress!, P.inclPress!, P.lateralRaise!, P.tricep!],
-  Back: [P.vertPull!, P.horizRow!, P.vertPull!, P.horizRow!, P.biceps!, P.rearDelt!],
-  Shoulders: [P.vertPress!, P.lateralRaise!, P.rearDelt!, P.lateralRaise!, P.vertPress!, P.tricep!],
+  Chest: [
+    P.horizPress!,
+    P.inclPress!,
+    P.horizPress!,
+    P.inclPress!,
+    P.lateralRaise!,
+    P.tricep!,
+  ],
+  Back: [
+    P.vertPull!,
+    P.horizRow!,
+    P.vertPull!,
+    P.horizRow!,
+    P.biceps!,
+    P.rearDelt!,
+  ],
+  Shoulders: [
+    P.vertPress!,
+    P.lateralRaise!,
+    P.rearDelt!,
+    P.lateralRaise!,
+    P.vertPress!,
+    P.tricep!,
+  ],
 };
 
 /* Representative pattern per priority muscle — inserted as an emphasis slot near the
    front of a day that already trains the muscle, so after the per-day cap it pushes out a
    tail accessory (priority "modulates within structure"; it never adds a day). */
 const PRIORITY_PATTERN: Partial<Record<Muscle, Pattern>> = {
-  chest: P.inclPress!, lats: P.vertPull!, middleBack: P.horizRow!, shoulders: P.lateralRaise!,
-  biceps: P.biceps!, triceps: P.tricep!, quadriceps: P.legExt!, hamstrings: P.legCurl!,
-  glutes: P.hinge!, calves: P.calf!, abdominals: P.abs!,
+  chest: P.inclPress!,
+  lats: P.vertPull!,
+  middleBack: P.horizRow!,
+  shoulders: P.lateralRaise!,
+  biceps: P.biceps!,
+  triceps: P.tricep!,
+  quadriceps: P.legExt!,
+  hamstrings: P.legCurl!,
+  glutes: P.hinge!,
+  calves: P.calf!,
+  abdominals: P.abs!,
 };
 
 const alternate = (pair: string[], n: number): string[] =>
@@ -266,39 +531,63 @@ const cycle = (seq: string[], n: number): string[] =>
  *  `days` is the hard constraint, `splitChoice` a preference). */
 function fitChoice(choice: SplitChoice, days: number): string[] | null {
   switch (choice) {
-    case 'fullBody': return Array.from({ length: days }, () => 'Full');
-    case 'upperLower': return days === 4 || days === 6 ? alternate(['Upper', 'Lower'], days) : null;
-    case 'pushPullLegs': return days === 3 || days === 6 ? cycle(['Push', 'Pull', 'Legs'], days) : null;
+    case 'fullBody':
+      return Array.from({ length: days }, () => 'Full');
+    case 'upperLower':
+      return days === 4 || days === 6
+        ? alternate(['Upper', 'Lower'], days)
+        : null;
+    case 'pushPullLegs':
+      return days === 3 || days === 6
+        ? cycle(['Push', 'Pull', 'Legs'], days)
+        : null;
     case 'pplArms':
       if (days === 4) return ['Push', 'Pull', 'Legs', 'Arms'];
       if (days === 5) return ['Push', 'Pull', 'Legs', 'Arms', 'Upper'];
       return null;
     case 'bodyPart':
       if (days === 5) return ['Chest', 'Back', 'Shoulders', 'Legs', 'Arms'];
-      if (days === 6) return ['Chest', 'Back', 'Shoulders', 'Legs', 'Arms', 'Upper'];
+      if (days === 6)
+        return ['Chest', 'Back', 'Shoulders', 'Legs', 'Arms', 'Upper'];
       return null;
-    default: return null; // 'auto'
+    default:
+      return null; // 'auto'
   }
 }
 
 /** The auto split by class + goal + days. Novices, strength, and general-fitness lean to
  *  full-body / upper-lower (high frequency, compounds recur); hypertrophy/recomp/fat-loss
  *  for trained lifters distribute volume via push/pull/legs. `days` is always honored. */
-function autoSequence(goal: TrainingGoal, exp: Experience, days: number): string[] {
-  const balanced = exp === 'Novice' || goal === 'Get stronger' || goal === 'General fitness';
+function autoSequence(
+  goal: TrainingGoal,
+  exp: Experience,
+  days: number,
+): string[] {
+  const balanced =
+    exp === 'Novice' || goal === 'Get stronger' || goal === 'General fitness';
   if (balanced) {
     switch (days) {
-      case 3: return ['Full', 'Full', 'Full'];
-      case 4: return ['Upper', 'Lower', 'Upper', 'Lower'];
-      case 5: return ['Upper', 'Lower', 'Upper', 'Lower', 'Full'];
-      default: return ['Upper', 'Lower', 'Upper', 'Lower', 'Upper', 'Lower']; // 6
+      case 3:
+        return ['Full', 'Full', 'Full'];
+      case 4:
+        return ['Upper', 'Lower', 'Upper', 'Lower'];
+      case 5:
+        return ['Upper', 'Lower', 'Upper', 'Lower', 'Full'];
+      default:
+        return ['Upper', 'Lower', 'Upper', 'Lower', 'Upper', 'Lower']; // 6
     }
   }
-  switch (days) { // hypertrophy / recomp / fat-loss, trained
-    case 3: return ['Push', 'Pull', 'Legs'];
-    case 4: return ['Upper', 'Lower', 'Upper', 'Lower'];
-    case 5: return ['Push', 'Pull', 'Legs', 'Upper', 'Lower'];
-    default: return ['Push', 'Pull', 'Legs', 'Push', 'Pull', 'Legs']; // 6
+  switch (
+    days // hypertrophy / recomp / fat-loss, trained
+  ) {
+    case 3:
+      return ['Push', 'Pull', 'Legs'];
+    case 4:
+      return ['Upper', 'Lower', 'Upper', 'Lower'];
+    case 5:
+      return ['Push', 'Pull', 'Legs', 'Upper', 'Lower'];
+    default:
+      return ['Push', 'Pull', 'Legs', 'Push', 'Pull', 'Legs']; // 6
   }
 }
 
@@ -306,10 +595,15 @@ function autoSequence(goal: TrainingGoal, exp: Experience, days: number): string
  *  warrant it (priority "earns a dedicated day only with budget"): trained lifter, ≥5
  *  days, arms flagged, and no Arms day already. Never adds a day — replaces one. */
 function withArmsSpecialization(
-  seq: string[], priority: readonly Muscle[], exp: Experience, days: number,
+  seq: string[],
+  priority: readonly Muscle[],
+  exp: Experience,
+  days: number,
 ): string[] {
-  const armPriority = priority.includes('biceps') || priority.includes('triceps');
-  if (!armPriority || exp === 'Novice' || days < 5 || seq.includes('Arms')) return seq;
+  const armPriority =
+    priority.includes('biceps') || priority.includes('triceps');
+  if (!armPriority || exp === 'Novice' || days < 5 || seq.includes('Arms'))
+    return seq;
   // Reallocate the most redundant secondary day first (Upper/Full before a primary Pull),
   // and never the leading day — so we don't sacrifice a primary movement day.
   let idx = -1;
@@ -327,8 +621,11 @@ function withArmsSpecialization(
  *  same inputs → same sequence (exercise-level variety/rotation is R4, not here).
  *  Exported for the split-matrix tests. */
 export function splitSequence(
-  goal: TrainingGoal, exp: Experience, days: number,
-  splitChoice: SplitChoice, priority: readonly Muscle[],
+  goal: TrainingGoal,
+  exp: Experience,
+  days: number,
+  splitChoice: SplitChoice,
+  priority: readonly Muscle[],
 ): string[] {
   // fitChoice returns null for 'auto' (and for any choice that doesn't fit the days),
   // so the composer falls through to the auto split.
@@ -339,7 +636,10 @@ export function splitSequence(
 /** Insert an emphasis slot for each priority muscle the day trains (after the first
  *  matching pattern), so the per-day cap keeps the priority work and drops a tail
  *  accessory. Days that don't train the muscle are untouched (no spurious slots). */
-function priorityEmphasis(base: Pattern[], priority: readonly Muscle[]): Pattern[] {
+function priorityEmphasis(
+  base: Pattern[],
+  priority: readonly Muscle[],
+): Pattern[] {
   if (priority.length === 0) return base;
   const out = [...base];
   for (const m of priority) {
@@ -376,12 +676,19 @@ function exercisesPerDay(exp: Experience): number {
  * recomp / fat-loss reward machine/cable/dumbbell variety on isolation. The curated
  * `prefer` list gets a strong bonus so vetted lifts win over generic name matches.
  */
-function score(ex: GenExercise, pat: Pattern, pool: ReadonlySet<string>, strength: boolean): number {
+function score(
+  ex: GenExercise,
+  pat: Pattern,
+  pool: ReadonlySet<string>,
+  strength: boolean,
+): number {
   const equip = ex.equipment ?? 'undefined';
   if (!pool.has(equip)) return -1;
   const n = ex.nameNorm;
   if (pat.excludes?.some((x) => n.includes(x))) return -1;
-  const nameHit = pat.includes.some((k) => n.includes(k.replace(/-/g, ' ')) || n.includes(k));
+  const nameHit = pat.includes.some(
+    (k) => n.includes(k.replace(/-/g, ' ')) || n.includes(k),
+  );
   const muscleHit = ex.primaryMuscles.some((m) => pat.muscles.includes(m));
   if (!nameHit && !muscleHit) return -1;
 
@@ -398,7 +705,11 @@ function score(ex: GenExercise, pat: Pattern, pool: ReadonlySet<string>, strengt
     if (pat.compound && equip === 'barbell') s += 3;
   } else {
     if (pat.compound && (equip === 'barbell' || equip === 'dumbbell')) s += 2;
-    if (!pat.compound && (equip === 'machine' || equip === 'cable' || equip === 'dumbbell')) s += 2;
+    if (
+      !pat.compound &&
+      (equip === 'machine' || equip === 'cable' || equip === 'dumbbell')
+    )
+      s += 2;
   }
   return s;
 }
@@ -406,7 +717,8 @@ function score(ex: GenExercise, pat: Pattern, pool: ReadonlySet<string>, strengt
 /* Starting weights: see ../body.ts (movement- and body-aware, replaces the old flat
    equipment constants that seeded squat, bench, press and deadlift identically). */
 
-const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
+const clamp = (v: number, lo: number, hi: number) =>
+  Math.min(hi, Math.max(lo, v));
 
 /* ── R3 · VOLUME ALLOCATOR ─────────────────────────────────────────────────────
    Per-muscle weekly set targets from the `mesocycle.ts` landmark data (previously
@@ -451,7 +763,8 @@ function patternCredit(pat: Pattern, direct: boolean): Array<[Muscle, number]> {
   if (!direct) {
     for (const m of pat.muscles.slice(1)) out.push([m, 0.5]);
     const syn = SYNERGIST[pat.key];
-    if (syn) for (const k of Object.keys(syn) as Muscle[]) out.push([k, syn[k]!]);
+    if (syn)
+      for (const k of Object.keys(syn) as Muscle[]) out.push([k, syn[k]!]);
   }
   return out;
 }
@@ -459,7 +772,14 @@ function patternCredit(pat: Pattern, direct: boolean): Array<[Muscle, number]> {
 /** Isolation-dominant muscles — the female between-SET volume tolerance applies here
  *  only (research C4: more submax/accessory volume, shorter rest; NOT a blanket weekly
  *  increase, and between-session recovery stays sex-neutral). [Mixed] evidence. */
-const ACCESSORY = new Set<Muscle>(['biceps', 'triceps', 'shoulders', 'calves', 'abdominals', 'forearms']);
+const ACCESSORY = new Set<Muscle>([
+  'biceps',
+  'triceps',
+  'shoulders',
+  'calves',
+  'abdominals',
+  'forearms',
+]);
 
 interface AllocOpts {
   priority: ReadonlySet<Muscle>;
@@ -483,8 +803,10 @@ function weeklyTarget(m: Muscle, o: AllocOpts): number {
     return o.priority.has(m) ? 8 : 6;
   }
   let base = o.priority.has(m) ? mav : mev;
-  if (o.goal === 'Lose fat') base = mev; // maintenance volume in a deficit (cardio carries the deficit, S7)
-  else if (o.goal === 'General fitness') base = Math.round(mev + 0.25 * (mav - mev)); // balanced moderate
+  if (o.goal === 'Lose fat')
+    base = mev; // maintenance volume in a deficit (cardio carries the deficit, S7)
+  else if (o.goal === 'General fitness')
+    base = Math.round(mev + 0.25 * (mav - mev)); // balanced moderate
   if (o.female && ACCESSORY.has(m)) base = Math.min(base + 2, mrv); // C4 between-set tolerance (accessory only)
   if (o.ageYears !== undefined && o.ageYears >= 50) base = Math.min(base, 12); // C3 older cap (intensity untouched)
   return clamp(base, mev, mrv);
@@ -520,7 +842,10 @@ function allocateVolume(
     const seen = new Set<Muscle>();
     for (const p of pats) {
       const m = p.muscles[0]!;
-      if (!seen.has(m)) { seen.add(m); (homeDays.get(m) ?? homeDays.set(m, []).get(m)!).push(di); }
+      if (!seen.has(m)) {
+        seen.add(m);
+        (homeDays.get(m) ?? homeDays.set(m, []).get(m)!).push(di);
+      }
     }
   });
 
@@ -533,7 +858,8 @@ function allocateVolume(
       if (placed >= compoundBudget) break;
       if (!pat.compound) continue;
       perDay[di]!.push({ pat, sets: BASE_COMPOUND_SETS });
-      for (const [m, c] of patternCredit(pat, direct)) add(m, c * BASE_COMPOUND_SETS);
+      for (const [m, c] of patternCredit(pat, direct))
+        add(m, c * BASE_COMPOUND_SETS);
       placed++;
     }
   });
@@ -545,12 +871,30 @@ function allocateVolume(
   // The MEV floor overrides the soft cap AND the slot budget (the abs / tail-accessory
   // fix); the soft cap caps surplus once MEV is met (priority is frequency-limited).
   const ORDER: Muscle[] = [
-    'chest', 'lats', 'middleBack', 'quadriceps', 'hamstrings', 'glutes', 'shoulders',
-    'traps', 'biceps', 'triceps', 'forearms', 'calves', 'abdominals', 'lowerBack',
+    'chest',
+    'lats',
+    'middleBack',
+    'quadriceps',
+    'hamstrings',
+    'glutes',
+    'shoulders',
+    'traps',
+    'biceps',
+    'triceps',
+    'forearms',
+    'calves',
+    'abdominals',
+    'lowerBack',
   ];
-  const rank = (m: Muscle) => { const i = ORDER.indexOf(m); return i < 0 ? 99 : i; };
-  const muscles = [...homeDays.keys()].sort((a, b) =>
-    (o.priority.has(a) ? 0 : 1) - (o.priority.has(b) ? 0 : 1) || rank(a) - rank(b) || a.localeCompare(b),
+  const rank = (m: Muscle) => {
+    const i = ORDER.indexOf(m);
+    return i < 0 ? 99 : i;
+  };
+  const muscles = [...homeDays.keys()].sort(
+    (a, b) =>
+      (o.priority.has(a) ? 0 : 1) - (o.priority.has(b) ? 0 : 1) ||
+      rank(a) - rank(b) ||
+      a.localeCompare(b),
   );
 
   for (const m of muscles) {
@@ -564,7 +908,10 @@ function allocateVolume(
     const slotsNeeded = Math.max(1, Math.ceil(deficit / MAX_SETS_PER_SLOT));
     const perSession = Math.ceil(deficit / slotsNeeded);
     const sessionSets = (di: number) =>
-      perDay[di]!.filter((s) => s.pat.muscles[0] === m).reduce((a, s) => a + s.sets, 0);
+      perDay[di]!.filter((s) => s.pat.muscles[0] === m).reduce(
+        (a, s) => a + s.sets,
+        0,
+      );
     while (deficit > 0.5) {
       const belowMev = (weekly.get(m) ?? 0) < mev;
       // Place on the LEAST-LOADED eligible home day (balances total slots across the week
@@ -573,22 +920,32 @@ function allocateVolume(
       let day = -1;
       let bestLoad = Infinity;
       for (const d of days) {
-        const eligible = belowMev || (perDay[d]!.length < slotBudget && sessionSets(d) < softCap);
-        if (eligible && perDay[d]!.length < bestLoad) { bestLoad = perDay[d]!.length; day = d; }
+        const eligible =
+          belowMev ||
+          (perDay[d]!.length < slotBudget && sessionSets(d) < softCap);
+        if (eligible && perDay[d]!.length < bestLoad) {
+          bestLoad = perDay[d]!.length;
+          day = d;
+        }
       }
       if (day < 0) break; // no room left → surplus is frequency-limited
       // 2nd+ slot for a muscle in a session → prefer an isolation pattern (doubling with
       // variety); the selection loop picks a distinct exercise. A small trailing remainder
       // folds into an existing slot rather than spawning a 1-set fragment.
-      const existing = perDay[day]!.find((s) => s.pat.muscles[0] === m && s.sets < MAX_SETS_PER_SLOT);
+      const existing = perDay[day]!.find(
+        (s) => s.pat.muscles[0] === m && s.sets < MAX_SETS_PER_SLOT,
+      );
       const want = Math.min(perSession, Math.round(deficit), MAX_SETS_PER_SLOT);
       if (existing && want <= 2) {
         const bump = Math.min(want, MAX_SETS_PER_SLOT - existing.sets);
         existing.sets += bump;
-        for (const [mm, c] of patternCredit(existing.pat, direct)) add(mm, c * bump);
+        for (const [mm, c] of patternCredit(existing.pat, direct))
+          add(mm, c * bump);
       } else {
         const pats = dayPatterns[day]!.filter((p) => p.muscles[0] === m);
-        const pat = (sessionSets(day) > 0 ? pats.find((p) => !p.compound) : undefined) ?? pats[0]!;
+        const pat =
+          (sessionSets(day) > 0 ? pats.find((p) => !p.compound) : undefined) ??
+          pats[0]!;
         const sets = Math.max(1, want);
         perDay[day]!.push({ pat, sets });
         for (const [mm, c] of patternCredit(pat, direct)) add(mm, c * sets);
@@ -610,7 +967,10 @@ function allocateVolume(
 /** The muscles (with fractions) a single set of pattern `patternKey` credits under the
  *  goal's counting mode — `direct` (strength) counts the primary only; fractional
  *  (hypertrophy) adds synergists at 0.5. Exported for the counting-switch proof. */
-export function creditFor(patternKey: string, direct: boolean): Array<[Muscle, number]> {
+export function creditFor(
+  patternKey: string,
+  direct: boolean,
+): Array<[Muscle, number]> {
   const p = P[patternKey];
   return p ? patternCredit(p, direct) : [];
 }
@@ -635,7 +995,13 @@ export function generatePlan(
   // Rep-range/volume schemes adapt to goal (linear for strength, double for hypertrophy).
   const compoundRule: ProgressionRule = strength
     ? { kind: 'linear', incrementLb: 2.5, failsBeforeDeload: 3, deloadPct: 0.1 }
-    : { kind: 'double', repMin: fatLoss ? 8 : 6, repMax: fatLoss ? 12 : 10, incrementLb: 2.5, perSet: false };
+    : {
+        kind: 'double',
+        repMin: fatLoss ? 8 : 6,
+        repMax: fatLoss ? 12 : 10,
+        incrementLb: 2.5,
+        perSet: false,
+      };
   const isoRule: ProgressionRule = {
     kind: 'double',
     repMin: fatLoss ? 12 : 10,
@@ -645,18 +1011,30 @@ export function generatePlan(
   };
   const compoundScheme = strength
     ? { sets: 3, repTarget: 5 }
-    : { sets: 3, repRange: [fatLoss ? 8 : 6, fatLoss ? 12 : 10] as [number, number] };
-  const isoScheme = { sets: 3, repRange: [fatLoss ? 12 : 10, fatLoss ? 15 : 14] as [number, number] };
+    : {
+        sets: 3,
+        repRange: [fatLoss ? 8 : 6, fatLoss ? 12 : 10] as [number, number],
+      };
+  const isoScheme = {
+    sets: 3,
+    repRange: [fatLoss ? 12 : 10, fatLoss ? 15 : 14] as [number, number],
+  };
 
   // GZCLP per-slot tier schemes (the engine derives reps from the rule; these drive
   // the preview to match stage 0).
   const gzScheme = (tier: 1 | 2 | 3) =>
-    tier === 1 ? { sets: 5, repTarget: 3 } : tier === 2 ? { sets: 3, repTarget: 10 } : { sets: 3, repTarget: 15 };
+    tier === 1
+      ? { sets: 5, repTarget: 3 }
+      : tier === 2
+        ? { sets: 3, repTarget: 10 }
+        : { sets: 3, repTarget: 15 };
 
   // Goal/training-age-aware split designer (R2): composes the week's day structure from
   // the persisted preference inputs, then biases it toward the priority muscles.
   const baseTypes = splitSequence(
-    goal, experience, days,
+    goal,
+    experience,
+    days,
     preferences.splitChoice ?? 'auto',
     preferences.priorityMuscles ?? [],
   );
@@ -666,7 +1044,10 @@ export function generatePlan(
   // flat `.slice(0, perDay)`, now decides which patterns become slots and with how many
   // sets, so the day's tail (abs / calves / rear-delt) can't be positionally dropped.
   const dayPatterns: Pattern[][] = baseTypes.map((t) =>
-    priorityEmphasis(DAY_TEMPLATES[t] ?? DAY_TEMPLATES.Full!, preferences.priorityMuscles ?? []),
+    priorityEmphasis(
+      DAY_TEMPLATES[t] ?? DAY_TEMPLATES.Full!,
+      preferences.priorityMuscles ?? [],
+    ),
   );
 
   let alloc: AllocSlot[][];
@@ -675,7 +1056,9 @@ export function generatePlan(
     // GZCLP carries its own tier-based set/rep structure (the volume model IS the stage
     // machine), so it keeps the legacy per-day-budget fill; per-muscle MEV-set targeting
     // is a hypertrophy concept and doesn't apply. (GZCLP = get-stronger + novice only.)
-    alloc = dayPatterns.map((pats) => pats.slice(0, perDay).map((pat) => ({ pat, sets: 0 })));
+    alloc = dayPatterns.map((pats) =>
+      pats.slice(0, perDay).map((pat) => ({ pat, sets: 0 })),
+    );
     weeklyByMuscle = new Map();
   } else {
     const a = allocateVolume(dayPatterns, perDay, {
@@ -706,10 +1089,16 @@ export function generatePlan(
         const sc = score(ex, pat, pool, strength);
         if (sc < 0) continue;
         if (used.has(ex.id)) {
-          if (sc > bestUsedScore) { bestUsedScore = sc; bestUsedFallback = ex; }
+          if (sc > bestUsedScore) {
+            bestUsedScore = sc;
+            bestUsedFallback = ex;
+          }
           continue;
         }
-        if (sc > bestScore) { bestScore = sc; best = ex; }
+        if (sc > bestScore) {
+          bestScore = sc;
+          best = ex;
+        }
       }
       const chosen = best ?? bestUsedFallback;
       if (!chosen) continue;
@@ -722,16 +1111,26 @@ export function generatePlan(
       if (loadType === 'bodyweight' && !useGzclp) {
         // Bodyweight lifts progress by reps, not by adding plates to a push-up.
         rule = { kind: 'repsOnly', repIncrement: 1 };
-        scheme = { ...(pat.compound ? compoundScheme : isoScheme), sets: allocSets };
+        scheme = {
+          ...(pat.compound ? compoundScheme : isoScheme),
+          sets: allocSets,
+        };
       } else if (useGzclp) {
-        const tier: 1 | 2 | 3 = !pat.compound ? 3 : dayCompoundCount === 0 ? 1 : 2;
+        const tier: 1 | 2 | 3 = !pat.compound
+          ? 3
+          : dayCompoundCount === 0
+            ? 1
+            : 2;
         if (pat.compound) dayCompoundCount += 1;
         rule = { kind: 'gzclp', tier };
         scheme = gzScheme(tier);
       } else {
         rule = pat.compound ? compoundRule : isoRule;
         // R3: the per-slot set count is the allocated volume, not flat 3.
-        scheme = { ...(pat.compound ? compoundScheme : isoScheme), sets: allocSets };
+        scheme = {
+          ...(pat.compound ? compoundScheme : isoScheme),
+          sets: allocSets,
+        };
       }
 
       const coaching = COACHING[pat.key] ?? DEFAULT_COACHING;
@@ -764,11 +1163,15 @@ export function generatePlan(
   }
 
   const goalShort =
-    goal === 'Get stronger' ? 'Strength'
-    : goal === 'Lose fat' ? 'Cut'
-    : goal === 'Recomposition' ? 'Recomp'
-    : goal === 'General fitness' ? 'Fitness'
-    : 'Hypertrophy';
+    goal === 'Get stronger'
+      ? 'Strength'
+      : goal === 'Lose fat'
+        ? 'Cut'
+        : goal === 'Recomposition'
+          ? 'Recomp'
+          : goal === 'General fitness'
+            ? 'Fitness'
+            : 'Hypertrophy';
 
   // Block mesocycle (§2.2) — sized to the goal timeframe (default 6 wk). GZCLP is
   // self-periodizing (its own stage machine), so those programs carry no mesocycle.
@@ -789,14 +1192,19 @@ export function generatePlan(
   }
 
   const weeklyVolumeByMuscle: Partial<Record<Muscle, number>> = {};
-  for (const [m, n] of weeklyByMuscle) weeklyVolumeByMuscle[m] = Math.round(n * 10) / 10;
+  for (const [m, n] of weeklyByMuscle)
+    weeklyVolumeByMuscle[m] = Math.round(n * 10) / 10;
 
   return {
     program: { name: `${goalShort} · ${days}d`, days: planDays },
     mesocycle,
     weeklyVolumeByMuscle,
     // Scaffolds — shape only this session (filled by later waves).
-    cardioProtocol: { weeklyMinutesTarget: 0, dailyStepTarget: 0, sessions: [] },
+    cardioProtocol: {
+      weeklyMinutesTarget: 0,
+      dailyStepTarget: 0,
+      sessions: [],
+    },
     goals: [],
     calibrationWeek: {
       isCalibrationWeek: true,

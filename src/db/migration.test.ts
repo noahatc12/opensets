@@ -69,10 +69,15 @@ describe('schema v1 → v4 migration (profile store + prescription fields + pref
     await migrated.open(); // runs version(2), version(3) AND version(4) upgrades in sequence
 
     // The inviolable: every v1 row survives the version bumps.
-    expect(await migrated.programs.get('p1')).toMatchObject({ name: 'My Program', isActive: true });
+    expect(await migrated.programs.get('p1')).toMatchObject({
+      name: 'My Program',
+      isActive: true,
+    });
     expect(await migrated.settings.get('user')).toMatchObject({ units: 'lb' });
     expect(await migrated.sets.count()).toBe(1);
-    expect(await migrated.measurements.get('m1')).toMatchObject({ valueLb: 150 });
+    expect(await migrated.measurements.get('m1')).toMatchObject({
+      valueLb: 150,
+    });
     expect(await migrated.profile.count()).toBe(0); // v2 store exists, empty
 
     // A snapshot per step, each labelled with ITS source version, pruned to the spec's
@@ -81,7 +86,9 @@ describe('schema v1 → v4 migration (profile store + prescription fields + pref
     const all = await migrated.backups.toArray();
     const versions = all.map((b) => b.schemaVersion).sort();
     expect(versions).toEqual([2, 3]);
-    expect(all.find((b) => b.schemaVersion === 2)!.envelope.data.sets).toHaveLength(1);
+    expect(
+      all.find((b) => b.schemaVersion === 2)!.envelope.data.sets,
+    ).toHaveLength(1);
 
     migrated.close();
     await Dexie.delete(NAME);
@@ -95,8 +102,23 @@ describe('schema v1 → v4 migration (profile store + prescription fields + pref
     v2.version(2).stores({ ...V1_STORES, profile: 'key' });
     await v2.open();
     await v2.table('templates').add({
-      id: 't1', programId: 'p1', dayIndex: 0, name: 'Day 1',
-      slots: [{ slotId: 's1', exerciseId: 'bench', order: 0, scheme: { sets: 3 }, progressionRule: { kind: 'manual' }, restWarmupSec: 60, restWorkSec: 120, warmupPolicy: 'auto', substitutionPolicy: 'carryState' }],
+      id: 't1',
+      programId: 'p1',
+      dayIndex: 0,
+      name: 'Day 1',
+      slots: [
+        {
+          slotId: 's1',
+          exerciseId: 'bench',
+          order: 0,
+          scheme: { sets: 3 },
+          progressionRule: { kind: 'manual' },
+          restWarmupSec: 60,
+          restWorkSec: 120,
+          warmupPolicy: 'auto',
+          substitutionPolicy: 'carryState',
+        },
+      ],
     });
     v2.close();
 
@@ -110,11 +132,15 @@ describe('schema v1 → v4 migration (profile store + prescription fields + pref
     expect(tpl!.slots[0]!.tempo).toBeUndefined();
     tpl!.slots[0]!.tempo = '3-1-1-0';
     await migrated.templates.put(tpl!);
-    expect((await migrated.templates.get('t1'))!.slots[0]!.tempo).toBe('3-1-1-0');
+    expect((await migrated.templates.get('t1'))!.slots[0]!.tempo).toBe(
+      '3-1-1-0',
+    );
 
     // Two snapshots from this open — the v3 and v4 upgrade steps, each labelled with
     // its own source version (proves the fromVersion fix across the new bump too).
-    const versions = (await migrated.backups.toArray()).map((b) => b.schemaVersion).sort();
+    const versions = (await migrated.backups.toArray())
+      .map((b) => b.schemaVersion)
+      .sort();
     expect(versions).toEqual([2, 3]);
 
     migrated.close();
@@ -129,9 +155,18 @@ describe('schema v1 → v4 migration (profile store + prescription fields + pref
     v3.version(3).stores({ ...V1_STORES, profile: 'key' });
     await v3.open();
     await v3.table('programs').add({
-      id: 'p1', name: 'Recomp · 5d', isActive: true, createdAt: '2026-06-01T00:00:00.000Z',
+      id: 'p1',
+      name: 'Recomp · 5d',
+      isActive: true,
+      createdAt: '2026-06-01T00:00:00.000Z',
     });
-    await v3.table('profile').add({ key: 'user', goal: 'Recomposition', updatedAt: '2026-06-01T00:00:00.000Z' });
+    await v3
+      .table('profile')
+      .add({
+        key: 'user',
+        goal: 'Recomposition',
+        updatedAt: '2026-06-01T00:00:00.000Z',
+      });
     v3.close();
 
     const migrated = new OpenSetsDB(N3);
@@ -184,12 +219,19 @@ describe('R1 preference inputs + volume-state persistence', () => {
     // A later patch to one field leaves the others intact (merge semantics).
     await updateProfile({ priorityMuscles: ['hamstrings'] });
     p = await db.profile.get('user');
-    expect(p).toMatchObject({ splitChoice: 'pplArms', priorityMuscles: ['hamstrings'], days: 5 });
+    expect(p).toMatchObject({
+      splitChoice: 'pplArms',
+      priorityMuscles: ['hamstrings'],
+      days: 5,
+    });
   });
 
   it('persists per-muscle volumeState on a Program and reads it back', async () => {
     await db.programs.add({
-      id: 'pv', name: 'Hypertrophy · 5d', isActive: true, createdAt: '2026-06-28T00:00:00.000Z',
+      id: 'pv',
+      name: 'Hypertrophy · 5d',
+      isActive: true,
+      createdAt: '2026-06-28T00:00:00.000Z',
       volumeState: {
         chest: { current: 10, mev: 10, mav: 16, mrv: 22 },
         biceps: { current: 8, mev: 8, mav: 14, mrv: 20 },
@@ -197,8 +239,15 @@ describe('R1 preference inputs + volume-state persistence', () => {
     });
     const prog = await db.programs.get('pv');
     // current seeds at MEV (block starts at minimum effective volume).
-    expect(prog!.volumeState!.chest).toEqual({ current: 10, mev: 10, mav: 16, mrv: 22 });
-    expect(prog!.volumeState!.chest!.current).toBe(prog!.volumeState!.chest!.mev);
+    expect(prog!.volumeState!.chest).toEqual({
+      current: 10,
+      mev: 10,
+      mav: 16,
+      mrv: 22,
+    });
+    expect(prog!.volumeState!.chest!.current).toBe(
+      prog!.volumeState!.chest!.mev,
+    );
     expect(prog!.volumeState!.biceps!.mrv).toBe(20);
   });
 });

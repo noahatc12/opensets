@@ -26,13 +26,22 @@ function startWeight(ex: Exercise): number {
   if (n.includes('squat')) return 185;
   if (n.includes('bench') || n.includes('row')) return 135;
   if (n.includes('press')) return 95;
-  if (n.includes('curl') || n.includes('extension') || n.includes('pushdown') || n.includes('raise'))
+  if (
+    n.includes('curl') ||
+    n.includes('extension') ||
+    n.includes('pushdown') ||
+    n.includes('raise')
+  )
     return 40;
   return ex.isBodyweight ? 0 : 90;
 }
 
-export async function seedSampleData(catalog: Exercise[], now: string): Promise<void> {
-  const pick = (q: string): Exercise | undefined => searchCatalog(catalog, q, 5)[0];
+export async function seedSampleData(
+  catalog: Exercise[],
+  now: string,
+): Promise<void> {
+  const pick = (q: string): Exercise | undefined =>
+    searchCatalog(catalog, q, 5)[0];
   const resolve = (qs: string[]): Exercise[] => {
     const out: Exercise[] = [];
     const seen = new Set<string>();
@@ -50,19 +59,50 @@ export async function seedSampleData(catalog: Exercise[], now: string): Promise<
   await setActiveProgram(program.id);
 
   const dayDefs: Array<[string, string[]]> = [
-    ['Push', ['barbell bench press', 'overhead press', 'incline dumbbell press', 'triceps pushdown']],
-    ['Pull', ['barbell deadlift', 'bent over barbell row', 'lat pulldown', 'barbell curl']],
-    ['Legs', ['barbell full squat', 'romanian deadlift', 'leg press', 'leg extension']],
+    [
+      'Push',
+      [
+        'barbell bench press',
+        'overhead press',
+        'incline dumbbell press',
+        'triceps pushdown',
+      ],
+    ],
+    [
+      'Pull',
+      [
+        'barbell deadlift',
+        'bent over barbell row',
+        'lat pulldown',
+        'barbell curl',
+      ],
+    ],
+    [
+      'Legs',
+      ['barbell full squat', 'romanian deadlift', 'leg press', 'leg extension'],
+    ],
   ];
 
-  const rule: ProgressionRule = { kind: 'double', repMin: 8, repMax: 12, incrementLb: 2.5, perSet: false };
+  const rule: ProgressionRule = {
+    kind: 'double',
+    repMin: 8,
+    repMax: 12,
+    incrementLb: 2.5,
+    perSet: false,
+  };
   const templates = [];
   for (let i = 0; i < dayDefs.length; i++) {
     const [name, queries] = dayDefs[i]!;
     const exs = resolve(queries);
     const tpl = await createTemplate(program.id, name, i);
     tpl.slots = exs.map((ex, j) =>
-      makeSlot(ex.id, j, rule, { sets: 3, repRange: [8, 12] }, { warmupSec: 60, workSec: 150 }),
+      makeSlot(
+        ex.id,
+        j,
+        rule,
+        { sets: 3, repRange: [8, 12] },
+        { warmupSec: 60, workSec: 150 },
+      ),
     );
     await saveTemplate(tpl);
     for (const slot of tpl.slots) {
@@ -109,7 +149,9 @@ export async function seedSampleData(catalog: Exercise[], now: string): Promise<
             reps: 8 + (s === 0 ? 2 : 0),
             completed: true,
             rpe: 8,
-            ...(newest && ei === 0 && s === 0 ? { isPR: ['weight', 'e1rm'] as const } : {}),
+            ...(newest && ei === 0 && s === 0
+              ? { isPR: ['weight', 'e1rm'] as const }
+              : {}),
           });
         }
       });
@@ -123,7 +165,14 @@ export async function seedSampleData(catalog: Exercise[], now: string): Promise<
   // render their populated card layouts (instead of empty states).
   const benchId = templates[0]?.exs[0]?.id;
   const goals: Goal[] = [
-    { id: newId(), type: 'bodyweight', target: 185, direction: 'increase', status: 'active', createdAt: now },
+    {
+      id: newId(),
+      type: 'bodyweight',
+      target: 185,
+      direction: 'increase',
+      status: 'active',
+      createdAt: now,
+    },
     ...(benchId
       ? [
           {

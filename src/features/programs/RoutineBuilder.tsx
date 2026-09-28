@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useNav } from '../../ui/nav';
 import { Pushed } from '../../ui/Pushed';
+import { PlanScreen } from './PlanScreen';
+import { TabBar } from '../../components/TabBar';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useProfile, useSettings } from '../../db/hooks';
 import { startingWeightLb } from '../../engine/body';
@@ -176,10 +178,18 @@ export function RoutineBuilder() {
   }
 
   return (
-    <Pushed to={-1}>
+    <Pushed
+      to="/plan"
+      parent={
+        <>
+          <PlanScreen />
+          <TabBar activePath="/plan" />
+        </>
+      }
+    >
       <div className="relative flex h-full flex-col">
         <div className="flex-1 overflow-auto px-[18px] pb-[120px] pt-[max(0.5rem,env(safe-area-inset-top))]">
-          <BackButton onClick={() => nav.pop()} />
+          <BackButton onClick={() => nav.pop('/plan')} />
           <div className="os-t mt-3.5">
             Day 1 · {drafts.length}{' '}
             {drafts.length === 1 ? 'exercise' : 'exercises'}

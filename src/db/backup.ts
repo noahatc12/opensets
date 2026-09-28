@@ -105,7 +105,13 @@ export async function preMigrationSnapshot(
   // snapshot holds everything the older one did (migrations are additive).
   const all = (await tx.table('backups').toArray()) as BackupRow[];
   if (all.length > KEEP) {
-    all.sort((a, b) => a.createdAt.localeCompare(b.createdAt) || a.schemaVersion - b.schemaVersion);
-    await tx.table('backups').bulkDelete(all.slice(0, all.length - KEEP).map((b) => b.id));
+    all.sort(
+      (a, b) =>
+        a.createdAt.localeCompare(b.createdAt) ||
+        a.schemaVersion - b.schemaVersion,
+    );
+    await tx
+      .table('backups')
+      .bulkDelete(all.slice(0, all.length - KEEP).map((b) => b.id));
   }
 }

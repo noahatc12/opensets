@@ -45,7 +45,8 @@ const MUSCLE_VOLUME: Partial<Record<Muscle, VolumeLandmarks>> = {
   forearms: { mev: 6, mav: 12, mrv: 16 },
 };
 
-export const landmarksFor = (m: Muscle): VolumeLandmarks => MUSCLE_VOLUME[m] ?? DEFAULT_LANDMARKS;
+export const landmarksFor = (m: Muscle): VolumeLandmarks =>
+  MUSCLE_VOLUME[m] ?? DEFAULT_LANDMARKS;
 
 /**
  * Build the phase schedule for a mesocycle of `totalWeeks` (clamped 4–12). The last
@@ -100,7 +101,11 @@ export function volumeFraction(plan: MesocyclePlan, week: number): number {
 
 /** Target weekly working sets for a muscle this week — lands in [MEV, MRV] and ramps
  *  with volumeFraction; deload pulls back to MEV. (§2.5 + the S12 analytics bands.) */
-export function weeklyVolumeTarget(m: Muscle, plan: MesocyclePlan, week: number): number {
+export function weeklyVolumeTarget(
+  m: Muscle,
+  plan: MesocyclePlan,
+  week: number,
+): number {
   const { mev, mrv } = landmarksFor(m);
   const f = volumeFraction(plan, week);
   return Math.round(mev + f * (mrv - mev));
