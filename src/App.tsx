@@ -1,5 +1,8 @@
 import { useEffect } from 'react';
 import { installViewportFix } from './ui/viewport';
+import { FeelPanel } from './ui/FeelPanel';
+import { tuneWantedFromUrl } from './ui/tuneTaps';
+import { setTuning } from './lib/feel';
 import {
   HashRouter,
   Routes,
@@ -44,6 +47,10 @@ function AppShell() {
   // The Home Screen container can report a viewport shorter than the screen; the shell
   // extends by the measured gap (see ui/viewport.ts).
   useEffect(() => installViewportFix(), []);
+  // Device QA: `?tune` opens the feel tuning panel (see ui/FeelPanel.tsx).
+  useEffect(() => {
+    if (tuneWantedFromUrl()) setTuning(true);
+  }, []);
 
   return (
     <div
@@ -57,6 +64,7 @@ function AppShell() {
       </main>
       {showTabs && <TabBar />}
       <ReloadPrompt />
+      <FeelPanel />
     </div>
   );
 }

@@ -5,6 +5,7 @@ import {
   scrolledAwayFromTop,
 } from './gesture';
 import { spring, rubberBand, reducedMotion } from '../lib/spring';
+import { sheetFeel } from '../lib/feel';
 
 /* Bottom sheet. Rises on the iOS curve; drags with the finger once its content is at the
    top; release past 35 percent of its height, or a flick faster than 0.4 px/ms, carries
@@ -12,9 +13,6 @@ import { spring, rubberBand, reducedMotion } from '../lib/spring';
    Dragging upward past open is rubber-banded. Tapping the scrim or pressing Escape runs
    the same close animation. Positioned inside the app shell (position: relative) so it
    respects the phone's safe areas the same way the tab bar does. */
-
-const CLOSE_FRACTION = 0.35;
-const FLICK = 0.4; // px per ms
 
 export function Sheet({
   open,
@@ -65,8 +63,7 @@ export function Sheet({
         from,
         to: p.offsetHeight + 8,
         velocity: Math.max(velocity, 0.9),
-        stiffness: 300,
-        damping: 34,
+        ...sheetFeel().close,
         onUpdate: paint,
         onDone: () => onCloseRef.current(),
       });
@@ -107,12 +104,14 @@ export function Sheet({
       onEnd: (s, cancelled) => {
         p.classList.remove('os-sheet--dragging');
         const h = p.offsetHeight || 1;
-        const flick = s.vy > FLICK;
+        // Read at release so a change on the tuning panel applies to the next drag.
+        const feel = sheetFeel();
+        const flick = s.vy > feel.flick;
         const shouldClose =
           !cancelled &&
           y > 0 &&
-          (y > h * CLOSE_FRACTION || flick) &&
-          s.vy > -FLICK;
+          (y > h * feel.closeFraction || flick) &&
+          s.vy > -feel.flick;
         if (shouldClose) {
           animateClose(s.vy);
           return;
@@ -121,8 +120,7 @@ export function Sheet({
           from: y,
           to: 0,
           velocity: s.vy,
-          stiffness: flick ? 320 : 420,
-          damping: flick ? 26 : 38,
+          ...(flick ? feel.flickHome : feel.home),
           onUpdate: paint,
         });
       },

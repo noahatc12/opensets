@@ -1064,3 +1064,43 @@ body {
   color: var(--acc-tx);
   box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--acc) 25%, transparent);
 }
+
+/* Feel tuning panel: a device-QA tool shown only in tune mode (ui/FeelPanel.tsx). It
+   floats over the top of the screen above sheets; the pill brings it back after Try it. */
+[data-ds='editorial'] .os-feel {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  top: max(8px, env(safe-area-inset-top));
+  z-index: 60;
+  max-height: calc(100% - 24px);
+  overflow: auto;
+  overscroll-behavior: contain;
+  background: var(--s2);
+  box-shadow:
+    inset 0 1px 0 var(--hl2),
+    var(--shadow-float);
+}
+[data-ds='editorial'] .os-feel-pill {
+  position: absolute;
+  right: 12px;
+  top: max(8px, env(safe-area-inset-top));
+  z-index: 60;
+  height: 36px;
+  padding: 0 14px;
+  border-radius: 999px;
+  background: var(--s3);
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 800;
+  box-shadow:
+    inset 0 1px 0 var(--hl2),
+    var(--shadow-float);
+}
+[data-ds='editorial'] .os-feel-numbers {
+  font-size: 12px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.45;
+  color: var(--mute);
+}

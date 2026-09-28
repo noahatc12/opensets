@@ -19,6 +19,7 @@ import { t } from '../../i18n/strings';
 import { ScreenTitle, SectionHead, StatTiles } from '../../ui/StatGrid';
 import { ConfirmSheet } from '../../ui/Sheet';
 import { PlateMarks } from '../../ui/Plates';
+import { useTuneTaps } from '../../ui/tuneTaps';
 
 /* You: settings and data. Three tiles, Units and Appearance segments, then Training,
    Body and Your data as cards of rows, the storage status, the privacy card. */
@@ -125,6 +126,8 @@ export function SettingsScreen() {
   }, [sets]);
 
   const fileRef = useRef<HTMLInputElement>(null);
+  const versionRef = useRef<HTMLParagraphElement>(null);
+  useTuneTaps(versionRef);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [confirmErase, setConfirmErase] = useState(false);
   // Import replaces everything, so a picked file waits here for an explicit confirm.
@@ -387,7 +390,7 @@ export function SettingsScreen() {
             </div>
           </div>
         </div>
-        <p className="os-t mt-4 text-center leading-snug">
+        <p ref={versionRef} className="os-t mt-4 text-center leading-snug">
           {t.settings.disclaimer}
           <br />
           v1.0 · MIT · free-exercise-db

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { attachDrag, canScrollLeft } from './gesture';
 import { spring, reducedMotion } from '../lib/spring';
+import { backFeel } from '../lib/feel';
 import { useNav } from './nav';
 
 /* A pushed screen: swipe from the left edge to go back, the screen following the finger
@@ -13,8 +14,6 @@ import { useNav } from './nav';
    24 px so chip rows and the image carousel keep their own horizontal scroll. */
 
 const EDGE = 24;
-const CLOSE_FRACTION = 0.33;
-const FLICK = 0.45; // px per ms
 const PARALLAX = 0.24;
 
 export function Pushed({
@@ -72,10 +71,12 @@ export function Pushed({
       onMove: (s) => paint(Math.max(0, s.dx)),
       onEnd: (s, cancelled) => {
         const w = width();
+        // Read at release so a change on the tuning panel applies to the next swipe.
+        const feel = backFeel();
         const shouldPop =
           !cancelled &&
-          (x > w * CLOSE_FRACTION || s.vx > FLICK) &&
-          s.vx > -FLICK;
+          (x > w * feel.closeFraction || s.vx > feel.flick) &&
+          s.vx > -feel.flick;
         if (shouldPop) {
           if (reducedMotion()) {
             navRef.current.swipe(toRef.current);
@@ -85,8 +86,7 @@ export function Pushed({
             from: x,
             to: w,
             velocity: Math.max(s.vx, 0.6),
-            stiffness: 260,
-            damping: 30,
+            ...feel.release,
             onUpdate: paint,
             onDone: () => navRef.current.swipe(toRef.current),
           });
@@ -95,6 +95,7 @@ export function Pushed({
             from: x,
             to: 0,
             velocity: s.vx,
+            ...feel.home,
             onUpdate: paint,
             onDone: () => {
               el.classList.remove('os-pushed--dragging');
