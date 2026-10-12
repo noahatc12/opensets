@@ -3,6 +3,7 @@ import { fmtWeight, kgToLb, loadWord, toUnit } from '../../lib/units';
 import {
   clock,
   compact,
+  explainTempo,
   flagLabel,
   humanReason,
   ruleLabel,
@@ -101,6 +102,7 @@ function Logger({ vm }: { vm: LoggerVM }) {
 
   const [keypad, setKeypad] = useState<'weight' | 'reps' | null>(null);
   const [platesOpen, setPlatesOpen] = useState(false);
+  const [tempoOpen, setTempoOpen] = useState(false);
 
   const ex = getCatalogExercise(exId);
   const scheme = activeSlot.scheme;
@@ -114,11 +116,13 @@ function Logger({ vm }: { vm: LoggerVM }) {
   ]
     .filter(Boolean)
     .join(' · ');
-  const coaching = [
-    activeSlot.tempo ? `Tempo ${fmtTempo(activeSlot.tempo)}` : null,
+  // The tempo is a tap away from what it means (review card f10); the rest tier and
+  // the cue read as before.
+  const notes = [
     activeSlot.restTier
       ? `${titleCase(activeSlot.restTier)} rest ${clock(activeSlot.restWorkSec)}`
       : null,
+    activeSlot.coachingCue,
   ]
     .filter(Boolean)
     .join(' · ');
@@ -295,11 +299,27 @@ function Logger({ vm }: { vm: LoggerVM }) {
         <h1 className="os-h1 mt-0.5" style={{ fontSize: 28 }}>
           {nameOf(exId)}
         </h1>
-        {(coaching || activeSlot.coachingCue) && (
+        {(activeSlot.tempo || notes) && (
           <div className="os-t mt-1.5 leading-snug">
-            {coaching}
-            {coaching && activeSlot.coachingCue ? ' · ' : ''}
-            {activeSlot.coachingCue}
+            {activeSlot.tempo && (
+              <button
+                type="button"
+                onClick={() => setTempoOpen(true)}
+                className="os-press os-hit"
+                style={{
+                  position: 'relative',
+                  font: 'inherit',
+                  color: 'inherit',
+                  textDecoration: 'underline dotted',
+                  textUnderlineOffset: 4,
+                }}
+                aria-label={`Tempo ${fmtTempo(activeSlot.tempo)}, what it means`}
+              >
+                Tempo {fmtTempo(activeSlot.tempo)}
+              </button>
+            )}
+            {activeSlot.tempo && notes ? ' · ' : ''}
+            {notes}
           </div>
         )}
 
@@ -441,7 +461,7 @@ function Logger({ vm }: { vm: LoggerVM }) {
                     </span>
                     <span className="os-t">
                       {activePrescribed.targetRpe !== undefined
-                        ? `Target RPE ${activePrescribed.targetRpe}`
+                        ? `Effort ${activePrescribed.targetRpe} of 10`
                         : `Target ${activePrescribed.targetReps}${activePrescribed.amrap ? '+' : ''} reps`}
                     </span>
                   </div>
@@ -554,12 +574,14 @@ function Logger({ vm }: { vm: LoggerVM }) {
                     </p>
                   )}
 
+                  {/* Effort 6 to 10 is the RPE scale under a word a new lifter knows
+                      (review card f10); it is still saved as rpe. */}
                   <div className="mt-2.5 flex items-center gap-2.5">
-                    <span className="os-t w-[34px]">RPE</span>
+                    <span className="os-t w-[44px]">Effort</span>
                     <div
                       className="os-seg flex-1"
                       role="group"
-                      aria-label="RPE"
+                      aria-label="Effort"
                     >
                       {[6, 7, 8, 9, 10].map((n) => (
                         <button
@@ -858,6 +880,35 @@ function Logger({ vm }: { vm: LoggerVM }) {
         </div>
       </Sheet>
 
+      {activeSlot.tempo && (
+        <Sheet
+          open={tempoOpen}
+          onClose={() => setTempoOpen(false)}
+          label="What the tempo means"
+        >
+          <SheetHeader
+            title={`Tempo ${fmtTempo(activeSlot.tempo)}`}
+            action="Done"
+            onAction={() => setTempoOpen(false)}
+          />
+          <p className="os-t mt-1.5 leading-snug">
+            Four counts, in seconds, for every rep. Count them out loud the
+            first few reps.
+          </p>
+          <div
+            className="os-card mt-3"
+            style={{ padding: '4px 16px', background: 'var(--s2)' }}
+          >
+            {explainTempo(activeSlot.tempo).map((row, i) => (
+              <div key={i} className="os-row">
+                <span className="os-num w-8 text-[22px]">{row.count}</span>
+                <span className="text-[15px] font-semibold">{row.text}</span>
+              </div>
+            ))}
+          </div>
+        </Sheet>
+      )}
+
       {pickerMode && (
         <ExercisePicker
           title={
@@ -894,7 +945,7 @@ function SetRow({
         {w(done.weightLb)} × {done.reps}
       </span>
       {done.rpe !== undefined && (
-        <span className="os-t ml-1.5">@{done.rpe}</span>
+        <span className="os-t ml-1.5">effort {done.rpe}</span>
       )}
       {isPr ? (
         <span className="os-tag os-tag--pr ml-auto">PR</span>

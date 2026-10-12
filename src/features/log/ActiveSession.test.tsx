@@ -188,6 +188,43 @@ describe('Logger core flow (pinned pre-extraction)', () => {
     });
   });
 
+  // Review card f10: plain words. The scale is called Effort on screen (still saved as
+  // rpe), and a tempo opens an explanation on tap.
+  it('calls the scale Effort, never RPE, and explains the tempo on tap', async () => {
+    await db.settings.put({ key: 'user', ...DEFAULT_SETTINGS });
+    const program = await createProgram('Words', now);
+    await setActiveProgram(program.id);
+    const tpl = await createTemplate(program.id, 'Day 1', 0);
+    tpl.slots = [
+      makeSlot(
+        'bench',
+        0,
+        LINEAR,
+        { sets: 3, repTarget: 5 },
+        { warmupSec: 60, workSec: 120 },
+        { tempo: '3-1-1-0', restTier: 'compound' },
+      ),
+    ];
+    await saveTemplate(tpl);
+    await seedExerciseState(program.id, tpl.slots[0]!, 60, now);
+    const session = await startSessionFromTemplate(tpl, now);
+    useSessionStore.getState().beginSession(session.id);
+    const user = userEvent.setup();
+    renderLogger();
+    await logButton();
+    expect(screen.getByRole('group', { name: 'Effort' })).toBeTruthy();
+    expect(screen.queryByText(/\bRPE\b/)).toBeNull();
+    await user.click(screen.getByRole('button', { name: /Tempo 3·1·1·0/ }));
+    expect(
+      await screen.findByText('Lower the weight for 3 seconds'),
+    ).toBeTruthy();
+    expect(screen.getByText('No pause at the top')).toBeTruthy();
+    await user.click(screen.getByRole('button', { name: 'Done' }));
+    await user.click(screen.getByRole('button', { name: '8' }));
+    await user.click(await logButton());
+    expect(await screen.findByText('effort 8')).toBeTruthy();
+  });
+
   it('records a selected RPE', async () => {
     const { session } = await seedActiveSession();
     const user = userEvent.setup();

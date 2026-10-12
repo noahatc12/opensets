@@ -23,9 +23,54 @@ export function clock(totalSec: number): string {
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 }
 
-/** The engine writes its reasons with a spaced em dash; the UI shows them without one. */
+/** The engine writes its reasons with a spaced em dash; the UI shows them without one.
+ *  Its week tail ("Wk 2 Accumulation (RPE 8)") and every RPE become plain words
+ *  (review card f10, Noah 2026-10-01: a first-time lifter should not have to look
+ *  anything up). */
 export function humanReason(reason: string): string {
-  return reason.replace(/\s+—\s+/g, ': ').replace(/—/g, ',');
+  return reason
+    .replace(/\s+—\s+/g, ': ')
+    .replace(/—/g, ',')
+    .replace(
+      /\bWk (\d+) (Accumulation|Intensification|Deload) \(RPE ([\d.]+)\)/g,
+      (_m, week: string, phase: string, rpe: string) =>
+        `week ${week}, ${phaseWords(phase.toLowerCase())}, effort ${rpe}`,
+    )
+    .replace(/\bRPE\b/g, 'effort');
+}
+
+/** A mesocycle phase by what it means to the lifter. */
+export function phaseWords(phase: string): string {
+  const words: Record<string, string> = {
+    accumulation: 'building volume',
+    intensification: 'pushing harder',
+    deload: 'easy week',
+  };
+  return words[phase] ?? phase;
+}
+
+/** A tempo such as "3-1-1-0" (or "3·1·1·0") as four plain rows: lower, pause, lift,
+ *  pause. "X" means as fast as you can. Returns [] for a tempo it cannot read. */
+export function explainTempo(tempo: string): { count: string; text: string }[] {
+  const parts = tempo
+    .toUpperCase()
+    .split(/[-·]/)
+    .map((p) => p.trim());
+  if (parts.length < 3 || parts.length > 4) return [];
+  if (!parts.every((p) => /^(\d+|X)$/.test(p))) return [];
+  const secs = (n: string) => `${n} second${n === '1' ? '' : 's'}`;
+  const rows = [
+    (n: string) =>
+      n === 'X' ? 'Lower as fast as you can' : `Lower the weight for ${secs(n)}`,
+    (n: string) =>
+      n === '0' || n === 'X'
+        ? 'No pause at the bottom'
+        : `Pause ${secs(n)} at the bottom`,
+    (n: string) => (n === 'X' ? 'Lift as fast as you can' : `Lift in ${secs(n)}`),
+    (n: string) =>
+      n === '0' || n === 'X' ? 'No pause at the top' : `Pause ${secs(n)} at the top`,
+  ];
+  return parts.map((count, i) => ({ count, text: rows[i]!(count) }));
 }
 
 /** A progression rule in the lifter's words; the engine's kind names never reach the UI. */

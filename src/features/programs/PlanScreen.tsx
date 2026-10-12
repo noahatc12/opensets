@@ -6,7 +6,7 @@ import { useProfile, useSettings } from '../../db/hooks';
 import { openWorkout } from '../log/workoutMotion';
 import { loadTypeFor } from '../../engine/loading';
 import { weightWithLoad } from '../../lib/units';
-import { shortName } from '../../lib/format';
+import { phaseWords, shortName } from '../../lib/format';
 import {
   getActiveProgram,
   getActiveWorkoutSession,
@@ -32,12 +32,6 @@ const estMin = (t: WorkoutTemplate) =>
   Math.round(
     t.slots.reduce((m, s) => m + s.scheme.sets * (s.restWorkSec + 35), 0) / 60,
   );
-
-const PHASE_LABEL: Record<string, string> = {
-  accumulation: 'Building up',
-  intensification: 'Pushing harder',
-  deload: 'Deload week',
-};
 
 export function PlanScreen() {
   const [, scrollRef] = useScrollMemory('plan');
@@ -146,16 +140,19 @@ export function PlanScreen() {
               style={{ padding: '14px 16px' }}
             >
               <div className="min-w-0 flex-1">
+                {/* "Week 1 of 5, building volume": the phase in words, on the line
+                    that names the week (review card f10). */}
                 <div
                   className="text-[16px] font-extrabold"
                   style={{ letterSpacing: '-.02em' }}
                 >
-                  Week {meso.weekIndex + 1} of {meso.totalWeeks}
+                  Week {meso.weekIndex + 1} of {meso.totalWeeks},{' '}
+                  {phaseWords(meso.phase)}
                 </div>
                 <div className="os-t mt-0.5">
-                  {PHASE_LABEL[meso.phase] ?? meso.phase}
-                  {meso.phase !== 'deload' &&
-                    ` · deload in week ${meso.totalWeeks}`}
+                  {meso.phase === 'deload'
+                    ? 'Lighter sets, then a new block'
+                    : `Easy week comes in week ${meso.totalWeeks}`}
                   {(meso.blockIndex ?? 0) > 0 &&
                     ` · block ${(meso.blockIndex ?? 0) + 1}`}
                 </div>

@@ -88,7 +88,7 @@ function draftFor(exercise: Exercise, startingWeightLb: number): SlotDraft {
 const RULE_NAMES: Record<string, string> = {
   percent531: '5/3/1',
   gzclp: 'GZCLP',
-  rpeTarget: 'RPE target',
+  rpeTarget: 'Effort target',
   apre: 'APRE',
   repsOnly: 'Reps only',
   durationLinear: 'Timed',
