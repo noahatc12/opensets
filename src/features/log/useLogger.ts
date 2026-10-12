@@ -49,6 +49,10 @@ import type {
 
 export type PickerMode = 'swap' | 'add' | null;
 
+/** The undo toast after a log: the set, and whether it set a rep record (shown as a tag
+ *  on the row rather than the record screen, review card f06). */
+export type LoggerToast = { setId: string; repRecord?: boolean };
+
 /** What the record screen shows: the set that set it and the best it beat. */
 export interface Celebration {
   kinds: PRKind[];
@@ -127,8 +131,8 @@ export interface LoggerVM {
   setWhyOpen: React.Dispatch<React.SetStateAction<boolean>>;
   celebrate: Celebration | null;
   setCelebrate: React.Dispatch<React.SetStateAction<Celebration | null>>;
-  toast: { setId: string } | null;
-  setToast: React.Dispatch<React.SetStateAction<{ setId: string } | null>>;
+  toast: LoggerToast | null;
+  setToast: React.Dispatch<React.SetStateAction<LoggerToast | null>>;
   finishing: boolean;
   multiTabConflict: boolean;
   pickerMode: PickerMode;
@@ -171,7 +175,7 @@ export function useLogger(): LoggerVM | null {
   const [now, setNow] = useState(() => Date.now());
   const [celebrate, setCelebrate] = useState<Celebration | null>(null);
   const [summaryOpen, setSummaryOpen] = useState(false);
-  const [toast, setToast] = useState<{ setId: string } | null>(null);
+  const [toast, setToast] = useState<LoggerToast | null>(null);
   const [pickerMode, setPickerMode] = useState<PickerMode>(null);
   const [multiTabConflict, setMultiTabConflict] = useState(false);
   const [readyToSave, setReadyToSave] = useState(false);
@@ -345,7 +349,7 @@ export function useLogger(): LoggerVM | null {
         ...(rpe !== undefined ? { rpe } : {}),
       });
       const pr = await detectAndMarkPRs(loggedRow);
-      if (pr.kinds.length > 0) {
+      if (isRealRecord(pr.kinds)) {
         // The best this set beat, for the record screen's "previous best" line.
         const prior = (
           await db.sets.where('exerciseId').equals(exId).toArray()
@@ -368,7 +372,12 @@ export function useLogger(): LoggerVM | null {
           previousBestE1rm,
         });
       }
-      setToast({ setId: loggedRow.id });
+      setToast({
+        setId: loggedRow.id,
+        ...(pr.kinds.length > 0 && !isRealRecord(pr.kinds)
+          ? { repRecord: true }
+          : {}),
+      });
       setWhyOpen(false);
       if (restAutoStart ?? true) {
         startRest(slot!.restWorkSec);
@@ -535,6 +544,16 @@ export function useLogger(): LoggerVM | null {
     onPickExercise,
     session,
   };
+}
+
+/** Whether a record earns the full-screen record screen. A heavier weight than ever, or
+ *  a new best max set some other way than one more rep at the same weight, does. One more
+ *  rep at a weight already lifted is a rep record: it raises the estimated max too, but in
+ *  double progression that is most sessions, and a screen to tap away every time reads as
+ *  noise, so it shows as a PR tag on the set instead (review card f06, Noah 2026-10-01). */
+export function isRealRecord(kinds: PRKind[]): boolean {
+  if (kinds.includes('weight')) return true;
+  return kinds.includes('e1rm') && !kinds.includes('reps');
 }
 
 /** The type a logged set is saved as. A set the program prescribes as rest-pause or drop

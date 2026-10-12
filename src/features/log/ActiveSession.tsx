@@ -632,7 +632,7 @@ function Logger({ vm }: { vm: LoggerVM }) {
               setToast(null);
             }}
           >
-            Set logged
+            {toast.repRecord ? 'Set logged, a rep record' : 'Set logged'}
           </Toast>
         </div>
       )}

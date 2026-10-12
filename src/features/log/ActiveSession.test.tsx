@@ -31,6 +31,7 @@ import {
 } from '../../db/repositories';
 import { useSessionStore } from '../../state/session';
 import { ActiveSession } from './ActiveSession';
+import { isRealRecord } from './useLogger';
 import { TodayScreen } from './TodayScreen';
 import { WorkoutCover } from './WorkoutCover';
 import { useLiveQuery } from 'dexie-react-hooks';
@@ -212,6 +213,42 @@ describe('Logger core flow (pinned pre-extraction)', () => {
     });
   });
 
+  // Review card f06: the full-screen record is for a heavier weight or a new best max;
+  // one more rep at a weight already lifted is a tag on the set.
+  it('a rep record shows as a tag on the set, not the record screen; a heavier weight gets the screen', async () => {
+    const { session } = await seedActiveSession();
+    await db.sets.add({
+      id: 'prior-1',
+      sessionId: 'prior',
+      exerciseId: 'bench',
+      date: '2026-06-18',
+      order: 0,
+      type: 'working',
+      weightLb: 60,
+      reps: 5,
+      completed: true,
+    });
+    const user = userEvent.setup();
+    renderLogger();
+    await logButton();
+    await user.click(screen.getByRole('button', { name: 'increase reps' }));
+    await user.click(await logButton());
+    await waitFor(async () =>
+      expect(await getSessionSets(session.id)).toHaveLength(1),
+    );
+    const logged = (await getSessionSets(session.id))[0]!;
+    expect(logged.isPR).toContain('reps');
+    expect(screen.queryByRole('dialog', { name: 'New record' })).toBeNull();
+    expect(await screen.findByText(/a rep record/)).toBeTruthy();
+    expect(await screen.findByText('PR')).toBeTruthy();
+    await user.click(screen.getByRole('button', { name: 'Skip rest' }));
+    await user.click(screen.getByRole('button', { name: 'increase weight' }));
+    await user.click(await logButton());
+    expect(
+      await screen.findByRole('dialog', { name: 'New record' }),
+    ).toBeTruthy();
+  });
+
   it('rest timer auto-starts on log', async () => {
     await seedActiveSession();
     const user = userEvent.setup();
@@ -335,6 +372,17 @@ describe('Logger core flow (pinned pre-extraction)', () => {
       const s = await db.sessions.get(session.id);
       expect(s!.status).toBe('completed');
     });
+  });
+});
+
+describe('isRealRecord', () => {
+  it('heavier weight: yes; new max without a rep record: yes; rep record: no', () => {
+    expect(isRealRecord(['weight'])).toBe(true);
+    expect(isRealRecord(['weight', 'reps', 'e1rm'])).toBe(true);
+    expect(isRealRecord(['e1rm'])).toBe(true);
+    expect(isRealRecord(['reps', 'e1rm'])).toBe(false);
+    expect(isRealRecord(['reps'])).toBe(false);
+    expect(isRealRecord([])).toBe(false);
   });
 });
 
