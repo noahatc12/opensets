@@ -49,9 +49,12 @@ import type {
 
 export type PickerMode = 'swap' | 'add' | null;
 
-/** The undo toast after a log: the set, and whether it set a rep record (shown as a tag
- *  on the row rather than the record screen, review card f06). */
-export type LoggerToast = { setId: string; repRecord?: boolean };
+/** The undo toast. After a log: the set, and whether it set a rep record (shown as a tag
+ *  on the row rather than the record screen, review card f06). After a skip: the exercise
+ *  taken out and where it sat, so Undo puts it back (review card f08). */
+export type LoggerToast =
+  | { kind: 'set'; setId: string; repRecord?: boolean }
+  | { kind: 'skip'; slot: ExerciseSlot; index: number };
 
 /** What the record screen shows: the set that set it and the best it beat. */
 export interface Celebration {
@@ -148,7 +151,10 @@ export interface LoggerVM {
   discard: () => Promise<void>;
   leave: () => void;
   undoSet: (setId: string) => Promise<void>;
+  /** Take the current exercise out of this workout (the day itself is untouched). */
   skip: () => Promise<void>;
+  /** Put a skipped exercise back where it was. */
+  undoSkip: (slot: ExerciseSlot, index: number) => Promise<void>;
   openSwap: () => void;
   openAdd: () => void;
   closePicker: () => void;
@@ -373,6 +379,7 @@ export function useLogger(): LoggerVM | null {
         });
       }
       setToast({
+        kind: 'set',
         setId: loggedRow.id,
         ...(pr.kinds.length > 0 && !isRealRecord(pr.kinds)
           ? { repRecord: true }
@@ -429,15 +436,26 @@ export function useLogger(): LoggerVM | null {
     await softDeleteSet(setId, nowIso());
   }
 
-  /** Mid-workout edits mutate the session's frozen slots only (template untouched). */
+  /** Mid-workout edits mutate the session's frozen slots only (template untouched).
+   *  Skipping the only exercise left would end the workout with nothing to undo, so
+   *  that opens the summary instead and the lifter chooses Save or Discard. */
   async function skip() {
-    const next = slots.filter((_, i) => i !== current);
-    await setSessionSlots(session!.id, next);
-    if (next.length === 0) {
-      await finish();
+    if (slots.length <= 1) {
+      setSummaryOpen(true);
       return;
     }
+    const removed = slots[current]!;
+    const next = slots.filter((_, i) => i !== current);
+    await setSessionSlots(session!.id, next);
     setCurrent(Math.min(current, next.length - 1));
+    setToast({ kind: 'skip', slot: removed, index: current });
+  }
+
+  async function undoSkip(slot: ExerciseSlot, index: number) {
+    const at = Math.min(index, slots.length);
+    const next = [...slots.slice(0, at), slot, ...slots.slice(at)];
+    await setSessionSlots(session!.id, next);
+    setCurrent(at);
   }
 
   const openSwap = () => setPickerMode('swap');
@@ -538,6 +556,7 @@ export function useLogger(): LoggerVM | null {
     leave,
     undoSet,
     skip,
+    undoSkip,
     openSwap,
     openAdd,
     closePicker,

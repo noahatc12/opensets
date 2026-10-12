@@ -61,7 +61,7 @@ await p.screenshot({ path: '.shots/logger/flow-02-swap.png', fullPage: true });
 
 // SKIP (remove current)
 const cBeforeSkip = await count();
-await p.getByRole('button', { name: 'Skip' }).click();
+await p.getByRole('button', { name: 'Skip exercise' }).click();
 await p.waitForTimeout(700);
 const cAfterSkip = await count();
 console.log('after Skip: count', cBeforeSkip, '->', cAfterSkip);

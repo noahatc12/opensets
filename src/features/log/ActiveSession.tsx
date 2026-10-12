@@ -90,6 +90,7 @@ function Logger({ vm }: { vm: LoggerVM }) {
     leave,
     undoSet,
     skip,
+    undoSkip,
     openSwap,
     openAdd,
     closePicker,
@@ -609,7 +610,7 @@ function Logger({ vm }: { vm: LoggerVM }) {
             onClick={() => void skip()}
             className="os-btn os-btn--sm os-press flex-1"
           >
-            Skip
+            Skip exercise
           </button>
           <button
             type="button"
@@ -628,11 +629,16 @@ function Logger({ vm }: { vm: LoggerVM }) {
           <Toast
             action="Undo"
             onAction={() => {
-              void undoSet(toast.setId);
+              if (toast.kind === 'set') void undoSet(toast.setId);
+              else void undoSkip(toast.slot, toast.index);
               setToast(null);
             }}
           >
-            {toast.repRecord ? 'Set logged, a rep record' : 'Set logged'}
+            {toast.kind === 'skip'
+              ? `Skipped ${shortName(nameOf(toast.slot.exerciseId), 22)}`
+              : toast.repRecord
+                ? 'Set logged, a rep record'
+                : 'Set logged'}
           </Toast>
         </div>
       )}
@@ -694,11 +700,10 @@ function Logger({ vm }: { vm: LoggerVM }) {
                 <button
                   type="button"
                   onClick={stopRest}
-                  aria-label="Skip rest"
                   className="os-chip os-chip--on os-press justify-center"
                   style={{ height: 40, borderRadius: 13, flex: 1.3 }}
                 >
-                  Skip
+                  Skip rest
                 </button>
               </div>
             </div>

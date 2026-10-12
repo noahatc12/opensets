@@ -807,7 +807,7 @@ async function hurried() {
     await tap(p, page.getByRole('button', { name: 'Skip rest' }), 'Skip rest');
   const chipsBefore = await page.locator('.os-chips button').count();
   const skipBtn = page
-    .getByRole('button', { name: 'Skip', exact: true })
+    .getByRole('button', { name: 'Skip exercise', exact: true })
     .first();
   const cover = await coveredBy(skipBtn);
   check(

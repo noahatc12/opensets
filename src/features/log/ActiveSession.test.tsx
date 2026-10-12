@@ -430,13 +430,13 @@ describe('Session resume on reload', () => {
   });
 });
 
-describe('Mid-workout Skip', () => {
+describe('Mid-workout Skip exercise', () => {
   it('removes the current exercise from the session (template untouched)', async () => {
     const { session } = await seedActiveSession(['bench', 'squat']);
     const user = userEvent.setup();
     renderLogger();
     await logButton();
-    await user.click(screen.getByRole('button', { name: 'Skip' }));
+    await user.click(screen.getByRole('button', { name: 'Skip exercise' }));
     await waitFor(async () => {
       const s = await db.sessions.get(session.id);
       expect(s!.executedSlots).toHaveLength(1);
@@ -445,6 +445,46 @@ describe('Mid-workout Skip', () => {
     // The template (program day) is NOT mutated — still 2 slots.
     const tpl = (await db.templates.toArray())[0]!;
     expect(tpl.slots).toHaveLength(2);
+  });
+
+  // Review card f08: the button says what it skips, and Undo puts the exercise back
+  // where it was.
+  it('says which exercise was skipped and Undo restores it at its place', async () => {
+    const { session } = await seedActiveSession(['bench', 'squat', 'row']);
+    const user = userEvent.setup();
+    renderLogger();
+    await logButton();
+    await user.click(screen.getByRole('button', { name: 'Next exercise' }));
+    await user.click(
+      await screen.findByRole('button', { name: 'Skip exercise' }),
+    );
+    expect(await screen.findByText(/Skipped squat/)).toBeTruthy();
+    await waitFor(async () =>
+      expect((await db.sessions.get(session.id))!.executedSlots).toHaveLength(
+        2,
+      ),
+    );
+    await user.click(screen.getByRole('button', { name: 'Undo' }));
+    await waitFor(async () => {
+      const s = await db.sessions.get(session.id);
+      expect(s!.executedSlots!.map((x) => x.exerciseId)).toEqual([
+        'bench',
+        'squat',
+        'row',
+      ]);
+    });
+    expect(useSessionStore.getState().currentExercise).toBe(1);
+  });
+
+  it('skipping the only exercise left opens the summary instead of ending the workout', async () => {
+    const { session } = await seedActiveSession(['bench']);
+    const user = userEvent.setup();
+    renderLogger();
+    await logButton();
+    await user.click(screen.getByRole('button', { name: 'Skip exercise' }));
+    expect(await screen.findByText('Nice work.')).toBeTruthy();
+    expect((await db.sessions.get(session.id))!.status).toBe('active');
+    expect((await db.sessions.get(session.id))!.executedSlots).toHaveLength(1);
   });
 });
 
