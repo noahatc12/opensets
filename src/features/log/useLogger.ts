@@ -6,6 +6,7 @@
  */
 import { useEffect, useRef, useState } from 'react';
 import { closeWorkout, tuckWorkout } from './workoutMotion';
+import { playChime, primeChime } from '../../lib/chime';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../db/db';
 import { useSettings } from '../../db/hooks';
@@ -127,6 +128,10 @@ export interface LoggerVM {
   // rest timer
   rest: ReturnType<typeof useSessionStore.getState>['rest'];
   restRemain: number;
+  /** The rest ran out and the panel is waiting for a tap (review card f09). */
+  restDone: boolean;
+  /** What happens at zero, in the lifter's words, for the rest panel's line. */
+  zeroLine: string;
   adjustRest: (deltaSec: number) => void;
   stopRest: () => void;
   // overlays / transient
@@ -165,8 +170,13 @@ export interface LoggerVM {
 export function useLogger(): LoggerVM | null {
   useCatalog();
   const settings = useSettings();
-  const { units, restAutoStart, defaultRestWarmupSec, defaultRestWorkSec } =
-    settings;
+  const {
+    units,
+    restAutoStart,
+    defaultRestWarmupSec,
+    defaultRestWorkSec,
+    soundOn,
+  } = settings;
   const { session, prescriptions, lastByExercise, logged } = useActiveWorkout();
   const current = useSessionStore((s) => s.currentExercise);
   const setCurrent = useSessionStore((s) => s.setCurrentExercise);
@@ -219,6 +229,33 @@ export function useLogger(): LoggerVM | null {
     const id = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(id);
   }, []);
+
+  // At zero the panel stays up until a tap (review card f09, Noah 2026-10-01: a rest
+  // that ends by itself is a rest you miss). The signal fires once per rest: a buzz
+  // where the browser can vibrate, and the chime when sound is on. WebKit on iPhone has
+  // had no navigator.vibrate since 2017, so there the chime is the signal.
+  const signalledRef = useRef<number | null>(null);
+  const restEndsAt = rest?.endsAt ?? null;
+  const restDone = rest !== null && rest.endsAt <= now;
+  useEffect(() => {
+    if (!restDone || restEndsAt === null) return;
+    if (signalledRef.current === restEndsAt) return;
+    signalledRef.current = restEndsAt;
+    if (
+      typeof navigator !== 'undefined' &&
+      typeof navigator.vibrate === 'function'
+    )
+      navigator.vibrate([120, 60, 120]);
+    if (soundOn) playChime();
+  }, [restDone, restEndsAt, soundOn]);
+  const canVibrate =
+    typeof navigator !== 'undefined' &&
+    typeof navigator.vibrate === 'function';
+  const zeroLine = canVibrate
+    ? 'The phone buzzes at zero.'
+    : soundOn
+      ? 'A chime plays at zero.'
+      : 'The panel stays up at zero.';
 
   // Auto-dismiss the set-logged undo toast (10 s undo window, spec §5 P1).
   useEffect(() => {
@@ -342,6 +379,9 @@ export function useLogger(): LoggerVM | null {
   async function log() {
     if (!activePrescribed || loggingRef.current) return;
     loggingRef.current = true;
+    // A tap is the only moment a phone lets a page open audio: open it here so the
+    // chime can sound at zero.
+    if (soundOn) primeChime();
     try {
       const loggedRow = await logSet({
         sessionId: session!.id,
@@ -536,6 +576,8 @@ export function useLogger(): LoggerVM | null {
     stepWeight,
     rest,
     restRemain,
+    restDone,
+    zeroLine,
     adjustRest,
     stopRest,
     whyOpen,

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { fmtWeight, kgToLb, loadWord, toUnit } from '../../lib/units';
 import {
   clock,
@@ -73,6 +73,8 @@ function Logger({ vm }: { vm: LoggerVM }) {
     setRpe,
     rest,
     restRemain,
+    restDone,
+    zeroLine,
     adjustRest,
     stopRest,
     whyOpen,
@@ -99,17 +101,6 @@ function Logger({ vm }: { vm: LoggerVM }) {
 
   const [keypad, setKeypad] = useState<'weight' | 'reps' | null>(null);
   const [platesOpen, setPlatesOpen] = useState(false);
-
-  // Buzz at zero, then the panel goes away on its own.
-  useEffect(() => {
-    if (!rest || restRemain > 0) return;
-    if (
-      typeof navigator !== 'undefined' &&
-      typeof navigator.vibrate === 'function'
-    )
-      navigator.vibrate([120, 60, 120]);
-    stopRest();
-  }, [rest, restRemain, stopRest]);
 
   const ex = getCatalogExercise(exId);
   const scheme = activeSlot.scheme;
@@ -157,12 +148,10 @@ function Logger({ vm }: { vm: LoggerVM }) {
   const numeralSize = (s: string) =>
     s.length > 4 ? 52 : s.length > 3 ? 60 : 72;
   const ctaLabel = `Log set ${activeIndex + 1} · ${w(weight)} × ${reps}`;
-  // Only promise a buzz where the browser can vibrate; WebKit on iPhone has had no
-  // navigator.vibrate since 2017, so there the panel just ends.
-  const zeroLine =
-    typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function'
-      ? 'The phone buzzes at zero.'
-      : 'Rest ends at zero.';
+  const stagedLine =
+    !exerciseComplete && activePrescribed
+      ? `Set ${activeIndex + 1} is staged at ${w(weight)} × ${reps}.`
+      : null;
 
   return (
     <div className="relative flex h-full flex-col">
@@ -655,59 +644,104 @@ function Logger({ vm }: { vm: LoggerVM }) {
           }}
         >
           <div className="os-grab" />
-          <div className="flex items-center gap-[18px]">
-            <Ring
-              size={112}
-              stroke={9}
-              value={restRemain / rest.durationSec}
-              animate
-              label={`${clock(restRemain)} of ${clock(rest.durationSec)} rest`}
-            >
-              <div className="os-num text-[30px]">{clock(restRemain)}</div>
-              <div className="os-t" style={{ fontSize: 11 }}>
-                of {clock(rest.durationSec)}
-              </div>
-            </Ring>
-            <div className="min-w-0 flex-1">
-              <div
-                className="text-[18px] font-extrabold"
-                style={{ letterSpacing: '-.02em' }}
+          {restDone ? (
+            /* Zero: the panel turns into Rest done and stays until a tap (review card
+               f09). The ring fills in the positive colour with a drawn check. */
+            <div className="flex items-center gap-[18px]">
+              <Ring
+                size={112}
+                stroke={9}
+                value={1}
+                color="var(--pos)"
+                label="Rest done"
               >
-                Rest
-              </div>
-              <div className="os-t mt-0.5 leading-[1.4]">
-                {!exerciseComplete && activePrescribed
-                  ? `Set ${activeIndex + 1} is staged at ${w(weight)} × ${reps}. ${zeroLine}`
-                  : zeroLine}
-              </div>
-              <div className="mt-3 flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => adjustRest(-15)}
-                  className="os-chip os-press flex-1 justify-center"
-                  style={{ height: 40, borderRadius: 13 }}
+                <svg
+                  width="44"
+                  height="44"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="var(--pos)"
+                  strokeWidth="2.6"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden
                 >
-                  −15
-                </button>
-                <button
-                  type="button"
-                  onClick={() => adjustRest(15)}
-                  className="os-chip os-press flex-1 justify-center"
-                  style={{ height: 40, borderRadius: 13 }}
+                  <path d="M5 12.5l4.5 4.5L19 7.5" />
+                </svg>
+              </Ring>
+              <div className="min-w-0 flex-1">
+                <div
+                  className="text-[18px] font-extrabold"
+                  style={{ letterSpacing: '-.02em' }}
                 >
-                  +15
-                </button>
+                  Rest done
+                </div>
+                <div className="os-t mt-0.5 leading-[1.4]">
+                  {stagedLine ?? 'This exercise is done.'}
+                </div>
                 <button
                   type="button"
                   onClick={stopRest}
-                  className="os-chip os-chip--on os-press justify-center"
-                  style={{ height: 40, borderRadius: 13, flex: 1.3 }}
+                  className="os-chip os-chip--on os-press mt-3 w-full justify-center"
+                  style={{ height: 44, borderRadius: 13 }}
                 >
-                  Skip rest
+                  {stagedLine ? 'Next set' : 'Continue'}
                 </button>
               </div>
             </div>
-          </div>
+          ) : (
+            <div className="flex items-center gap-[18px]">
+              <Ring
+                size={112}
+                stroke={9}
+                value={restRemain / rest.durationSec}
+                animate
+                label={`${clock(restRemain)} of ${clock(rest.durationSec)} rest`}
+              >
+                <div className="os-num text-[30px]">{clock(restRemain)}</div>
+                <div className="os-t" style={{ fontSize: 11 }}>
+                  of {clock(rest.durationSec)}
+                </div>
+              </Ring>
+              <div className="min-w-0 flex-1">
+                <div
+                  className="text-[18px] font-extrabold"
+                  style={{ letterSpacing: '-.02em' }}
+                >
+                  Rest
+                </div>
+                <div className="os-t mt-0.5 leading-[1.4]">
+                  {stagedLine ? `${stagedLine} ${zeroLine}` : zeroLine}
+                </div>
+                <div className="mt-3 flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => adjustRest(-15)}
+                    className="os-chip os-press flex-1 justify-center"
+                    style={{ height: 40, borderRadius: 13 }}
+                  >
+                    −15
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => adjustRest(15)}
+                    className="os-chip os-press flex-1 justify-center"
+                    style={{ height: 40, borderRadius: 13 }}
+                  >
+                    +15
+                  </button>
+                  <button
+                    type="button"
+                    onClick={stopRest}
+                    className="os-chip os-chip--on os-press justify-center"
+                    style={{ height: 40, borderRadius: 13, flex: 1.3 }}
+                  >
+                    Skip rest
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       ) : (
         <div className="os-fade-under flex-none px-[18px] pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-2.5">

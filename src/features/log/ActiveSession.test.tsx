@@ -257,6 +257,26 @@ describe('Logger core flow (pinned pre-extraction)', () => {
     expect(await screen.findByText('Rest')).toBeTruthy();
   });
 
+  // Review card f09: at zero the panel turns into Rest done and stays until a tap.
+  it('at zero the panel says Rest done and stays until Next set is tapped', async () => {
+    await seedActiveSession();
+    const user = userEvent.setup();
+    renderLogger();
+    await logButton();
+    await user.click(await logButton());
+    expect(await screen.findByText('Rest')).toBeTruthy();
+    // The clock reaches zero: the timer's end is already in the past.
+    useSessionStore.getState().setRest({ endsAt: Date.now() - 1, durationSec: 120 });
+    expect(await screen.findByText('Rest done')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: /Log set/ })).toBeNull();
+    await new Promise((r) => setTimeout(r, 1200));
+    expect(screen.getByText('Rest done')).toBeTruthy();
+    expect(useSessionStore.getState().rest).not.toBeNull();
+    await user.click(screen.getByRole('button', { name: 'Next set' }));
+    expect(useSessionStore.getState().rest).toBeNull();
+    expect(await logButton()).toBeTruthy();
+  });
+
   it('a seeded weight is labelled as a suggested start with the calibration instruction', async () => {
     await seedActiveSession();
     renderLogger();
