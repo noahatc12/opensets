@@ -7,7 +7,9 @@ import { explainTempo, humanReason, phaseWords } from './format';
 describe('humanReason', () => {
   it('turns the engine week tail into words: week, phase, effort', () => {
     expect(
-      humanReason('Starting weight — build toward 12 reps. · Wk 2 Accumulation (RPE 8)'),
+      humanReason(
+        'Starting weight — build toward 12 reps. · Wk 2 Accumulation (RPE 8)',
+      ),
     ).toBe(
       'Starting weight: build toward 12 reps. · week 2, building volume, effort 8',
     );

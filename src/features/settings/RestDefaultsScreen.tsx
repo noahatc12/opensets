@@ -159,7 +159,9 @@ export function RestDefaultsScreen() {
             <PillToggle
               label="Auto-start on logged set"
               on={autoStart}
-              onToggle={() => void updateSettings({ restAutoStart: !autoStart })}
+              onToggle={() =>
+                void updateSettings({ restAutoStart: !autoStart })
+              }
             />
             {/* The rest panel stays up at zero until a tap; the chime is the signal on
                 an iPhone, which cannot buzz from a web app (review card f09). */}

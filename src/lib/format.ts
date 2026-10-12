@@ -61,14 +61,19 @@ export function explainTempo(tempo: string): { count: string; text: string }[] {
   const secs = (n: string) => `${n} second${n === '1' ? '' : 's'}`;
   const rows = [
     (n: string) =>
-      n === 'X' ? 'Lower as fast as you can' : `Lower the weight for ${secs(n)}`,
+      n === 'X'
+        ? 'Lower as fast as you can'
+        : `Lower the weight for ${secs(n)}`,
     (n: string) =>
       n === '0' || n === 'X'
         ? 'No pause at the bottom'
         : `Pause ${secs(n)} at the bottom`,
-    (n: string) => (n === 'X' ? 'Lift as fast as you can' : `Lift in ${secs(n)}`),
     (n: string) =>
-      n === '0' || n === 'X' ? 'No pause at the top' : `Pause ${secs(n)} at the top`,
+      n === 'X' ? 'Lift as fast as you can' : `Lift in ${secs(n)}`,
+    (n: string) =>
+      n === '0' || n === 'X'
+        ? 'No pause at the top'
+        : `Pause ${secs(n)} at the top`,
   ];
   return parts.map((count, i) => ({ count, text: rows[i]!(count) }));
 }
