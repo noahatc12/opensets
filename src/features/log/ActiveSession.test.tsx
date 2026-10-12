@@ -13,6 +13,7 @@ import {
   waitFor,
   cleanup,
   fireEvent,
+  within,
 } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
@@ -303,7 +304,9 @@ describe('Logger core flow (pinned pre-extraction)', () => {
     await user.click(await logButton());
     expect(await screen.findByText('Rest')).toBeTruthy();
     // The clock reaches zero: the timer's end is already in the past.
-    useSessionStore.getState().setRest({ endsAt: Date.now() - 1, durationSec: 120 });
+    useSessionStore
+      .getState()
+      .setRest({ endsAt: Date.now() - 1, durationSec: 120 });
     expect(await screen.findByText('Rest done')).toBeTruthy();
     expect(screen.queryByRole('button', { name: /Log set/ })).toBeNull();
     await new Promise((r) => setTimeout(r, 1200));
@@ -429,6 +432,84 @@ describe('Logger core flow (pinned pre-extraction)', () => {
       const s = await db.sessions.get(session.id);
       expect(s!.status).toBe('completed');
     });
+  });
+});
+
+// Review card f07: tap a logged set to fix it.
+describe('Tap a logged set to fix it', () => {
+  it('saves new reps on the set and judges its record again', async () => {
+    const { session } = await seedActiveSession();
+    await db.sets.add({
+      id: 'prior-1',
+      sessionId: 'prior',
+      exerciseId: 'bench',
+      date: '2026-06-18',
+      order: 0,
+      type: 'working',
+      weightLb: 60,
+      reps: 5,
+      completed: true,
+    });
+    const user = userEvent.setup();
+    renderLogger();
+    await user.click(await logButton());
+    await waitFor(async () =>
+      expect(await getSessionSets(session.id)).toHaveLength(1),
+    );
+    expect((await getSessionSets(session.id))[0]!.isPR).toBeUndefined();
+    await user.click(screen.getByRole('button', { name: 'Skip rest' }));
+    await user.click(screen.getByRole('button', { name: /^Edit set 1,/ }));
+    const sheet = await screen.findByRole('dialog', { name: 'Edit set 1' });
+    await user.click(
+      within(sheet).getByRole('button', { name: 'increase reps' }),
+    );
+    await user.click(within(sheet).getByRole('button', { name: '9' }));
+    await user.click(within(sheet).getByRole('button', { name: 'Save set 1' }));
+    await waitFor(async () => {
+      const s = (await getSessionSets(session.id))[0]!;
+      expect(s.reps).toBe(6);
+      expect(s.rpe).toBe(9);
+      expect(s.isPR).toContain('reps');
+    });
+    expect(screen.queryByRole('dialog', { name: 'Edit set 1' })).toBeNull();
+  });
+
+  it('deletes a set, closes the gap, and Undo puts it back where it was', async () => {
+    const { session } = await seedActiveSession();
+    const user = userEvent.setup();
+    renderLogger();
+    await user.click(await logButton());
+    await user.click(await screen.findByRole('button', { name: 'Skip rest' }));
+    await user.click(screen.getByRole('button', { name: 'increase reps' }));
+    await user.click(await logButton());
+    await user.click(await screen.findByRole('button', { name: 'Skip rest' }));
+    await waitFor(async () =>
+      expect(await getSessionSets(session.id)).toHaveLength(2),
+    );
+    await user.click(screen.getByRole('button', { name: /^Edit set 1,/ }));
+    const sheet = await screen.findByRole('dialog', { name: 'Edit set 1' });
+    await user.click(within(sheet).getByRole('button', { name: 'Delete set' }));
+    await waitFor(async () => {
+      const sets = await getSessionSets(session.id);
+      expect(sets).toHaveLength(1);
+      expect(sets[0]!.reps).toBe(6);
+      expect(sets[0]!.order).toBe(0);
+    });
+    expect(await screen.findByText(/Deleted set 1/)).toBeTruthy();
+    expect(
+      await screen.findByRole('button', { name: /Log set 2/ }),
+    ).toBeTruthy();
+    await user.click(screen.getByRole('button', { name: 'Undo' }));
+    await waitFor(async () => {
+      const sets = await getSessionSets(session.id);
+      expect(sets.map((s) => [s.order, s.reps])).toEqual([
+        [0, 5],
+        [1, 6],
+      ]);
+    });
+    expect(
+      await screen.findByRole('button', { name: /Log set 3/ }),
+    ).toBeTruthy();
   });
 });
 

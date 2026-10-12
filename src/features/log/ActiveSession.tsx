@@ -92,6 +92,9 @@ function Logger({ vm }: { vm: LoggerVM }) {
     log,
     leave,
     undoSet,
+    editSet,
+    deleteSet,
+    undoDelete,
     skip,
     undoSkip,
     openSwap,
@@ -100,9 +103,18 @@ function Logger({ vm }: { vm: LoggerVM }) {
     onPickExercise,
   } = vm;
 
-  const [keypad, setKeypad] = useState<'weight' | 'reps' | null>(null);
+  const [keypad, setKeypad] = useState<
+    'weight' | 'reps' | 'editWeight' | 'editReps' | null
+  >(null);
   const [platesOpen, setPlatesOpen] = useState(false);
   const [tempoOpen, setTempoOpen] = useState(false);
+  // A logged set being fixed (review card f07): the row tapped and its draft numbers.
+  const [edit, setEdit] = useState<{
+    set: LoggedSet;
+    weightLb: number;
+    reps: number;
+    rpe: number | undefined;
+  } | null>(null);
 
   const ex = getCatalogExercise(exId);
   const scheme = activeSlot.scheme;
@@ -386,6 +398,14 @@ function Logger({ vm }: { vm: LoggerVM }) {
               done={d}
               target={pres?.sets[d.order]?.targetReps}
               w={w}
+              onEdit={() =>
+                setEdit({
+                  set: d,
+                  weightLb: d.weightLb,
+                  reps: d.reps,
+                  rpe: d.rpe,
+                })
+              }
             />
           ));
           const upRows = upcoming.map((p, j) => (
@@ -641,15 +661,19 @@ function Logger({ vm }: { vm: LoggerVM }) {
             action="Undo"
             onAction={() => {
               if (toast.kind === 'set') void undoSet(toast.setId);
-              else void undoSkip(toast.slot, toast.index);
+              else if (toast.kind === 'skip')
+                void undoSkip(toast.slot, toast.index);
+              else void undoDelete(toast.setId, toast.index);
               setToast(null);
             }}
           >
             {toast.kind === 'skip'
               ? `Skipped ${shortName(nameOf(toast.slot.exerciseId), 22)}`
-              : toast.repRecord
-                ? 'Set logged, a rep record'
-                : 'Set logged'}
+              : toast.kind === 'deleted'
+                ? `Deleted set ${toast.index + 1}, ${toast.label}`
+                : toast.repRecord
+                  ? 'Set logged, a rep record'
+                  : 'Set logged'}
           </Toast>
         </div>
       )}
@@ -817,6 +841,167 @@ function Logger({ vm }: { vm: LoggerVM }) {
         onClose={() => setKeypad(null)}
       />
 
+      {/* Tap a logged set to fix it (review card f07): weight, reps, effort, or delete
+          it with Undo. Saving judges its records again. */}
+      {edit && (
+        <Sheet
+          open
+          onClose={() => setEdit(null)}
+          label={`Edit set ${edit.set.order + 1}`}
+        >
+          <SheetHeader
+            title={`Set ${edit.set.order + 1}`}
+            action="Cancel"
+            onAction={() => setEdit(null)}
+          />
+          <div className="mt-1 grid grid-cols-2 gap-3.5 text-center">
+            <div>
+              <div className="os-t">
+                {weightLabel}
+                {!isBw(edit.weightLb) && <span> · {units}</span>}
+              </div>
+              <button
+                type="button"
+                onClick={() => setKeypad('editWeight')}
+                aria-label="Type weight"
+                className="os-num os-press mt-1 w-full"
+                style={{ fontSize: 52 }}
+              >
+                {w(edit.weightLb)}
+              </button>
+              <div className="mt-2 flex justify-center gap-2">
+                <button
+                  type="button"
+                  onClick={() =>
+                    setEdit((e) =>
+                      e ? { ...e, weightLb: vm.nextWeight(e.weightLb, -1) } : e,
+                    )
+                  }
+                  className="os-step os-press"
+                  aria-label="decrease weight"
+                >
+                  <Minus />
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setEdit((e) =>
+                      e ? { ...e, weightLb: vm.nextWeight(e.weightLb, 1) } : e,
+                    )
+                  }
+                  className="os-step os-press"
+                  aria-label="increase weight"
+                >
+                  <Plus />
+                </button>
+              </div>
+            </div>
+            <div>
+              <div className="os-t">Reps</div>
+              <button
+                type="button"
+                onClick={() => setKeypad('editReps')}
+                aria-label="Type reps"
+                className="os-num os-press mt-1 w-full"
+                style={{ fontSize: 52 }}
+              >
+                {edit.reps}
+              </button>
+              <div className="mt-2 flex justify-center gap-2">
+                <button
+                  type="button"
+                  onClick={() =>
+                    setEdit((e) =>
+                      e ? { ...e, reps: Math.max(0, e.reps - 1) } : e,
+                    )
+                  }
+                  className="os-step os-press"
+                  aria-label="decrease reps"
+                >
+                  <Minus />
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setEdit((e) => (e ? { ...e, reps: e.reps + 1 } : e))
+                  }
+                  className="os-step os-press"
+                  aria-label="increase reps"
+                >
+                  <Plus />
+                </button>
+              </div>
+            </div>
+          </div>
+          <div className="mt-3 flex items-center gap-2.5">
+            <span className="os-t w-[44px]">Effort</span>
+            <div className="os-seg flex-1" role="group" aria-label="Effort">
+              {[6, 7, 8, 9, 10].map((n) => (
+                <button
+                  key={n}
+                  type="button"
+                  onClick={() =>
+                    setEdit((e) =>
+                      e ? { ...e, rpe: e.rpe === n ? undefined : n } : e,
+                    )
+                  }
+                  aria-pressed={edit.rpe === n}
+                  style={{ fontVariantNumeric: 'tabular-nums' }}
+                >
+                  {n}
+                </button>
+              ))}
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              const { set, weightLb, reps: r, rpe: e } = edit;
+              setEdit(null);
+              void editSet(set.id, { weightLb, reps: r, rpe: e });
+            }}
+            className="os-btn os-btn--pri os-press mt-4"
+          >
+            Save set {edit.set.order + 1}
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              const { set } = edit;
+              setEdit(null);
+              void deleteSet(set);
+            }}
+            className="os-btn os-btn--sm os-btn--danger os-press mt-2"
+          >
+            Delete set
+          </button>
+        </Sheet>
+      )}
+      <KeypadSheet
+        open={keypad === 'editWeight'}
+        label={`${weightLabel}, ${units}`}
+        current={edit ? w(edit.weightLb) : '0'}
+        decimal
+        onDone={(v) =>
+          setEdit((e) =>
+            e
+              ? { ...e, weightLb: Math.max(0, units === 'kg' ? kgToLb(v) : v) }
+              : e,
+          )
+        }
+        onClose={() => setKeypad(null)}
+      />
+      <KeypadSheet
+        open={keypad === 'editReps'}
+        label="Reps"
+        current={edit ? String(edit.reps) : '0'}
+        decimal={false}
+        onDone={(v) =>
+          setEdit((e) => (e ? { ...e, reps: Math.max(0, Math.round(v)) } : e))
+        }
+        onClose={() => setKeypad(null)}
+      />
+
       <Sheet
         open={platesOpen}
         onClose={() => setPlatesOpen(false)}
@@ -930,16 +1115,23 @@ function SetRow({
   done,
   target,
   w,
+  onEdit,
 }: {
   n: number;
   done: LoggedSet;
   target: number | undefined;
   w: (lb: number) => string;
+  onEdit: () => void;
 }) {
   const missed = target !== undefined && done.reps < target;
   const isPr = (done.isPR?.length ?? 0) > 0;
   return (
-    <div className="os-row">
+    <button
+      type="button"
+      onClick={onEdit}
+      className="os-row os-press w-full text-left"
+      aria-label={`Edit set ${n}, ${w(done.weightLb)} × ${done.reps}`}
+    >
       <span className="os-t w-4">{n}</span>
       <span className="os-num text-[18px]">
         {w(done.weightLb)} × {done.reps}
@@ -962,7 +1154,7 @@ function SetRow({
       ) : (
         <span className="os-tag os-tag--pos ml-auto">Done</span>
       )}
-    </div>
+    </button>
   );
 }
 

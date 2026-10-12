@@ -22,6 +22,9 @@ import {
   detectAndMarkPRs,
   setSessionSlots,
   makeSlot,
+  editLoggedSet,
+  deleteLoggedSet,
+  restoreLoggedSetAt,
 } from '../../db/repositories';
 import {
   saveActiveSnapshot,
@@ -55,7 +58,8 @@ export type PickerMode = 'swap' | 'add' | null;
  *  taken out and where it sat, so Undo puts it back (review card f08). */
 export type LoggerToast =
   | { kind: 'set'; setId: string; repRecord?: boolean }
-  | { kind: 'skip'; slot: ExerciseSlot; index: number };
+  | { kind: 'skip'; slot: ExerciseSlot; index: number }
+  | { kind: 'deleted'; setId: string; index: number; label: string };
 
 /** What the record screen shows: the set that set it and the best it beat. */
 export interface Celebration {
@@ -125,6 +129,8 @@ export interface LoggerVM {
   wStepLabel: string;
   loadType: LoadType | undefined;
   stepWeight: (dir: 1 | -1) => void;
+  /** The weight one tap of + or - gives from `w` (dumbbells and stacks follow the rack). */
+  nextWeight: (w: number, dir: 1 | -1) => number;
   // rest timer
   rest: ReturnType<typeof useSessionStore.getState>['rest'];
   restRemain: number;
@@ -156,6 +162,14 @@ export interface LoggerVM {
   discard: () => Promise<void>;
   leave: () => void;
   undoSet: (setId: string) => Promise<void>;
+  /** Fix a logged set's weight, reps or effort (review card f07). */
+  editSet: (
+    setId: string,
+    patch: { weightLb: number; reps: number; rpe: number | undefined },
+  ) => Promise<void>;
+  /** Remove a logged set; the toast offers Undo. */
+  deleteSet: (set: LoggedSet) => Promise<void>;
+  undoDelete: (setId: string, index: number) => Promise<void>;
   /** Take the current exercise out of this workout (the day itself is untouched). */
   skip: () => Promise<void>;
   /** Put a skipped exercise back where it was. */
@@ -249,8 +263,7 @@ export function useLogger(): LoggerVM | null {
     if (soundOn) playChime();
   }, [restDone, restEndsAt, soundOn]);
   const canVibrate =
-    typeof navigator !== 'undefined' &&
-    typeof navigator.vibrate === 'function';
+    typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function';
   const zeroLine = canVibrate
     ? 'The phone buzzes at zero.'
     : soundOn
@@ -358,7 +371,7 @@ export function useLogger(): LoggerVM | null {
   /** The +/- weight buttons. Dumbbells and stacks step along what the gym actually has
    *  (15 -> 17.5 -> 20 -> 25 on a dumbbell rack); barbell and bodyweight keep the flat
    *  step. */
-  function stepWeight(dir: 1 | -1) {
+  function nextWeight(w: number, dir: 1 | -1): number {
     if (loadType === 'dumbbell' || loadType === 'stack') {
       const args = [
         loadType,
@@ -366,14 +379,14 @@ export function useLogger(): LoggerVM | null {
         settings.plateInventoryLb,
         loadStepsOf(settings),
       ] as const;
-      setWeight((w) =>
-        dir > 0
-          ? roundForLoad(w + 0.01, ...args, 'up')
-          : Math.max(0, roundForLoad(w - 0.01, ...args, 'down')),
-      );
-      return;
+      return dir > 0
+        ? roundForLoad(w + 0.01, ...args, 'up')
+        : Math.max(0, roundForLoad(w - 0.01, ...args, 'down'));
     }
-    setWeight((w) => Math.max(0, Math.round((w + dir * wStep) * 100) / 100));
+    return Math.max(0, Math.round((w + dir * wStep) * 100) / 100);
+  }
+  function stepWeight(dir: 1 | -1) {
+    setWeight((w) => nextWeight(w, dir));
   }
 
   async function log() {
@@ -476,6 +489,27 @@ export function useLogger(): LoggerVM | null {
     await softDeleteSet(setId, nowIso());
   }
 
+  async function editSet(
+    setId: string,
+    patch: { weightLb: number; reps: number; rpe: number | undefined },
+  ) {
+    await editLoggedSet(setId, patch);
+  }
+
+  async function deleteSet(set: LoggedSet) {
+    const index = await deleteLoggedSet(set.id, nowIso());
+    setToast({
+      kind: 'deleted',
+      setId: set.id,
+      index,
+      label: `${set.weightLb > 0 ? fmtWeight(set.weightLb, units) : 'BW'} × ${set.reps}`,
+    });
+  }
+
+  async function undoDelete(setId: string, index: number) {
+    await restoreLoggedSetAt(setId, index);
+  }
+
   /** Mid-workout edits mutate the session's frozen slots only (template untouched).
    *  Skipping the only exercise left would end the workout with nothing to undo, so
    *  that opens the summary instead and the lifter chooses Save or Discard. */
@@ -574,6 +608,7 @@ export function useLogger(): LoggerVM | null {
     wStepLabel,
     loadType,
     stepWeight,
+    nextWeight,
     rest,
     restRemain,
     restDone,
@@ -597,6 +632,9 @@ export function useLogger(): LoggerVM | null {
     discard,
     leave,
     undoSet,
+    editSet,
+    deleteSet,
+    undoDelete,
     skip,
     undoSkip,
     openSwap,

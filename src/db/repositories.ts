@@ -700,6 +700,90 @@ export async function softDeleteSet(id: string, now: string): Promise<void> {
   await db.sets.update(id, { deletedAt: now });
 }
 
+/** A session's live sets for one exercise, in order. */
+async function liveSetsFor(
+  sessionId: string,
+  exerciseId: string,
+): Promise<LoggedSet[]> {
+  const all = await db.sets.where('sessionId').equals(sessionId).toArray();
+  return all
+    .filter((s) => s.exerciseId === exerciseId && !s.deletedAt)
+    .sort((a, b) => a.order - b.order);
+}
+
+/** Give the live sets of (session, exercise) the orders 0..n-1 in their current order,
+ *  so the next logged set lands after the last and done rows map to prescribed sets. */
+async function renumberSets(
+  sessionId: string,
+  exerciseId: string,
+): Promise<void> {
+  const live = await liveSetsFor(sessionId, exerciseId);
+  await db.transaction('rw', db.sets, async () => {
+    for (let i = 0; i < live.length; i++) {
+      if (live[i]!.order !== i) await db.sets.update(live[i]!.id, { order: i });
+    }
+  });
+}
+
+/** Fix a logged set mid-workout (review card f07): weight, reps or effort. Its record
+ *  marks are judged again against everything else, since a changed number can make or
+ *  unmake a record. Later sets in the same session keep their marks. */
+export async function editLoggedSet(
+  id: string,
+  patch: { weightLb?: number; reps?: number; rpe?: number | undefined },
+): Promise<LoggedSet | undefined> {
+  const row = await db.sets.get(id);
+  if (!row) return undefined;
+  const next: LoggedSet = { ...row, ...patch };
+  if (patch.rpe === undefined && 'rpe' in patch) delete next.rpe;
+  const all = await db.sets
+    .where('exerciseId')
+    .equals(row.exerciseId)
+    .toArray();
+  const prior = all.filter((s) => s.id !== id && !s.deletedAt).map(toSetResult);
+  const pr = detectPRs(toSetResult(next), prior);
+  if (pr.kinds.length > 0) next.isPR = pr.kinds;
+  else delete next.isPR;
+  await db.sets.put(next);
+  return next;
+}
+
+/** Soft-delete a set and close the gap it leaves (review card f07). Returns the position
+ *  it had among the exercise's live sets, for Undo. */
+export async function deleteLoggedSet(
+  id: string,
+  now: string,
+): Promise<number> {
+  const row = await db.sets.get(id);
+  if (!row) return 0;
+  const before = await liveSetsFor(row.sessionId, row.exerciseId);
+  const index = Math.max(
+    0,
+    before.findIndex((s) => s.id === id),
+  );
+  await db.sets.update(id, { deletedAt: now });
+  await renumberSets(row.sessionId, row.exerciseId);
+  return index;
+}
+
+/** Undo a delete: the set comes back at the position it had, and the rest shift. */
+export async function restoreLoggedSetAt(
+  id: string,
+  index: number,
+): Promise<void> {
+  const row = await db.sets.get(id);
+  if (!row) return;
+  const live = await liveSetsFor(row.sessionId, row.exerciseId);
+  const at = Math.min(index, live.length);
+  await db.transaction('rw', db.sets, async () => {
+    for (const s of live) {
+      if (s.order >= at) await db.sets.update(s.id, { order: s.order + 1 });
+    }
+    await db.sets.update(id, { deletedAt: undefined, order: at });
+  });
+  await renumberSets(row.sessionId, row.exerciseId);
+}
+
 export async function restoreSet(id: string): Promise<void> {
   await db.sets.update(id, { deletedAt: undefined });
 }
