@@ -66,6 +66,8 @@ interface SlotDraft {
   repMax: number;
   incrementLb: number;
   startingWeightLb: number;
+  /** The lifter typed or stepped the weight: it is theirs, not a suggested start. */
+  weightTyped?: boolean;
   restWorkSec: number;
 }
 
@@ -319,7 +321,9 @@ export function RoutineBuilder() {
       const d = drafts[i]!;
       const prior = await getExerciseState(program.id, slot.exerciseId);
       if (!prior)
-        await seedExerciseState(program.id, slot, d.startingWeightLb, now);
+        await seedExerciseState(program.id, slot, d.startingWeightLb, now, {
+          suggested: !d.weightTyped,
+        });
       else if (
         d.origWeightLb !== undefined &&
         Math.abs(d.startingWeightLb - d.origWeightLb) > 0.001
@@ -391,6 +395,7 @@ export function RoutineBuilder() {
           d.startingWeightLb,
           !ruleChanged && !weightChanged,
           now,
+          { suggested: !d.weightTyped },
         );
     }
     nav.back('/plan');
@@ -600,7 +605,10 @@ export function RoutineBuilder() {
                         label={`${loadWord(loadTypeFor(d.exercise.equipment, d.exercise.isBodyweight))} · ${settings.units}`}
                         value={shown(d.startingWeightLb)}
                         onChange={(v) =>
-                          update(i, { startingWeightLb: fromShown(v) })
+                          update(i, {
+                            startingWeightLb: fromShown(v),
+                            weightTyped: true,
+                          })
                         }
                         min={0}
                         step={settings.units === 'kg' ? 1 : 2.5}

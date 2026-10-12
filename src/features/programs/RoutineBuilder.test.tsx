@@ -216,4 +216,36 @@ describe('a new day', () => {
     expect(days.map((d) => d.name)).toEqual(['Push']);
     expect(await getExerciseState(programs[0]!.id, BENCH.id)).toBeDefined();
   });
+
+  // Review card f13: "Suggested start" belongs to weights the app picked, never to one
+  // the lifter typed.
+  it('a weight the app picked is a suggested start; one the lifter set is not', async () => {
+    await db.settings.put({ key: 'user', ...DEFAULT_SETTINGS });
+    const user = userEvent.setup();
+    renderNew();
+    await screen.findByText(/Bench Press/i, undefined, { timeout: 3000 });
+    await user.type(screen.getByRole('textbox', { name: 'Day name' }), 'Push');
+    await user.click(screen.getByRole('button', { name: 'Save day' }));
+    await screen.findByText('today');
+    const program = (await db.programs.toArray())[0]!;
+    const picked = (await getExerciseState(program.id, BENCH.id))!;
+    expect(picked.pending!.flags).toContain('suggested');
+
+    await Promise.all(db.tables.map((t) => t.clear()));
+    await db.settings.put({ key: 'user', ...DEFAULT_SETTINGS });
+    cleanup();
+    renderNew();
+    await screen.findByText(/Bench Press/i, undefined, { timeout: 3000 });
+    await user.click(
+      screen.getByRole('button', { name: 'Increase starting weight' }),
+    );
+    await user.type(screen.getByRole('textbox', { name: 'Day name' }), 'Push');
+    await user.click(screen.getByRole('button', { name: 'Save day' }));
+    await screen.findByText('today');
+    const own = (await getExerciseState(
+      (await db.programs.toArray())[0]!.id,
+      BENCH.id,
+    ))!;
+    expect(own.pending!.flags).not.toContain('suggested');
+  });
 });

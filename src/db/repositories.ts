@@ -351,6 +351,7 @@ export async function seedExerciseState(
   slot: ExerciseSlot,
   startingWeightLb: number,
   now: string,
+  opts: { suggested?: boolean } = {},
 ): Promise<ExerciseStateRow> {
   const settings = engineSettings(await getSettings(), await loadTypeOf(slot));
   const meso = (await db.programs.get(programId))?.mesocycle;
@@ -373,10 +374,14 @@ export async function seedExerciseState(
     programId,
     exerciseId: slot.exerciseId,
     updatedAt: now,
-    // Nobody has lifted this weight yet: flag it so the logger labels it as a
-    // suggested start and asks the lifter to calibrate it. The first completion
-    // computes a fresh prescription without the flag.
-    pending: withFlag(periodize(prescription, meso, ramp), 'suggested'),
+    // A weight the app picked and nobody has lifted yet is flagged so the logger
+    // labels it a suggested start and asks the lifter to calibrate it. A weight the
+    // lifter typed is their own, so it carries no flag (review card f13). The first
+    // completion computes a fresh prescription without the flag either way.
+    pending:
+      opts.suggested === false
+        ? periodize(prescription, meso, ramp)
+        : withFlag(periodize(prescription, meso, ramp), 'suggested'),
   };
   await db.exerciseState.put(row);
   return row;
@@ -396,10 +401,11 @@ export async function represcribeAfterEdit(
   weightLb: number,
   keepCounters: boolean,
   now: string,
+  opts: { suggested?: boolean } = {},
 ): Promise<void> {
   const existing = await getExerciseState(programId, slot.exerciseId);
   if (!existing) {
-    await seedExerciseState(programId, slot, weightLb, now);
+    await seedExerciseState(programId, slot, weightLb, now, opts);
     return;
   }
   const settings = engineSettings(await getSettings(), await loadTypeOf(slot));
