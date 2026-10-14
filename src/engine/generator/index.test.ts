@@ -100,7 +100,7 @@ describe('generatePlan — contract shape (§2.1)', () => {
   it('returns the full coached-plan contract with valid scaffolds', () => {
     const r = gen();
     expect(r.program.days.length).toBeGreaterThan(0);
-    expect(r.program.name).toMatch(/\d+d/);
+    expect(r.program.name).toBe('Build muscle · 4 days');
     // Scaffolds: shape present, empty-but-valid this session.
     expect(r.cardioProtocol).toEqual({
       weeklyMinutesTarget: 0,
@@ -502,5 +502,17 @@ describe('split designer — matrix coherence (§2.3 / R2)', () => {
       { experience: 'Advanced', days: 6, priorityMuscles: ['chest'] },
     );
     expect(JSON.stringify(p1)).toBe(JSON.stringify(p2));
+  });
+});
+
+describe('plan names use the onboarding words (review 2026-10-14)', () => {
+  it.each([
+    ['Build muscle', 'Build muscle · 3 days'],
+    ['Get stronger', 'Get stronger · 3 days'],
+    ['General fitness', 'Stay fit · 3 days'],
+    ['Lose fat', 'Lean out · 3 days'],
+    ['Recomposition', 'Recomposition · 3 days'],
+  ] as const)('%s is named %s', (goal, name) => {
+    expect(gen({ goal }, { days: 3 }).program.name).toBe(name);
   });
 });

@@ -31,7 +31,8 @@ export const strings = {
   history: {
     title: 'History',
     emptyTitle: 'No history yet',
-    emptyBody: 'Your logged workouts, PRs, and e1RM trends will appear here.',
+    emptyBody:
+      'Your logged workouts, records and estimated max trends will appear here.',
   },
   settings: {
     title: 'Settings',
