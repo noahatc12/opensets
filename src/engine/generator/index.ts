@@ -479,7 +479,17 @@ const DAY_TEMPLATES: Record<string, Pattern[]> = {
     P.rearDelt!,
   ],
   Pull: [P.vertPull!, P.horizRow!, P.hinge!, P.biceps!, P.rearDelt!, P.abs!],
-  Legs: [P.squat!, P.hinge!, P.legPress!, P.legCurl!, P.calf!, P.legExt!],
+  // Abs ride leg day too, so a 3-day push/pull/legs week does not pile all ab work on
+  // pull day (2026-10-14).
+  Legs: [
+    P.squat!,
+    P.hinge!,
+    P.legPress!,
+    P.legCurl!,
+    P.calf!,
+    P.legExt!,
+    P.abs!,
+  ],
   Upper: [
     P.horizPress!,
     P.vertPull!,
@@ -950,7 +960,14 @@ function allocateVolume(
         (s) => s.pat.muscles[0] === m && s.sets < MAX_SETS_PER_SLOT,
       );
       const want = Math.min(perSession, Math.round(deficit), MAX_SETS_PER_SLOT);
-      if (existing && want <= 2) {
+      // A day at or over its exercise budget, or a muscle that already has two
+      // exercises in this session, raises an existing exercise toward the 5-set cap
+      // before adding another (2026-10-14: a 3-day push/pull/legs pull day had grown
+      // to 10 exercises of 3 sets). A day with room keeps the variety.
+      const crowded =
+        perDay[day]!.length >= slotBudget ||
+        perDay[day]!.filter((s) => s.pat.muscles[0] === m).length >= 2;
+      if (existing && (want <= 2 || crowded)) {
         const bump = Math.min(want, MAX_SETS_PER_SLOT - existing.sets);
         existing.sets += bump;
         for (const [mm, c] of patternCredit(existing.pat, direct))
