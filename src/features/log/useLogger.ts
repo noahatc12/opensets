@@ -6,6 +6,7 @@
  */
 import { useEffect, useRef, useState } from 'react';
 import { closeWorkout, tuckWorkout } from './workoutMotion';
+import { playChime, primeChime } from '../../lib/chime';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../db/db';
 import { useSettings } from '../../db/hooks';
@@ -21,6 +22,9 @@ import {
   detectAndMarkPRs,
   setSessionSlots,
   makeSlot,
+  editLoggedSet,
+  deleteLoggedSet,
+  restoreLoggedSetAt,
 } from '../../db/repositories';
 import {
   saveActiveSnapshot,
@@ -48,6 +52,14 @@ import type {
 } from '../../engine/types';
 
 export type PickerMode = 'swap' | 'add' | null;
+
+/** The undo toast. After a log: the set, and whether it set a rep record (shown as a tag
+ *  on the row rather than the record screen, review card f06). After a skip: the exercise
+ *  taken out and where it sat, so Undo puts it back (review card f08). */
+export type LoggerToast =
+  | { kind: 'set'; setId: string; repRecord?: boolean }
+  | { kind: 'skip'; slot: ExerciseSlot; index: number }
+  | { kind: 'deleted'; setId: string; index: number; label: string };
 
 /** What the record screen shows: the set that set it and the best it beat. */
 export interface Celebration {
@@ -117,9 +129,15 @@ export interface LoggerVM {
   wStepLabel: string;
   loadType: LoadType | undefined;
   stepWeight: (dir: 1 | -1) => void;
+  /** The weight one tap of + or - gives from `w` (dumbbells and stacks follow the rack). */
+  nextWeight: (w: number, dir: 1 | -1) => number;
   // rest timer
   rest: ReturnType<typeof useSessionStore.getState>['rest'];
   restRemain: number;
+  /** The rest ran out and the panel is waiting for a tap (review card f09). */
+  restDone: boolean;
+  /** What happens at zero, in the lifter's words, for the rest panel's line. */
+  zeroLine: string;
   adjustRest: (deltaSec: number) => void;
   stopRest: () => void;
   // overlays / transient
@@ -127,8 +145,8 @@ export interface LoggerVM {
   setWhyOpen: React.Dispatch<React.SetStateAction<boolean>>;
   celebrate: Celebration | null;
   setCelebrate: React.Dispatch<React.SetStateAction<Celebration | null>>;
-  toast: { setId: string } | null;
-  setToast: React.Dispatch<React.SetStateAction<{ setId: string } | null>>;
+  toast: LoggerToast | null;
+  setToast: React.Dispatch<React.SetStateAction<LoggerToast | null>>;
   finishing: boolean;
   multiTabConflict: boolean;
   pickerMode: PickerMode;
@@ -144,7 +162,18 @@ export interface LoggerVM {
   discard: () => Promise<void>;
   leave: () => void;
   undoSet: (setId: string) => Promise<void>;
+  /** Fix a logged set's weight, reps or effort (review card f07). */
+  editSet: (
+    setId: string,
+    patch: { weightLb: number; reps: number; rpe: number | undefined },
+  ) => Promise<void>;
+  /** Remove a logged set; the toast offers Undo. */
+  deleteSet: (set: LoggedSet) => Promise<void>;
+  undoDelete: (setId: string, index: number) => Promise<void>;
+  /** Take the current exercise out of this workout (the day itself is untouched). */
   skip: () => Promise<void>;
+  /** Put a skipped exercise back where it was. */
+  undoSkip: (slot: ExerciseSlot, index: number) => Promise<void>;
   openSwap: () => void;
   openAdd: () => void;
   closePicker: () => void;
@@ -155,8 +184,13 @@ export interface LoggerVM {
 export function useLogger(): LoggerVM | null {
   useCatalog();
   const settings = useSettings();
-  const { units, restAutoStart, defaultRestWarmupSec, defaultRestWorkSec } =
-    settings;
+  const {
+    units,
+    restAutoStart,
+    defaultRestWarmupSec,
+    defaultRestWorkSec,
+    soundOn,
+  } = settings;
   const { session, prescriptions, lastByExercise, logged } = useActiveWorkout();
   const current = useSessionStore((s) => s.currentExercise);
   const setCurrent = useSessionStore((s) => s.setCurrentExercise);
@@ -171,7 +205,7 @@ export function useLogger(): LoggerVM | null {
   const [now, setNow] = useState(() => Date.now());
   const [celebrate, setCelebrate] = useState<Celebration | null>(null);
   const [summaryOpen, setSummaryOpen] = useState(false);
-  const [toast, setToast] = useState<{ setId: string } | null>(null);
+  const [toast, setToast] = useState<LoggerToast | null>(null);
   const [pickerMode, setPickerMode] = useState<PickerMode>(null);
   const [multiTabConflict, setMultiTabConflict] = useState(false);
   const [readyToSave, setReadyToSave] = useState(false);
@@ -209,6 +243,32 @@ export function useLogger(): LoggerVM | null {
     const id = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(id);
   }, []);
+
+  // At zero the panel stays up until a tap (review card f09, Noah 2026-10-01: a rest
+  // that ends by itself is a rest you miss). The signal fires once per rest: a buzz
+  // where the browser can vibrate, and the chime when sound is on. WebKit on iPhone has
+  // had no navigator.vibrate since 2017, so there the chime is the signal.
+  const signalledRef = useRef<number | null>(null);
+  const restEndsAt = rest?.endsAt ?? null;
+  const restDone = rest !== null && rest.endsAt <= now;
+  useEffect(() => {
+    if (!restDone || restEndsAt === null) return;
+    if (signalledRef.current === restEndsAt) return;
+    signalledRef.current = restEndsAt;
+    if (
+      typeof navigator !== 'undefined' &&
+      typeof navigator.vibrate === 'function'
+    )
+      navigator.vibrate([120, 60, 120]);
+    if (soundOn) playChime();
+  }, [restDone, restEndsAt, soundOn]);
+  const canVibrate =
+    typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function';
+  const zeroLine = canVibrate
+    ? 'The phone buzzes at zero.'
+    : soundOn
+      ? 'A chime plays at zero.'
+      : 'The panel stays up at zero.';
 
   // Auto-dismiss the set-logged undo toast (10 s undo window, spec §5 P1).
   useEffect(() => {
@@ -311,7 +371,7 @@ export function useLogger(): LoggerVM | null {
   /** The +/- weight buttons. Dumbbells and stacks step along what the gym actually has
    *  (15 -> 17.5 -> 20 -> 25 on a dumbbell rack); barbell and bodyweight keep the flat
    *  step. */
-  function stepWeight(dir: 1 | -1) {
+  function nextWeight(w: number, dir: 1 | -1): number {
     if (loadType === 'dumbbell' || loadType === 'stack') {
       const args = [
         loadType,
@@ -319,19 +379,22 @@ export function useLogger(): LoggerVM | null {
         settings.plateInventoryLb,
         loadStepsOf(settings),
       ] as const;
-      setWeight((w) =>
-        dir > 0
-          ? roundForLoad(w + 0.01, ...args, 'up')
-          : Math.max(0, roundForLoad(w - 0.01, ...args, 'down')),
-      );
-      return;
+      return dir > 0
+        ? roundForLoad(w + 0.01, ...args, 'up')
+        : Math.max(0, roundForLoad(w - 0.01, ...args, 'down'));
     }
-    setWeight((w) => Math.max(0, Math.round((w + dir * wStep) * 100) / 100));
+    return Math.max(0, Math.round((w + dir * wStep) * 100) / 100);
+  }
+  function stepWeight(dir: 1 | -1) {
+    setWeight((w) => nextWeight(w, dir));
   }
 
   async function log() {
     if (!activePrescribed || loggingRef.current) return;
     loggingRef.current = true;
+    // A tap is the only moment a phone lets a page open audio: open it here so the
+    // chime can sound at zero.
+    if (soundOn) primeChime();
     try {
       const loggedRow = await logSet({
         sessionId: session!.id,
@@ -345,7 +408,7 @@ export function useLogger(): LoggerVM | null {
         ...(rpe !== undefined ? { rpe } : {}),
       });
       const pr = await detectAndMarkPRs(loggedRow);
-      if (pr.kinds.length > 0) {
+      if (isRealRecord(pr.kinds)) {
         // The best this set beat, for the record screen's "previous best" line.
         const prior = (
           await db.sets.where('exerciseId').equals(exId).toArray()
@@ -368,7 +431,13 @@ export function useLogger(): LoggerVM | null {
           previousBestE1rm,
         });
       }
-      setToast({ setId: loggedRow.id });
+      setToast({
+        kind: 'set',
+        setId: loggedRow.id,
+        ...(pr.kinds.length > 0 && !isRealRecord(pr.kinds)
+          ? { repRecord: true }
+          : {}),
+      });
       setWhyOpen(false);
       if (restAutoStart ?? true) {
         startRest(slot!.restWorkSec);
@@ -420,15 +489,47 @@ export function useLogger(): LoggerVM | null {
     await softDeleteSet(setId, nowIso());
   }
 
-  /** Mid-workout edits mutate the session's frozen slots only (template untouched). */
+  async function editSet(
+    setId: string,
+    patch: { weightLb: number; reps: number; rpe: number | undefined },
+  ) {
+    await editLoggedSet(setId, patch);
+  }
+
+  async function deleteSet(set: LoggedSet) {
+    const index = await deleteLoggedSet(set.id, nowIso());
+    setToast({
+      kind: 'deleted',
+      setId: set.id,
+      index,
+      label: `${set.weightLb > 0 ? fmtWeight(set.weightLb, units) : 'BW'} × ${set.reps}`,
+    });
+  }
+
+  async function undoDelete(setId: string, index: number) {
+    await restoreLoggedSetAt(setId, index);
+  }
+
+  /** Mid-workout edits mutate the session's frozen slots only (template untouched).
+   *  Skipping the only exercise left would end the workout with nothing to undo, so
+   *  that opens the summary instead and the lifter chooses Save or Discard. */
   async function skip() {
-    const next = slots.filter((_, i) => i !== current);
-    await setSessionSlots(session!.id, next);
-    if (next.length === 0) {
-      await finish();
+    if (slots.length <= 1) {
+      setSummaryOpen(true);
       return;
     }
+    const removed = slots[current]!;
+    const next = slots.filter((_, i) => i !== current);
+    await setSessionSlots(session!.id, next);
     setCurrent(Math.min(current, next.length - 1));
+    setToast({ kind: 'skip', slot: removed, index: current });
+  }
+
+  async function undoSkip(slot: ExerciseSlot, index: number) {
+    const at = Math.min(index, slots.length);
+    const next = [...slots.slice(0, at), slot, ...slots.slice(at)];
+    await setSessionSlots(session!.id, next);
+    setCurrent(at);
   }
 
   const openSwap = () => setPickerMode('swap');
@@ -507,8 +608,11 @@ export function useLogger(): LoggerVM | null {
     wStepLabel,
     loadType,
     stepWeight,
+    nextWeight,
     rest,
     restRemain,
+    restDone,
+    zeroLine,
     adjustRest,
     stopRest,
     whyOpen,
@@ -528,13 +632,27 @@ export function useLogger(): LoggerVM | null {
     discard,
     leave,
     undoSet,
+    editSet,
+    deleteSet,
+    undoDelete,
     skip,
+    undoSkip,
     openSwap,
     openAdd,
     closePicker,
     onPickExercise,
     session,
   };
+}
+
+/** Whether a record earns the full-screen record screen. A heavier weight than ever, or
+ *  a new best max set some other way than one more rep at the same weight, does. One more
+ *  rep at a weight already lifted is a rep record: it raises the estimated max too, but in
+ *  double progression that is most sessions, and a screen to tap away every time reads as
+ *  noise, so it shows as a PR tag on the set instead (review card f06, Noah 2026-10-01). */
+export function isRealRecord(kinds: PRKind[]): boolean {
+  if (kinds.includes('weight')) return true;
+  return kinds.includes('e1rm') && !kinds.includes('reps');
 }
 
 /** The type a logged set is saved as. A set the program prescribes as rest-pause or drop

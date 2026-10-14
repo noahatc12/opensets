@@ -14,7 +14,8 @@ import { ExercisePicker } from '../library/ExercisePicker';
 import { useCatalog } from '../library/useCatalog';
 import { getCatalogExercise } from '../../db/catalog';
 import { BackButton } from '../../ui/StatGrid';
-import { ConfirmSheet } from '../../ui/Sheet';
+import { ConfirmSheet, Sheet, SheetHeader } from '../../ui/Sheet';
+import { KeypadSheet } from '../../ui/Keypad';
 import type { Exercise, ExerciseSlot } from '../../db/types';
 import { db } from '../../db/db';
 import type { ProgressionRule } from '../../engine/types';
@@ -66,13 +67,17 @@ interface SlotDraft {
   repMax: number;
   incrementLb: number;
   startingWeightLb: number;
+  /** The lifter typed or stepped the weight: it is theirs, not a suggested start. */
+  weightTyped?: boolean;
   restWorkSec: number;
 }
 
+/** A new card. Double progression (add reps, then weight) is the default for a loaded
+ *  lift (review card f11, Noah 2026-10-01); a bodyweight move is manual. */
 function draftFor(exercise: Exercise, startingWeightLb: number): SlotDraft {
   return {
     exercise,
-    ruleKind: exercise.isBodyweight ? 'manual' : 'linear',
+    ruleKind: exercise.isBodyweight ? 'manual' : 'double',
     sets: 3,
     repTarget: 5,
     repMin: 8,
@@ -83,10 +88,13 @@ function draftFor(exercise: Exercise, startingWeightLb: number): SlotDraft {
   };
 }
 
+/** Rest presets for the rest sheet, in seconds. */
+const REST_PRESETS = [60, 90, 120, 150, 180, 240, 300] as const;
+
 const RULE_NAMES: Record<string, string> = {
   percent531: '5/3/1',
   gzclp: 'GZCLP',
-  rpeTarget: 'RPE target',
+  rpeTarget: 'Effort target',
   apre: 'APRE',
   repsOnly: 'Reps only',
   durationLinear: 'Timed',
@@ -162,6 +170,24 @@ export function RoutineBuilder() {
   // leaving with edits asks first (NAV.md, rule 6).
   const [touched, setTouched] = useState(false);
   const [asking, setAsking] = useState(false);
+  // Tap a number to type it (review card f11): which card and field the keypad edits.
+  const [keypad, setKeypad] = useState<{
+    i: number;
+    field:
+      | 'sets'
+      | 'repTarget'
+      | 'repMin'
+      | 'repMax'
+      | 'startingWeightLb'
+      | 'incrementLb';
+    label: string;
+    decimal: boolean;
+    current: string;
+    min: number;
+    max: number;
+  } | null>(null);
+  // Rest is picked from presets on a sheet, shown as m:ss.
+  const [restFor, setRestFor] = useState<number | null>(null);
   const catalog = useCatalog();
   // Edit mode: the saved day, its program, and each exercise's working weight.
   const editSource = useLiveQuery(async () => {
@@ -319,7 +345,9 @@ export function RoutineBuilder() {
       const d = drafts[i]!;
       const prior = await getExerciseState(program.id, slot.exerciseId);
       if (!prior)
-        await seedExerciseState(program.id, slot, d.startingWeightLb, now);
+        await seedExerciseState(program.id, slot, d.startingWeightLb, now, {
+          suggested: !d.weightTyped,
+        });
       else if (
         d.origWeightLb !== undefined &&
         Math.abs(d.startingWeightLb - d.origWeightLb) > 0.001
@@ -391,6 +419,7 @@ export function RoutineBuilder() {
           d.startingWeightLb,
           !ruleChanged && !weightChanged,
           now,
+          { suggested: !d.weightTyped },
         );
     }
     nav.back('/plan');
@@ -523,9 +552,11 @@ export function RoutineBuilder() {
                     </p>
                     <div className="w-[120px] flex-none">
                       <Mini
-                        label="Rest · sec"
+                        label="Rest"
                         value={d.restWorkSec}
+                        display={clock(d.restWorkSec)}
                         onChange={(v) => update(i, { restWorkSec: v })}
+                        onTap={() => setRestFor(i)}
                         min={30}
                         max={600}
                         step={15}
@@ -563,6 +594,17 @@ export function RoutineBuilder() {
                         label="Sets"
                         value={d.sets}
                         onChange={(v) => update(i, { sets: v })}
+                        onTap={() =>
+                          setKeypad({
+                            i,
+                            field: 'sets',
+                            label: 'Sets',
+                            decimal: false,
+                            current: String(d.sets),
+                            min: 1,
+                            max: 10,
+                          })
+                        }
                         min={1}
                         max={10}
                         name="sets"
@@ -573,6 +615,17 @@ export function RoutineBuilder() {
                             label="Reps from"
                             value={d.repMin}
                             onChange={(v) => update(i, { repMin: v })}
+                            onTap={() =>
+                              setKeypad({
+                                i,
+                                field: 'repMin',
+                                label: 'Reps from',
+                                decimal: false,
+                                current: String(d.repMin),
+                                min: 1,
+                                max: d.repMax,
+                              })
+                            }
                             min={1}
                             max={d.repMax}
                             name="rep min"
@@ -581,6 +634,17 @@ export function RoutineBuilder() {
                             label="Reps to"
                             value={d.repMax}
                             onChange={(v) => update(i, { repMax: v })}
+                            onTap={() =>
+                              setKeypad({
+                                i,
+                                field: 'repMax',
+                                label: 'Reps to',
+                                decimal: false,
+                                current: String(d.repMax),
+                                min: d.repMin,
+                                max: 30,
+                              })
+                            }
                             min={d.repMin}
                             max={30}
                             name="rep max"
@@ -591,6 +655,17 @@ export function RoutineBuilder() {
                           label="Reps"
                           value={d.repTarget}
                           onChange={(v) => update(i, { repTarget: v })}
+                          onTap={() =>
+                            setKeypad({
+                              i,
+                              field: 'repTarget',
+                              label: 'Reps',
+                              decimal: false,
+                              current: String(d.repTarget),
+                              min: 1,
+                              max: 30,
+                            })
+                          }
                           min={1}
                           max={30}
                           name="reps"
@@ -600,7 +675,21 @@ export function RoutineBuilder() {
                         label={`${loadWord(loadTypeFor(d.exercise.equipment, d.exercise.isBodyweight))} · ${settings.units}`}
                         value={shown(d.startingWeightLb)}
                         onChange={(v) =>
-                          update(i, { startingWeightLb: fromShown(v) })
+                          update(i, {
+                            startingWeightLb: fromShown(v),
+                            weightTyped: true,
+                          })
+                        }
+                        onTap={() =>
+                          setKeypad({
+                            i,
+                            field: 'startingWeightLb',
+                            label: `${loadWord(loadTypeFor(d.exercise.equipment, d.exercise.isBodyweight))}, ${settings.units}`,
+                            decimal: true,
+                            current: String(shown(d.startingWeightLb)),
+                            min: 0,
+                            max: 2000,
+                          })
                         }
                         min={0}
                         step={settings.units === 'kg' ? 1 : 2.5}
@@ -613,15 +702,28 @@ export function RoutineBuilder() {
                           onChange={(v) =>
                             update(i, { incrementLb: fromShown(v) })
                           }
+                          onTap={() =>
+                            setKeypad({
+                              i,
+                              field: 'incrementLb',
+                              label: `Step, ${settings.units}`,
+                              decimal: true,
+                              current: String(shown(d.incrementLb)),
+                              min: settings.units === 'kg' ? 0.5 : 1.25,
+                              max: 100,
+                            })
+                          }
                           min={settings.units === 'kg' ? 0.5 : 1.25}
                           step={settings.units === 'kg' ? 0.5 : 1.25}
                           name="increment"
                         />
                       )}
                       <Mini
-                        label="Rest · sec"
+                        label="Rest"
                         value={d.restWorkSec}
+                        display={clock(d.restWorkSec)}
                         onChange={(v) => update(i, { restWorkSec: v })}
+                        onTap={() => setRestFor(i)}
                         min={30}
                         max={600}
                         step={15}
@@ -671,6 +773,64 @@ export function RoutineBuilder() {
           onClose={() => setAsking(false)}
         />
 
+        <KeypadSheet
+          open={keypad !== null}
+          label={keypad?.label ?? ''}
+          current={keypad?.current ?? ''}
+          decimal={keypad?.decimal ?? false}
+          onDone={(v) => {
+            if (!keypad) return;
+            const { i, field, min, max, decimal } = keypad;
+            const n = Math.min(max, Math.max(min, decimal ? v : Math.round(v)));
+            if (field === 'startingWeightLb')
+              update(i, { startingWeightLb: fromShown(n), weightTyped: true });
+            else if (field === 'incrementLb')
+              update(i, { incrementLb: fromShown(n) });
+            else update(i, { [field]: n });
+          }}
+          onClose={() => setKeypad(null)}
+        />
+
+        <Sheet
+          open={restFor !== null}
+          onClose={() => setRestFor(null)}
+          label="Rest between sets"
+        >
+          <SheetHeader
+            title="Rest between sets"
+            action="Done"
+            onAction={() => setRestFor(null)}
+          />
+          <div className="mt-3 grid grid-cols-4 gap-2">
+            {REST_PRESETS.map((sec) => {
+              const on =
+                restFor !== null && drafts[restFor]?.restWorkSec === sec;
+              return (
+                <button
+                  key={sec}
+                  type="button"
+                  onClick={() => {
+                    if (restFor !== null) update(restFor, { restWorkSec: sec });
+                    setRestFor(null);
+                  }}
+                  aria-pressed={on}
+                  className={`os-chip os-press justify-center ${on ? 'os-chip--on' : ''}`}
+                  style={{
+                    height: 44,
+                    borderRadius: 13,
+                    fontVariantNumeric: 'tabular-nums',
+                  }}
+                >
+                  {clock(sec)}
+                </button>
+              );
+            })}
+          </div>
+          <p className="os-t mt-3 leading-snug">
+            The minus and plus on the card move it by 15 seconds.
+          </p>
+        </Sheet>
+
         {picking && (
           <ExercisePicker
             onClose={() => setPicking(false)}
@@ -688,11 +848,14 @@ export function RoutineBuilder() {
 
 const round2 = (n: number) => Math.round(n * 100) / 100;
 
-/** A mini stepper tile: label, numeral, minus and plus. */
+/** A mini stepper tile: label, numeral, minus and plus. The numeral is a tap away from
+ *  typing the value (review card f11); `display` shows the value another way (3:00). */
 function Mini({
   label,
   value,
+  display,
   onChange,
+  onTap,
   min = 0,
   max = Infinity,
   step = 1,
@@ -700,22 +863,36 @@ function Mini({
 }: {
   label: string;
   value: number;
+  display?: string;
   onChange: (v: number) => void;
+  onTap?: () => void;
   min?: number;
   max?: number;
   step?: number;
   name: string;
 }) {
   const set = (v: number) => onChange(Math.min(max, Math.max(min, round2(v))));
+  const shownValue =
+    display ?? String(Number.isInteger(value) ? value : round2(value));
   return (
     <div
       className="rounded-[14px] px-1.5 py-2 text-center"
       style={{ background: 'var(--s2)', boxShadow: 'inset 0 1px 0 var(--hl)' }}
     >
       <div className="os-t truncate text-[11px]">{label}</div>
-      <div className="os-num my-1 text-[22px]">
-        {Number.isInteger(value) ? value : round2(value)}
-      </div>
+      {onTap ? (
+        <button
+          type="button"
+          onClick={onTap}
+          aria-label={`Type ${name}`}
+          className="os-num os-press my-1 w-full text-[22px]"
+          style={{ fontVariantNumeric: 'tabular-nums' }}
+        >
+          {shownValue}
+        </button>
+      ) : (
+        <div className="os-num my-1 text-[22px]">{shownValue}</div>
+      )}
       <div className="flex justify-center gap-1.5">
         <button
           type="button"

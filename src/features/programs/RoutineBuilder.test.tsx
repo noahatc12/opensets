@@ -5,7 +5,13 @@
  * exercise is re-prescribed from its current state without losing progress.
  */
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { render, screen, waitFor, cleanup } from '@testing-library/react';
+import {
+  render,
+  screen,
+  waitFor,
+  cleanup,
+  within,
+} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { db, DEFAULT_SETTINGS } from '../../db/db';
@@ -138,6 +144,38 @@ describe('editing a saved day', () => {
     });
   });
 
+  // Review card f11: tap a number to type it; rest reads as m:ss and comes from presets.
+  it('types a set count on the keypad and picks a rest preset', async () => {
+    const { tpl } = await seedDay();
+    const user = userEvent.setup();
+    renderEdit(tpl.id);
+    await screen.findByText(/Bench Press/i, undefined, { timeout: 3000 });
+    expect(screen.getByRole('button', { name: 'Type rest' }).textContent).toBe(
+      '3:00',
+    );
+    await user.click(screen.getByRole('button', { name: 'Type sets' }));
+    const pad = await screen.findByRole('dialog', { name: 'Sets' });
+    await user.click(within(pad).getByRole('button', { name: '5' }));
+    await user.click(within(pad).getByRole('button', { name: 'Set' }));
+    expect(screen.getByRole('button', { name: 'Type sets' }).textContent).toBe(
+      '5',
+    );
+    await user.click(screen.getByRole('button', { name: 'Type rest' }));
+    const rest = await screen.findByRole('dialog', {
+      name: 'Rest between sets',
+    });
+    await user.click(within(rest).getByRole('button', { name: '2:00' }));
+    expect(screen.getByRole('button', { name: 'Type rest' }).textContent).toBe(
+      '2:00',
+    );
+    await user.click(screen.getByRole('button', { name: 'Save changes' }));
+    await waitFor(async () => {
+      const saved = await db.templates.get(tpl.id);
+      expect(saved!.slots[0]!.scheme.sets).toBe(5);
+      expect(saved!.slots[0]!.restWorkSec).toBe(120);
+    });
+  });
+
   it('a program-set rule (5/3/1) keeps its rule; only rest edits', async () => {
     const { tpl } = await seedDay({
       kind: 'percent531',
@@ -202,6 +240,25 @@ describe('a new day', () => {
     expect(st.consecutiveFails).toBe(1);
   });
 
+  // Review card f11: Double is the default progression for a loaded lift.
+  it('a new loaded lift defaults to double progression, 3 × 8 to 12', async () => {
+    await db.settings.put({ key: 'user', ...DEFAULT_SETTINGS });
+    const user = userEvent.setup();
+    renderNew();
+    await screen.findByText(/Bench Press/i, undefined, { timeout: 3000 });
+    expect(
+      screen
+        .getByRole('radio', { name: 'Double' })
+        .getAttribute('aria-checked'),
+    ).toBe('true');
+    await user.type(screen.getByRole('textbox', { name: 'Day name' }), 'Push');
+    await user.click(screen.getByRole('button', { name: 'Save day' }));
+    await screen.findByText('today');
+    const day = (await db.templates.toArray())[0]!;
+    expect(day.slots[0]!.progressionRule.kind).toBe('double');
+    expect(day.slots[0]!.scheme).toEqual({ sets: 3, repRange: [8, 12] });
+  });
+
   it('starts My plan when there is no program, with the day under the name typed', async () => {
     await db.settings.put({ key: 'user', ...DEFAULT_SETTINGS });
     const user = userEvent.setup();
@@ -215,5 +272,37 @@ describe('a new day', () => {
     const days = await db.templates.toArray();
     expect(days.map((d) => d.name)).toEqual(['Push']);
     expect(await getExerciseState(programs[0]!.id, BENCH.id)).toBeDefined();
+  });
+
+  // Review card f13: "Suggested start" belongs to weights the app picked, never to one
+  // the lifter typed.
+  it('a weight the app picked is a suggested start; one the lifter set is not', async () => {
+    await db.settings.put({ key: 'user', ...DEFAULT_SETTINGS });
+    const user = userEvent.setup();
+    renderNew();
+    await screen.findByText(/Bench Press/i, undefined, { timeout: 3000 });
+    await user.type(screen.getByRole('textbox', { name: 'Day name' }), 'Push');
+    await user.click(screen.getByRole('button', { name: 'Save day' }));
+    await screen.findByText('today');
+    const program = (await db.programs.toArray())[0]!;
+    const picked = (await getExerciseState(program.id, BENCH.id))!;
+    expect(picked.pending!.flags).toContain('suggested');
+
+    await Promise.all(db.tables.map((t) => t.clear()));
+    await db.settings.put({ key: 'user', ...DEFAULT_SETTINGS });
+    cleanup();
+    renderNew();
+    await screen.findByText(/Bench Press/i, undefined, { timeout: 3000 });
+    await user.click(
+      screen.getByRole('button', { name: 'Increase starting weight' }),
+    );
+    await user.type(screen.getByRole('textbox', { name: 'Day name' }), 'Push');
+    await user.click(screen.getByRole('button', { name: 'Save day' }));
+    await screen.findByText('today');
+    const own = (await getExerciseState(
+      (await db.programs.toArray())[0]!.id,
+      BENCH.id,
+    ))!;
+    expect(own.pending!.flags).not.toContain('suggested');
   });
 });

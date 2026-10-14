@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { fmtWeight, kgToLb, loadWord, toUnit } from '../../lib/units';
 import {
   clock,
   compact,
+  explainTempo,
   flagLabel,
   humanReason,
   ruleLabel,
@@ -73,6 +74,8 @@ function Logger({ vm }: { vm: LoggerVM }) {
     setRpe,
     rest,
     restRemain,
+    restDone,
+    zeroLine,
     adjustRest,
     stopRest,
     whyOpen,
@@ -89,26 +92,29 @@ function Logger({ vm }: { vm: LoggerVM }) {
     log,
     leave,
     undoSet,
+    editSet,
+    deleteSet,
+    undoDelete,
     skip,
+    undoSkip,
     openSwap,
     openAdd,
     closePicker,
     onPickExercise,
   } = vm;
 
-  const [keypad, setKeypad] = useState<'weight' | 'reps' | null>(null);
+  const [keypad, setKeypad] = useState<
+    'weight' | 'reps' | 'editWeight' | 'editReps' | null
+  >(null);
   const [platesOpen, setPlatesOpen] = useState(false);
-
-  // Buzz at zero, then the panel goes away on its own.
-  useEffect(() => {
-    if (!rest || restRemain > 0) return;
-    if (
-      typeof navigator !== 'undefined' &&
-      typeof navigator.vibrate === 'function'
-    )
-      navigator.vibrate([120, 60, 120]);
-    stopRest();
-  }, [rest, restRemain, stopRest]);
+  const [tempoOpen, setTempoOpen] = useState(false);
+  // A logged set being fixed (review card f07): the row tapped and its draft numbers.
+  const [edit, setEdit] = useState<{
+    set: LoggedSet;
+    weightLb: number;
+    reps: number;
+    rpe: number | undefined;
+  } | null>(null);
 
   const ex = getCatalogExercise(exId);
   const scheme = activeSlot.scheme;
@@ -122,11 +128,13 @@ function Logger({ vm }: { vm: LoggerVM }) {
   ]
     .filter(Boolean)
     .join(' · ');
-  const coaching = [
-    activeSlot.tempo ? `Tempo ${fmtTempo(activeSlot.tempo)}` : null,
+  // The tempo is a tap away from what it means (review card f10); the rest tier and
+  // the cue read as before.
+  const notes = [
     activeSlot.restTier
       ? `${titleCase(activeSlot.restTier)} rest ${clock(activeSlot.restWorkSec)}`
       : null,
+    activeSlot.coachingCue,
   ]
     .filter(Boolean)
     .join(' · ');
@@ -156,12 +164,10 @@ function Logger({ vm }: { vm: LoggerVM }) {
   const numeralSize = (s: string) =>
     s.length > 4 ? 52 : s.length > 3 ? 60 : 72;
   const ctaLabel = `Log set ${activeIndex + 1} · ${w(weight)} × ${reps}`;
-  // Only promise a buzz where the browser can vibrate; WebKit on iPhone has had no
-  // navigator.vibrate since 2017, so there the panel just ends.
-  const zeroLine =
-    typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function'
-      ? 'The phone buzzes at zero.'
-      : 'Rest ends at zero.';
+  const stagedLine =
+    !exerciseComplete && activePrescribed
+      ? `Set ${activeIndex + 1} is staged at ${w(weight)} × ${reps}.`
+      : null;
 
   return (
     <div className="relative flex h-full flex-col">
@@ -305,11 +311,27 @@ function Logger({ vm }: { vm: LoggerVM }) {
         <h1 className="os-h1 mt-0.5" style={{ fontSize: 28 }}>
           {nameOf(exId)}
         </h1>
-        {(coaching || activeSlot.coachingCue) && (
+        {(activeSlot.tempo || notes) && (
           <div className="os-t mt-1.5 leading-snug">
-            {coaching}
-            {coaching && activeSlot.coachingCue ? ' · ' : ''}
-            {activeSlot.coachingCue}
+            {activeSlot.tempo && (
+              <button
+                type="button"
+                onClick={() => setTempoOpen(true)}
+                className="os-press os-hit"
+                style={{
+                  position: 'relative',
+                  font: 'inherit',
+                  color: 'inherit',
+                  textDecoration: 'underline dotted',
+                  textUnderlineOffset: 4,
+                }}
+                aria-label={`Tempo ${fmtTempo(activeSlot.tempo)}, what it means`}
+              >
+                Tempo {fmtTempo(activeSlot.tempo)}
+              </button>
+            )}
+            {activeSlot.tempo && notes ? ' · ' : ''}
+            {notes}
           </div>
         )}
 
@@ -376,6 +398,14 @@ function Logger({ vm }: { vm: LoggerVM }) {
               done={d}
               target={pres?.sets[d.order]?.targetReps}
               w={w}
+              onEdit={() =>
+                setEdit({
+                  set: d,
+                  weightLb: d.weightLb,
+                  reps: d.reps,
+                  rpe: d.rpe,
+                })
+              }
             />
           ));
           const upRows = upcoming.map((p, j) => (
@@ -451,7 +481,7 @@ function Logger({ vm }: { vm: LoggerVM }) {
                     </span>
                     <span className="os-t">
                       {activePrescribed.targetRpe !== undefined
-                        ? `Target RPE ${activePrescribed.targetRpe}`
+                        ? `Effort ${activePrescribed.targetRpe} of 10`
                         : `Target ${activePrescribed.targetReps}${activePrescribed.amrap ? '+' : ''} reps`}
                     </span>
                   </div>
@@ -564,12 +594,14 @@ function Logger({ vm }: { vm: LoggerVM }) {
                     </p>
                   )}
 
+                  {/* Effort 6 to 10 is the RPE scale under a word a new lifter knows
+                      (review card f10); it is still saved as rpe. */}
                   <div className="mt-2.5 flex items-center gap-2.5">
-                    <span className="os-t w-[34px]">RPE</span>
+                    <span className="os-t w-[44px]">Effort</span>
                     <div
                       className="os-seg flex-1"
                       role="group"
-                      aria-label="RPE"
+                      aria-label="Effort"
                     >
                       {[6, 7, 8, 9, 10].map((n) => (
                         <button
@@ -609,7 +641,7 @@ function Logger({ vm }: { vm: LoggerVM }) {
             onClick={() => void skip()}
             className="os-btn os-btn--sm os-press flex-1"
           >
-            Skip
+            Skip exercise
           </button>
           <button
             type="button"
@@ -628,11 +660,20 @@ function Logger({ vm }: { vm: LoggerVM }) {
           <Toast
             action="Undo"
             onAction={() => {
-              void undoSet(toast.setId);
+              if (toast.kind === 'set') void undoSet(toast.setId);
+              else if (toast.kind === 'skip')
+                void undoSkip(toast.slot, toast.index);
+              else void undoDelete(toast.setId, toast.index);
               setToast(null);
             }}
           >
-            Set logged
+            {toast.kind === 'skip'
+              ? `Skipped ${shortName(nameOf(toast.slot.exerciseId), 22)}`
+              : toast.kind === 'deleted'
+                ? `Deleted set ${toast.index + 1}, ${toast.label}`
+                : toast.repRecord
+                  ? 'Set logged, a rep record'
+                  : 'Set logged'}
           </Toast>
         </div>
       )}
@@ -649,60 +690,104 @@ function Logger({ vm }: { vm: LoggerVM }) {
           }}
         >
           <div className="os-grab" />
-          <div className="flex items-center gap-[18px]">
-            <Ring
-              size={112}
-              stroke={9}
-              value={restRemain / rest.durationSec}
-              animate
-              label={`${clock(restRemain)} of ${clock(rest.durationSec)} rest`}
-            >
-              <div className="os-num text-[30px]">{clock(restRemain)}</div>
-              <div className="os-t" style={{ fontSize: 11 }}>
-                of {clock(rest.durationSec)}
-              </div>
-            </Ring>
-            <div className="min-w-0 flex-1">
-              <div
-                className="text-[18px] font-extrabold"
-                style={{ letterSpacing: '-.02em' }}
+          {restDone ? (
+            /* Zero: the panel turns into Rest done and stays until a tap (review card
+               f09). The ring fills in the positive colour with a drawn check. */
+            <div className="flex items-center gap-[18px]">
+              <Ring
+                size={112}
+                stroke={9}
+                value={1}
+                color="var(--pos)"
+                label="Rest done"
               >
-                Rest
-              </div>
-              <div className="os-t mt-0.5 leading-[1.4]">
-                {!exerciseComplete && activePrescribed
-                  ? `Set ${activeIndex + 1} is staged at ${w(weight)} × ${reps}. ${zeroLine}`
-                  : zeroLine}
-              </div>
-              <div className="mt-3 flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => adjustRest(-15)}
-                  className="os-chip os-press flex-1 justify-center"
-                  style={{ height: 40, borderRadius: 13 }}
+                <svg
+                  width="44"
+                  height="44"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="var(--pos)"
+                  strokeWidth="2.6"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden
                 >
-                  −15
-                </button>
-                <button
-                  type="button"
-                  onClick={() => adjustRest(15)}
-                  className="os-chip os-press flex-1 justify-center"
-                  style={{ height: 40, borderRadius: 13 }}
+                  <path d="M5 12.5l4.5 4.5L19 7.5" />
+                </svg>
+              </Ring>
+              <div className="min-w-0 flex-1">
+                <div
+                  className="text-[18px] font-extrabold"
+                  style={{ letterSpacing: '-.02em' }}
                 >
-                  +15
-                </button>
+                  Rest done
+                </div>
+                <div className="os-t mt-0.5 leading-[1.4]">
+                  {stagedLine ?? 'This exercise is done.'}
+                </div>
                 <button
                   type="button"
                   onClick={stopRest}
-                  aria-label="Skip rest"
-                  className="os-chip os-chip--on os-press justify-center"
-                  style={{ height: 40, borderRadius: 13, flex: 1.3 }}
+                  className="os-chip os-chip--on os-press mt-3 w-full justify-center"
+                  style={{ height: 44, borderRadius: 13 }}
                 >
-                  Skip
+                  {stagedLine ? 'Next set' : 'Continue'}
                 </button>
               </div>
             </div>
-          </div>
+          ) : (
+            <div className="flex items-center gap-[18px]">
+              <Ring
+                size={112}
+                stroke={9}
+                value={restRemain / rest.durationSec}
+                animate
+                label={`${clock(restRemain)} of ${clock(rest.durationSec)} rest`}
+              >
+                <div className="os-num text-[30px]">{clock(restRemain)}</div>
+                <div className="os-t" style={{ fontSize: 11 }}>
+                  of {clock(rest.durationSec)}
+                </div>
+              </Ring>
+              <div className="min-w-0 flex-1">
+                <div
+                  className="text-[18px] font-extrabold"
+                  style={{ letterSpacing: '-.02em' }}
+                >
+                  Rest
+                </div>
+                <div className="os-t mt-0.5 leading-[1.4]">
+                  {stagedLine ? `${stagedLine} ${zeroLine}` : zeroLine}
+                </div>
+                <div className="mt-3 flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => adjustRest(-15)}
+                    className="os-chip os-press flex-1 justify-center"
+                    style={{ height: 40, borderRadius: 13 }}
+                  >
+                    −15
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => adjustRest(15)}
+                    className="os-chip os-press flex-1 justify-center"
+                    style={{ height: 40, borderRadius: 13 }}
+                  >
+                    +15
+                  </button>
+                  <button
+                    type="button"
+                    onClick={stopRest}
+                    className="os-chip os-chip--on os-press justify-center"
+                    style={{ height: 40, borderRadius: 13, flex: 1.3 }}
+                  >
+                    Skip rest
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       ) : (
         <div className="os-fade-under flex-none px-[18px] pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-2.5">
@@ -753,6 +838,167 @@ function Logger({ vm }: { vm: LoggerVM }) {
         current={String(reps)}
         decimal={false}
         onDone={(v) => setReps(Math.max(0, Math.round(v)))}
+        onClose={() => setKeypad(null)}
+      />
+
+      {/* Tap a logged set to fix it (review card f07): weight, reps, effort, or delete
+          it with Undo. Saving judges its records again. */}
+      {edit && (
+        <Sheet
+          open
+          onClose={() => setEdit(null)}
+          label={`Edit set ${edit.set.order + 1}`}
+        >
+          <SheetHeader
+            title={`Set ${edit.set.order + 1}`}
+            action="Cancel"
+            onAction={() => setEdit(null)}
+          />
+          <div className="mt-1 grid grid-cols-2 gap-3.5 text-center">
+            <div>
+              <div className="os-t">
+                {weightLabel}
+                {!isBw(edit.weightLb) && <span> · {units}</span>}
+              </div>
+              <button
+                type="button"
+                onClick={() => setKeypad('editWeight')}
+                aria-label="Type weight"
+                className="os-num os-press mt-1 w-full"
+                style={{ fontSize: 52 }}
+              >
+                {w(edit.weightLb)}
+              </button>
+              <div className="mt-2 flex justify-center gap-2">
+                <button
+                  type="button"
+                  onClick={() =>
+                    setEdit((e) =>
+                      e ? { ...e, weightLb: vm.nextWeight(e.weightLb, -1) } : e,
+                    )
+                  }
+                  className="os-step os-press"
+                  aria-label="decrease weight"
+                >
+                  <Minus />
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setEdit((e) =>
+                      e ? { ...e, weightLb: vm.nextWeight(e.weightLb, 1) } : e,
+                    )
+                  }
+                  className="os-step os-press"
+                  aria-label="increase weight"
+                >
+                  <Plus />
+                </button>
+              </div>
+            </div>
+            <div>
+              <div className="os-t">Reps</div>
+              <button
+                type="button"
+                onClick={() => setKeypad('editReps')}
+                aria-label="Type reps"
+                className="os-num os-press mt-1 w-full"
+                style={{ fontSize: 52 }}
+              >
+                {edit.reps}
+              </button>
+              <div className="mt-2 flex justify-center gap-2">
+                <button
+                  type="button"
+                  onClick={() =>
+                    setEdit((e) =>
+                      e ? { ...e, reps: Math.max(0, e.reps - 1) } : e,
+                    )
+                  }
+                  className="os-step os-press"
+                  aria-label="decrease reps"
+                >
+                  <Minus />
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setEdit((e) => (e ? { ...e, reps: e.reps + 1 } : e))
+                  }
+                  className="os-step os-press"
+                  aria-label="increase reps"
+                >
+                  <Plus />
+                </button>
+              </div>
+            </div>
+          </div>
+          <div className="mt-3 flex items-center gap-2.5">
+            <span className="os-t w-[44px]">Effort</span>
+            <div className="os-seg flex-1" role="group" aria-label="Effort">
+              {[6, 7, 8, 9, 10].map((n) => (
+                <button
+                  key={n}
+                  type="button"
+                  onClick={() =>
+                    setEdit((e) =>
+                      e ? { ...e, rpe: e.rpe === n ? undefined : n } : e,
+                    )
+                  }
+                  aria-pressed={edit.rpe === n}
+                  style={{ fontVariantNumeric: 'tabular-nums' }}
+                >
+                  {n}
+                </button>
+              ))}
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              const { set, weightLb, reps: r, rpe: e } = edit;
+              setEdit(null);
+              void editSet(set.id, { weightLb, reps: r, rpe: e });
+            }}
+            className="os-btn os-btn--pri os-press mt-4"
+          >
+            Save set {edit.set.order + 1}
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              const { set } = edit;
+              setEdit(null);
+              void deleteSet(set);
+            }}
+            className="os-btn os-btn--sm os-btn--danger os-press mt-2"
+          >
+            Delete set
+          </button>
+        </Sheet>
+      )}
+      <KeypadSheet
+        open={keypad === 'editWeight'}
+        label={`${weightLabel}, ${units}`}
+        current={edit ? w(edit.weightLb) : '0'}
+        decimal
+        onDone={(v) =>
+          setEdit((e) =>
+            e
+              ? { ...e, weightLb: Math.max(0, units === 'kg' ? kgToLb(v) : v) }
+              : e,
+          )
+        }
+        onClose={() => setKeypad(null)}
+      />
+      <KeypadSheet
+        open={keypad === 'editReps'}
+        label="Reps"
+        current={edit ? String(edit.reps) : '0'}
+        decimal={false}
+        onDone={(v) =>
+          setEdit((e) => (e ? { ...e, reps: Math.max(0, Math.round(v)) } : e))
+        }
         onClose={() => setKeypad(null)}
       />
 
@@ -819,6 +1065,35 @@ function Logger({ vm }: { vm: LoggerVM }) {
         </div>
       </Sheet>
 
+      {activeSlot.tempo && (
+        <Sheet
+          open={tempoOpen}
+          onClose={() => setTempoOpen(false)}
+          label="What the tempo means"
+        >
+          <SheetHeader
+            title={`Tempo ${fmtTempo(activeSlot.tempo)}`}
+            action="Done"
+            onAction={() => setTempoOpen(false)}
+          />
+          <p className="os-t mt-1.5 leading-snug">
+            Four counts, in seconds, for every rep. Count them out loud the
+            first few reps.
+          </p>
+          <div
+            className="os-card mt-3"
+            style={{ padding: '4px 16px', background: 'var(--s2)' }}
+          >
+            {explainTempo(activeSlot.tempo).map((row, i) => (
+              <div key={i} className="os-row">
+                <span className="os-num w-8 text-[22px]">{row.count}</span>
+                <span className="text-[15px] font-semibold">{row.text}</span>
+              </div>
+            ))}
+          </div>
+        </Sheet>
+      )}
+
       {pickerMode && (
         <ExercisePicker
           title={
@@ -840,22 +1115,29 @@ function SetRow({
   done,
   target,
   w,
+  onEdit,
 }: {
   n: number;
   done: LoggedSet;
   target: number | undefined;
   w: (lb: number) => string;
+  onEdit: () => void;
 }) {
   const missed = target !== undefined && done.reps < target;
   const isPr = (done.isPR?.length ?? 0) > 0;
   return (
-    <div className="os-row">
+    <button
+      type="button"
+      onClick={onEdit}
+      className="os-row os-press w-full text-left"
+      aria-label={`Edit set ${n}, ${w(done.weightLb)} × ${done.reps}`}
+    >
       <span className="os-t w-4">{n}</span>
       <span className="os-num text-[18px]">
         {w(done.weightLb)} × {done.reps}
       </span>
       {done.rpe !== undefined && (
-        <span className="os-t ml-1.5">@{done.rpe}</span>
+        <span className="os-t ml-1.5">effort {done.rpe}</span>
       )}
       {isPr ? (
         <span className="os-tag os-tag--pr ml-auto">PR</span>
@@ -872,7 +1154,7 @@ function SetRow({
       ) : (
         <span className="os-tag os-tag--pos ml-auto">Done</span>
       )}
-    </div>
+    </button>
   );
 }
 

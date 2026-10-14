@@ -6,7 +6,7 @@ import { useProfile, useSettings } from '../../db/hooks';
 import { openWorkout } from '../log/workoutMotion';
 import { loadTypeFor } from '../../engine/loading';
 import { weightWithLoad } from '../../lib/units';
-import { shortName } from '../../lib/format';
+import { phaseWords, shortName } from '../../lib/format';
 import {
   getActiveProgram,
   getActiveWorkoutSession,
@@ -33,12 +33,6 @@ const estMin = (t: WorkoutTemplate) =>
     t.slots.reduce((m, s) => m + s.scheme.sets * (s.restWorkSec + 35), 0) / 60,
   );
 
-const PHASE_LABEL: Record<string, string> = {
-  accumulation: 'Building up',
-  intensification: 'Pushing harder',
-  deload: 'Deload week',
-};
-
 export function PlanScreen() {
   const [, scrollRef] = useScrollMemory('plan');
   useCatalog();
@@ -47,6 +41,14 @@ export function PlanScreen() {
   const { units } = useSettings();
   const programs = useLiveQuery(() => db.programs.toArray());
   const activeProgram = useLiveQuery(() => getActiveProgram());
+  // Days per program, for the other-programs list (review card f12).
+  const dayCounts = useLiveQuery(async () => {
+    const all = await db.templates.toArray();
+    const counts = new Map<string, number>();
+    for (const t of all)
+      counts.set(t.programId, (counts.get(t.programId) ?? 0) + 1);
+    return counts;
+  });
   const templates = useLiveQuery(
     () =>
       activeProgram
@@ -146,16 +148,19 @@ export function PlanScreen() {
               style={{ padding: '14px 16px' }}
             >
               <div className="min-w-0 flex-1">
+                {/* "Week 1 of 5, building volume": the phase in words, on the line
+                    that names the week (review card f10). */}
                 <div
                   className="text-[16px] font-extrabold"
                   style={{ letterSpacing: '-.02em' }}
                 >
-                  Week {meso.weekIndex + 1} of {meso.totalWeeks}
+                  Week {meso.weekIndex + 1} of {meso.totalWeeks},{' '}
+                  {phaseWords(meso.phase)}
                 </div>
                 <div className="os-t mt-0.5">
-                  {PHASE_LABEL[meso.phase] ?? meso.phase}
-                  {meso.phase !== 'deload' &&
-                    ` · deload in week ${meso.totalWeeks}`}
+                  {meso.phase === 'deload'
+                    ? 'Lighter sets, then a new block'
+                    : `Easy week comes in week ${meso.totalWeeks}`}
                   {(meso.blockIndex ?? 0) > 0 &&
                     ` · block ${(meso.blockIndex ?? 0) + 1}`}
                 </div>
@@ -382,6 +387,45 @@ export function PlanScreen() {
               Regenerate
             </button>
           </div>
+
+          {/* Your other programs, each with Make active (review card f12, Noah
+              2026-10-01): a regenerated plan used to hide the one before it. */}
+          {programs.filter((p) => p.id !== activeProgram.id).length > 0 && (
+            <>
+              <div className="os-h2 mt-6">Your other programs</div>
+              <div className="os-card" style={{ padding: '4px 16px' }}>
+                {programs
+                  .filter((p) => p.id !== activeProgram.id)
+                  .map((p) => {
+                    const days = dayCounts?.get(p.id) ?? 0;
+                    return (
+                      <div key={p.id} className="os-row">
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate text-[15px] font-semibold">
+                            {p.name}
+                          </span>
+                          <span
+                            className="mt-0.5 block text-[12px] font-medium"
+                            style={{ color: 'var(--mute)' }}
+                          >
+                            {days} {days === 1 ? 'day' : 'days'}
+                          </span>
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => void setActiveProgram(p.id)}
+                          className="os-btn os-btn--sm os-press flex-none px-4"
+                          style={{ background: 'var(--s2)', width: 'auto' }}
+                          aria-label={`Make ${p.name} active`}
+                        >
+                          Make active
+                        </button>
+                      </div>
+                    );
+                  })}
+              </div>
+            </>
+          )}
         </>
       ) : (
         <>

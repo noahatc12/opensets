@@ -577,9 +577,9 @@ async function noah() {
   await tap(
     p,
     page
-      .getByRole('group', { name: 'RPE' })
+      .getByRole('group', { name: 'Effort' })
       .getByRole('button', { name: '10' }),
-    'RPE 10',
+    'Effort 10',
   );
   await shot(p, 'set1-staged');
   await tap(
@@ -605,9 +605,9 @@ async function noah() {
   await tap(
     p,
     page
-      .getByRole('group', { name: 'RPE' })
+      .getByRole('group', { name: 'Effort' })
       .getByRole('button', { name: '10' }),
-    'RPE 10',
+    'Effort 10',
   );
   await shot(p, 'set2-staged');
   const cta2b = await ctaText(page);
@@ -807,7 +807,7 @@ async function hurried() {
     await tap(p, page.getByRole('button', { name: 'Skip rest' }), 'Skip rest');
   const chipsBefore = await page.locator('.os-chips button').count();
   const skipBtn = page
-    .getByRole('button', { name: 'Skip', exact: true })
+    .getByRole('button', { name: 'Skip exercise', exact: true })
     .first();
   const cover = await coveredBy(skipBtn);
   check(

@@ -84,12 +84,52 @@ function TypeRow({
   );
 }
 
+/** A labelled pill toggle row (the prototype's switch). */
+function PillToggle({
+  label,
+  on,
+  onToggle,
+}: {
+  label: string;
+  on: boolean;
+  onToggle: () => void;
+}) {
+  return (
+    <button
+      onClick={onToggle}
+      aria-pressed={on}
+      className="flex w-full items-center justify-between os-card px-4 py-3.5 text-left"
+      style={{
+        background: 'var(--surface)',
+      }}
+    >
+      <span className="text-[14px] font-semibold text-text">{label}</span>
+      <span
+        className="relative h-7 w-[46px] flex-none rounded-[var(--r-pill)] transition-colors"
+        style={{
+          background: on ? 'var(--accent)' : 'var(--surface-2)',
+        }}
+      >
+        <span
+          className="absolute top-[3px] size-[22px] rounded-full transition-all"
+          style={{
+            background: on ? 'var(--accent-ink)' : 'var(--muted)',
+            left: on ? 'auto' : '3px',
+            right: on ? '3px' : 'auto',
+          }}
+        />
+      </span>
+    </button>
+  );
+}
+
 export function RestDefaultsScreen() {
   const nav = useNav();
   const settings = useSettings();
   const [step, setStep] = useState<Step>(15);
 
   const autoStart = settings.restAutoStart ?? DEFAULT_SETTINGS.restAutoStart;
+  const soundOn = settings.soundOn ?? DEFAULT_SETTINGS.soundOn;
   const compoundSec =
     settings.restCompoundSec ?? DEFAULT_SETTINGS.restCompoundSec;
   const isolationSec =
@@ -115,34 +155,22 @@ export function RestDefaultsScreen() {
         </div>
 
         <div className="os-scroll flex-1 overflow-auto px-[22px] pb-7 pt-1.5">
-          {/* Auto-start pill toggle */}
-          <button
-            onClick={() => void updateSettings({ restAutoStart: !autoStart })}
-            aria-pressed={autoStart}
-            className="flex w-full items-center justify-between os-card px-4 py-3.5 text-left"
-            style={{
-              background: 'var(--surface)',
-            }}
-          >
-            <span className="text-[14px] font-semibold text-text">
-              Auto-start on logged set
-            </span>
-            <span
-              className="relative h-7 w-[46px] flex-none rounded-[var(--r-pill)] transition-colors"
-              style={{
-                background: autoStart ? 'var(--accent)' : 'var(--surface-2)',
-              }}
-            >
-              <span
-                className="absolute top-[3px] size-[22px] rounded-full transition-all"
-                style={{
-                  background: autoStart ? 'var(--accent-ink)' : 'var(--muted)',
-                  left: autoStart ? 'auto' : '3px',
-                  right: autoStart ? '3px' : 'auto',
-                }}
-              />
-            </span>
-          </button>
+          <div className="flex flex-col gap-2">
+            <PillToggle
+              label="Auto-start on logged set"
+              on={autoStart}
+              onToggle={() =>
+                void updateSettings({ restAutoStart: !autoStart })
+              }
+            />
+            {/* The rest panel stays up at zero until a tap; the chime is the signal on
+                an iPhone, which cannot buzz from a web app (review card f09). */}
+            <PillToggle
+              label="Chime when rest ends"
+              on={soundOn}
+              onToggle={() => void updateSettings({ soundOn: !soundOn })}
+            />
+          </div>
 
           <SectionLabel>Default by exercise type</SectionLabel>
           <div className="flex flex-col gap-2">

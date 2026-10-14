@@ -13,6 +13,7 @@ import {
   waitFor,
   cleanup,
   fireEvent,
+  within,
 } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
@@ -31,6 +32,7 @@ import {
 } from '../../db/repositories';
 import { useSessionStore } from '../../state/session';
 import { ActiveSession } from './ActiveSession';
+import { isRealRecord } from './useLogger';
 import { TodayScreen } from './TodayScreen';
 import { WorkoutCover } from './WorkoutCover';
 import { useLiveQuery } from 'dexie-react-hooks';
@@ -187,6 +189,43 @@ describe('Logger core flow (pinned pre-extraction)', () => {
     });
   });
 
+  // Review card f10: plain words. The scale is called Effort on screen (still saved as
+  // rpe), and a tempo opens an explanation on tap.
+  it('calls the scale Effort, never RPE, and explains the tempo on tap', async () => {
+    await db.settings.put({ key: 'user', ...DEFAULT_SETTINGS });
+    const program = await createProgram('Words', now);
+    await setActiveProgram(program.id);
+    const tpl = await createTemplate(program.id, 'Day 1', 0);
+    tpl.slots = [
+      makeSlot(
+        'bench',
+        0,
+        LINEAR,
+        { sets: 3, repTarget: 5 },
+        { warmupSec: 60, workSec: 120 },
+        { tempo: '3-1-1-0', restTier: 'compound' },
+      ),
+    ];
+    await saveTemplate(tpl);
+    await seedExerciseState(program.id, tpl.slots[0]!, 60, now);
+    const session = await startSessionFromTemplate(tpl, now);
+    useSessionStore.getState().beginSession(session.id);
+    const user = userEvent.setup();
+    renderLogger();
+    await logButton();
+    expect(screen.getByRole('group', { name: 'Effort' })).toBeTruthy();
+    expect(screen.queryByText(/\bRPE\b/)).toBeNull();
+    await user.click(screen.getByRole('button', { name: /Tempo 3·1·1·0/ }));
+    expect(
+      await screen.findByText('Lower the weight for 3 seconds'),
+    ).toBeTruthy();
+    expect(screen.getByText('No pause at the top')).toBeTruthy();
+    await user.click(screen.getByRole('button', { name: 'Done' }));
+    await user.click(screen.getByRole('button', { name: '8' }));
+    await user.click(await logButton());
+    expect(await screen.findByText('effort 8')).toBeTruthy();
+  });
+
   it('records a selected RPE', async () => {
     const { session } = await seedActiveSession();
     const user = userEvent.setup();
@@ -212,12 +251,70 @@ describe('Logger core flow (pinned pre-extraction)', () => {
     });
   });
 
+  // Review card f06: the full-screen record is for a heavier weight or a new best max;
+  // one more rep at a weight already lifted is a tag on the set.
+  it('a rep record shows as a tag on the set, not the record screen; a heavier weight gets the screen', async () => {
+    const { session } = await seedActiveSession();
+    await db.sets.add({
+      id: 'prior-1',
+      sessionId: 'prior',
+      exerciseId: 'bench',
+      date: '2026-06-18',
+      order: 0,
+      type: 'working',
+      weightLb: 60,
+      reps: 5,
+      completed: true,
+    });
+    const user = userEvent.setup();
+    renderLogger();
+    await logButton();
+    await user.click(screen.getByRole('button', { name: 'increase reps' }));
+    await user.click(await logButton());
+    await waitFor(async () =>
+      expect(await getSessionSets(session.id)).toHaveLength(1),
+    );
+    const logged = (await getSessionSets(session.id))[0]!;
+    expect(logged.isPR).toContain('reps');
+    expect(screen.queryByRole('dialog', { name: 'New record' })).toBeNull();
+    expect(await screen.findByText(/a rep record/)).toBeTruthy();
+    expect(await screen.findByText('PR')).toBeTruthy();
+    await user.click(screen.getByRole('button', { name: 'Skip rest' }));
+    await user.click(screen.getByRole('button', { name: 'increase weight' }));
+    await user.click(await logButton());
+    expect(
+      await screen.findByRole('dialog', { name: 'New record' }),
+    ).toBeTruthy();
+  });
+
   it('rest timer auto-starts on log', async () => {
     await seedActiveSession();
     const user = userEvent.setup();
     renderLogger();
     await user.click(await logButton());
     expect(await screen.findByText('Rest')).toBeTruthy();
+  });
+
+  // Review card f09: at zero the panel turns into Rest done and stays until a tap.
+  it('at zero the panel says Rest done and stays until Next set is tapped', async () => {
+    await seedActiveSession();
+    const user = userEvent.setup();
+    renderLogger();
+    await logButton();
+    await user.click(await logButton());
+    expect(await screen.findByText('Rest')).toBeTruthy();
+    // The clock reaches zero: the timer's end is already in the past.
+    useSessionStore
+      .getState()
+      .setRest({ endsAt: Date.now() - 1, durationSec: 120 });
+    expect(await screen.findByText('Rest done')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: /Log set/ })).toBeNull();
+    await new Promise((r) => setTimeout(r, 1200));
+    expect(screen.getByText('Rest done')).toBeTruthy();
+    expect(useSessionStore.getState().rest).not.toBeNull();
+    await user.click(screen.getByRole('button', { name: 'Next set' }));
+    expect(useSessionStore.getState().rest).toBeNull();
+    expect(await logButton()).toBeTruthy();
   });
 
   it('a seeded weight is labelled as a suggested start with the calibration instruction', async () => {
@@ -338,6 +435,95 @@ describe('Logger core flow (pinned pre-extraction)', () => {
   });
 });
 
+// Review card f07: tap a logged set to fix it.
+describe('Tap a logged set to fix it', () => {
+  it('saves new reps on the set and judges its record again', async () => {
+    const { session } = await seedActiveSession();
+    await db.sets.add({
+      id: 'prior-1',
+      sessionId: 'prior',
+      exerciseId: 'bench',
+      date: '2026-06-18',
+      order: 0,
+      type: 'working',
+      weightLb: 60,
+      reps: 5,
+      completed: true,
+    });
+    const user = userEvent.setup();
+    renderLogger();
+    await user.click(await logButton());
+    await waitFor(async () =>
+      expect(await getSessionSets(session.id)).toHaveLength(1),
+    );
+    expect((await getSessionSets(session.id))[0]!.isPR).toBeUndefined();
+    await user.click(screen.getByRole('button', { name: 'Skip rest' }));
+    await user.click(screen.getByRole('button', { name: /^Edit set 1,/ }));
+    const sheet = await screen.findByRole('dialog', { name: 'Edit set 1' });
+    await user.click(
+      within(sheet).getByRole('button', { name: 'increase reps' }),
+    );
+    await user.click(within(sheet).getByRole('button', { name: '9' }));
+    await user.click(within(sheet).getByRole('button', { name: 'Save set 1' }));
+    await waitFor(async () => {
+      const s = (await getSessionSets(session.id))[0]!;
+      expect(s.reps).toBe(6);
+      expect(s.rpe).toBe(9);
+      expect(s.isPR).toContain('reps');
+    });
+    expect(screen.queryByRole('dialog', { name: 'Edit set 1' })).toBeNull();
+  });
+
+  it('deletes a set, closes the gap, and Undo puts it back where it was', async () => {
+    const { session } = await seedActiveSession();
+    const user = userEvent.setup();
+    renderLogger();
+    await user.click(await logButton());
+    await user.click(await screen.findByRole('button', { name: 'Skip rest' }));
+    await user.click(screen.getByRole('button', { name: 'increase reps' }));
+    await user.click(await logButton());
+    await user.click(await screen.findByRole('button', { name: 'Skip rest' }));
+    await waitFor(async () =>
+      expect(await getSessionSets(session.id)).toHaveLength(2),
+    );
+    await user.click(screen.getByRole('button', { name: /^Edit set 1,/ }));
+    const sheet = await screen.findByRole('dialog', { name: 'Edit set 1' });
+    await user.click(within(sheet).getByRole('button', { name: 'Delete set' }));
+    await waitFor(async () => {
+      const sets = await getSessionSets(session.id);
+      expect(sets).toHaveLength(1);
+      expect(sets[0]!.reps).toBe(6);
+      expect(sets[0]!.order).toBe(0);
+    });
+    expect(await screen.findByText(/Deleted set 1/)).toBeTruthy();
+    expect(
+      await screen.findByRole('button', { name: /Log set 2/ }),
+    ).toBeTruthy();
+    await user.click(screen.getByRole('button', { name: 'Undo' }));
+    await waitFor(async () => {
+      const sets = await getSessionSets(session.id);
+      expect(sets.map((s) => [s.order, s.reps])).toEqual([
+        [0, 5],
+        [1, 6],
+      ]);
+    });
+    expect(
+      await screen.findByRole('button', { name: /Log set 3/ }),
+    ).toBeTruthy();
+  });
+});
+
+describe('isRealRecord', () => {
+  it('heavier weight: yes; new max without a rep record: yes; rep record: no', () => {
+    expect(isRealRecord(['weight'])).toBe(true);
+    expect(isRealRecord(['weight', 'reps', 'e1rm'])).toBe(true);
+    expect(isRealRecord(['e1rm'])).toBe(true);
+    expect(isRealRecord(['reps', 'e1rm'])).toBe(false);
+    expect(isRealRecord(['reps'])).toBe(false);
+    expect(isRealRecord([])).toBe(false);
+  });
+});
+
 describe('Summary: Discard', () => {
   it('removes the logged sets and closes the session without advancing progression', async () => {
     const { session, programId } = await seedActiveSession();
@@ -382,13 +568,13 @@ describe('Session resume on reload', () => {
   });
 });
 
-describe('Mid-workout Skip', () => {
+describe('Mid-workout Skip exercise', () => {
   it('removes the current exercise from the session (template untouched)', async () => {
     const { session } = await seedActiveSession(['bench', 'squat']);
     const user = userEvent.setup();
     renderLogger();
     await logButton();
-    await user.click(screen.getByRole('button', { name: 'Skip' }));
+    await user.click(screen.getByRole('button', { name: 'Skip exercise' }));
     await waitFor(async () => {
       const s = await db.sessions.get(session.id);
       expect(s!.executedSlots).toHaveLength(1);
@@ -397,6 +583,46 @@ describe('Mid-workout Skip', () => {
     // The template (program day) is NOT mutated — still 2 slots.
     const tpl = (await db.templates.toArray())[0]!;
     expect(tpl.slots).toHaveLength(2);
+  });
+
+  // Review card f08: the button says what it skips, and Undo puts the exercise back
+  // where it was.
+  it('says which exercise was skipped and Undo restores it at its place', async () => {
+    const { session } = await seedActiveSession(['bench', 'squat', 'row']);
+    const user = userEvent.setup();
+    renderLogger();
+    await logButton();
+    await user.click(screen.getByRole('button', { name: 'Next exercise' }));
+    await user.click(
+      await screen.findByRole('button', { name: 'Skip exercise' }),
+    );
+    expect(await screen.findByText(/Skipped squat/)).toBeTruthy();
+    await waitFor(async () =>
+      expect((await db.sessions.get(session.id))!.executedSlots).toHaveLength(
+        2,
+      ),
+    );
+    await user.click(screen.getByRole('button', { name: 'Undo' }));
+    await waitFor(async () => {
+      const s = await db.sessions.get(session.id);
+      expect(s!.executedSlots!.map((x) => x.exerciseId)).toEqual([
+        'bench',
+        'squat',
+        'row',
+      ]);
+    });
+    expect(useSessionStore.getState().currentExercise).toBe(1);
+  });
+
+  it('skipping the only exercise left opens the summary instead of ending the workout', async () => {
+    const { session } = await seedActiveSession(['bench']);
+    const user = userEvent.setup();
+    renderLogger();
+    await logButton();
+    await user.click(screen.getByRole('button', { name: 'Skip exercise' }));
+    expect(await screen.findByText('Nice work.')).toBeTruthy();
+    expect((await db.sessions.get(session.id))!.status).toBe('active');
+    expect((await db.sessions.get(session.id))!.executedSlots).toHaveLength(1);
   });
 });
 
