@@ -13,6 +13,7 @@ import { ScreenTitle, SectionHead, StatTiles } from '../../ui/StatGrid';
 import { TrendChart, type TrendPoint } from '../../ui/TrendChart';
 import type { LoggedSet } from '../../db/types';
 import { useScrollMemory } from '../../ui/scrollMemory';
+import { WorkoutCalendar } from './WorkoutCalendar';
 
 /* Trends: one layout. A range, the lifts with the most eligible sets as chips, the
    estimated one-rep max for the chosen lift with its delta, three tiles, weekly volume
@@ -158,7 +159,9 @@ export function HistoryScreen() {
         title="Trends"
       />
 
-      <div className="os-seg mt-3.5" role="radiogroup" aria-label="Range">
+      <WorkoutCalendar />
+
+      <div className="os-seg mt-5" role="radiogroup" aria-label="Range">
         {(['4W', '12W', 'All'] as const).map((r) => (
           <button
             key={r}
