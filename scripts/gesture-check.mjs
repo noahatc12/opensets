@@ -83,7 +83,7 @@ check('tab switch lands on Plan', (await hash()) === '#/plan', await hash());
 // 2. Push into a pushed screen, then edge-swipe back.
 await page.getByRole('link', { name: 'Library' }).click();
 await page.waitForTimeout(600);
-await page.getByRole('button', { name: /e1RM/ }).first().click();
+await page.getByRole('button', { name: /estimated max/ }).first().click();
 await page.waitForTimeout(700);
 check(
   'push lands on detail',
@@ -118,7 +118,7 @@ check(
 );
 
 // 3. A swipe that starts away from the edge is a scroll, not a pop.
-await page.getByRole('button', { name: /e1RM/ }).first().click();
+await page.getByRole('button', { name: /estimated max/ }).first().click();
 await page.waitForTimeout(600);
 await drag(120, 420, 330, 425);
 await page.waitForTimeout(500);

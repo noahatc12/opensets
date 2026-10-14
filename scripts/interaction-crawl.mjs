@@ -113,7 +113,7 @@ state('sheet-filters', 'sample', async (h) => {
 });
 state('exercise-detail', 'sample', async (h) => {
   await h.tab('Library');
-  await h.tap(h.btn(/e1RM/));
+  await h.tap(h.btn(/estimated max/));
 });
 state('trends', 'sample', async (h) => h.tab('Trends'));
 state('you', 'sample', async (h) => h.tab('You'));
