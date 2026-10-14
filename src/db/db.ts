@@ -26,9 +26,10 @@ import type {
 } from './types';
 import { newId } from './ids';
 import { preMigrationSnapshot } from './backup';
+import { moveSessionsToLocalDay } from './localDayMigration';
 
 /** Current code schema version. Bump alongside a new `version(n)` block below. */
-export const SCHEMA_VERSION = 4;
+export const SCHEMA_VERSION = 5;
 
 export const DEFAULT_SETTINGS: UserSettings = {
   units: 'lb',
@@ -166,6 +167,32 @@ export class OpenSetsDB extends Dexie {
       })
       .upgrade(async (tx) => {
         await preMigrationSnapshot(tx, newId(), new Date().toISOString(), 3);
+      });
+
+    // --- v5 (2026-10-14): sessions and the sets that carried their day move to the
+    // LOCAL day the session started. The day used to be the UTC day (an ISO timestamp
+    // cut at 10), which filed a Pacific evening workout under the next day. No store
+    // or index change; rows are rewritten from startedAt after the v4 snapshot.
+    this.version(5)
+      .stores({
+        exercises:
+          'id, nameNorm, *primaryMuscles, equipment, category, isCustom',
+        programs: 'id, name, isActive',
+        templates: 'id, programId, dayIndex',
+        sessions: 'id, date, programId, templateId, status',
+        sets: 'id, sessionId, exerciseId, [exerciseId+date]',
+        exerciseState: '[programId+exerciseId]',
+        measurements: 'id, date, type',
+        photos: 'id, date',
+        goals: 'id, type, status',
+        settings: 'key',
+        activeSession: 'key',
+        backups: 'id, createdAt',
+        profile: 'key',
+      })
+      .upgrade(async (tx) => {
+        await preMigrationSnapshot(tx, newId(), new Date().toISOString(), 4);
+        await moveSessionsToLocalDay(tx);
       });
 
     // Seed default settings on a brand-new database only.
