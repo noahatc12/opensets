@@ -46,8 +46,11 @@ import type {
   WorkoutSession,
   WorkoutTemplate,
 } from './types';
+import { localDay } from '../lib/dates';
 
-const localDate = (iso: string) => iso.slice(0, 10);
+// A session belongs to the LOCAL day it started (lib/dates); this was the UTC day
+// until 2026-10-14.
+const localDate = (iso: string) => localDay(iso);
 
 /** The muscle a slot's volume rides on + its MRV headroom — the R3.5 ramp context passed
  *  into `periodize`. `baseTotal` is the muscle's WHOLE-program week-1 set count (Σ over

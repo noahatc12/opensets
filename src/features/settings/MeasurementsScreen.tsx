@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNav } from '../../ui/nav';
+import { localDay } from '../../lib/dates';
 import { Pushed } from '../../ui/Pushed';
 import { SettingsScreen } from './SettingsScreen';
 import { TabBar } from '../../components/TabBar';
@@ -26,7 +27,8 @@ const numFont = {
 };
 
 const nowIso = () => new Date().toISOString();
-const today = () => nowIso().slice(0, 10);
+// The local day (lib/dates): an evening entry belongs to today, not tomorrow's UTC day.
+const today = () => localDay(nowIso());
 
 /** Bodyweight stores a weight (lb); every other type stores a length (inches). */
 const isWeight = (type: string) => type === 'bodyweight';

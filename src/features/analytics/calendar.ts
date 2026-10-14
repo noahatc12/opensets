@@ -1,23 +1,20 @@
 import type { LoggedSet, WorkoutSession } from '../../db/types';
 import { fmtWeight, type WeightUnit } from '../../lib/units';
+import { localDay } from '../../lib/dates';
 
 /*
  * The workout calendar's logic (Noah, 2026-10-14: "a calendar that shows the days a
  * workout was logged and what happened during the workout"). Pure functions so the
  * screen stays a thin shell.
  *
- * A workout sits on the LOCAL day it started. `WorkoutSession.date` is the UTC day
- * (an ISO string cut at 10 characters), which files an evening workout in the
- * Pacific time zone under the next day, so the calendar reads `startedAt` instead.
+ * A workout sits on the LOCAL day it started. Before schema v5 `WorkoutSession.date`
+ * was the UTC day, so the calendar reads `startedAt`, which is right either way.
  */
 
 const pad = (n: number) => String(n).padStart(2, '0');
 
-/** "2026-10-13" for the local calendar day of an ISO timestamp. */
-export function localDayKey(iso: string): string {
-  const d = new Date(iso);
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-}
+/** The local calendar day of a timestamp: one implementation, in lib/dates. */
+export const localDayKey = localDay;
 
 /** "2026-10-13" for a year, zero-based month and day. */
 export function dayKey(year: number, month0: number, day: number): string {

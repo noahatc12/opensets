@@ -3,6 +3,8 @@
  * goes through lib/units so the lb/kg setting stays consistent.
  */
 
+import { parseDay } from './dates';
+
 /** 86_700 -> "86.7k", 716_000 -> "716k", 1_240_000 -> "1.24M", 950 -> "950". */
 export function compact(n: number): string {
   const abs = Math.abs(n);
@@ -106,19 +108,19 @@ export function flagLabel(flag: string): string {
   return names[flag] ?? flag;
 }
 
-/** "Fri" for an ISO date or timestamp. */
+/** "Fri" for an ISO date or timestamp. A bare day is a LOCAL day (lib/dates). */
 export function weekdayShort(iso: string): string {
-  return new Date(iso).toLocaleDateString(undefined, { weekday: 'short' });
+  return parseDay(iso).toLocaleDateString(undefined, { weekday: 'short' });
 }
 
 /** "Sunday". */
 export function weekdayLong(iso: string): string {
-  return new Date(iso).toLocaleDateString(undefined, { weekday: 'long' });
+  return parseDay(iso).toLocaleDateString(undefined, { weekday: 'long' });
 }
 
 /** "Sun, Sep 27". */
 export function dateShort(iso: string): string {
-  return new Date(iso).toLocaleDateString(undefined, {
+  return parseDay(iso).toLocaleDateString(undefined, {
     weekday: 'short',
     month: 'short',
     day: 'numeric',
@@ -127,7 +129,7 @@ export function dateShort(iso: string): string {
 
 /** "Sep 27". */
 export function monthDay(iso: string): string {
-  return new Date(iso).toLocaleDateString(undefined, {
+  return parseDay(iso).toLocaleDateString(undefined, {
     month: 'short',
     day: 'numeric',
   });
@@ -135,7 +137,7 @@ export function monthDay(iso: string): string {
 
 /** Whole days between an ISO date and now, floored at 0. */
 export function daysAgo(iso: string, now = Date.now()): number {
-  return Math.max(0, Math.floor((now - Date.parse(iso)) / 86_400_000));
+  return Math.max(0, Math.floor((now - parseDay(iso).getTime()) / 86_400_000));
 }
 
 /** "today", "yesterday", "5 days ago". */

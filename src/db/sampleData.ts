@@ -5,6 +5,7 @@
  */
 import { db } from './db';
 import { newId } from './ids';
+import { localDay } from '../lib/dates';
 import { searchCatalog } from './catalog';
 import {
   createProgram,
@@ -122,7 +123,7 @@ export async function seedSampleData(
       const { tpl, exs } = templates[d]!;
       const dateMs = nowMs - (wk * 7 + (2 - d) * 2 + 1) * DAY_MS;
       const iso = new Date(dateMs).toISOString();
-      const date = iso.slice(0, 10);
+      const date = localDay(iso);
       const sid = newId();
       const newest = wk === 0;
       sessions.push({
