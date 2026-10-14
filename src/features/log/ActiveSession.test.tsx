@@ -734,3 +734,31 @@ describe('Back is a non-destructive leave (#2)', () => {
     ); // advanced
   });
 });
+
+describe('Last time line (quick win, review 2026-10-14)', () => {
+  it("shows last session's sets under the exercise name", async () => {
+    const old = (order: number, reps: number) => ({
+      id: `old-${order}`,
+      sessionId: 'last-week',
+      exerciseId: 'bench',
+      date: '2026-06-13T10:00:00.000Z',
+      order,
+      type: 'working' as const,
+      weightLb: 135,
+      reps,
+      completed: true,
+    });
+    await db.sets.bulkPut([old(0, 8), old(1, 8), old(2, 7)]);
+    await seedActiveSession(['bench']);
+    renderLogger();
+    const line = await waitFor(() => screen.getByTestId('last-time'));
+    expect(line.textContent).toBe('Last time 135 lb × 8, 8, 7');
+  });
+
+  it('shows nothing on a first session', async () => {
+    await seedActiveSession(['bench']);
+    renderLogger();
+    await logButton();
+    expect(screen.queryByTestId('last-time')).toBeNull();
+  });
+});
