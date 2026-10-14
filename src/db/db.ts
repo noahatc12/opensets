@@ -32,10 +32,12 @@ export const SCHEMA_VERSION = 4;
 
 export const DEFAULT_SETTINGS: UserSettings = {
   units: 'lb',
-  // 45 lb Olympic bar + standard US plate set incl. the 1.25 lb fractional pair
-  // (spec §6.1). lb is canonical; a kg user re-picks their set on the Plates screen.
+  // 45 lb Olympic bar + the standard US plate set (spec §6.1). The 1.25 lb fractional
+  // pair is opt-in on the Plates screen: most gyms lack it, and with it in the default
+  // every plan landed on weights like 102.5 (Noah, 2026-10-14). lb is canonical; a kg
+  // user re-picks their set on the Plates screen.
   barLb: 45,
-  plateInventoryLb: [1.25, 2.5, 5, 10, 25, 35, 45],
+  plateInventoryLb: [2.5, 5, 10, 25, 35, 45],
   defaultRestWarmupSec: 60,
   defaultRestWorkSec: 120,
   restCompoundSec: 180,

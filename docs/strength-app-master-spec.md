@@ -111,7 +111,7 @@ Priority-ordered stories:
 - [ ] **Calculators:** plate calculator (uses user plate inventory + bar weight), e1RM calculator, warm-up set generator (bar → 40/60/80% ramp, plate-rounded)
 - [ ] **History:** calendar + list; per-exercise history with e1RM sparkline (Recharts, lazy-loaded route)
 - [ ] **Import:** Strong + Hevy CSV (§12) with header sniffing and exercise-name mapping UI
-- [ ] **Units (imperial-first):** lb is the default and canonical unit for load; US plate set (45/35/25/10/5/2.5 + fractional 1.25) on a 45 lb bar; increments in lb, resolved through plate-aware rounding. **Bodyweight in lb; height in feet/inches (entered as a ft + in field, shown like 5'10″); body measurements in inches; cardio distance in miles.** Optional kg toggle converts load for display only and never mutates stored data; metric is used only inside the BMR/protein formulas, never in the UI
+- [ ] **Units (imperial-first):** lb is the default and canonical unit for load; US plate set (45/35/25/10/5/2.5, fractional 1.25 opt-in) on a 45 lb bar; increments in lb, resolved through plate-aware rounding. **Bodyweight in lb; height in feet/inches (entered as a ft + in field, shown like 5'10″); body measurements in inches; cardio distance in miles.** Optional kg toggle converts load for display only and never mutates stored data; metric is used only inside the BMR/protein formulas, never in the UI
 - [ ] Dark mode default; thumb-zone primary actions; touch targets ≥ 48 px
 
 **Exit:** developer dogfoods one full week, zero data loss, logging ≤ 2 taps/set.
@@ -207,7 +207,7 @@ export function nextPrescription(
 ): { prescription: Prescription; nextState: ExerciseState };
 ```
 
-**Units — pounds-first (whole engine).** All loads, increments, plate inventory, and seeds are **pounds**; default US plates 45/35/25/10/5/2.5 lb (+ fractional 1.25 lb) on a 45 lb bar; kg is display-only. The kg figures in the example tables below are illustrative — implement them in lb. All output loads pass through `roundToLoadable(targetLb, barLb, plates)` — nearest weight actually loadable from the user's plate inventory (pairs only). Default increments: compounds **+5 lb upper / +10 lb lower**; isolation **+5 lb** (or fractional); overridable per exercise.
+**Units — pounds-first (whole engine).** All loads, increments, plate inventory, and seeds are **pounds**; default US plates 45/35/25/10/5/2.5 lb on a 45 lb bar (fractional 1.25 lb is opt-in; changed 2026-10-14 on Noah's call because most gyms lack it); kg is display-only. The kg figures in the example tables below are illustrative — implement them in lb. All output loads pass through `roundToLoadable(targetLb, barLb, plates)` — nearest weight actually loadable from the user's plate inventory (pairs only). Default increments: compounds **+5 lb upper / +10 lb lower**; isolation **+5 lb** (or fractional); overridable per exercise.
 
 ### 6.2 Rule logic (normative)
 
