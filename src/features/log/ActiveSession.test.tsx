@@ -774,7 +774,8 @@ describe('Screen stays awake (quick win, review 2026-10-14)', () => {
       await seedActiveSession(['bench']);
       renderLogger();
       await logButton();
-      expect(request).toHaveBeenCalledWith('screen');
+      // waitFor: the coverage run is slow enough that one immediate look can miss it.
+      await waitFor(() => expect(request).toHaveBeenCalledWith('screen'));
     } finally {
       delete (navigator as unknown as Record<string, unknown>).wakeLock;
     }
