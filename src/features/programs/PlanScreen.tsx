@@ -1,3 +1,4 @@
+import { ArrowRightIcon } from '../../components/icons';
 import { useNav } from '../../ui/nav';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useCatalog } from '../library/useCatalog';
@@ -129,7 +130,7 @@ export function PlanScreen() {
               onClick={() => nav.push('/onboarding')}
               className="os-btn os-btn--hero os-press mt-4"
             >
-              Build my plan <span className="text-[18px]">→</span>
+              Build my plan <ArrowRightIcon />
             </button>
           </div>
           <button

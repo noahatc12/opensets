@@ -62,12 +62,15 @@ export function ProteinCard() {
         className="mt-1.5 text-[20px] font-extrabold"
         style={{ letterSpacing: '-.02em', fontVariantNumeric: 'tabular-nums' }}
       >
-        {target.lowG} to {target.highG} g a day
+        At least {target.lowG} g a day
       </div>
       <p
         className="mt-1 text-[12px] font-medium leading-snug"
         style={{ color: 'var(--mute)' }}
       >
+        {/* One number to act on: the benefit levels off near 1.6 g per kg (Morton
+            2018), so the low end leads and the range follows (review 2026-10-14). */}
+        Up to {target.highG} g is fine.{' '}
         {target.basis === 'heightAdjusted'
           ? 'From a height-adjusted weight, 1.6 to 2.2 g per kg.'
           : 'From your bodyweight, 1.6 to 2.2 g per kg.'}{' '}

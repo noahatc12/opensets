@@ -1,3 +1,4 @@
+import { ArrowRightIcon } from '../../components/icons';
 import { useMemo } from 'react';
 import { useNav } from '../../ui/nav';
 import { useLiveQuery } from 'dexie-react-hooks';
@@ -209,7 +210,7 @@ export function TodayScreen() {
             onClick={() => nav.push('/onboarding')}
             className="os-btn os-btn--hero os-press mt-4"
           >
-            Build my plan <span className="text-[18px]">→</span>
+            Build my plan <ArrowRightIcon />
           </button>
         </div>
         <div className="mt-2.5 grid grid-cols-2 gap-2">
@@ -404,7 +405,7 @@ export function TodayScreen() {
             onClick={() => openWorkout(resumable.id)}
             className="os-btn os-btn--hero os-press mt-4"
           >
-            Resume workout <span className="text-[18px]">→</span>
+            Resume workout <ArrowRightIcon />
           </button>
         ) : (
           <button
@@ -412,7 +413,7 @@ export function TodayScreen() {
             onClick={() => void start()}
             className="os-btn os-btn--hero os-press mt-4"
           >
-            Start workout <span className="text-[18px]">→</span>
+            Start workout <ArrowRightIcon />
           </button>
         )}
       </div>

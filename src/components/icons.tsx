@@ -129,6 +129,17 @@ export function ChevronUpIcon(props: IconProps) {
   );
 }
 
+/** A drawn arrow for buttons. A typed "→" rides the text baseline and never sits
+ *  centred (designer.md trap, 2026-09-27); this one centres in the flex row. */
+export function ArrowRightIcon(props: IconProps) {
+  return (
+    <svg {...base({ width: 18, height: 18, strokeWidth: 2.4, ...props })}>
+      <path d="M5 12h14" />
+      <path d="M13 6l6 6-6 6" />
+    </svg>
+  );
+}
+
 export function PlusIcon(props: IconProps) {
   return (
     <svg {...base(props)}>
