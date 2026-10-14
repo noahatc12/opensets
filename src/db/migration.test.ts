@@ -1,7 +1,8 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, beforeAll, afterAll } from 'vitest';
 import Dexie from 'dexie';
 import { OpenSetsDB, DEFAULT_SETTINGS, db } from './db';
 import { updateProfile } from './hooks';
+import { moveSessionsToLocalDay } from './localDayMigration';
 
 /**
  * The first real schema migration (v1 → v2 adds the `profile` store). This proves
@@ -58,7 +59,7 @@ async function seedV1(name: string): Promise<void> {
   v1.close();
 }
 
-describe('schema v1 → v4 migration (profile store + prescription fields + preference inputs)', () => {
+describe('schema v1 → v5 migration (profile store + prescription fields + preference inputs + local day)', () => {
   const NAME = 'opensets-migr-test';
 
   it('preserves all v1 data across ALL upgrades and snapshots each step with its own source version', async () => {
@@ -66,7 +67,7 @@ describe('schema v1 → v4 migration (profile store + prescription fields + pref
     await seedV1(NAME);
 
     const migrated = new OpenSetsDB(NAME);
-    await migrated.open(); // runs version(2), version(3) AND version(4) upgrades in sequence
+    await migrated.open(); // runs version(2) through version(5) upgrades in sequence
 
     // The inviolable: every v1 row survives the version bumps.
     expect(await migrated.programs.get('p1')).toMatchObject({
@@ -81,20 +82,20 @@ describe('schema v1 → v4 migration (profile store + prescription fields + pref
     expect(await migrated.profile.count()).toBe(0); // v2 store exists, empty
 
     // A snapshot per step, each labelled with ITS source version, pruned to the spec's
-    // keep-2 (the two newest: 2 and 3). Migrations are additive, so the v2 snapshot
+    // keep-2 (the two newest: 3 and 4). Migrations are additive, so the v3 snapshot
     // still holds every v1 row; the fromVersion labelling is still proven.
     const all = await migrated.backups.toArray();
     const versions = all.map((b) => b.schemaVersion).sort();
-    expect(versions).toEqual([2, 3]);
+    expect(versions).toEqual([3, 4]);
     expect(
-      all.find((b) => b.schemaVersion === 2)!.envelope.data.sets,
+      all.find((b) => b.schemaVersion === 3)!.envelope.data.sets,
     ).toHaveLength(1);
 
     migrated.close();
     await Dexie.delete(NAME);
   });
 
-  it('v2 → v4: existing template + slots survive the prescription-fields bump (snapshots labelled 2, 3)', async () => {
+  it('v2 → v5: existing template + slots survive the prescription-fields bump (newest snapshots 3, 4)', async () => {
     const N2 = 'opensets-migr-v2v3';
     await Dexie.delete(N2);
     // Seed a v2 DB (v1 stores + the profile store) with a template carrying a slot.
@@ -123,7 +124,7 @@ describe('schema v1 → v4 migration (profile store + prescription fields + pref
     v2.close();
 
     const migrated = new OpenSetsDB(N2);
-    await migrated.open(); // runs version(3) AND version(4)
+    await migrated.open(); // runs version(3), version(4) AND version(5)
 
     const tpl = await migrated.templates.get('t1');
     expect(tpl?.slots).toHaveLength(1);
@@ -136,18 +137,18 @@ describe('schema v1 → v4 migration (profile store + prescription fields + pref
       '3-1-1-0',
     );
 
-    // Two snapshots from this open — the v3 and v4 upgrade steps, each labelled with
-    // its own source version (proves the fromVersion fix across the new bump too).
+    // Three snapshots from this open (labelled 2, 3, 4), pruned to the two newest,
+    // each labelled with its own source version.
     const versions = (await migrated.backups.toArray())
       .map((b) => b.schemaVersion)
       .sort();
-    expect(versions).toEqual([2, 3]);
+    expect(versions).toEqual([3, 4]);
 
     migrated.close();
     await Dexie.delete(N2);
   });
 
-  it('v3 → v4: existing program survives the preference-inputs bump (snapshot labelled 3)', async () => {
+  it('v3 → v5: existing program survives the preference-inputs bump (snapshots labelled 3, 4)', async () => {
     const N3 = 'opensets-migr-v3v4';
     await Dexie.delete(N3);
     // Seed a v3 DB (v1 stores + profile) with a program + a profile row.
@@ -160,17 +161,15 @@ describe('schema v1 → v4 migration (profile store + prescription fields + pref
       isActive: true,
       createdAt: '2026-06-01T00:00:00.000Z',
     });
-    await v3
-      .table('profile')
-      .add({
-        key: 'user',
-        goal: 'Recomposition',
-        updatedAt: '2026-06-01T00:00:00.000Z',
-      });
+    await v3.table('profile').add({
+      key: 'user',
+      goal: 'Recomposition',
+      updatedAt: '2026-06-01T00:00:00.000Z',
+    });
     v3.close();
 
     const migrated = new OpenSetsDB(N3);
-    await migrated.open(); // runs only version(4)
+    await migrated.open(); // runs version(4) and version(5)
 
     // Old program + profile intact; new optional fields simply absent and writable.
     const prog = await migrated.programs.get('p1');
@@ -181,13 +180,104 @@ describe('schema v1 → v4 migration (profile store + prescription fields + pref
     expect(prof!.experience).toBeUndefined();
     expect(prof!.priorityMuscles).toBeUndefined();
 
-    // One snapshot, labelled with the v3 source version.
+    // Two snapshots, labelled with their source versions.
     const backups = await migrated.backups.toArray();
-    expect(backups).toHaveLength(1);
-    expect(backups[0]!.schemaVersion).toBe(3);
+    expect(backups.map((x) => x.schemaVersion).sort()).toEqual([3, 4]);
 
     migrated.close();
     await Dexie.delete(N3);
+  });
+});
+
+describe('schema v4 → v5: sessions move to the local day they started', () => {
+  // Pinned to Los Angeles: 9 PM Wednesday Oct 14 there is 04:00 Thursday UTC, so the
+  // old code stored that workout under Thursday.
+  const env = (
+    globalThis as unknown as {
+      process: { env: Record<string, string | undefined> };
+    }
+  ).process.env;
+  let tz: string | undefined;
+  beforeAll(() => {
+    tz = env.TZ;
+    env.TZ = 'America/Los_Angeles';
+  });
+  afterAll(() => {
+    if (tz === undefined) delete env.TZ;
+    else env.TZ = tz;
+  });
+
+  it('moves an evening session and its sets back a day, leaves the rest, and keeps the old rows', async () => {
+    const N = 'opensets-migr-v4v5';
+    await Dexie.delete(N);
+    const v4 = new Dexie(N);
+    v4.version(4).stores({ ...V1_STORES, profile: 'key' });
+    await v4.open();
+    await v4.table('sessions').bulkAdd([
+      {
+        id: 'eve',
+        date: '2026-10-15',
+        startedAt: '2026-10-15T04:00:00.000Z',
+        status: 'completed',
+      },
+      {
+        id: 'am',
+        date: '2026-10-14',
+        startedAt: '2026-10-14T16:00:00.000Z',
+        status: 'completed',
+      },
+    ]);
+    const set = (id: string, sessionId: string, date: string) => ({
+      id,
+      sessionId,
+      exerciseId: 'bench',
+      date,
+      order: 0,
+      type: 'working',
+      weightLb: 135,
+      reps: 5,
+      completed: true,
+    });
+    await v4
+      .table('sets')
+      .bulkAdd([
+        set('e1', 'eve', '2026-10-15'),
+        set('e2', 'eve', '2026-10-15T04:10:00.000Z'),
+        set('a1', 'am', '2026-10-14'),
+      ]);
+    v4.close();
+
+    const migrated = new OpenSetsDB(N);
+    await migrated.open(); // runs version(5)
+
+    expect((await migrated.sessions.get('eve'))!.date).toBe('2026-10-14');
+    expect((await migrated.sets.get('e1'))!.date).toBe('2026-10-14');
+    expect((await migrated.sets.get('e2'))!.date).toBe(
+      '2026-10-15T04:10:00.000Z',
+    );
+    expect((await migrated.sessions.get('am'))!.date).toBe('2026-10-14');
+    expect((await migrated.sets.get('a1'))!.date).toBe('2026-10-14');
+
+    // Reversible: the v4 snapshot holds the rows as they were.
+    const snap = (await migrated.backups.toArray()).find(
+      (x) => x.schemaVersion === 4,
+    )!;
+    const old = (
+      snap.envelope.data.sessions as { id: string; date: string }[]
+    ).find((s) => s.id === 'eve');
+    expect(old!.date).toBe('2026-10-15');
+
+    // Idempotent: a second pass moves nothing.
+    const again = await migrated.transaction(
+      'rw',
+      migrated.sessions,
+      migrated.sets,
+      (tx) => moveSessionsToLocalDay(tx),
+    );
+    expect(again).toBe(0);
+
+    migrated.close();
+    await Dexie.delete(N);
   });
 });
 
