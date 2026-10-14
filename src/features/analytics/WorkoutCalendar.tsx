@@ -163,7 +163,7 @@ export function WorkoutCalendar() {
                 ? 'var(--pr)'
                 : 'var(--acc-tx)'
               : key > todayKey
-                ? 'var(--faint)'
+                ? 'var(--mute)' // --faint fails 4.5:1 in both themes (design check)
                 : 'var(--ink2)',
             boxShadow: ring || undefined,
           };
@@ -326,7 +326,7 @@ function WorkoutCard({
               return (
                 <span
                   key={s.id}
-                  className="rounded-[8px] px-2 py-0.5 text-[13px] font-semibold"
+                  className="rounded-[10px] px-2 py-0.5 text-[13px] font-semibold"
                   style={{
                     background: hit ? PR_SOFT : 'var(--s2)',
                     color: hit ? 'var(--pr)' : 'var(--ink2)',
