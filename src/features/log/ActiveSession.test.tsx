@@ -6,7 +6,7 @@
  * refactor. Engine coverage gate doesn't reach here (features/**), but these are
  * the safety net for the logger UI the gate never covered.
  */
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import {
   render,
   screen,
@@ -760,5 +760,23 @@ describe('Last time line (quick win, review 2026-10-14)', () => {
     renderLogger();
     await logButton();
     expect(screen.queryByTestId('last-time')).toBeNull();
+  });
+});
+
+describe('Screen stays awake (quick win, review 2026-10-14)', () => {
+  it('an open workout takes a screen wake lock', async () => {
+    const request = vi.fn(async () => ({ release: vi.fn(async () => {}) }));
+    Object.defineProperty(navigator, 'wakeLock', {
+      value: { request },
+      configurable: true,
+    });
+    try {
+      await seedActiveSession(['bench']);
+      renderLogger();
+      await logButton();
+      expect(request).toHaveBeenCalledWith('screen');
+    } finally {
+      delete (navigator as unknown as Record<string, unknown>).wakeLock;
+    }
   });
 });

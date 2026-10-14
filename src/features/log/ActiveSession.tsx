@@ -16,6 +16,7 @@ import { useSettings } from '../../db/hooks';
 import { platesForWeight, roundToLoadable } from '../../engine';
 import { plateList } from '../../lib/plates';
 import { lastTimeLine } from '../../lib/lastTime';
+import { useWakeLock } from '../../lib/wakeLock';
 import { useLogger, type LoggerVM } from './useLogger';
 import { PrCelebration } from './PrCelebration';
 import { ExercisePicker } from '../library/ExercisePicker';
@@ -38,6 +39,8 @@ const fmtTempo = (t: string) => t.replace(/-/g, '·');
 
 export function ActiveSession() {
   const vm = useLogger();
+  // The screen stays awake while a workout is open (quick win, review 2026-10-14).
+  useWakeLock(vm !== null);
   if (!vm) return null;
   if (vm.summaryOpen) return <Summary vm={vm} />;
   return <Logger vm={vm} />;
