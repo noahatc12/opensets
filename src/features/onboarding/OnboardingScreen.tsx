@@ -201,10 +201,28 @@ function Chip({
   );
 }
 
-function Field({ label, children }: { label: string; children: ReactNode }) {
+function Field({
+  label,
+  children,
+  group = false,
+}: {
+  label: string;
+  children: ReactNode;
+  /** A row of buttons, not an input: a <label> would lend its text to the first
+   *  button ("Sex Sex") and a tap on the words would press it. */
+  group?: boolean;
+}) {
+  const caption = <span className="os-t mb-1.5 block">{label}</span>;
+  if (group)
+    return (
+      <div className="block">
+        {caption}
+        {children}
+      </div>
+    );
   return (
     <label className="block">
-      <span className="os-t mb-1.5 block">{label}</span>
+      {caption}
       {children}
     </label>
   );
@@ -497,7 +515,7 @@ export function OnboardingScreen() {
 
           {step === 3 && (
             <div className="mt-5 flex flex-col gap-3.5">
-              <Field label="Sex">
+              <Field label="Sex" group>
                 <div
                   className="grid grid-cols-2 gap-2"
                   role="radiogroup"
@@ -537,7 +555,6 @@ export function OnboardingScreen() {
                       inputMode="numeric"
                       value={heightFt}
                       onChange={(e) => setHeightFt(e.target.value)}
-                      placeholder="0"
                       aria-label="Height feet"
                       className={inputCls}
                     />
@@ -549,7 +566,6 @@ export function OnboardingScreen() {
                       inputMode="numeric"
                       value={heightInch}
                       onChange={(e) => setHeightInch(e.target.value)}
-                      placeholder="0"
                       aria-label="Height inches"
                       className={inputCls}
                     />
@@ -564,7 +580,6 @@ export function OnboardingScreen() {
                     inputMode="decimal"
                     value={bodyweight}
                     onChange={(e) => setBodyweight(e.target.value)}
-                    placeholder="0"
                     aria-label="Bodyweight"
                     className={inputCls}
                   />
@@ -578,7 +593,6 @@ export function OnboardingScreen() {
                     inputMode="decimal"
                     value={bodyFat}
                     onChange={(e) => setBodyFat(e.target.value)}
-                    placeholder="0"
                     aria-label="Body fat percent"
                     className={inputCls}
                   />
@@ -599,7 +613,6 @@ export function OnboardingScreen() {
                       inputMode="decimal"
                       value={targetBodyFat}
                       onChange={(e) => setTargetBodyFat(e.target.value)}
-                      placeholder="0"
                       aria-label="Target body fat percent"
                       className={inputCls}
                     />
@@ -611,7 +624,6 @@ export function OnboardingScreen() {
                       inputMode="numeric"
                       value={timeframeWeeks}
                       onChange={(e) => setTimeframeWeeks(e.target.value)}
-                      placeholder="0"
                       aria-label="Goal timeframe weeks"
                       className={inputCls}
                     />

@@ -15,6 +15,8 @@ import { getCatalogExercise } from '../../db/catalog';
 import { useSettings } from '../../db/hooks';
 import { platesForWeight, roundToLoadable } from '../../engine';
 import { plateList } from '../../lib/plates';
+import { lastTimeLine } from '../../lib/lastTime';
+import { useWakeLock } from '../../lib/wakeLock';
 import { useLogger, type LoggerVM } from './useLogger';
 import { PrCelebration } from './PrCelebration';
 import { ExercisePicker } from '../library/ExercisePicker';
@@ -37,6 +39,8 @@ const fmtTempo = (t: string) => t.replace(/-/g, '·');
 
 export function ActiveSession() {
   const vm = useLogger();
+  // The screen stays awake while a workout is open (quick win, review 2026-10-14).
+  useWakeLock(vm !== null);
   if (!vm) return null;
   if (vm.summaryOpen) return <Summary vm={vm} />;
   return <Logger vm={vm} />;
@@ -332,6 +336,20 @@ function Logger({ vm }: { vm: LoggerVM }) {
             )}
             {activeSlot.tempo && notes ? ' · ' : ''}
             {notes}
+          </div>
+        )}
+        {last.length > 0 && (
+          <div className="os-t mt-1.5 leading-snug" data-testid="last-time">
+            Last time{' '}
+            <span
+              className="font-bold"
+              style={{
+                color: 'var(--ink2)',
+                fontVariantNumeric: 'tabular-nums',
+              }}
+            >
+              {lastTimeLine(last, units)}
+            </span>
           </div>
         )}
 

@@ -1162,16 +1162,19 @@ export function generatePlan(
     planDays.push({ name: types[di]!, slots });
   }
 
+  // The plan is named in the words onboarding used for the goal, so Today does not say
+  // "Hypertrophy" to someone who picked "Build muscle" (review 2026-10-14). Keep these
+  // in step with the goal labels in features/onboarding/OnboardingScreen.tsx.
   const goalShort =
     goal === 'Get stronger'
-      ? 'Strength'
+      ? 'Get stronger'
       : goal === 'Lose fat'
-        ? 'Cut'
+        ? 'Lean out'
         : goal === 'Recomposition'
-          ? 'Recomp'
+          ? 'Recomposition'
           : goal === 'General fitness'
-            ? 'Fitness'
-            : 'Hypertrophy';
+            ? 'Stay fit'
+            : 'Build muscle';
 
   // Block mesocycle (§2.2) — sized to the goal timeframe (default 6 wk). GZCLP is
   // self-periodizing (its own stage machine), so those programs carry no mesocycle.
@@ -1196,7 +1199,7 @@ export function generatePlan(
     weeklyVolumeByMuscle[m] = Math.round(n * 10) / 10;
 
   return {
-    program: { name: `${goalShort} · ${days}d`, days: planDays },
+    program: { name: `${goalShort} · ${days} days`, days: planDays },
     mesocycle,
     weeklyVolumeByMuscle,
     // Scaffolds — shape only this session (filled by later waves).

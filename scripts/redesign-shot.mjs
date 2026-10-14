@@ -173,7 +173,7 @@ async function run(mode) {
     await shot('sheet-filters');
     await page.keyboard.press('Escape');
     await page.waitForTimeout(300);
-    await page.getByRole('button', { name: /e1RM/ }).first().click();
+    await page.getByRole('button', { name: /estimated max/ }).first().click();
     await page.waitForTimeout(800);
     await shot('detail');
     await scrollMain(99999);

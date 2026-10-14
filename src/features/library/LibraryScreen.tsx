@@ -419,7 +419,7 @@ export function LibraryScreen() {
                         type="button"
                         onClick={() => open(ex)}
                         className="os-row os-press"
-                        aria-label={`${ex.name}, e1RM ${b ? roundDisplay(toUnit(b, units), units) : 'none'}`}
+                        aria-label={`${ex.name}, estimated max ${b ? roundDisplay(toUnit(b, units), units) : 'none'}`}
                       >
                         <Thumb ex={ex} />
                         <span className="min-w-0 flex-1">
@@ -446,7 +446,7 @@ export function LibraryScreen() {
                               {roundDisplay(toUnit(b, units), units)}
                             </span>
                             <span className="os-t block text-[11px]">
-                              e1RM {units}
+                              est. max {units}
                             </span>
                           </span>
                         ) : (

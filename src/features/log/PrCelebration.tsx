@@ -41,7 +41,7 @@ export function PrCelebration({
     e1rmDisplay ?? (weightRecord ? fmtWeight(weightLb, units) : (reps ?? ''));
   const what =
     e1rmDisplay != null
-      ? `e1RM ${units}`
+      ? `est. max ${units}`
       : weightRecord
         ? `heaviest, ${units}`
         : kinds.includes('reps')

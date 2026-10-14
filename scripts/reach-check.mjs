@@ -451,7 +451,7 @@ async function run(profile) {
     await click('Filters', { exact: false });
     await reach('sheet-filters');
     await swipeDown('sheet-filters');
-    await page.getByRole('button', { name: /e1RM/ }).first().click();
+    await page.getByRole('button', { name: /estimated max/ }).first().click();
     await page.waitForTimeout(800);
     await reach('exercise-detail');
   });
@@ -501,13 +501,17 @@ async function run(profile) {
       await reach('sheet-plates');
       await swipeDown('sheet-plates');
     }
+    // Since f06 the record screen is for a heavier weight or a new best max, so the
+    // set goes up before it is logged. A missing record screen is an error, not a
+    // silent skip: the state dropped out of this check unnoticed once (2026-10-14).
+    for (let i = 0; i < 4; i++) await click('increase weight', { wait: 150 });
     await click('Log set', { exact: false, wait: 800 });
     const keepGoing = page.getByRole('button', { name: 'Keep going' });
-    if (await keepGoing.count()) {
-      await reach('record');
-      await keepGoing.click();
-      await page.waitForTimeout(400);
-    }
+    if (!(await keepGoing.count()))
+      throw new Error('the record screen did not show for a heavier set');
+    await reach('record');
+    await keepGoing.click();
+    await page.waitForTimeout(400);
     await reach('rest');
     await click('Skip rest').catch(() => {});
     await click('Finish', { wait: 800 });

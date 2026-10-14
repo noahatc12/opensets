@@ -42,7 +42,13 @@ const LIN: ProgressionRule = {
 
 beforeEach(async () => {
   await Promise.all(db.tables.map((t) => t.clear()));
-  await db.settings.put({ key: 'user', ...DEFAULT_SETTINGS });
+  // These tests pin progression arithmetic (one +2.5 lb step = 102.5), so they keep
+  // the fractional 1.25 lb pair that left the default set on 2026-10-14.
+  await db.settings.put({
+    key: 'user',
+    ...DEFAULT_SETTINGS,
+    plateInventoryLb: [1.25, ...DEFAULT_SETTINGS.plateInventoryLb],
+  });
 });
 
 function slot(

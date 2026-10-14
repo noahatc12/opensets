@@ -23,7 +23,7 @@ const renderCard = () =>
   );
 
 describe('ProteinCard', () => {
-  it('shows a daily range from the latest bodyweight, framed as an estimate', async () => {
+  it('leads with the low end of the range, keeps the range, framed as an estimate', async () => {
     await db.measurements.add({
       id: 'bw',
       type: 'bodyweight',
@@ -31,7 +31,8 @@ describe('ProteinCard', () => {
       valueLb: 180,
     });
     renderCard();
-    expect(await screen.findByText(/130 to 180 g/)).toBeTruthy();
+    expect(await screen.findByText('At least 130 g a day')).toBeTruthy();
+    expect(screen.getByText(/Up to 180 g is fine\./)).toBeTruthy();
     expect(screen.getByText(/estimate/i)).toBeTruthy();
     expect(screen.getByText(/not medical advice/i)).toBeTruthy();
   });
@@ -45,7 +46,8 @@ describe('ProteinCard', () => {
     });
     await db.profile.put({ key: 'user', heightIn: 70, updatedAt: NOW });
     renderCard();
-    expect(await screen.findByText(/125 to 175 g/)).toBeTruthy();
+    expect(await screen.findByText('At least 125 g a day')).toBeTruthy();
+    expect(screen.getByText(/Up to 175 g is fine\./)).toBeTruthy();
     expect(screen.getByText(/height/i)).toBeTruthy();
   });
 

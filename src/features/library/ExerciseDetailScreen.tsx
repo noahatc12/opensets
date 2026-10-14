@@ -249,7 +249,7 @@ export function ExerciseDetailScreen() {
             size={24}
             stats={[
               {
-                label: 'Best e1RM',
+                label: 'Best est. max',
                 value:
                   best !== null
                     ? roundDisplay(toUnit(best, units), units)
@@ -270,7 +270,7 @@ export function ExerciseDetailScreen() {
 
         <div className="os-card mt-3">
           <div className="flex justify-between">
-            <span className="os-t">e1RM trend</span>
+            <span className="os-t">Est. max trend</span>
             {delta !== null ? (
               <span
                 className="os-t"
