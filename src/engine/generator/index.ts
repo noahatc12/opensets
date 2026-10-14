@@ -18,6 +18,14 @@ import type { LoadType, Muscle, ProgressionRule } from '../types';
 import { loadTypeFor } from '../loading';
 import { startingWeightLb } from '../body';
 import {
+  ODD,
+  VETTED,
+  mulberry32,
+  roleOrder,
+  tempoFor,
+  type Vetted,
+} from './roles';
+import {
   buildMesocyclePlan,
   landmarksFor,
   type Phase,
@@ -65,6 +73,8 @@ export interface GenProfile {
   /** Physique-target extension (carried in the contract; drives bands/nutrition later). */
   targetBodyFatPct?: number;
   goalTimeframeWeeks?: number;
+  /** Exercises the lifter never wants (R1 input, consumed from R4 on). */
+  avoidExerciseIds?: readonly string[];
 }
 
 export interface GenPreferences {
@@ -77,6 +87,9 @@ export interface GenPreferences {
   splitChoice?: SplitChoice;
   /** Lagging/priority muscles to bias the split toward (R1 input); omitted → none. */
   priorityMuscles?: readonly Muscle[];
+  /** R4 variety seed: rotates among vetted equals. Omitted → the vetted order, so the
+   *  same inputs give the same plan. Infrastructure until a regenerate button exists. */
+  seed?: number;
 }
 
 /** Rest-tier buckets (§3.7) — re-declared engine-local (engine may not import db). */
@@ -1075,34 +1088,119 @@ export function generatePlan(
   const used = new Set<string>();
   const trainedMuscles = new Set<Muscle>();
   const planDays: GeneratedDay[] = [];
+  const avoid = new Set(profile.avoidExerciseIds ?? []);
+  const byId = new Map(catalog.map((e) => [e.id, e] as const));
+  const rand =
+    preferences.seed === undefined ? null : mulberry32(preferences.seed);
+
+  // A novice repeats the same main lifts every session (simple linear progression);
+  // everyone else rotates through the vetted equals across the week.
+  const novice = experience === 'Novice';
+
+  /** R4: the vetted lift for this slot, by the job the slot does for its muscle today
+   *  (heavy, stretch, squeeze; roles.ts). Never a lift already in today's session.
+   *  Prefers a lift not yet used this week (variety); a slot's MAIN job repeats a lift
+   *  from another day before it drops to a lesser job (no flyes as a main chest lift);
+   *  a novice's main compound repeats first. Null when nothing vetted fits. */
+  const pickVetted = (
+    pat: Pattern,
+    nthToday: number,
+    usedToday: ReadonlySet<string>,
+  ): { ex: GenExercise; v: Vetted } | null => {
+    const fits = (VETTED[pat.key] ?? []).filter((v) => {
+      const ex = byId.get(v.id);
+      return (
+        ex !== undefined &&
+        pool.has(ex.equipment ?? 'undefined') &&
+        !avoid.has(v.id) &&
+        !usedToday.has(v.id)
+      );
+    });
+    const take = (tier: readonly Vetted[]) => {
+      const v = rand ? tier[Math.floor(rand() * tier.length)]! : tier[0]!;
+      return { ex: byId.get(v.id)!, v };
+    };
+    const one = (v: Vetted) => ({ ex: byId.get(v.id)!, v });
+    const roles = roleOrder(pat.compound, nthToday, strength);
+    const tierOf = (r: (typeof roles)[number]) =>
+      fits.filter((v) => v.role === r);
+    // The slot's main job is the first role this equipment can fill at all (a dumbbell
+    // gym has no heavy hinge, so its stretch hinge is the main lift).
+    const mainAt = roles.findIndex((r) => tierOf(r).length > 0);
+    if (mainAt < 0) return null;
+    const main = tierOf(roles[mainAt]!);
+    const freshMain = main.filter((v) => !used.has(v.id));
+    const againMain = main.filter((v) => used.has(v.id));
+    const later = roles
+      .slice(mainAt + 1)
+      .flatMap(tierOf)
+      .filter((v) => !used.has(v.id));
+    if (novice && pat.compound && nthToday === 0 && againMain.length > 0)
+      return one(againMain[0]!); // a novice repeats the main lift
+    if (freshMain.length > 0) return take(freshMain);
+    // A compound slot takes a fresh COMPOUND from the next job (deadlift, then a
+    // Romanian deadlift) before repeating, and repeats before dropping to an isolation
+    // (no flyes as the main chest lift).
+    const freshCompound = pat.compound
+      ? later.find((v) => byId.get(v.id)!.mechanic === 'compound')
+      : undefined;
+    if (freshCompound) return one(freshCompound);
+    // An isolation slot varies before it repeats (cable crunch, not a second hanging
+    // leg raise).
+    if (!pat.compound && later.length > 0) return one(later[0]!);
+    if (againMain.length > 0) return one(againMain[0]!);
+    return later.length > 0 ? one(later[0]!) : null;
+  };
+
+  /** The generic match when no vetted lift fits: best score, never an avoided lift or
+   *  an odd variant (roles.ts ODD), falling back to a lift already used this week. */
+  const pickFallback = (
+    pat: Pattern,
+    usedToday: ReadonlySet<string>,
+  ): GenExercise | null => {
+    let best: GenExercise | null = null;
+    let bestScore = 0;
+    let bestUsedFallback: GenExercise | null = null;
+    let bestUsedScore = 0;
+    for (const ex of catalog) {
+      if (
+        avoid.has(ex.id) ||
+        usedToday.has(ex.id) ||
+        ODD.some((o) => ex.nameNorm.includes(o))
+      )
+        continue;
+      const sc = score(ex, pat, pool, strength);
+      if (sc < 0) continue;
+      if (used.has(ex.id)) {
+        if (sc > bestUsedScore) {
+          bestUsedScore = sc;
+          bestUsedFallback = ex;
+        }
+        continue;
+      }
+      if (sc > bestScore) {
+        bestScore = sc;
+        best = ex;
+      }
+    }
+    return best ?? bestUsedFallback;
+  };
 
   for (let di = 0; di < types.length; di++) {
     const slots: GeneratedSlot[] = [];
     let dayCompoundCount = 0; // GZCLP: first compound -> T1, rest -> T2
+    const slotsToday = new Map<Muscle, number>();
+    const usedToday = new Set<string>();
 
     for (const { pat, sets: allocSets } of alloc[di]!) {
-      let best: GenExercise | null = null;
-      let bestScore = 0;
-      let bestUsedFallback: GenExercise | null = null;
-      let bestUsedScore = 0;
-      for (const ex of catalog) {
-        const sc = score(ex, pat, pool, strength);
-        if (sc < 0) continue;
-        if (used.has(ex.id)) {
-          if (sc > bestUsedScore) {
-            bestUsedScore = sc;
-            bestUsedFallback = ex;
-          }
-          continue;
-        }
-        if (sc > bestScore) {
-          bestScore = sc;
-          best = ex;
-        }
-      }
-      const chosen = best ?? bestUsedFallback;
+      const home = pat.muscles[0]!;
+      const nthToday = slotsToday.get(home) ?? 0;
+      slotsToday.set(home, nthToday + 1);
+      const vettedPick = pickVetted(pat, nthToday, usedToday);
+      const chosen = vettedPick?.ex ?? pickFallback(pat, usedToday);
       if (!chosen) continue;
       used.add(chosen.id);
+      usedToday.add(chosen.id);
       for (const m of chosen.primaryMuscles) trainedMuscles.add(m);
 
       const loadType = loadTypeFor(chosen.equipment, chosen.isBodyweight);
@@ -1134,6 +1232,12 @@ export function generatePlan(
       }
 
       const coaching = COACHING[pat.key] ?? DEFAULT_COACHING;
+      // R4: the cue belongs to the exercise and the tempo to its job; rest stays
+      // pattern-keyed (the plan's decision 2).
+      const cue = vettedPick?.v.cue ?? coaching.cue;
+      const tempo = vettedPick
+        ? tempoFor(vettedPick.v.role, coaching.tempo)
+        : coaching.tempo;
       slots.push({
         exerciseId: chosen.id,
         exerciseName: chosen.name,
@@ -1152,8 +1256,8 @@ export function generatePlan(
           ageYears: profile.ageYears,
           experience,
         }),
-        tempo: coaching.tempo,
-        coachingCue: coaching.cue,
+        tempo,
+        coachingCue: cue,
         restTier: coaching.tier,
         primaryMuscle: pat.muscles[0]!,
         loadType,
