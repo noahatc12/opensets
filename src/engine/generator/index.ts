@@ -485,6 +485,7 @@ const DAY_TEMPLATES: Record<string, Pattern[]> = {
     P.vertPull!,
     P.vertPress!,
     P.horizRow!,
+    P.lateralRaise!,
     P.biceps!,
     P.tricep!,
   ],
@@ -965,6 +966,50 @@ function allocateVolume(
       }
       deficit = tgt - (weekly.get(m) ?? 0);
     }
+  }
+
+  // ── PASS 3 — direct-work floor (hypertrophy goals, 2026-10-14). Press and row credit
+  // meets arm and shoulder MEV on paper, and "shoulders" lumps all three delt heads, so
+  // a hypertrophy upper day used to carry no curl, no triceps work and no lateral raise
+  // (the review's first coach finding). Build muscle and Recomposition now get a lateral
+  // raise on every day that offers one and one arm exercise per day that offers one,
+  // the arm with fewer slots this week first, so an upper/lower week alternates biceps
+  // and triceps. Placed last in the session; adds volume only, so no floor can regress.
+  if (
+    !o.strength &&
+    (o.goal === 'Build muscle' || o.goal === 'Recomposition')
+  ) {
+    const DIRECT_SETS = 3;
+    const offers = (di: number, key: string) =>
+      dayPatterns[di]!.some((p) => p.key === key);
+    const has = (di: number, key: string) =>
+      perDay[di]!.some((s) => s.pat.key === key);
+    const place = (di: number, key: string) => {
+      const pat = dayPatterns[di]!.find((p) => p.key === key)!;
+      perDay[di]!.push({ pat, sets: DIRECT_SETS });
+      for (const [m, c] of patternCredit(pat, direct)) add(m, c * DIRECT_SETS);
+    };
+    const armSlots = (key: string) =>
+      perDay.reduce(
+        (n, day) => n + day.filter((s) => s.pat.key === key).length,
+        0,
+      );
+    dayPatterns.forEach((_, di) => {
+      if (offers(di, 'lateralRaise') && !has(di, 'lateralRaise'))
+        place(di, 'lateralRaise');
+      const canB = offers(di, 'biceps');
+      const canT = offers(di, 'tricep');
+      if ((!canB && !canT) || has(di, 'biceps') || has(di, 'tricep')) return;
+      const key =
+        canB && canT
+          ? armSlots('biceps') <= armSlots('tricep')
+            ? 'biceps'
+            : 'tricep'
+          : canB
+            ? 'biceps'
+            : 'tricep';
+      place(di, key);
+    });
   }
 
   // Report only the ALLOCATED (primary-home) muscles — those R3 directly targets + floors
