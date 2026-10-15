@@ -19,6 +19,7 @@ import type {
   Goal,
   Measurement,
   UserSettingsRow,
+  ExportEnvelope,
 } from './types';
 
 const EXPORT_TABLES = [
@@ -32,6 +33,7 @@ const EXPORT_TABLES = [
   db.goals,
   db.settings,
   db.backups,
+  db.photos,
 ];
 
 async function wipe() {
@@ -212,6 +214,97 @@ describe('full-DB export → wipe → import (P0 exit gate)', () => {
       failsBeforeDeload: 3,
       deloadPct: 0.1,
     });
+  });
+});
+
+/** A fake JPEG body: 2 KB of bytes that differ per `seedByte`, so a mix-up shows. */
+function photoBlob(seedByte: number): Blob {
+  const bytes = new Uint8Array(2048);
+  for (let i = 0; i < bytes.length; i++) bytes[i] = (i * 31 + seedByte) % 256;
+  return new Blob([bytes], { type: 'image/jpeg' });
+}
+
+async function bytesOf(blob: Blob | undefined): Promise<number[]> {
+  expect(blob).toBeDefined();
+  return Array.from(new Uint8Array(await (blob as Blob).arrayBuffer()));
+}
+
+describe('progress photos in the backup', () => {
+  it('survive export → erase → import with identical bytes', async () => {
+    await seed();
+    const original = photoBlob(7);
+    await db.photos.add({
+      id: 'ph_1',
+      date: '2026-10-16T14:00:00.000Z',
+      blob: original,
+      pose: 'front',
+    });
+    const json = serializeEnvelope(
+      await buildEnvelope('2026-10-16T15:00:00.000Z'),
+    );
+
+    await wipe();
+    expect(await db.photos.count()).toBe(0);
+    await importFromJson(json);
+
+    const back = await db.photos.get('ph_1');
+    expect(back?.date).toBe('2026-10-16T14:00:00.000Z');
+    expect(back?.pose).toBe('front');
+    expect(back?.blob?.type).toBe('image/jpeg');
+    expect(await bytesOf(back?.blob)).toEqual(await bytesOf(original));
+  });
+
+  it('an older backup without photos leaves the photos on the device alone', async () => {
+    const env = await buildEnvelope('2026-10-16T15:00:00.000Z');
+    delete env.data.photos; // as written by an app version before photo backup
+    await db.photos.add({
+      id: 'ph_keep',
+      date: '2026-10-16T14:00:00.000Z',
+      blob: photoBlob(1),
+    });
+    await importEnvelope(env);
+    expect(await db.photos.get('ph_keep')).toBeDefined();
+  });
+
+  it('import adds and updates photos but never deletes one', async () => {
+    await db.photos.add({
+      id: 'ph_a',
+      date: '2026-10-16T14:00:00.000Z',
+      blob: photoBlob(2),
+    });
+    const env = await buildEnvelope('2026-10-16T15:00:00.000Z');
+    await db.photos.add({
+      id: 'ph_b',
+      date: '2026-10-23T14:00:00.000Z',
+      blob: photoBlob(3),
+    });
+    await importEnvelope(env);
+    const ids = (await db.photos.toArray()).map((p) => p.id).sort();
+    expect(ids).toEqual(['ph_a', 'ph_b']);
+  });
+
+  it('safety snapshots leave photos out so they do not double the storage', async () => {
+    await db.photos.add({
+      id: 'ph_s',
+      date: '2026-10-16T14:00:00.000Z',
+      blob: photoBlob(4),
+    });
+    const row = await createBackup('bk_photo', '2026-10-16T15:00:00.000Z');
+    expect(row.envelope.data.photos).toBeUndefined();
+  });
+
+  it('rejects a damaged photo entry before touching any data', async () => {
+    await seed();
+    const env = await buildEnvelope('2026-10-16T15:00:00.000Z');
+    const bad = {
+      ...env,
+      data: { ...env.data, photos: [{ id: 'ph_x', date: 'x' }] },
+    } as unknown as ExportEnvelope;
+    await expect(importEnvelope(bad)).rejects.toBeInstanceOf(ImportError);
+    expect(await db.sets.count()).toBe(1);
+    expect(() =>
+      assertValidEnvelope({ ...env, data: { ...env.data, photos: 'nope' } }),
+    ).toThrow(/malformed/i);
   });
 });
 

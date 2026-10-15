@@ -238,7 +238,7 @@ export interface Measurement {
 export interface ProgressPhoto {
   id: string;
   date: string;
-  /** IndexedDB blob (P3). Excluded from JSON export until base64 handling lands. */
+  /** IndexedDB blob (P3). Exported as base64 in backups (`ExportedPhoto`). */
   blob?: Blob;
   pose?: string;
 }
@@ -384,5 +384,18 @@ export interface ExportEnvelope {
     settings: UserSettingsRow[];
     /** Added in schema v2; optional so v1 envelopes/snapshots remain valid. */
     profile?: ProfileRow[];
+    /** Progress photos (2026-10). Optional: backups from earlier versions have none,
+     *  and safety snapshots leave photos out, since import never deletes a photo. */
+    photos?: ExportedPhoto[];
   };
+}
+
+/** A progress photo in a backup file: the image bytes as base64 plus their type. */
+export interface ExportedPhoto {
+  id: string;
+  date: string;
+  pose?: string;
+  /** MIME type of the image, e.g. image/jpeg. */
+  type: string;
+  base64: string;
 }

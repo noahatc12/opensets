@@ -13,6 +13,7 @@ import { useSettings } from '../../db/hooks';
 import { fmtWeight, kgToLb, toUnit } from '../../lib/units';
 import type { WeightUnit } from '../../lib/units';
 import { Sheet, SheetHeader } from '../../ui/Sheet';
+import { shrinkPhoto } from '../../lib/photo';
 
 /* Ported from the Tempo prototype Measurements screen (showMeasurements): a back
    header + stat cards (Bodyweight / Waist) + a PROGRESS PHOTOS row + a recent-
@@ -203,7 +204,8 @@ function captionWeight(
   return `${fmtWeight(bw.valueLb, units)} ${units}`;
 }
 
-/** A single empty "Add photo" tile that opens a file picker and stores the Blob. */
+/** A single empty "Add photo" tile that opens a file picker and stores the Blob,
+ *  shrunk to PHOTO_MAX_EDGE first so the store and the backups stay small. */
 function AddPhotoTile() {
   async function onPick(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -212,7 +214,7 @@ function AddPhotoTile() {
     const photo: ProgressPhoto = {
       id: newId(),
       date: nowIso(),
-      blob: file,
+      blob: await shrinkPhoto(file),
     };
     await db.photos.add(photo);
   }
