@@ -10,11 +10,11 @@
 import { db, SCHEMA_VERSION } from './db';
 import { createBackup } from './backup';
 import { newId } from './ids';
-import type { ExportEnvelope } from './types';
+import type { ExportEnvelope, ExportedPhoto, ProgressPhoto } from './types';
 
 /** The tables that participate in export/import, in stable order.
- *  Excludes `backups` (would nest), `photos` (Blobs — base64 handling lands with
- *  P3 photos), and `activeSession` (ephemeral crash-recovery state). */
+ *  Excludes `backups` (would nest), `photos` (Blobs, carried separately as base64:
+ *  see `photosForExport`) and `activeSession` (ephemeral crash-recovery state). */
 const EXPORT_TABLES = [
   'exercises',
   'programs',
@@ -28,8 +28,54 @@ const EXPORT_TABLES = [
   'profile',
 ] as const;
 
+/** Base64 of a Blob's bytes, built in chunks so a large photo cannot overflow the stack. */
+async function blobToBase64(blob: Blob): Promise<string> {
+  const bytes = new Uint8Array(await blob.arrayBuffer());
+  const CHUNK = 0x8000;
+  let binary = '';
+  for (let i = 0; i < bytes.length; i += CHUNK) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + CHUNK));
+  }
+  return btoa(binary);
+}
+
+/** The reverse of `blobToBase64`. Throws on text that is not base64. */
+function base64ToBlob(base64: string, type: string): Blob {
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return new Blob([bytes], { type });
+}
+
+/** Every stored progress photo that has image bytes, oldest first. */
+async function photosForExport(): Promise<ExportedPhoto[]> {
+  const rows = await db.photos.orderBy('date').toArray();
+  const out: ExportedPhoto[] = [];
+  for (const p of rows) {
+    if (!p.blob) continue;
+    out.push({
+      id: p.id,
+      date: p.date,
+      ...(p.pose ? { pose: p.pose } : {}),
+      type: p.blob.type || 'image/jpeg',
+      base64: await blobToBase64(p.blob),
+    });
+  }
+  return out;
+}
+
+export interface EnvelopeOptions {
+  /** Include progress photos (default true). Safety snapshots pass false: import never
+   *  deletes a photo, so a snapshot does not need them, and leaving them out keeps the
+   *  two kept snapshots from doubling the photo storage on the device. */
+  photos?: boolean;
+}
+
 /** Read the entire database into a versioned envelope. `now` is an ISO string. */
-export async function buildEnvelope(now: string): Promise<ExportEnvelope> {
+export async function buildEnvelope(
+  now: string,
+  opts: EnvelopeOptions = {},
+): Promise<ExportEnvelope> {
   const [
     exercises,
     programs,
@@ -53,6 +99,7 @@ export async function buildEnvelope(now: string): Promise<ExportEnvelope> {
     db.settings.toArray(),
     db.profile.toArray(),
   ]);
+  const photos = opts.photos === false ? undefined : await photosForExport();
   return {
     app: 'opensets',
     schemaVersion: SCHEMA_VERSION,
@@ -68,6 +115,7 @@ export async function buildEnvelope(now: string): Promise<ExportEnvelope> {
       goals,
       settings,
       profile,
+      ...(photos ? { photos } : {}),
     },
   };
 }
@@ -107,6 +155,22 @@ export function assertValidEnvelope(
       throw new ImportError(`Backup table "${t}" is malformed.`);
     }
   }
+  const photos = (env.data as Record<string, unknown>).photos;
+  if (photos !== undefined) {
+    if (!Array.isArray(photos)) {
+      throw new ImportError('Backup table "photos" is malformed.');
+    }
+    for (const p of photos as Record<string, unknown>[]) {
+      const ok =
+        typeof p === 'object' &&
+        p !== null &&
+        typeof p.id === 'string' &&
+        typeof p.date === 'string' &&
+        typeof p.type === 'string' &&
+        typeof p.base64 === 'string';
+      if (!ok) throw new ImportError('A progress photo in this backup is damaged.');
+    }
+  }
 }
 
 /**
@@ -137,6 +201,19 @@ export async function importEnvelope(
   const env = migrateEnvelope(value);
   const d = env.data;
 
+  // Decode photos before anything is touched, so a damaged one stops the import.
+  let photoRows: ProgressPhoto[];
+  try {
+    photoRows = (d.photos ?? []).map((p) => ({
+      id: p.id,
+      date: p.date,
+      ...(p.pose ? { pose: p.pose } : {}),
+      blob: base64ToBlob(p.base64, p.type),
+    }));
+  } catch {
+    throw new ImportError('A progress photo in this backup is damaged.');
+  }
+
   // Replace wipes every table, so first keep a copy of the current data in `backups`
   // (keep 2). A wrong file is then recoverable instead of final. (Audit 2026-09-24.)
   await createBackup(
@@ -157,9 +234,12 @@ export async function importEnvelope(
       db.goals,
       db.settings,
       db.profile,
+      db.photos,
     ],
     async () => {
       // Replace mode: clear every export table, then load. (Merge lands in P1.)
+      // Photos are the exception: added or updated, never cleared. A photo is only
+      // ever removed by the person, on purpose.
       await Promise.all([
         db.exercises.clear(),
         db.programs.clear(),
@@ -185,6 +265,7 @@ export async function importEnvelope(
         db.goals.bulkAdd(d.goals ?? []),
         db.settings.bulkAdd(d.settings ?? []),
         db.profile.bulkAdd(d.profile ?? []),
+        photoRows.length ? db.photos.bulkPut(photoRows) : Promise.resolve(),
       ]);
     },
   );

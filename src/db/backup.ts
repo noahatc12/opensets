@@ -22,7 +22,9 @@ export async function createBackup(
   id: string,
   now: string,
 ): Promise<BackupRow> {
-  const envelope = await buildEnvelope(now);
+  // Photos stay out of snapshots: import never deletes a photo, so a snapshot does
+  // not need them, and two kept snapshots would otherwise double the photo storage.
+  const envelope = await buildEnvelope(now, { photos: false });
   const row: BackupRow = {
     id,
     createdAt: now,
