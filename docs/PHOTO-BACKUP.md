@@ -1,6 +1,6 @@
 # Photo backup (roadmap item 1, 2026-10-15)
 
-Branch `feat/photo-backup`, cut from `origin/main` (`17cc15f`). Not merged. Waiting for Noah's go after a phone test.
+Branch `feat/photo-backup`, cut from `origin/main` (`17cc15f`). Merged and deployed 2026-10-16 on Noah's go ("Ship it"); his phone test follows the deploy.
 
 ## What changed
 - **Backups now carry progress photos.** Settings, Export backup writes each photo into the JSON file as base64, with its date, pose and image type (`ExportedPhoto` in `src/db/types.ts`).
